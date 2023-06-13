@@ -39,7 +39,7 @@ library LibMuon {
        );
     }
 
-    function verifyPrices(PriceSig memory priceSig) internal view {
+    function verifyPrices(PriceSig memory priceSig, address partyA) internal view {
         MuonStorage.Layout storage muonLayout = MuonStorage.layout();
         require(priceSig.prices.length == priceSig.symbolIds.length, "LibMuon: Invalid length");
         bytes32 hash = keccak256(
@@ -47,6 +47,7 @@ library LibMuon {
                 muonLayout.muonAppId,
                 priceSig.reqId,
                 address(this),
+                partyA,
                 priceSig.upnl,
                 priceSig.totalUnrealizedLoss,
                 priceSig.symbolIds,

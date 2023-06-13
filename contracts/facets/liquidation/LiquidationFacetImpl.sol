@@ -35,7 +35,7 @@ library LiquidationFacetImpl {
         MAStorage.Layout storage maLayout = MAStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-        LibMuon.verifyPrices(priceSig);
+        LibMuon.verifyPrices(priceSig, partyA);
         require(maLayout.liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
         require(
             priceSig.timestamp <=
