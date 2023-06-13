@@ -194,7 +194,7 @@ In order to grasp the intricacies of the liquidation process, a fundamental unde
 ### Liquidate Party A
 For a better understanding of how a user gets liquidated, let’s look at one with a $1000 allocated balance as an example:
 <p align="center"> 
-  <img src="images/liq_example1.png">
+  <img src="images/liq_example1.png" width="30%">
 </p>
 
 User positions are all considered to be cross, meaning that in the above picture, values can be the sum of the equivalent values in 4 different positions. \
@@ -202,7 +202,7 @@ Pending locked values are from user quotes that have not been opened yet.
 
 Now let’s say that the user is having a bad day, and one of their positions is sinking deep into loss:
 <p align="center"> 
-  <img src="images/liq_example2.png">
+  <img src="images/liq_example2.png" width="30%">
 </p>
 
 Each user position has a respective UPNL, which determines whether the position is in profit(positive UPNL) or loss(negative UPNL). Adding all those UPNLs, we get the user’s total UPNL. Now let’s see what happens if UPNL changes:
