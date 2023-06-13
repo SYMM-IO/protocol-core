@@ -1,3 +1,31 @@
+# SYMM I/O protocol implementation
+### Table of contents
+- [Introduction](#introduction)
+- [Main Flow](#main-flow)
+  * [Deposit](#deposit)
+  * [Send Quote](#send-quote)
+  * [Party B sees the position request](#party-b-sees-the-position-request)
+  * [Open Position](#open-position)
+  * [Close Request](#close-request)
+  * [Cancel Close Request](#cancel-close-request)
+- [Detailed Flow](#detailed-flow)
+  * [Deposit](#deposit-1)
+  * [Withdraw](#withdraw)
+  * [Allocate](#allocate)
+  * [Deallocate](#deallocate)
+  * [SendQuote](#sendquote)
+  * [LockQuote](#lockquote)
+  * [UnlockQuote](#unlockquote)
+  * [CancelQuote](#cancelquote)
+  * [OpenPosition](#openposition)
+    + [Partially](#partially)
+  * [RequestToClosePosition](#requesttocloseposition)
+  * [FillCloseRequest](#fillcloserequest)
+  * [CancelCloseRequest](#cancelcloserequest)
+  * [Liquidation](#liquidation)
+    + [Liquidate Party A](#liquidate-party-a)
+    + [Liquidate Party B](#liquidate-party-b)
+
 # Introduction
 This document details a sophisticated trading platform designed for future trading on cryptocurrency tokens. This platform establishes an interactive contract between two parties: Party A and Party B. Party A initiates the interaction by requesting a quote. This request is tailored with specific parameters such as whether the position is short or long, the intended amount, the leverage, and the price. Party B, in response, evaluates the request based on its own trading conditions, subsequently choosing to either accept or ignore it. This contract is the infrastructure for them.
 # Main Flow
