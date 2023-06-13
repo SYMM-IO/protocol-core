@@ -1,0 +1,76 @@
+{
+  "name": "deus_v3",
+  "description": "DEUS V3 MasterAgreement contracts",
+  "version": "1.0.0",
+  "author": {
+    "name": "KazemGhareghani/NavidFkh",
+    "url": "https://github.com/kazemGhareghani"
+  },
+  "devDependencies": {
+    "@ethersproject/abi": "^5.7.0",
+    "@ethersproject/abstract-signer": "^5.7.0",
+    "@ethersproject/bignumber": "^5.7.0",
+    "@ethersproject/bytes": "^5.7.0",
+    "@ethersproject/providers": "^5.7.2",
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-etherscan": "^3.1.7",
+    "@openzeppelin/contracts": "^4.9.0",
+    "@typechain/ethers-v5": "^10.2.1",
+    "@typechain/hardhat": "^6.1.6",
+    "@types/chai": "^4.3.5",
+    "@types/fs-extra": "^11.0.1",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.2.5",
+    "@typescript-eslint/eslint-plugin": "^5.59.7",
+    "@typescript-eslint/parser": "^5.59.7",
+    "bignumber.js": "^9.1.1",
+    "builder-pattern": "^2.2.0",
+    "chai": "^4.3.7",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.41.0",
+    "ethers": "^5.7.2",
+    "fs-extra": "^11.1.1",
+    "hardhat": "^2.14.0",
+    "hardhat-gas-reporter": "^1.0.9",
+    "mocha": "^10.2.0",
+    "random-ext": "^2.8.0",
+    "rxjs": "^7.8.1",
+    "shx": "^0.3.4",
+    "solidity-coverage": "^0.8.2",
+    "ts-node": "^10.9.1",
+    "typechain": "^8.2.0",
+    "typescript": "^5.0.4",
+    "typescript-json-serializer": "^6.0.0",
+    "winston": "^3.9.0"
+  },
+  "files": [
+    "/contracts"
+  ],
+  "keywords": [
+    "defi",
+    "ethereum",
+    "hardhat",
+    "smart-contracts",
+    "solidity",
+    "typescript"
+  ],
+  "packageManager": "yarn@3.2.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "shx rm -rf ./artifacts ./cache ./coverage ./src/types ./coverage.json && yarn typechain",
+    "compile": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile",
+    "coverage": "hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"test/**/*.ts\" && yarn typechain",
+    "lint": "yarn lint:sol && yarn lint:ts",
+    "lint:sol": "solhint --config ./.solhint.json --max-warnings 0 \"contracts/**/*.sol\"",
+    "lint:ts": "eslint --config ./.eslintrc.yml --ignore-path ./.eslintignore --ext .js,.ts .",
+    "postinstall": "DOTENV_CONFIG_PATH=./.env yarn typechain",
+    "test": "hardhat test",
+    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
+  }
+}

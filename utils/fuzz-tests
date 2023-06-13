@@ -1,0 +1,3 @@
+#!/bin/bash -e
+./docker/compile.sh
+TEST_MODE=fuzz npx hardhat test
