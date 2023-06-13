@@ -164,13 +164,19 @@ function requestToCancelCloseRequest(uint256 quoteId);
 ## Liquidation
 In order to grasp the intricacies of the liquidation process, a fundamental understanding of the 'pending locked' concept is crucial. When a user sends a quote request, the corresponding amount of the position goes into a 'pending' state. During this phase, the user is restricted from opening other positions with that specific amount. Nonetheless, this amount continues to contribute to the user's allocated funds when assessing their liquidity status. Once Party B opens the position, this amount goes from the 'pending' to the 'locked' state.
 ### Liquidate Party A
-For a better understanding of how a user gets liquidated, let’s look at one with a $1000 allocated balance as an example: \
-[PICTURE] \
+For a better understanding of how a user gets liquidated, let’s look at one with a $1000 allocated balance as an example:
+<p align="center"> 
+  <img src="images/liq_example1.png">
+</p>
+
 User positions are all considered to be cross, meaning that in the above picture, values can be the sum of the equivalent values in 4 different positions. \
 Pending locked values are from user quotes that have not been opened yet.
 
-Now let’s say that the user is having a bad day, and one of their positions is sinking deep into loss: \
-[PICTURE] \
+Now let’s say that the user is having a bad day, and one of their positions is sinking deep into loss:
+<p align="center"> 
+  <img src="images/liq_example2.png">
+</p>
+
 Each user position has a respective UPNL, which determines whether the position is in profit(positive UPNL) or loss(negative UPNL). Adding all those UPNLs, we get the user’s total UPNL. Now let’s see what happens if UPNL changes:
 * Total upnl  > 0: User is overall in profit
 * -500 < Total UPNL < 0: User’s locked MMs are supporting their positions
