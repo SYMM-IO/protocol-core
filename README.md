@@ -1,6 +1,7 @@
 # SYMM I/O protocol implementation
 ### Table of contents
 - [Introduction](#introduction)
+- [Setup Instructions](#setup-instructions)
 - [Main Flow](#main-flow)
   * [Deposit](#deposit)
   * [Send Quote](#send-quote)
@@ -28,6 +29,12 @@
 
 # Introduction
 This document details a sophisticated trading platform designed for future trading on cryptocurrency tokens. This platform establishes an interactive contract between two parties: Party A and Party B. Party A initiates the interaction by requesting a quote. This request is tailored with specific parameters such as whether the position is short or long, the intended amount, the leverage, and the price. Party B, in response, evaluates the request based on its own trading conditions, subsequently choosing to either accept or ignore it. This contract is the infrastructure for them.
+# Setup Instructions
+To setup the testing envoirment 
+* Copy the `.env.example` file, name it `.env`, and then provide the required variables in that .env file. 
+* Then you can run static tests by using `npx hardhat test`
+* Also, there is a hardhat task for deploying the contracts. You can run it with `npx hardhat deploy:diamond`
+
 # Main Flow
 ## Deposit
 To start trading in this system, the user needs to deposit money in the platform.
