@@ -120,6 +120,10 @@ library PartyBFacetImpl {
 
         Quote storage quote = quoteLayout.quotes[quoteId];
         require(
+            SymbolStorage.layout().symbols[quote.symbolId].isValid, 
+            "PartyBFacet: Symbol is not valid"
+        );
+        require(
             quote.quoteStatus == QuoteStatus.LOCKED ||
             quote.quoteStatus == QuoteStatus.CANCEL_PENDING,
             "PartyBFacet: Invalid state"
