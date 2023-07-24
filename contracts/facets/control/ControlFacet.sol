@@ -59,6 +59,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     function registerPartyB(
         address partyB
     ) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
+        require(partyB != address(0), "ControlFacet: Zero address");
         require(
             !MAStorage.layout().partyBStatus[partyB],
             "ControlFacet: Address is already registered"
@@ -72,10 +73,12 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         address partyB,
         uint256 index
     ) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
+        require(partyB != address(0), "ControlFacet: Zero address");
         require(MAStorage.layout().partyBStatus[partyB], "ControlFacet: Address is not registered");
         require(MAStorage.layout().partyBList[index] == partyB, "ControlFacet: Invalid index");
-        MAStorage.layout().partyBStatus[partyB] = false;
         uint256 lastIndex = MAStorage.layout().partyBList.length - 1;
+        require(index <= lastIndex, "ControlFacet: Invalid index");
+        MAStorage.layout().partyBStatus[partyB] = false;
         MAStorage.layout().partyBList[index] = MAStorage.layout().partyBList[lastIndex];
         MAStorage.layout().partyBList.pop();
         emit DeregisterPartyB(partyB, index);
