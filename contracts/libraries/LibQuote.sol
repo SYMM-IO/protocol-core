@@ -136,14 +136,6 @@ library LibQuote {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         uint256 tradingFee = LibQuote.getTradingFee(quoteId);
         accountLayout.allocatedBalances[QuoteStorage.layout().quotes[quoteId].partyA] += tradingFee;
-        accountLayout.balances[GlobalAppStorage.layout().feeCollector] -= tradingFee;
-    }
-
-    function receiveTradingFee(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        uint256 tradingFee = LibQuote.getTradingFee(quoteId);
-        accountLayout.allocatedBalances[QuoteStorage.layout().quotes[quoteId].partyA] -= tradingFee;
-        accountLayout.balances[GlobalAppStorage.layout().feeCollector] += tradingFee;
     }
 
     function closeQuote(Quote storage quote, uint256 filledAmount, uint256 closedPrice) internal {
