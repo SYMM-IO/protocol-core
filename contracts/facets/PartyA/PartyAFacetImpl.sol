@@ -115,8 +115,8 @@ library PartyAFacetImpl {
         quoteLayout.quoteIdsOf[msg.sender].push(currentId);
         quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
         quoteLayout.quotes[currentId] = quote;
-
-        LibQuote.receiveTradingFee(currentId);
+        
+        accountLayout.allocatedBalances[msg.sender] -= LibQuote.getTradingFee(currentId);
     }
 
     function requestToCancelQuote(uint256 quoteId) internal returns (QuoteStatus result) {

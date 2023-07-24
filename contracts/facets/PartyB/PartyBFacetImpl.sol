@@ -119,6 +119,7 @@ library PartyBFacetImpl {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
         Quote storage quote = quoteLayout.quotes[quoteId];
+        Symbol storage symbol = SymbolStorage.layout().symbols[quote.symbolId];
         require(
             quote.quoteStatus == QuoteStatus.LOCKED ||
             quote.quoteStatus == QuoteStatus.CANCEL_PENDING,
@@ -130,8 +131,12 @@ library PartyBFacetImpl {
                 quote.quantity >= filledAmount && filledAmount > 0,
                 "PartyBFacet: Invalid filledAmount"
             );
+            accountLayout.balances[GlobalAppStorage.layout().feeCollector] += 
+                (filledAmount * quote.requestedOpenPrice * symbol.tradingFee) / 1e36;
         } else {
             require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
+            accountLayout.balances[GlobalAppStorage.layout().feeCollector] += 
+                (filledAmount * quote.marketPrice * symbol.tradingFee) / 1e36;
         }
         if (quote.positionType == PositionType.LONG) {
             require(
