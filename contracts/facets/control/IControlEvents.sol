@@ -62,4 +62,5 @@ interface IControlEvents {
     event SetPartyBEmergencyStatus(address partyB, bool status);
     event SetBalanceLimitPerUser(uint256 balanceLimitPerUser);
     event RegisterPartyB(address partyB);
+    event DeregisterPartyB(address partyB, uint256 index);
 }

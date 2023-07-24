@@ -68,6 +68,19 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         emit RegisterPartyB(partyB);
     }
 
+    function deregisterPartyB(
+        address partyB,
+        uint256 index
+    ) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
+        require(MAStorage.layout().partyBStatus[partyB], "ControlFacet: Address is not registered");
+        require(MAStorage.layout().partyBList[index] == partyB, "ControlFacet: Invalid index");
+        MAStorage.layout().partyBStatus[partyB] = false;
+        uint256 lastIndex = MAStorage.layout().partyBList.length - 1;
+        MAStorage.layout().partyBList[index] = MAStorage.layout().partyBList[lastIndex];
+        MAStorage.layout().partyBList.pop();
+        emit DeregisterPartyB(partyB, index);
+    }
+
     function setMuonConfig(
         uint256 upnlValidTime,
         uint256 priceValidTime,
