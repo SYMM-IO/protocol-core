@@ -27,7 +27,7 @@ library PartyBFacetImpl {
         LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
         checkPartyBValidationToLockQuote(quoteId, upnlSig.upnl);
         if (increaseNonce) {
-            accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+            accountLayout.partyBNonces[msg.sender][quote.partyA] += 1;
         }
         quote.modifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.LOCKED;
