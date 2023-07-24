@@ -38,9 +38,13 @@ library LiquidationFacetImpl {
         LibMuon.verifyPrices(priceSig, partyA);
         require(maLayout.liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
         require(
+            priceSig.timestamp >= maLayout.liquidationTimestamp[partyA],
+            "LiquidationFacet: Expired signature"
+        );
+        require(
             priceSig.timestamp <=
                 maLayout.liquidationTimestamp[partyA] + maLayout.liquidationTimeout,
-            "LiquidationFacet: Expired signature"
+            "LiquidationFacet: Invalid signature"
         );
         for (uint256 index = 0; index < priceSig.symbolIds.length; index++) {
             accountLayout.symbolsPrices[partyA][priceSig.symbolIds[index]] = Price(
