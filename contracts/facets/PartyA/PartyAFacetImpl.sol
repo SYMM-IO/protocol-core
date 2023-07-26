@@ -110,7 +110,8 @@ library PartyAFacetImpl {
             createTimestamp: block.timestamp,
             modifyTimestamp: block.timestamp,
             quantityToClose: 0,
-            deadline: deadline
+            deadline: deadline,
+            tradingFee: symbolLayout.symbols[symbolId].tradingFee
         });
         quoteLayout.quoteIdsOf[msg.sender].push(currentId);
         quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);

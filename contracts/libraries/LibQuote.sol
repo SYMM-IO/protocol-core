@@ -122,13 +122,12 @@ library LibQuote {
     function getTradingFee(uint256 quoteId) internal view returns (uint256 fee) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         Quote storage quote = quoteLayout.quotes[quoteId];
-        Symbol storage symbol = SymbolStorage.layout().symbols[quote.symbolId];
         if (quote.orderType == OrderType.LIMIT) {
             fee =
-                (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * symbol.tradingFee) /
+                (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee) /
                 1e36;
         } else {
-            fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * symbol.tradingFee) / 1e36;
+            fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee) / 1e36;
         }
     }
 

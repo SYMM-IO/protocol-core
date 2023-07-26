@@ -224,7 +224,8 @@ library PartyBFacetImpl {
                 createTimestamp: quote.createTimestamp,
                 modifyTimestamp: block.timestamp,
                 quantityToClose: 0,
-                deadline: quote.deadline
+                deadline: quote.deadline,
+                tradingFee: quote.tradingFee
             });
 
             quoteLayout.quoteIdsOf[quote.partyA].push(currentId);

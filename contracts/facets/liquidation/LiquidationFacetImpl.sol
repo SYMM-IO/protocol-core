@@ -62,6 +62,7 @@ library LiquidationFacetImpl {
                 liquidationFee: 0
             });
             if (availableBalance >= 0) {
+                AccountStorage.layout().partyAReimbursement[partyA] += uint256(availableBalance);
                 uint256 remainingLf = accountLayout.lockedBalances[partyA].lf;
                 accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.NORMAL;
                 accountLayout.liquidationDetails[partyA].liquidationFee = remainingLf;
@@ -116,6 +117,7 @@ library LiquidationFacetImpl {
                 .layout()
                 .partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
             }
+            AccountStorage.layout().partyAReimbursement[partyA] += LibQuote.getTradingFee(quote.id);
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
             quote.modifyTimestamp = block.timestamp;
         }
@@ -213,7 +215,10 @@ library LiquidationFacetImpl {
                 quoteLayout.partyAPendingQuotes[partyA].length == 0,
                 "LiquidationFacet: Pending quotes should be liquidated first"
             );
-            accountLayout.allocatedBalances[partyA] = 0;
+            accountLayout.allocatedBalances[partyA] = AccountStorage.layout().partyAReimbursement[
+                partyA
+            ];
+            AccountStorage.layout().partyAReimbursement[partyA] = 0;
             accountLayout.lockedBalances[partyA].makeZero();
 
             uint256 lf = accountLayout.liquidationDetails[partyA].liquidationFee;
@@ -282,7 +287,7 @@ library LiquidationFacetImpl {
                     quote.quoteStatus == QuoteStatus.CANCEL_PENDING)
             ) {
                 accountLayout.pendingLockedBalances[partyA].subQuote(quote);
-
+                accountLayout.allocatedBalances[partyA] += LibQuote.getTradingFee(quote.id);
                 pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
                 pendingQuotes.pop();
                 quote.quoteStatus = QuoteStatus.LIQUIDATED;
