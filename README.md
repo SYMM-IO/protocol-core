@@ -83,7 +83,7 @@ function deposit(uint256 amount);
 There's also the functionality for a user to deposit funds on behalf of another user utilizing the `depositFor` method.
 ## Withdraw
 Funds that have been deposited but not yet allocated can be returned to the user's wallet. Additionally, there's a required waiting period between the deallocation and withdrawal processes. The waiting period can and will be used for independent watch dogs and security researcher to detect potential malicious behaviour between PartyA and PartyBs and can therefore be used to suspend those malicious parties, suspended Parties are not able to withdraw their de-allocated funds after the withdrawal period.
-It's a typical Fraud Proof window also used in optimistic rollups, one could therefore describe SYMMIO as L3.
+It's a typical Fraud Proof window also used in optimistic rollups, one could therefore describe SYMMIO as something vaguely similiar to an L3.
 
 
 ```solidity
