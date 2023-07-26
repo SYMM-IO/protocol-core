@@ -131,12 +131,6 @@ library LibQuote {
         }
     }
 
-    function returnTradingFee(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        uint256 tradingFee = LibQuote.getTradingFee(quoteId);
-        accountLayout.allocatedBalances[QuoteStorage.layout().quotes[quoteId].partyA] += tradingFee;
-    }
-
     function closeQuote(Quote storage quote, uint256 filledAmount, uint256 closedPrice) internal {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
@@ -229,7 +223,7 @@ library LibQuote {
             accountLayout.partyANonces[quote.partyA] += 1;
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             // send trading Fee back to partyA
-            LibQuote.returnTradingFee(quoteId);
+            accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
             removeFromPartyAPendingQuotes(quote);
             if (
                 quote.quoteStatus == QuoteStatus.LOCKED ||
