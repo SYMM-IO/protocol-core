@@ -105,17 +105,6 @@ library AccountFacetImpl {
         accountLayout.partyBAllocatedBalances[msg.sender][recipient] += amount;
     }
 
-    function depositForPartyB(uint256 amount) internal {
-        IERC20(GlobalAppStorage.layout().collateral).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
-        uint256 amountWith18Decimals = (amount * 1e18) /
-        (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
-        AccountStorage.layout().balances[msg.sender] += amountWith18Decimals;
-    }
-
     function allocateForPartyB(uint256 amount, address partyA, bool increaseNonce) internal {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
