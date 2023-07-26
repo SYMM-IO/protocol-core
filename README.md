@@ -28,7 +28,13 @@
     + [Liquidate Party B](#liquidate-party-b)
 
 # Introduction
-This document details a sophisticated trading platform designed for future trading on cryptocurrency tokens. This platform establishes an interactive contract between two parties: Party A and Party B. Party A initiates the interaction by requesting a quote. This request is tailored with specific parameters such as whether the position is short or long, the intended amount, the leverage, and the price. Party B, in response, evaluates the request based on its own trading conditions, subsequently choosing to either accept or ignore it. This contract is the infrastructure for them.
+This document details a intent-based permissionless derivatives trading architecture. At its core its a communication protocol, that defines how Quotes or Intents should be created, requested, structured and accepted. This platform establishes an interactive contract between two parties: Party A and Party B. Party A initiates the interaction by sending an intent. This request is tailored with specific parameters such as whether the position is short or long, the intended amount, the leverage, and the price. Party B, in response, evaluates the request based on its own trading conditions, subsequently choosing to either accept or ignore it. This contract is the infrastructure for them.
+
+This contract focuses on the sending, receiving, locking and accepting of quotes, as well as the management of the provided collateral by both parties, additionally it also regulates how 3rd Party Liquidators can use Oracles, to flag Parties as liquidatable in case they fail to provide sufficient capital, post trade-execution.
+
+The contract does not provide a matching engine, matching of PartyA and PartyBs can be done via decentralized frontends or decentralized driver architecture, as external services, matching can easily be facilitated by providing an array of whitelisted PartyBs in the quote.
+
+
 # Setup Instructions
 To setup the testing envoirment 
 * Copy the `.env.example` file, name it `.env`, and then provide the required variables in that .env file. 
@@ -37,30 +43,49 @@ To setup the testing envoirment
 
 # Main Flow
 ## Deposit
-To start trading in this system, the user needs to deposit money in the platform.
-* **Allocate:** After depositing money, the user can’t trade with it yet. It is required to allocate that money, then he will be able to start trading
-## Send Quote
-To start the process of opening a position, he chooses to open long or short positions by giving some criteria* by calling `sendQuote` function. \
+To start sending and accepting INTENTs, the user needs to deposit collateral into the SYMMIO contracts.
+
+* **Allocate:** After depositing collateral, the user cannot trade with it yet. It is required to allocate that money to a subaccount, then he will be able to start trading, subaccounts are isolated instances, as SYMMIO is 100% economical sound, all PartyA <> PartyB instances are isolated in subaccounts.
+All collateral deposited into a subaccount is in cross with all positions opened using that subaccount.
+To have an isolated position, a seperate subaccount should be created.
+Subaccounts also enable further customization down the road, where collateral could be allocated to a specific contract instance, with customized code written by PartyA or PartyB.
+
+## Send Quote (Send INTENT)
+To start the process of opening a trade, he chooses to open long or short positions by giving some criteria* & by calling `sendQuote` function. \
 *Criteria: symbol, price, …
+
 ## Party B sees the position request
-At this time, Party B would see the request, and he could decide whether to accept or ignore it. If he accepts it, first he locks the quote through `lockQuote` and then calls `openPosition`.
-At the time of locking the quote before opening the position, no other party Bs can accept the quote until it gets unlocked for any possible reason. (user requests to cancel or Party B cannot open the position)
-* **Cancel Quote:** It is possible that the user wants to cancel the quote before it gets opened. If the quote isn’t locked, then it will be canceled immediately. But if it’s locked and isn’t opened yet, depends on if it’s partially filled or not, the quote will be canceled. (in partially filled, the unfilled part will be canceled, not all)
+At this time, Party B will see the request, and he can decide whether to accept or ignore it. 
+If he accepts it, first he locks(reserves) the quote through `lockQuote` and then calls `openPosition`.
+At the time of locking(reserving) the quote before opening the position, no other party Bs can accept the quote until it gets unlocked for any possible reason.
+(user requests to cancel or Party B cannot open the position)
+
+Reserving Quotes is a "training wheel" feature to make it easier for MarketMakers to respond to quotes, by giving them the ability to reserve a quote, then fulfill their needed hedging operations and then fill the quote afterwards.
+It could be removed in later versions.
+
+
+* **Cancel Quote:** It is possible that the user wants to cancel his quote(intent) before it gets opened. If the quote isn’t locked(reserved), then it will be canceled immediately. But if it’s locked and isn’t opened yet, depending if it’s partially filled or not, the quote will be canceled. (If it was partially filled already, the unfilled part will be canceled, and the partially filled will be opened.)
+
+
 ## Open Position
-After locking a quote if nothing happens, the position will be opened by calling `openPosition`
+After locking(reserving) a quote if nothing unusual happens, the position will be opened by PartyB calling `openPosition`
 ## Close Request
-The user would close the position whenever they want to. This will happen by calling `requestToClosePosition`
+The PartyA (user) can close the position whenever they want to. This will happen by calling `requestToClosePosition`, Please remark that PartyBs are not able to request to close a position.
 ## Cancel Close Request
-It is possible for the user to cancel their close request (or in limit close if he wants to make any changes to his order) In these cases if the close request isn’t filled yet, it will be canceled and the position status would change from close pending to a regular position. But if it is partially filled, that portion will be closed and the remaining one won’t be closed and get back to his positions.
+It is possible for the user to cancel their close request (or when using limit order for closing if he wants to make any changes to his order) In these cases if the close request isn’t filled yet, it will be canceled and the position status would change from close pending to a regular position. But if the close request was already partially filled, the already filled portion will remain closed and the remaining amount will be added back to his position and re-opened.
 # Detailed Flow
 ## Deposit
-The initial operation that can be performed by PartyA is the deposit. The designated token to serve as collateral is predetermined following the deployment of the contract (see ControlFacet.setCollateral function) 
+The initial operation that can be performed by PartyA is the deposit. The designated token to serve as collateral is predetermined following the deployment of the contract, in current SYMMIO version each contract has a unique collateral type, for multi collateral support multiple base contracts can be deployed.
+It is important to note that whatever design decision gets taken in later versions, it is critical to hard require both Parties to use the same collateral when entering into a trade, in this SYMMIO version that hard requirement is enforced by having a single collateral class per contract. (see ControlFacet.setCollateral function) 
 ```solidity
 function deposit(uint256 amount);
 ```
 There's also the functionality for a user to deposit funds on behalf of another user utilizing the `depositFor` method.
 ## Withdraw
-Funds that have been deposited but not yet allocated can be returned to the user's wallet. Additionally, there's a required waiting period between the deallocation and withdrawal processes.
+Funds that have been deposited but not yet allocated can be returned to the user's wallet. Additionally, there's a required waiting period between the deallocation and withdrawal processes. The waiting period can and will be used for independent watch dogs and security researcher to detect potential malicious behaviour between PartyA and PartyBs and can therefore be used to suspend those malicious parties, suspended Parties are not able to withdraw their de-allocated funds after the withdrawal period.
+It's a typical Fraud Proof window also used in optimistic rollups, one could therefore describe SYMMIO as L3.
+
+
 ```solidity
 function withdraw(uint256 amount);
 ```
