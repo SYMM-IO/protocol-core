@@ -67,7 +67,7 @@ library PartyBFacetImpl {
         accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
         accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
         // send trading Fee back to partyA
-        LibQuote.returnTradingFee(quoteId);
+        accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quoteId);
 
         LibQuote.removeFromPendingQuotes(quote);
     }
@@ -234,7 +234,7 @@ library PartyBFacetImpl {
 
             if (newStatus == QuoteStatus.CANCELED) {
                 // send trading Fee back to partyA
-                LibQuote.returnTradingFee(currentId);
+                accountLayout.allocatedBalances[newQuote.partyA] += LibQuote.getTradingFee(newQuote.id);
                 // part of quote has been filled and part of it has been canceled
                 accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
                 accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(
