@@ -29,7 +29,7 @@ library PartyBFacetImpl {
         if (increaseNonce) {
             accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
         }
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.LOCKED;
         quote.partyB = msg.sender;
         // lock funds for partyB
@@ -47,7 +47,7 @@ library PartyBFacetImpl {
             return result;
         } else {
             accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
             quote.quoteStatus = QuoteStatus.PENDING;
             accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
             LibQuote.removeFromPartyBPendingQuotes(quote);
@@ -62,7 +62,7 @@ library PartyBFacetImpl {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         require(quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyBFacet: Invalid state");
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CANCELED;
         accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
         accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
@@ -151,7 +151,7 @@ library PartyBFacetImpl {
 
         accountLayout.partyANonces[quote.partyA] += 1;
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
 
         LibQuote.removeFromPendingQuotes(quote);
 
@@ -217,7 +217,7 @@ library PartyBFacetImpl {
                 requestedClosePrice: 0,
                 parentId: quote.id,
                 createTimestamp: quote.createTimestamp,
-                modifyTimestamp: block.timestamp,
+                statusModifyTimestamp: block.timestamp,
                 quantityToClose: 0,
                 deadline: quote.deadline
             });
@@ -300,7 +300,7 @@ library PartyBFacetImpl {
             "PartyBFacet: Invalid state"
         );
         AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.OPENED;
         quote.requestedClosePrice = 0;
         quote.quantityToClose = 0;

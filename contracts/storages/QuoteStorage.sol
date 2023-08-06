@@ -56,7 +56,7 @@ struct Quote {
     // handle partially open position
     uint256 parentId;
     uint256 createTimestamp;
-    uint256 modifyTimestamp;
+    uint256 statusModifyTimestamp;
     uint256 deadline;
 }
 

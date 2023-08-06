@@ -117,7 +117,7 @@ library LiquidationFacetImpl {
                 .partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
             }
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
         }
         AccountStorage.layout().pendingLockedBalances[partyA].makeZero();
         delete quoteLayout.partyAPendingQuotes[partyA];
@@ -147,7 +147,7 @@ library LiquidationFacetImpl {
                 "LiquidationFacet: Price should be set"
             );
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
 
             (bool hasMadeProfit, uint256 amount) = LibQuote.getValueOfQuoteForPartyA(
                 accountLayout.symbolsPrices[partyA][quote.symbolId].price,
@@ -286,7 +286,7 @@ library LiquidationFacetImpl {
                 pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
                 pendingQuotes.pop();
                 quote.quoteStatus = QuoteStatus.LIQUIDATED;
-                quote.modifyTimestamp = block.timestamp;
+                quote.statusModifyTimestamp = block.timestamp;
             } else {
                 index++;
             }
@@ -342,7 +342,7 @@ library LiquidationFacetImpl {
             );
 
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
 
             // accountLayout.allocatedBalances[partyA] += quote.lockedValues.cva;
             accountLayout.lockedBalances[partyA].subQuote(quote);
