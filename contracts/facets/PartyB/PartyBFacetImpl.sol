@@ -147,7 +147,7 @@ library PartyBFacetImpl {
         LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 
         quote.openedPrice = openedPrice;
-        LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
+        
 
         accountLayout.partyANonces[quote.partyA] += 1;
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
@@ -162,8 +162,7 @@ library PartyBFacetImpl {
             if (quote.orderType == OrderType.LIMIT) {
                 quote.lockedValues.mul(openedPrice).div(quote.requestedOpenPrice);
             }
-            accountLayout.lockedBalances[quote.partyA].addQuote(quote);
-            accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
+            
         }
         // partially fill
         else {
@@ -244,11 +243,12 @@ library PartyBFacetImpl {
             newQuote.initialLockedValues = newQuote.lockedValues;
             quote.quantity = filledAmount;
             quote.lockedValues = appliedFilledLockedValues;
-
-            // lock with amount of filledAmount
-            accountLayout.lockedBalances[quote.partyA].addQuote(quote);
-            accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
         }
+        // lock with amount of filledAmount
+        accountLayout.lockedBalances[quote.partyA].addQuote(quote);
+        accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
+        
+        LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
         quote.quoteStatus = QuoteStatus.OPENED;
         LibQuote.addToOpenPositions(quoteId);
     }
