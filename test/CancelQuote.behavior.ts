@@ -201,7 +201,7 @@ export function shouldBehaveLikeCancelQuote(): void {
           hedger: this.hedger,
           quoteId: BigNumber.from(1),
           openedPrice: openedPrice,
-          filledAmount: filledAmount,
+          fillAmount: filledAmount,
           beforeOutput: beforeOut,
           newQuoteId: BigNumber.from(2),
           newQuoteTargetStatus: QuoteStatus.CANCELED,
@@ -233,7 +233,7 @@ export function shouldBehaveLikeCancelQuote(): void {
           hedger: this.hedger,
           quoteId: BigNumber.from(1),
           openedPrice: openedPrice,
-          filledAmount: filledAmount,
+          fillAmount: filledAmount,
           beforeOutput: beforeOut,
         });
       });
