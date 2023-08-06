@@ -235,7 +235,6 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CANCEL_PENDING
         ) {
             quote.modifyTimestamp = block.timestamp;
-            accountLayout.partyANonces[quote.partyA] += 1;
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             // send trading Fee back to partyA
             LibQuote.returnTradingFee(quoteId);
@@ -244,7 +243,6 @@ library LibQuote {
                 quote.quoteStatus == QuoteStatus.LOCKED ||
                 quote.quoteStatus == QuoteStatus.CANCEL_PENDING
             ) {
-                accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
                 accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(
                     quote
                 );
@@ -257,8 +255,6 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING
         ) {
             quote.modifyTimestamp = block.timestamp;
-            accountLayout.partyANonces[quote.partyA] += 1;
-            accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0;
             quote.quoteStatus = QuoteStatus.OPENED;

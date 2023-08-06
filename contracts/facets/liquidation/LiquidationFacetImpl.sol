@@ -148,7 +148,9 @@ library LiquidationFacetImpl {
             );
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
             quote.modifyTimestamp = block.timestamp;
-
+            
+            accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+            
             (bool hasMadeProfit, uint256 amount) = LibQuote.getValueOfQuoteForPartyA(
                 accountLayout.symbolsPrices[partyA][quote.symbolId].price,
                 LibQuote.quoteOpenAmount(quote),

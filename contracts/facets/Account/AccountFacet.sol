@@ -67,17 +67,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountEvents {
         uint256 amount,
         address partyA
     ) public whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
-        AccountFacetImpl.allocateForPartyB(amount, partyA, true);
-        emit AllocateForPartyB(msg.sender, partyA, amount);
-    }
-
-    function depositAndAllocateForPartyB(
-        uint256 amount,
-        address partyA
-    ) external whenNotPartyBActionsPaused onlyPartyB {
-        AccountFacetImpl.depositForPartyB(amount);
-        AccountFacetImpl.allocateForPartyB(amount, partyA, true);
-        emit DepositForPartyB(msg.sender, amount);
+        AccountFacetImpl.allocateForPartyB(amount, partyA);
         emit AllocateForPartyB(msg.sender, partyA, amount);
     }
 
