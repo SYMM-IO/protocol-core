@@ -517,7 +517,7 @@ export function shouldBehaveLikeClosePosition(): void {
         hedger: this.hedger,
         quoteId: BigNumber.from(1),
         closePrice: closePrice,
-        filledAmount: filledAmount,
+        fillAmount: filledAmount,
         beforeOutput: beforeOut,
       });
     });
@@ -542,7 +542,7 @@ export function shouldBehaveLikeClosePosition(): void {
         hedger: this.hedger,
         quoteId: BigNumber.from(1),
         closePrice: closePrice,
-        filledAmount: filledAmount,
+        fillAmount: filledAmount,
         beforeOutput: beforeOut,
       });
     });
@@ -566,7 +566,7 @@ export function shouldBehaveLikeClosePosition(): void {
         hedger: this.hedger,
         quoteId: BigNumber.from(4),
         closePrice: closePrice,
-        filledAmount: filledAmount,
+        fillAmount: filledAmount,
         beforeOutput: beforeOut,
       });
     });
