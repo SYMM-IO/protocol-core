@@ -84,6 +84,14 @@ library AccountFacetImpl {
             !maLayout.partyBLiquidationStatus[msg.sender][recipient],
             "PartyBFacet: PartyB isn't solvent"
         );
+        require(
+            !MAStorage.layout().liquidationStatus[origin],
+            "PartyBFacet: Origin isn't solvent"
+        );
+        require(
+            !MAStorage.layout().liquidationStatus[recipient],
+            "PartyBFacet: Recipient isn't solvent"
+        );
         // deallocate from origin
         require(
             accountLayout.partyBAllocatedBalances[msg.sender][origin] >= amount,
