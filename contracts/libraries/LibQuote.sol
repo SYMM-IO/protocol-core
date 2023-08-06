@@ -150,8 +150,6 @@ library LibQuote {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-        quote.modifyTimestamp = block.timestamp;
-
         LockedValues memory lockedValues = LockedValues(
             quote.lockedValues.cva -
                 ((quote.lockedValues.cva * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
@@ -187,6 +185,7 @@ library LibQuote {
         quote.quantityToClose -= filledAmount;
 
         if (quote.closedAmount == quote.quantity) {
+            quote.statusModifyTimestamp = block.timestamp;
             quote.quoteStatus = QuoteStatus.CLOSED;
             quote.requestedClosePrice = 0;
             removeFromOpenPositions(quote.id);
@@ -196,6 +195,7 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING || quote.quantityToClose == 0
         ) {
             quote.quoteStatus = QuoteStatus.OPENED;
+            quote.statusModifyTimestamp = block.timestamp;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
         } else {
@@ -234,7 +234,7 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.LOCKED ||
             quote.quoteStatus == QuoteStatus.CANCEL_PENDING
         ) {
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
             accountLayout.partyANonces[quote.partyA] += 1;
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             // send trading Fee back to partyA
@@ -256,7 +256,7 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING
         ) {
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
             accountLayout.partyANonces[quote.partyA] += 1;
             accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
             quote.requestedClosePrice = 0;
