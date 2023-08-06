@@ -288,11 +288,11 @@ library PartyAFacetImpl {
         LibSolvency.isSolventAfterClosePosition(
             quoteId,
             filledAmount,
-            quote.requestedClosePrice,
+            upnlSig.price,
             upnlSig
         );
         accountLayout.partyANonces[quote.partyA] += 1;
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        LibQuote.closeQuote(quote, filledAmount, quote.requestedClosePrice);
+        LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
     }
 }
