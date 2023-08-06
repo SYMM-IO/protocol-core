@@ -55,6 +55,7 @@ library LibMuon {
                 muonLayout.muonAppId,
                 priceSig.reqId,
                 address(this),
+                "verifyPrices",
                 partyA,
                 priceSig.upnl,
                 priceSig.totalUnrealizedLoss,
