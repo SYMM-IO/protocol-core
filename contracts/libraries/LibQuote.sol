@@ -198,12 +198,6 @@ library LibQuote {
             quote.quoteStatus = QuoteStatus.OPENED;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
-        } else {
-            require(
-                quote.lockedValues.total() >=
-                    SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
-                "LibQuote: Remaining quote value is low"
-            );
         }
     }
 
