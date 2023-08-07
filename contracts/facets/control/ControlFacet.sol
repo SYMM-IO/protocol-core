@@ -4,6 +4,7 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../utils/Ownable.sol";
 import "../../utils/Accessibility.sol";
 import "../../storages/MAStorage.sol";
@@ -95,6 +96,10 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     function setCollateral(
         address collateral
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        require(
+            IERC20Metadata(collateral).decimals() <= 18,
+            "ControlFacet: Token with more than 18 decimals not allowed"
+        );
         GlobalAppStorage.layout().collateral = collateral;
         emit SetCollateral(collateral);
     }
