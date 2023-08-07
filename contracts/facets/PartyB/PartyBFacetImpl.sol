@@ -158,10 +158,7 @@ library PartyBFacetImpl {
         if (quote.quantity == filledAmount) {
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
-
-            if (quote.orderType == OrderType.LIMIT) {
-                quote.lockedValues.mul(openedPrice).div(quote.requestedOpenPrice);
-            }
+            quote.lockedValues.mul(openedPrice).div(quote.requestedOpenPrice);
             accountLayout.lockedBalances[quote.partyA].addQuote(quote);
             accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
         }
