@@ -53,9 +53,10 @@ struct PairUpnlAndPriceSig {
     SchnorrSign sigs;
 }
 
-struct PriceSig {
+struct LiquidationSig {
     bytes reqId;
     uint256 timestamp;
+    bytes liquidationId;
     int256 upnl;
     int256 totalUnrealizedLoss; 
     uint256[] symbolIds;
