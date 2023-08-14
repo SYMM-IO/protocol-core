@@ -4,16 +4,19 @@
 FROM node
 
 ######################################################################
-# VCS METADATA
+# LABELS
 ######################################################################
 ARG COMMIT_ID
 ARG COMMIT_TIMESTAMP
 ARG COMMIT_AUTHOR
+ARG BUILD_APPLICATION
+ARG BUILD_DATE
 
-ENV COMMIT_ID=${COMMIT_ID}
-ENV COMMIT_TIMESTAMP=${COMMIT_TIMESTAMP}
-ENV COMMIT_AUTHOR=${COMMIT_AUTHOR}
-
+LABEL org.vcs.CommitId=${COMMIT_ID}
+LABEL org.vcs.CommitTimestamp=${COMMIT_TIMESTAMP}
+LABEL org.vcs.CommitAuthor=${COMMIT_AUTHOR}
+LABEL org.build.Application=${BUILD_APPLICATION}
+LABEL org.build.Date=${BUILD_DATE}
 
 ######################################################################
 # BUILD STAGE
