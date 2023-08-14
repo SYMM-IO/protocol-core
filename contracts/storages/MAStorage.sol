@@ -21,7 +21,6 @@ library MAStorage {
         uint256 forceCloseGapRatio;
         mapping(address => bool) partyBStatus;
         mapping(address => bool) liquidationStatus;
-        mapping(address => uint256) liquidationTimestamp;
         mapping(address => mapping(address => bool)) partyBLiquidationStatus;
         mapping(address => mapping(address => uint256)) partyBLiquidationTimestamp;
         mapping(address => mapping(address => uint256)) partyBPositionLiquidatorsShare;
