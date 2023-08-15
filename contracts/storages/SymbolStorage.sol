@@ -11,6 +11,8 @@ struct Symbol {
     uint256 minAcceptableQuoteValue;
     uint256 minAcceptablePortionLF;
     uint256 tradingFee;
+    uint256 fundingRateEpochDuration;
+    uint256 fundingRateWindowTime;
 }
 
 library SymbolStorage {

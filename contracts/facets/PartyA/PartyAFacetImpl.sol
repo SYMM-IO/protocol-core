@@ -94,6 +94,7 @@ library PartyAFacetImpl {
             positionType: positionType,
             orderType: orderType,
             openedPrice: 0,
+            initialOpenedPrice: 0,
             requestedOpenPrice: price,
             marketPrice: upnlSig.price,
             quantity: quantity,
@@ -110,6 +111,7 @@ library PartyAFacetImpl {
             createTimestamp: block.timestamp,
             modifyTimestamp: block.timestamp,
             quantityToClose: 0,
+            lastFundingPaymentTimestamp: 0,
             deadline: deadline
         });
         quoteLayout.quoteIdsOf[msg.sender].push(currentId);

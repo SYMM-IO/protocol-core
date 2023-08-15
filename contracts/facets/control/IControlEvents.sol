@@ -19,10 +19,13 @@ interface IControlEvents {
         string name,
         uint256 minAcceptableQuoteValue,
         uint256 minAcceptablePortionLF,
-        uint256 tradingFee
+        uint256 tradingFee,
+        uint256 fundingRateEpochDuration,
+        uint256 fundingRateWindowTime
     );
     event SetFeeCollector(address oldFeeCollector, address newFeeCollector);
     event SetSymbolValidationState(uint256 id, bool oldState, bool isValid);
+    event SetSymbolFundingState(uint256 id, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime);
     event SetSymbolAcceptableValues(
         uint256 symbolId,
         uint256 oldMinAcceptableQuoteValue,
