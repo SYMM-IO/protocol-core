@@ -105,8 +105,15 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         string memory name,
         uint256 minAcceptableQuoteValue,
         uint256 minAcceptablePortionLF,
-        uint256 tradingFee
+        uint256 tradingFee,
+        uint256 fundingRateEpochDuration,
+        uint256 fundingRateWindowTime
     ) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+        require(
+            fundingRateWindowTime < fundingRateEpochDuration / 2,
+            "ControlFacet: High window time"
+        );
+        require(tradingFee <= 1e18, "ControlFacet: High trading fee");
         uint256 lastId = ++SymbolStorage.layout().lastId;
         Symbol memory symbol = Symbol(
             lastId,
@@ -114,10 +121,20 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
             true,
             minAcceptableQuoteValue,
             minAcceptablePortionLF,
-            tradingFee
+            tradingFee,
+            fundingRateEpochDuration,
+            fundingRateWindowTime
         );
         SymbolStorage.layout().symbols[lastId] = symbol;
-        emit AddSymbol(lastId, name, minAcceptableQuoteValue, minAcceptablePortionLF, tradingFee);
+        emit AddSymbol(
+            lastId,
+            name,
+            minAcceptableQuoteValue,
+            minAcceptablePortionLF,
+            tradingFee,
+            fundingRateEpochDuration,
+            fundingRateWindowTime
+        );
     }
 
     function addSymbols(
@@ -128,9 +145,27 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
                 symbols[i].name,
                 symbols[i].minAcceptableQuoteValue,
                 symbols[i].minAcceptablePortionLF,
-                symbols[i].tradingFee
+                symbols[i].tradingFee,
+                symbols[i].fundingRateEpochDuration,
+                symbols[i].fundingRateWindowTime
             );
         }
+    }
+
+    function setSymbolFundingState(
+        uint256 symbolId,
+        uint256 fundingRateEpochDuration,
+        uint256 fundingRateWindowTime
+    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+        SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+        require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+        require(
+            fundingRateWindowTime < fundingRateEpochDuration / 2,
+            "ControlFacet: High window time"
+        );
+        symbolLayout.symbols[symbolId].fundingRateEpochDuration = fundingRateEpochDuration;
+        symbolLayout.symbols[symbolId].fundingRateWindowTime = fundingRateWindowTime;
+        emit SetSymbolFundingState(symbolId, fundingRateEpochDuration, fundingRateWindowTime);
     }
 
     function setSymbolValidationState(

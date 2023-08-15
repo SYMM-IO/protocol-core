@@ -37,6 +37,7 @@ struct Quote {
     OrderType orderType;
     // Price of quote which PartyB opened in 18 decimals
     uint256 openedPrice;
+    uint256 initialOpenedPrice;
     // Price of quote which PartyA requested in 18 decimals
     uint256 requestedOpenPrice;
     uint256 marketPrice;
@@ -57,6 +58,7 @@ struct Quote {
     uint256 parentId;
     uint256 createTimestamp;
     uint256 modifyTimestamp;
+    uint256 lastFundingPaymentTimestamp;
     uint256 deadline;
 }
 
