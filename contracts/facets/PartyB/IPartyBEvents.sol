@@ -40,7 +40,7 @@ interface IPartyBEvents {
         uint256 cva,
         uint256 mm,
         uint256 lf,
-        uint256 maxInterestRate,
+        uint256 maxFundingRate,
         uint256 deadline,
         QuoteStatus quoteStatus
     );

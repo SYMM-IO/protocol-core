@@ -211,7 +211,7 @@ library PartyBFacetImpl {
                 closedAmount: 0,
                 lockedValues: LockedValues(0, 0, 0),
                 initialLockedValues: LockedValues(0, 0, 0),
-                maxInterestRate: quote.maxInterestRate,
+                maxFundingRate: quote.maxFundingRate,
                 partyA: quote.partyA,
                 partyB: address(0),
                 quoteStatus: newStatus,
@@ -377,8 +377,8 @@ library PartyBFacetImpl {
             }
             if (rates[i] >= 0) {
                 require(
-                    uint256(rates[i]) <= quote.maxInterestRate,
-                    "PartyBFacet: High interest rate"
+                    uint256(rates[i]) <= quote.maxFundingRate,
+                    "PartyBFacet: High funding rate"
                 );
                 uint256 priceDiff = (quote.openedPrice * uint256(rates[i])) / 1e18;
                 if (quote.positionType == PositionType.LONG) {
@@ -390,8 +390,8 @@ library PartyBFacetImpl {
                 partyBAvailableBalance += int256(LibQuote.quoteOpenAmount(quote) * priceDiff);
             } else {
                 require(
-                    uint256(-rates[i]) <= quote.maxInterestRate,
-                    "PartyBFacet: High interest rate"
+                    uint256(-rates[i]) <= quote.maxFundingRate,
+                    "PartyBFacet: High funding rate"
                 );
                 uint256 priceDiff = (quote.openedPrice * uint256(-rates[i])) / 1e18;
                 if (quote.positionType == PositionType.LONG) {

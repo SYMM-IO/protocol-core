@@ -75,7 +75,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.lockedValues.cva,
                     newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
-                    newQuote.maxInterestRate,
+                    newQuote.maxFundingRate,
                     newQuote.deadline,
                     newQuote.quoteStatus
                 );
@@ -128,7 +128,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.lockedValues.cva,
                     newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
-                    newQuote.maxInterestRate,
+                    newQuote.maxFundingRate,
                     newQuote.deadline,
                     newQuote.quoteStatus
                 );
@@ -189,7 +189,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.lockedValues.cva,
                     newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
-                    newQuote.maxInterestRate,
+                    newQuote.maxFundingRate,
                     newQuote.deadline,
                     newQuote.quoteStatus
                 );
