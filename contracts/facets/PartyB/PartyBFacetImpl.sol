@@ -406,5 +406,7 @@ library PartyBFacetImpl {
         }
         require(partyAAvailableBalance >= 0, "PartyBFacet: PartyA will be insolvent");
         require(partyBAvailableBalance >= 0, "PartyBFacet: PartyB will be insolvent");
+        AccountStorage.layout().partyBNonces[msg.sender][partyA] += 1;
+        AccountStorage.layout().partyANonces[partyA] += 1;
     }
 }
