@@ -28,7 +28,7 @@ library PartyAFacetImpl {
         uint256 cva,
         uint256 mm,
         uint256 lf,
-        uint256 maxInterestRate,
+        uint256 maxFundingRate,
         uint256 deadline,
         SingleUpnlAndPriceSig memory upnlSig
     ) internal returns (uint256 currentId) {
@@ -101,7 +101,7 @@ library PartyAFacetImpl {
             closedAmount: 0,
             lockedValues: lockedValues,
             initialLockedValues: lockedValues,
-            maxInterestRate: maxInterestRate,
+            maxFundingRate: maxFundingRate,
             partyA: msg.sender,
             partyB: address(0),
             quoteStatus: QuoteStatus.PENDING,

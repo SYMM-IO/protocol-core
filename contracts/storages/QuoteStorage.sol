@@ -47,7 +47,7 @@ struct Quote {
     uint256 closedAmount;
     LockedValues initialLockedValues;
     LockedValues lockedValues;
-    uint256 maxInterestRate;
+    uint256 maxFundingRate;
     address partyA;
     address partyB;
     QuoteStatus quoteStatus;

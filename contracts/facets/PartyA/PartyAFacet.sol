@@ -20,7 +20,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         uint256 cva,
         uint256 mm,
         uint256 lf,
-        uint256 maxInterestRate,
+        uint256 maxFundingRate,
         uint256 deadline,
         SingleUpnlAndPriceSig memory upnlSig
     ) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
@@ -34,7 +34,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
             cva,
             mm,
             lf,
-            maxInterestRate,
+            maxFundingRate,
             deadline,
             upnlSig
         );
@@ -52,7 +52,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
             quote.lockedValues.cva,
             quote.lockedValues.mm,
             quote.lockedValues.lf,
-            maxInterestRate,
+            maxFundingRate,
             deadline,
             QuoteStatus.PENDING
         );
