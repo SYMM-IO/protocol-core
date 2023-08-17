@@ -32,7 +32,7 @@ const limitDefaultQuoteRequest: QuoteRequest = {
   cva: decimal(22),
   mm: decimal(75),
   lf: decimal(3),
-  maxFundingRate: 0,
+  maxFundingRate: decimal(2, 16),
   deadline: getBlockTimestamp(500),
   upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
 };
@@ -47,7 +47,7 @@ const marketDefaultQuoteRequest: QuoteRequest = {
   cva: decimal(22),
   mm: decimal(75),
   lf: decimal(3),
-  maxFundingRate: 0,
+  maxFundingRate: decimal(2, 16),
   deadline: getBlockTimestamp(500),
   upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
 };

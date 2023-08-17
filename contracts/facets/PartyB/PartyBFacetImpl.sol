@@ -386,8 +386,8 @@ library PartyBFacetImpl {
                 } else {
                     quote.openedPrice -= priceDiff;
                 }
-                partyAAvailableBalance -= int256(LibQuote.quoteOpenAmount(quote) * priceDiff);
-                partyBAvailableBalance += int256(LibQuote.quoteOpenAmount(quote) * priceDiff);
+                partyAAvailableBalance -= int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
+                partyBAvailableBalance += int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
             } else {
                 require(
                     uint256(-rates[i]) <= quote.maxFundingRate,
@@ -399,8 +399,8 @@ library PartyBFacetImpl {
                 } else {
                     quote.openedPrice += priceDiff;
                 }
-                partyAAvailableBalance += int256(LibQuote.quoteOpenAmount(quote) * priceDiff);
-                partyBAvailableBalance -= int256(LibQuote.quoteOpenAmount(quote) * priceDiff);
+                partyAAvailableBalance += int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
+                partyBAvailableBalance -= int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
             }
             quote.lastFundingPaymentTimestamp = paidTimestamp;
         }
