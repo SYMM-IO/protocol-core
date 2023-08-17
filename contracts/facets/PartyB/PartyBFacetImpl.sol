@@ -119,6 +119,7 @@ library PartyBFacetImpl {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
         Quote storage quote = quoteLayout.quotes[quoteId];
+        require(accountLayout.suspendedAddresses[quote.partyA] == false, "PartyBFacet: PartyA is suspended");
         require(
             SymbolStorage.layout().symbols[quote.symbolId].isValid, 
             "PartyBFacet: Symbol is not valid"
