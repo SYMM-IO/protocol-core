@@ -153,6 +153,10 @@ library LiquidationFacetImpl {
             } else {
                 accountLayout.totalUnplForLiquidation[partyA] -= int256(amount);
             }
+            uint256 amountToDeduct = amount >
+                accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
+                ? accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
+                : amount;
 
             if (
                 accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.NORMAL
@@ -161,7 +165,7 @@ library LiquidationFacetImpl {
                     .lockedValues
                     .cva;
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amount;
+                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
                 } else {
                     accountLayout.partyBAllocatedBalances[quote.partyB][partyA] += amount;
                 }
@@ -173,7 +177,7 @@ library LiquidationFacetImpl {
                     ((quote.lockedValues.cva * accountLayout.liquidationDetails[partyA].deficit) /
                         accountLayout.lockedBalances[partyA].cva);
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amount;
+                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
                 } else {
                     accountLayout.partyBAllocatedBalances[quote.partyB][partyA] += amount;
                 }
@@ -181,7 +185,7 @@ library LiquidationFacetImpl {
                 accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.OVERDUE
             ) {
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amount;
+                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
                 } else {
                     accountLayout.partyBAllocatedBalances[quote.partyB][partyA] +=
                         amount -
