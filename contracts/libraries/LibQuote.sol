@@ -151,7 +151,9 @@ library LibQuote {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
         quote.modifyTimestamp = block.timestamp;
-
+        require(quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.mm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.lf * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         LockedValues memory lockedValues = LockedValues(
             quote.lockedValues.cva -
                 ((quote.lockedValues.cva * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
