@@ -100,6 +100,12 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
             IERC20Metadata(collateral).decimals() <= 18,
             "ControlFacet: Token with more than 18 decimals not allowed"
         );
+        if (GlobalAppStorage.layout().collateral != address(0)) {
+            require(
+                IERC20Metadata(GlobalAppStorage.layout().collateral).balanceOf(address(this)) == 0,
+                "ControlFacet: There is still collateral in the contract"
+            );
+        }
         GlobalAppStorage.layout().collateral = collateral;
         emit SetCollateral(collateral);
     }
