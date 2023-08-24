@@ -119,6 +119,9 @@ library PartyBFacetImpl {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
         Quote storage quote = quoteLayout.quotes[quoteId];
+
+        require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
+
         require(
             quote.quoteStatus == QuoteStatus.LOCKED ||
             quote.quoteStatus == QuoteStatus.CANCEL_PENDING,
@@ -165,7 +168,7 @@ library PartyBFacetImpl {
             accountLayout.lockedBalances[quote.partyA].addQuote(quote);
             accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
         }
-        // partially fill
+            // partially fill
         else {
             currentId = ++quoteLayout.lastId;
             QuoteStatus newStatus;
