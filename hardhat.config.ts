@@ -1,5 +1,6 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-toolbox";
+import "@openzeppelin/hardhat-upgrades";
 import { config as dotenvConfig } from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
 import { resolve } from "path";
@@ -63,6 +64,10 @@ const config: HardhatUserConfig = {
     },
     bsc: {
       url: "https://bsc-dataseed3.defibit.io",
+      accounts: [privateKey],
+    },
+    base: {
+      url: "https://base.meowrpc.com",
       accounts: [privateKey],
     },
     bscTest: {
