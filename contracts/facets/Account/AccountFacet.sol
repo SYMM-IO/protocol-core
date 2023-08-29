@@ -75,7 +75,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountEvents {
         uint256 amount,
         address partyA,
         SingleUpnlSig memory upnlSig
-    ) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
+    ) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) notLiquidatedPartyA(partyA) onlyPartyB {
         AccountFacetImpl.deallocateForPartyB(amount, partyA, upnlSig);
         emit DeallocateForPartyB(msg.sender, partyA, amount);
     }
