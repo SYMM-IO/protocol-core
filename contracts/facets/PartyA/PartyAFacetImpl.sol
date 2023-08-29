@@ -152,8 +152,7 @@ library PartyAFacetImpl {
         uint256 closePrice,
         uint256 quantityToClose,
         OrderType orderType,
-        uint256 deadline,
-        SingleUpnlAndPriceSig memory upnlSig
+        uint256 deadline
     ) internal {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
@@ -164,13 +163,6 @@ library PartyAFacetImpl {
         require(
             LibQuote.quoteOpenAmount(quote) >= quantityToClose,
             "PartyAFacet: Invalid quantityToClose"
-        );
-        LibMuon.verifyPartyAUpnlAndPrice(upnlSig, quote.partyA, quote.symbolId);
-        LibSolvency.isSolventAfterRequestToClosePosition(
-            quoteId,
-            closePrice,
-            quantityToClose,
-            upnlSig
         );
 
         // check that remaining position is not too small

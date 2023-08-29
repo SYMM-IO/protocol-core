@@ -87,16 +87,14 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         uint256 closePrice,
         uint256 quantityToClose,
         OrderType orderType,
-        uint256 deadline,
-        SingleUpnlAndPriceSig memory upnlSig
+        uint256 deadline
     ) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
         PartyAFacetImpl.requestToClosePosition(
             quoteId,
             closePrice,
             quantityToClose,
             orderType,
-            deadline,
-            upnlSig
+            deadline
         );
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         emit RequestToClosePosition(
