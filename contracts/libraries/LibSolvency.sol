@@ -18,76 +18,57 @@ library LibSolvency {
         PairUpnlAndPriceSig memory upnlSig
     ) internal view returns (bool) {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        int256 partyBAvailableBalance = LibAccount.partyBAvailableBalance(
+        int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(
             upnlSig.upnlPartyB,
             quote.partyB,
             quote.partyA
         );
-        int256 partyAAvailableBalance = LibAccount.partyAAvailableBalance(
+        int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
             upnlSig.upnlPartyA,
             quote.partyA
         );
 
-        uint256 lockedAmount;
-        uint256 lockedMM;
-        if (quote.orderType == OrderType.LIMIT) {
-            lockedAmount =
-                (filledAmount * (quote.lockedValues.cva + quote.lockedValues.lf)) /
-                quote.quantity;
-            lockedMM = (filledAmount * quote.lockedValues.mm) / quote.quantity;
-        } else {
-            lockedAmount = quote.lockedValues.cva + quote.lockedValues.lf;
-            lockedMM = quote.lockedValues.mm;
-        }
-
-        partyAAvailableBalance -= int256(lockedAmount);
-        partyBAvailableBalance -= int256(lockedAmount);
-
         if (quote.positionType == PositionType.LONG) {
             if (quote.openedPrice >= upnlSig.price) {
                 uint256 diff = (filledAmount * (quote.openedPrice - upnlSig.price)) / 1e18;
-                uint256 max = diff > lockedMM ? diff : lockedMM;
                 require(
-                    partyAAvailableBalance - int256(max) >= 0,
+                    partyAAvailableBalance - int256(diff) >= 0,
                     "LibSolvency: PartyA will be liquidatable"
                 );
                 require(
-                    partyBAvailableBalance + int256(diff) - int256(lockedMM) >= 0,
+                    partyBAvailableBalance + int256(diff) >= 0,
                     "LibSolvency: PartyB will be liquidatable"
                 );
             } else {
                 uint256 diff = (filledAmount * (upnlSig.price - quote.openedPrice)) / 1e18;
-                uint256 max = diff > lockedMM ? diff : lockedMM;
                 require(
-                    partyBAvailableBalance - int256(max) >= 0,
+                    partyBAvailableBalance - int256(diff) >= 0,
                     "LibSolvency: PartyB will be liquidatable"
                 );
                 require(
-                    partyAAvailableBalance + int256(diff) - int256(lockedMM) >= 0,
+                    partyAAvailableBalance + int256(diff) >= 0,
                     "LibSolvency: PartyA will be liquidatable"
                 );
             }
         } else if (quote.positionType == PositionType.SHORT) {
             if (quote.openedPrice >= upnlSig.price) {
                 uint256 diff = (filledAmount * (quote.openedPrice - upnlSig.price)) / 1e18;
-                uint256 max = diff > lockedMM ? diff : lockedMM;
                 require(
-                    partyBAvailableBalance - int256(max) >= 0,
+                    partyBAvailableBalance - int256(diff) >= 0,
                     "LibSolvency: PartyB will be liquidatable"
                 );
                 require(
-                    partyAAvailableBalance + int256(diff) - int256(lockedMM) >= 0,
+                    partyAAvailableBalance + int256(diff) >= 0,
                     "LibSolvency: PartyA will be liquidatable"
                 );
             } else {
                 uint256 diff = (filledAmount * (upnlSig.price - quote.openedPrice)) / 1e18;
-                uint256 max = diff > lockedMM ? diff : lockedMM;
                 require(
-                    partyAAvailableBalance - int256(max) >= 0,
+                    partyAAvailableBalance - int256(diff) >= 0,
                     "LibSolvency: PartyA will be liquidatable"
                 );
                 require(
-                    partyBAvailableBalance + int256(diff) - int256(lockedMM) >= 0,
+                    partyBAvailableBalance + int256(diff) >= 0,
                     "LibSolvency: PartyB will be liquidatable"
                 );
             }
