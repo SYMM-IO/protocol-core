@@ -105,7 +105,8 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         string memory name,
         uint256 minAcceptableQuoteValue,
         uint256 minAcceptablePortionLF,
-        uint256 tradingFee
+        uint256 tradingFee,
+        uint256 maxLeverage
     ) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
         uint256 lastId = ++SymbolStorage.layout().lastId;
         Symbol memory symbol = Symbol(
@@ -114,10 +115,11 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
             true,
             minAcceptableQuoteValue,
             minAcceptablePortionLF,
-            tradingFee
+            tradingFee,
+            maxLeverage
         );
         SymbolStorage.layout().symbols[lastId] = symbol;
-        emit AddSymbol(lastId, name, minAcceptableQuoteValue, minAcceptablePortionLF, tradingFee);
+        emit AddSymbol(lastId, name, minAcceptableQuoteValue, minAcceptablePortionLF, tradingFee, maxLeverage);
     }
 
     function addSymbols(
@@ -128,7 +130,8 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
                 symbols[i].name,
                 symbols[i].minAcceptableQuoteValue,
                 symbols[i].minAcceptablePortionLF,
-                symbols[i].tradingFee
+                symbols[i].tradingFee,
+                symbols[i].maxLeverage
             );
         }
     }
@@ -141,6 +144,16 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
         emit SetSymbolValidationState(symbolId, symbolLayout.symbols[symbolId].isValid, isValid);
         symbolLayout.symbols[symbolId].isValid = isValid;
+    }
+
+    function setSymbolMaxLeverage(
+        uint256 symbolId,
+        uint256 maxLeverage
+    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+        SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+        require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+        emit SetSymbolMaxLeverage(symbolId, symbolLayout.symbols[symbolId].maxLeverage, maxLeverage);
+        symbolLayout.symbols[symbolId].maxLeverage = maxLeverage;
     }
 
     function setSymbolAcceptableValues(

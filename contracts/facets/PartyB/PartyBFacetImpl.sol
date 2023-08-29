@@ -249,6 +249,12 @@ library PartyBFacetImpl {
             accountLayout.lockedBalances[quote.partyA].addQuote(quote);
             accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
         }
+        // check leverage (is in 18 decimals)
+        require(
+            quote.quantity * quote.openedPrice / quote.lockedValues.total() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
+            "PartyBFacet: Leverage is high"
+        );
+
         quote.quoteStatus = QuoteStatus.OPENED;
         LibQuote.addToOpenPositions(quoteId);
     }
