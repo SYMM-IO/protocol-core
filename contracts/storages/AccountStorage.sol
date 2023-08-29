@@ -14,11 +14,13 @@ enum LiquidationType {
 }
 
 struct LiquidationDetail {
+    bytes liquidationId;
     LiquidationType liquidationType;
     int256 upnl;
     int256 totalUnrealizedLoss;
     uint256 deficit;
     uint256 liquidationFee;
+    uint256 timestamp;
 }
 
 struct Price {

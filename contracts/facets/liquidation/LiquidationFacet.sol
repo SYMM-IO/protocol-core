@@ -12,23 +12,23 @@ import "./LiquidationFacetImpl.sol";
 contract LiquidationFacet is Pausable, Accessibility, ILiquidationEvents {
     function liquidatePartyA(
         address partyA,
-        SingleUpnlSig memory upnlSig
+        LiquidationSig memory liquidationSig
     )
     external
     whenNotLiquidationPaused
     notLiquidatedPartyA(partyA)
     onlyRole(LibAccessibility.LIQUIDATOR_ROLE)
     {
-        LiquidationFacetImpl.liquidatePartyA(partyA, upnlSig);
+        LiquidationFacetImpl.liquidatePartyA(partyA, liquidationSig);
         emit LiquidatePartyA(msg.sender, partyA);
     }
 
     function setSymbolsPrice(
         address partyA,
-        PriceSig memory priceSig
+        LiquidationSig memory liquidationSig
     ) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
-        LiquidationFacetImpl.setSymbolsPrice(partyA, priceSig);
-        emit SetSymbolsPrices(msg.sender, partyA, priceSig.symbolIds, priceSig.prices);
+        LiquidationFacetImpl.setSymbolsPrice(partyA, liquidationSig);
+        emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices);
     }
 
     function liquidatePendingPositionsPartyA(
