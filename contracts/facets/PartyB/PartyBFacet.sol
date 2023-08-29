@@ -45,7 +45,12 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, false);
         emit LockQuote(quote.partyB, quoteId, quote.quoteStatus);
-        uint256 newId = PartyBFacetImpl.openPosition(quoteId, filledAmount, openedPrice, pairUpnlSig);
+        uint256 newId = PartyBFacetImpl.openPosition(
+            quoteId,
+            filledAmount,
+            openedPrice,
+            pairUpnlSig
+        );
         emit OpenPosition(
             quoteId,
             quote.partyA,
@@ -70,7 +75,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.lockedValues.cva,
                     newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
-                    newQuote.maxInterestRate,
+                    newQuote.maxFundingRate,
                     newQuote.deadline,
                     newQuote.quoteStatus
                 );
@@ -93,7 +98,12 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, false);
         emit AllocateForPartyB(msg.sender, quote.partyA, allocateAmount);
         emit LockQuote(quote.partyB, quoteId, quote.quoteStatus);
-        uint256 newId = PartyBFacetImpl.openPosition(quoteId, filledAmount, openedPrice, pairUpnlSig);
+        uint256 newId = PartyBFacetImpl.openPosition(
+            quoteId,
+            filledAmount,
+            openedPrice,
+            pairUpnlSig
+        );
         emit OpenPosition(
             quoteId,
             quote.partyA,
@@ -118,7 +128,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.lockedValues.cva,
                     newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
-                    newQuote.maxInterestRate,
+                    newQuote.maxFundingRate,
                     newQuote.deadline,
                     newQuote.quoteStatus
                 );
@@ -179,7 +189,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.lockedValues.cva,
                     newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
-                    newQuote.maxInterestRate,
+                    newQuote.maxFundingRate,
                     newQuote.deadline,
                     newQuote.quoteStatus
                 );
@@ -235,5 +245,15 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
             upnlSig.price,
             quote.quoteStatus
         );
+    }
+
+    function chargeFundingRate(
+        address partyA,
+        uint256[] memory quoteIds,
+        int256[] memory rates,
+        PairUpnlSig memory upnlSig
+    ) external whenNotPartyBActionsPaused {
+        PartyBFacetImpl.chargeFundingRate(partyA, quoteIds, rates, upnlSig);
+        emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
     }
 }

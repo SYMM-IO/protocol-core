@@ -45,7 +45,7 @@ export async function initializeFixture(): Promise<RunContext> {
 
   await context.controlFacet
     .connect(context.signers.admin)
-    .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16));
+    .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), 28800, 900);
 
   await context.controlFacet.connect(context.signers.admin).setPendingQuotesValidLength(10);
   await context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1, 17));

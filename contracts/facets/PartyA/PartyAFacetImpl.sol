@@ -28,7 +28,7 @@ library PartyAFacetImpl {
         uint256 cva,
         uint256 mm,
         uint256 lf,
-        uint256 maxInterestRate,
+        uint256 maxFundingRate,
         uint256 deadline,
         SingleUpnlAndPriceSig memory upnlSig
     ) internal returns (uint256 currentId) {
@@ -94,13 +94,14 @@ library PartyAFacetImpl {
             positionType: positionType,
             orderType: orderType,
             openedPrice: 0,
+            initialOpenedPrice: 0,
             requestedOpenPrice: price,
             marketPrice: upnlSig.price,
             quantity: quantity,
             closedAmount: 0,
             lockedValues: lockedValues,
             initialLockedValues: lockedValues,
-            maxInterestRate: maxInterestRate,
+            maxFundingRate: maxFundingRate,
             partyA: msg.sender,
             partyB: address(0),
             quoteStatus: QuoteStatus.PENDING,
@@ -110,6 +111,7 @@ library PartyAFacetImpl {
             createTimestamp: block.timestamp,
             modifyTimestamp: block.timestamp,
             quantityToClose: 0,
+            lastFundingPaymentTimestamp: 0,
             deadline: deadline
         });
         quoteLayout.quoteIdsOf[msg.sender].push(currentId);
