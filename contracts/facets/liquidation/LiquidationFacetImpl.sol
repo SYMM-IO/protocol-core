@@ -142,7 +142,9 @@ library LiquidationFacetImpl {
             );
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
             quote.modifyTimestamp = block.timestamp;
-
+            
+            accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+            
             (bool hasMadeProfit, uint256 amount) = LibQuote.getValueOfQuoteForPartyA(
                 accountLayout.symbolsPrices[partyA][quote.symbolId].price,
                 LibQuote.quoteOpenAmount(quote),
@@ -230,6 +232,7 @@ library LiquidationFacetImpl {
                 return false;
             }
             accountLayout.totalUnplForLiquidation[partyA] = 0;
+            accountLayout.partyANonces[partyA] += 1;
         }
         return true;
     }
@@ -342,20 +345,8 @@ library LiquidationFacetImpl {
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
             quote.modifyTimestamp = block.timestamp;
 
-            // accountLayout.allocatedBalances[partyA] += quote.lockedValues.cva;
             accountLayout.lockedBalances[partyA].subQuote(quote);
 
-            // (bool hasMadeProfit, uint256 amount) = LibQuote.getValueOfQuoteForPartyA(
-            //     priceSig.prices[index],
-            //     LibQuote.quoteOpenAmount(quote),
-            //     quote
-            // );
-
-            // if (hasMadeProfit) {
-            //     accountLayout.allocatedBalances[partyA] += amount;
-            // } else {
-            //     accountLayout.allocatedBalances[partyA] -= amount;
-            // }
             quote.avgClosedPrice =
                 (quote.avgClosedPrice *
                     quote.closedAmount +
@@ -377,6 +368,7 @@ library LiquidationFacetImpl {
         if (quoteLayout.partyBPositionsCount[partyB][partyA] == 0) {
             maLayout.partyBLiquidationStatus[partyB][partyA] = false;
             maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
+            accountLayout.partyBNonces[partyB][partyA] += 1;
         }
     }
 }
