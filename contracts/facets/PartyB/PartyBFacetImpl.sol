@@ -164,6 +164,12 @@ library PartyBFacetImpl {
             }
             accountLayout.lockedBalances[quote.partyA].addQuote(quote);
             accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
+            // check locked values
+            require(
+                quote.lockedValues.total() >=
+                SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
+                "PartyBFacet: Quote value is low"
+            );
         }
         // partially fill
         else {
