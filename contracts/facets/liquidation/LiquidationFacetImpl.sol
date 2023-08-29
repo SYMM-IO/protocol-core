@@ -319,15 +319,15 @@ library LiquidationFacetImpl {
         require(
             priceSig.timestamp <=
                 maLayout.partyBLiquidationTimestamp[partyB][partyA] + maLayout.liquidationTimeout,
-            "LiquidationFacet: Expired signature"
+            "LiquidationFacet: Invalid signature"
         );
         require(
             maLayout.partyBLiquidationStatus[partyB][partyA],
             "LiquidationFacet: PartyB is solvent"
         );
         require(
-            block.timestamp <= priceSig.timestamp + maLayout.liquidationTimeout,
-            "LiquidationFacet: Expired price sig"
+            maLayout.partyBLiquidationTimestamp[partyB][partyA] <= priceSig.timestamp,
+            "LiquidationFacet: Expired signature"
         );
         for (uint256 index = 0; index < priceSig.quoteIds.length; index++) {
             Quote storage quote = quoteLayout.quotes[priceSig.quoteIds[index]];
