@@ -15,6 +15,9 @@ if (!privateKey) {
   throw new Error("Please set your PRIVATE_KEY in a .env file");
 }
 
+const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR;
+const privateKeyList: string[] = privateKeysStr?.split(",") || [];
+
 const fantomRpcURL: string | undefined = process.env.FANTOM_RPC_URL;
 if (!fantomRpcURL) {
   throw new Error("Please set your FANTOM_RPC_URL in a .env file");
@@ -30,10 +33,7 @@ if (!bscApiKey) {
   throw new Error("Please set your BSC_API_KEY in a .env file");
 }
 
-const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL;
-if (!hardhatDockerUrl) {
-  throw new Error("Please set your HARDHAT_DOCKER_URL in a .env file");
-}
+const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || "";
 
 const APIKey: string = process.env.API_Key!;
 
@@ -55,14 +55,11 @@ const config: HardhatUserConfig = {
     docker: {
       url: hardhatDockerUrl,
       allowUnlimitedContractSize: false,
-    },
-
-    fantomfork: {
-      url: "http://hardhat:8545",
+      accounts: privateKeyList,
     },
     fantom: {
       url: fantomRpcURL,
-      accounts: [privateKey],
+      accounts: privateKeyList,
     },
     bsc: {
       url: "https://bsc-dataseed3.defibit.io",

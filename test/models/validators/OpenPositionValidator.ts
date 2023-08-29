@@ -5,12 +5,12 @@ import { BigNumber } from "ethers";
 import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet";
 import { getTotalLockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common";
 import { logger } from "../../utils/LoggerUtils";
-import { expectToBeApproximately } from "../../utils/SafeMath";
 import { OrderType, QuoteStatus } from "../Enums";
 import { Hedger } from "../Hedger";
 import { RunContext } from "../RunContext";
 import { BalanceInfo, User } from "../User";
 import { TransactionValidator } from "./TransactionValidator";
+import { expectToBeApproximately } from "../../utils/SafeMath";
 
 export type OpenPositionValidatorBeforeArg = {
   user: User;
@@ -29,7 +29,7 @@ export type OpenPositionValidatorAfterArg = {
   hedger: Hedger;
   quoteId: BigNumber;
   openedPrice: BigNumber;
-  filledAmount: BigNumber;
+  fillAmount: BigNumber;
   beforeOutput: OpenPositionValidatorBeforeOutput;
   newQuoteId?: BigNumber;
   newQuoteTargetStatus?: QuoteStatus;
@@ -55,12 +55,12 @@ export class OpenPositionValidator implements TransactionValidator {
     const oldQuote = arg.beforeOutput.quote;
     expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.OPENED);
     expect(newQuote.openedPrice).to.be.equal(arg.openedPrice);
-    expect(newQuote.quantity).to.be.equal(arg.filledAmount);
+    expect(newQuote.quantity).to.be.equal(arg.fillAmount);
 
     const oldLockedValues = await getTotalLockedValuesForQuotes([oldQuote]);
     const newLockedValues = await getTotalLockedValuesForQuotes([newQuote]);
 
-    const fillAmountCoef = new BN(arg.filledAmount.toString()).div(
+    const fillAmountCoef = new BN(arg.fillAmount.toString()).div(
       new BN(oldQuote.quantity.toString()),
     );
     const priceCoef = new BN(arg.openedPrice.toString()).div(
@@ -76,7 +76,7 @@ export class OpenPositionValidator implements TransactionValidator {
       const newlyCreatedQuote = await context.viewFacet.getQuote(arg.newQuoteId!);
       expect(newlyCreatedQuote.quoteStatus).to.be.equal(arg.newQuoteTargetStatus!);
       const lv = await getTotalLockedValuesForQuotes([newlyCreatedQuote]);
-      expect(newlyCreatedQuote.quantity).to.be.equal(oldQuote.quantity.sub(arg.filledAmount));
+      expect(newlyCreatedQuote.quantity).to.be.equal(oldQuote.quantity.sub(arg.fillAmount));
       expect(lv).to.be.equal(
         new BN(oldLockedValues.toString()).times(new BN(1).minus(fillAmountCoef)).toString(),
       );

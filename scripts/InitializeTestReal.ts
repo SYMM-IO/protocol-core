@@ -5,6 +5,9 @@ import { createRunContext, RunContext } from "../test/models/RunContext";
 import { decimal } from "../test/utils/Common";
 import fs from "fs";
 import { runTx } from "../test/utils/TxUtils";
+import { limitOpenRequestBuilder } from "../test/models/requestModels/OpenRequest";
+import { Hedger } from "../test/models/Hedger";
+import { User } from "../test/models/User";
 
 export async function initialize(): Promise<RunContext> {
   let collateral = await run("deploy:stablecoin");
@@ -13,10 +16,6 @@ export async function initialize(): Promise<RunContext> {
     genABI: false,
     reportGas: true,
   });
-
-  let multicall =
-    process.env.DEPLOY_MULTICALL == "true" ? await run("deploy:multicall") : undefined;
-
   let context = await createRunContext(diamond.address, collateral.address, true);
 
   await runTx(context.controlFacet
@@ -33,19 +32,7 @@ export async function initialize(): Promise<RunContext> {
     .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("SETTER_ROLE"))));
   await runTx(context.controlFacet
     .connect(context.signers.admin)
-    .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("PAUSER_ROLE"))));
-  await runTx(context.controlFacet
-    .connect(context.signers.admin)
     .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE"))));
-  await runTx(context.controlFacet
-    .connect(context.signers.admin)
-    .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))));
-  await runTx(context.controlFacet
-    .connect(context.signers.admin)
-    .grantRole(context.signers.user.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))));
-  await runTx(context.controlFacet
-    .connect(context.signers.admin)
-    .grantRole(context.signers.user2.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))));
 
   await runTx(context.controlFacet
     .connect(context.signers.admin)
@@ -56,6 +43,28 @@ export async function initialize(): Promise<RunContext> {
   await runTx(context.controlFacet.connect(context.signers.admin).setLiquidationTimeout(100));
   await runTx(context.controlFacet.connect(context.signers.admin).setDeallocateCooldown(120));
   await runTx(context.controlFacet.connect(context.signers.admin).setBalanceLimitPerUser(decimal(100000)));
+
+  const user = new User(context, context.signers.user);
+  const hedger = new Hedger(context, context.signers.admin);
+  await hedger.register();
+
+  console.log("Setting balances");
+  await user.setBalances(decimal(10000), decimal(10000), decimal(10000));
+  await user.setup();
+  await hedger.setBalances(decimal(10000), decimal(10000));
+  await hedger.setup();
+
+  console.log("Sending Quote...");
+  await user.sendQuote();
+  console.log("Lock Quote...");
+  await hedger.lockQuote(1);
+
+  console.log(await context.viewFacet.getQuote(1));
+
+  console.log("Open Quote...");
+  await hedger.openPosition(1, limitOpenRequestBuilder().openPrice(decimal(9, 17)).build());
+
+  console.log(await context.viewFacet.getQuote(1));
 
   let output: any = {};
   if (fs.existsSync("./output/addresses.json")) {

@@ -136,6 +136,10 @@ contract ViewFacet {
         return AccountStorage.layout().suspendedAddresses[user];
     }
 
+    function getLiquidatedStateOfPartyA(address partyA) external view returns (LiquidationDetail memory){
+        return AccountStorage.layout().liquidationDetails[partyA];
+    }
+
     ///////////////////////////////////////////
 
     // Symbols

@@ -245,7 +245,7 @@ export function shouldBehaveLikeOpenPosition(): void {
       hedger: this.hedger,
       quoteId: BigNumber.from(1),
       openedPrice: openedPrice,
-      filledAmount: filledAmount,
+      fillAmount: filledAmount,
       beforeOutput: beforeOut,
     });
   });
@@ -274,7 +274,7 @@ export function shouldBehaveLikeOpenPosition(): void {
       hedger: this.hedger,
       quoteId: BigNumber.from(1),
       openedPrice: openedPrice,
-      filledAmount: filledAmount,
+      fillAmount: filledAmount,
       beforeOutput: beforeOut,
       newQuoteId: BigNumber.from(5),
       newQuoteTargetStatus: QuoteStatus.PENDING,
@@ -305,7 +305,7 @@ export function shouldBehaveLikeOpenPosition(): void {
       hedger: this.hedger,
       quoteId: BigNumber.from(4),
       openedPrice: openedPrice,
-      filledAmount: filledAmount,
+      fillAmount: filledAmount,
       beforeOutput: beforeOut,
     });
   });

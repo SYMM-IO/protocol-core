@@ -122,6 +122,10 @@ library PartyBFacetImpl {
             SymbolStorage.layout().symbols[quote.symbolId].isValid, 
             "PartyBFacet: Symbol is not valid"
         );
+
+        require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
+        require(!GlobalAppStorage.layout().emergencyMode, "PartyBFacet: System is in emergency mode");
+
         require(
             quote.quoteStatus == QuoteStatus.LOCKED ||
                 quote.quoteStatus == QuoteStatus.CANCEL_PENDING,
@@ -175,7 +179,7 @@ library PartyBFacetImpl {
                 "PartyBFacet: Quote value is low"
             );
         }
-        // partially fill
+            // partially fill
         else {
             currentId = ++quoteLayout.lastId;
             QuoteStatus newStatus;
