@@ -64,7 +64,7 @@ export class User {
         request.cva,
         request.mm,
         request.lf,
-        request.maxInterestRate,
+        request.maxFundingRate,
         request.deadline,
         await request.upnlSig,
       );

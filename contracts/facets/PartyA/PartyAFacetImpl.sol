@@ -28,7 +28,7 @@ library PartyAFacetImpl {
         uint256 cva,
         uint256 mm,
         uint256 lf,
-        uint256 maxInterestRate,
+        uint256 maxFundingRate,
         uint256 deadline,
         SingleUpnlAndPriceSig memory upnlSig
     ) internal returns (uint256 currentId) {
@@ -94,13 +94,14 @@ library PartyAFacetImpl {
             positionType: positionType,
             orderType: orderType,
             openedPrice: 0,
+            initialOpenedPrice: 0,
             requestedOpenPrice: price,
             marketPrice: upnlSig.price,
             quantity: quantity,
             closedAmount: 0,
             lockedValues: lockedValues,
             initialLockedValues: lockedValues,
-            maxInterestRate: maxInterestRate,
+            maxFundingRate: maxFundingRate,
             partyA: msg.sender,
             partyB: address(0),
             quoteStatus: QuoteStatus.PENDING,
@@ -108,15 +109,17 @@ library PartyAFacetImpl {
             requestedClosePrice: 0,
             parentId: 0,
             createTimestamp: block.timestamp,
-            modifyTimestamp: block.timestamp,
+            statusModifyTimestamp: block.timestamp,
             quantityToClose: 0,
-            deadline: deadline
+            lastFundingPaymentTimestamp: 0,
+            deadline: deadline,
+            tradingFee: symbolLayout.symbols[symbolId].tradingFee
         });
         quoteLayout.quoteIdsOf[msg.sender].push(currentId);
         quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
         quoteLayout.quotes[currentId] = quote;
-
-        LibQuote.receiveTradingFee(currentId);
+        
+        accountLayout.allocatedBalances[msg.sender] -= LibQuote.getTradingFee(currentId);
     }
 
     function requestToCancelQuote(uint256 quoteId) internal returns (QuoteStatus result) {
@@ -127,13 +130,12 @@ library PartyAFacetImpl {
             quote.quoteStatus == QuoteStatus.PENDING || quote.quoteStatus == QuoteStatus.LOCKED,
             "PartyAFacet: Invalid state"
         );
-        accountLayout.partyANonces[quote.partyA] += 1;
 
         if (block.timestamp > quote.deadline) {
             result = LibQuote.expireQuote(quoteId);
         } else if (quote.quoteStatus == QuoteStatus.PENDING) {
             quote.quoteStatus = QuoteStatus.CANCELED;
-            LibQuote.returnTradingFee(quoteId);
+            accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             LibQuote.removeFromPartyAPendingQuotes(quote);
             result = QuoteStatus.CANCELED;
@@ -142,7 +144,7 @@ library PartyAFacetImpl {
             quote.quoteStatus = QuoteStatus.CANCEL_PENDING;
             result = QuoteStatus.CANCEL_PENDING;
         }
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
     }
 
     function requestToClosePosition(
@@ -150,8 +152,7 @@ library PartyAFacetImpl {
         uint256 closePrice,
         uint256 quantityToClose,
         OrderType orderType,
-        uint256 deadline,
-        SingleUpnlAndPriceSig memory upnlSig
+        uint256 deadline
     ) internal {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
@@ -162,13 +163,6 @@ library PartyAFacetImpl {
         require(
             LibQuote.quoteOpenAmount(quote) >= quantityToClose,
             "PartyAFacet: Invalid quantityToClose"
-        );
-        LibMuon.verifyPartyAUpnlAndPrice(upnlSig, quote.partyA, quote.symbolId);
-        LibSolvency.isSolventAfterRequestToClosePosition(
-            quoteId,
-            closePrice,
-            quantityToClose,
-            upnlSig
         );
 
         // check that remaining position is not too small
@@ -181,8 +175,7 @@ library PartyAFacetImpl {
             );
         }
 
-        accountLayout.partyANonces[quote.partyA] += 1;
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CLOSE_PENDING;
         quote.requestedClosePrice = closePrice;
         quote.quantityToClose = quantityToClose;
@@ -199,8 +192,7 @@ library PartyAFacetImpl {
             LibQuote.expireQuote(quoteId);
             return QuoteStatus.OPENED;
         } else {
-            accountLayout.partyANonces[quote.partyA] += 1;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
             quote.quoteStatus = QuoteStatus.CANCEL_CLOSE_PENDING;
             return QuoteStatus.CANCEL_CLOSE_PENDING;
         }
@@ -213,18 +205,16 @@ library PartyAFacetImpl {
 
         require(quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyAFacet: Invalid state");
         require(
-            block.timestamp > quote.modifyTimestamp + maLayout.forceCancelCooldown,
+            block.timestamp > quote.statusModifyTimestamp + maLayout.forceCancelCooldown,
             "PartyAFacet: Cooldown not reached"
         );
-        accountLayout.partyANonces[quote.partyA] += 1;
-        accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CANCELED;
         accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
         accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 
         // send trading Fee back to partyA
-        LibQuote.returnTradingFee(quoteId);
+        accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
 
         LibQuote.removeFromPendingQuotes(quote);
     }
@@ -239,12 +229,11 @@ library PartyAFacetImpl {
             "PartyAFacet: Invalid state"
         );
         require(
-            block.timestamp > quote.modifyTimestamp + maLayout.forceCancelCloseCooldown,
+            block.timestamp > quote.statusModifyTimestamp + maLayout.forceCancelCloseCooldown,
             "PartyAFacet: Cooldown not reached"
         );
 
-        accountLayout.partyANonces[quote.partyA] += 1;
-        quote.modifyTimestamp = block.timestamp;
+        quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.OPENED;
         quote.requestedClosePrice = 0;
         quote.quantityToClose = 0;
@@ -258,7 +247,7 @@ library PartyAFacetImpl {
         uint256 filledAmount = quote.quantityToClose;
         require(quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyAFacet: Invalid state");
         require(
-            block.timestamp > quote.modifyTimestamp + maLayout.forceCloseCooldown,
+            block.timestamp > quote.statusModifyTimestamp + maLayout.forceCloseCooldown,
             "PartyAFacet: Cooldown not reached"
         );
         require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
@@ -288,11 +277,11 @@ library PartyAFacetImpl {
         LibSolvency.isSolventAfterClosePosition(
             quoteId,
             filledAmount,
-            quote.requestedClosePrice,
+            upnlSig.price,
             upnlSig
         );
         accountLayout.partyANonces[quote.partyA] += 1;
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        LibQuote.closeQuote(quote, filledAmount, quote.requestedClosePrice);
+        LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
     }
 }

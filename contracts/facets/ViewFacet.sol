@@ -366,10 +366,6 @@ contract ViewFacet {
         return MAStorage.layout().liquidationTimeout;
     }
 
-    function partyALiquidationTimestamp(address partyA) external view returns (uint256) {
-        return MAStorage.layout().liquidationTimestamp[partyA];
-    }
-
     function partyBLiquidationTimestamp(
         address partyB,
         address partyA
