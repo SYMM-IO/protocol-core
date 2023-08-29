@@ -56,6 +56,7 @@ library LibMuon {
                 liquidationSig.reqId,
                 liquidationSig.liquidationId,
                 address(this),
+                "verifyPrices",
                 partyA,
                 liquidationSig.upnl,
                 liquidationSig.totalUnrealizedLoss,
