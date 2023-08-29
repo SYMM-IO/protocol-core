@@ -129,7 +129,6 @@ library PartyAFacetImpl {
             quote.quoteStatus == QuoteStatus.PENDING || quote.quoteStatus == QuoteStatus.LOCKED,
             "PartyAFacet: Invalid state"
         );
-        accountLayout.partyANonces[quote.partyA] += 1;
 
         if (block.timestamp > quote.deadline) {
             result = LibQuote.expireQuote(quoteId);
@@ -175,7 +174,6 @@ library PartyAFacetImpl {
             );
         }
 
-        accountLayout.partyANonces[quote.partyA] += 1;
         quote.modifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CLOSE_PENDING;
         quote.requestedClosePrice = closePrice;
@@ -193,7 +191,6 @@ library PartyAFacetImpl {
             LibQuote.expireQuote(quoteId);
             return QuoteStatus.OPENED;
         } else {
-            accountLayout.partyANonces[quote.partyA] += 1;
             quote.modifyTimestamp = block.timestamp;
             quote.quoteStatus = QuoteStatus.CANCEL_CLOSE_PENDING;
             return QuoteStatus.CANCEL_CLOSE_PENDING;
@@ -210,8 +207,6 @@ library PartyAFacetImpl {
             block.timestamp > quote.modifyTimestamp + maLayout.forceCancelCooldown,
             "PartyAFacet: Cooldown not reached"
         );
-        accountLayout.partyANonces[quote.partyA] += 1;
-        accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
         quote.modifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CANCELED;
         accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
@@ -237,7 +232,6 @@ library PartyAFacetImpl {
             "PartyAFacet: Cooldown not reached"
         );
 
-        accountLayout.partyANonces[quote.partyA] += 1;
         quote.modifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.OPENED;
         quote.requestedClosePrice = 0;
