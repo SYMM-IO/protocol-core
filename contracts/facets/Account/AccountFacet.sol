@@ -11,7 +11,7 @@ import "./AccountFacetImpl.sol";
 import "../../storages/GlobalAppStorage.sol";
 
 contract AccountFacet is Accessibility, Pausable, IAccountEvents {
-
+    
     //Party A
     function deposit(uint256 amount) external whenNotAccountingPaused {
         AccountFacetImpl.deposit(msg.sender, amount);
@@ -48,7 +48,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountEvents {
     ) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
         AccountFacetImpl.deposit(msg.sender, amount);
         uint256 amountWith18Decimals = (amount * 1e18) /
-        (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
+            (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
         AccountFacetImpl.allocate(amountWith18Decimals);
         emit Deposit(msg.sender, msg.sender, amount);
         emit AllocatePartyA(msg.sender, amountWith18Decimals);
@@ -67,17 +67,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountEvents {
         uint256 amount,
         address partyA
     ) public whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
-        AccountFacetImpl.allocateForPartyB(amount, partyA, true);
-        emit AllocateForPartyB(msg.sender, partyA, amount);
-    }
-
-    function depositAndAllocateForPartyB(
-        uint256 amount,
-        address partyA
-    ) external whenNotPartyBActionsPaused onlyPartyB {
-        AccountFacetImpl.depositForPartyB(amount);
-        AccountFacetImpl.allocateForPartyB(amount, partyA, true);
-        emit DepositForPartyB(msg.sender, amount);
+        AccountFacetImpl.allocateForPartyB(amount, partyA);
         emit AllocateForPartyB(msg.sender, partyA, amount);
     }
 
@@ -85,14 +75,9 @@ contract AccountFacet is Accessibility, Pausable, IAccountEvents {
         uint256 amount,
         address partyA,
         SingleUpnlSig memory upnlSig
-    ) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
+    ) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) notLiquidatedPartyA(partyA) onlyPartyB {
         AccountFacetImpl.deallocateForPartyB(amount, partyA, upnlSig);
         emit DeallocateForPartyB(msg.sender, partyA, amount);
-    }
-
-    function depositForPartyB(uint256 amount) external whenNotPartyBActionsPaused onlyPartyB {
-        AccountFacetImpl.depositForPartyB(amount);
-        emit DepositForPartyB(msg.sender, amount);
     }
 
     function transferAllocation(

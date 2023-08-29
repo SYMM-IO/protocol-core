@@ -8,6 +8,7 @@ import { shouldBehaveLikeLockQuote } from "./LockQuote.behavior";
 import { shouldBehaveLikeOpenPosition } from "./OpenPosition.behavior";
 import { shouldBehaveLikeSendQuote } from "./SendQuote.behavior";
 import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior";
+import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior";
 
 describe("UnitTests", function() {
   if (process.env.TEST_MODE == "static") {
@@ -41,6 +42,10 @@ describe("UnitTests", function() {
 
     describe("Liquidation", async function() {
       shouldBehaveLikeLiquidationFacet();
+    });
+
+    describe("FundingRate", async function() {
+      shouldBehaveLikeFundingRate();
     });
 
     describe("SpecificScenario", async function() {

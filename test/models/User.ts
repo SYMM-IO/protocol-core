@@ -12,6 +12,7 @@ import { PositionType } from "./Enums";
 import { RunContext } from "./RunContext";
 import { CloseRequest, limitCloseRequestBuilder } from "./requestModels/CloseRequest";
 import { limitQuoteRequestBuilder, QuoteRequest } from "./requestModels/QuoteRequest";
+import { runTx } from "../utils/TxUtils";
 
 export class User {
   constructor(private context: RunContext, private signer: SignerWithAddress) {
@@ -28,15 +29,15 @@ export class User {
   ) {
     const userAddress = this.signer.getAddress();
 
-    await this.context.collateral
+    await runTx(this.context.collateral
       .connect(this.signer)
-      .approve(this.context.diamond, ethers.constants.MaxUint256);
+      .approve(this.context.diamond, ethers.constants.MaxUint256));
 
     if (collateralAmount)
-      await this.context.collateral.connect(this.signer).mint(userAddress, collateralAmount);
-    if (depositAmount) await this.context.accountFacet.connect(this.signer).deposit(depositAmount);
+      await runTx(this.context.collateral.connect(this.signer).mint(userAddress, collateralAmount));
+    if (depositAmount) await runTx(this.context.accountFacet.connect(this.signer).deposit(depositAmount));
     if (allocatedAmount)
-      await this.context.accountFacet.connect(this.signer).allocate(allocatedAmount);
+      await runTx(this.context.accountFacet.connect(this.signer).allocate(allocatedAmount));
   }
 
   public async setNativeBalance(amount: bigint) {
@@ -63,7 +64,7 @@ export class User {
         request.cva,
         request.mm,
         request.lf,
-        request.maxInterestRate,
+        request.maxFundingRate,
         request.deadline,
         await request.upnlSig,
       );
@@ -80,7 +81,7 @@ export class User {
         userUpnl: await this.getUpnl(),
       }),
     );
-    await this.context.partyAFacet.connect(this.signer).requestToCancelQuote(id);
+    await runTx(this.context.partyAFacet.connect(this.signer).requestToCancelQuote(id));
     logger.info(`User::::RequestToCancelQuote: ${id}`);
   }
 
@@ -110,7 +111,7 @@ export class User {
         userUpnl: await this.getUpnl(),
       }),
     );
-    await this.context.partyAFacet
+    await runTx(this.context.partyAFacet
       .connect(this.signer)
       .requestToClosePosition(
         id,
@@ -119,7 +120,7 @@ export class User {
         request.orderType,
         request.deadline,
         await getDummySingleUpnlAndPriceSig(request.price, request.upnl),
-      );
+      ));
     logger.info(`User::::RequestToClosePosition: ${id}`);
   }
 
@@ -131,7 +132,7 @@ export class User {
         userUpnl: await this.getUpnl(),
       }),
     );
-    await this.context.partyAFacet.connect(this.signer).requestToCancelCloseRequest(id);
+    await runTx(this.context.partyAFacet.connect(this.signer).requestToCancelCloseRequest(id));
     logger.info(`User::::RequestToCancelCloseRequest: ${id}`);
   }
 

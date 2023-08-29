@@ -1,5 +1,6 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-toolbox";
+import "@openzeppelin/hardhat-upgrades";
 import { config as dotenvConfig } from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
 import { resolve } from "path";
@@ -14,6 +15,9 @@ const privateKey: string | undefined = process.env.PRIVATE_KEY;
 if (!privateKey) {
   throw new Error("Please set your PRIVATE_KEY in a .env file");
 }
+
+const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR;
+const privateKeyList: string[] = privateKeysStr?.split(",") || [];
 
 const fantomRpcURL: string | undefined = process.env.FANTOM_RPC_URL;
 if (!fantomRpcURL) {
@@ -30,10 +34,7 @@ if (!bscApiKey) {
   throw new Error("Please set your BSC_API_KEY in a .env file");
 }
 
-const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL;
-if (!hardhatDockerUrl) {
-  throw new Error("Please set your HARDHAT_DOCKER_URL in a .env file");
-}
+const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || "";
 
 const APIKey: string = process.env.API_Key!;
 
@@ -55,17 +56,18 @@ const config: HardhatUserConfig = {
     docker: {
       url: hardhatDockerUrl,
       allowUnlimitedContractSize: false,
-    },
-
-    fantomfork: {
-      url: "http://hardhat:8545",
+      accounts: privateKeyList,
     },
     fantom: {
       url: fantomRpcURL,
-      accounts: [privateKey],
+      accounts: privateKeyList,
     },
     bsc: {
       url: "https://bsc-dataseed3.defibit.io",
+      accounts: [privateKey],
+    },
+    base: {
+      url: "https://base.meowrpc.com",
       accounts: [privateKey],
     },
     bscTest: {

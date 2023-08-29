@@ -44,7 +44,7 @@ export function shouldBehaveLikeSpecificScenario(): void {
         .lf("8104916153486468905")
         .price("22207600000000000000000")
         .upnlSig(getDummySingleUpnlAndPriceSig("20817400000000000000000"))
-        .maxInterestRate(0)
+        .maxFundingRate(0)
         .symbolId(1)
         .orderType(OrderType.MARKET)
         .positionType(PositionType.SHORT)

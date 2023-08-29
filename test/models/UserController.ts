@@ -321,7 +321,7 @@ export class UserController {
         .deadline(getBlockTimestamp(10000))
         .price(requestPrice)
         .upnlSig(getDummySingleUpnlAndPriceSig(price, upnl))
-        .maxInterestRate(0)
+        .maxFundingRate(0)
         .build(),
     );
   }
