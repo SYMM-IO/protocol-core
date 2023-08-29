@@ -21,6 +21,10 @@ library LiquidationFacetImpl {
         MAStorage.Layout storage maLayout = MAStorage.layout();
 
         LibMuon.verifyLiquidationSig(liquidationSig, partyA);
+        require(
+            block.timestamp <= liquidationSig.timestamp + MuonStorage.layout().upnlValidTime,
+            "LiquidationFacet: Expired signature"
+        );
         int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
             liquidationSig.upnl,
             partyA
