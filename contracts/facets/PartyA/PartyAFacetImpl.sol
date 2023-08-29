@@ -112,13 +112,14 @@ library PartyAFacetImpl {
             statusModifyTimestamp: block.timestamp,
             quantityToClose: 0,
             lastFundingPaymentTimestamp: 0,
-            deadline: deadline
+            deadline: deadline,
+            tradingFee: symbolLayout.symbols[symbolId].tradingFee
         });
         quoteLayout.quoteIdsOf[msg.sender].push(currentId);
         quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
         quoteLayout.quotes[currentId] = quote;
-
-        LibQuote.receiveTradingFee(currentId);
+        
+        accountLayout.allocatedBalances[msg.sender] -= LibQuote.getTradingFee(currentId);
     }
 
     function requestToCancelQuote(uint256 quoteId) internal returns (QuoteStatus result) {
@@ -134,7 +135,7 @@ library PartyAFacetImpl {
             result = LibQuote.expireQuote(quoteId);
         } else if (quote.quoteStatus == QuoteStatus.PENDING) {
             quote.quoteStatus = QuoteStatus.CANCELED;
-            LibQuote.returnTradingFee(quoteId);
+            accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             LibQuote.removeFromPartyAPendingQuotes(quote);
             result = QuoteStatus.CANCELED;
@@ -213,7 +214,7 @@ library PartyAFacetImpl {
         accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 
         // send trading Fee back to partyA
-        LibQuote.returnTradingFee(quoteId);
+        accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
 
         LibQuote.removeFromPendingQuotes(quote);
     }

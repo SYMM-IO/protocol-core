@@ -65,7 +65,7 @@ library PartyBFacetImpl {
         accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
         accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
         // send trading Fee back to partyA
-        LibQuote.returnTradingFee(quoteId);
+        accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quoteId);
 
         LibQuote.removeFromPendingQuotes(quote);
     }
@@ -128,8 +128,12 @@ library PartyBFacetImpl {
                 quote.quantity >= filledAmount && filledAmount > 0,
                 "PartyBFacet: Invalid filledAmount"
             );
+            accountLayout.balances[GlobalAppStorage.layout().feeCollector] += 
+                (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
         } else {
             require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
+            accountLayout.balances[GlobalAppStorage.layout().feeCollector] += 
+                (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
         }
         if (quote.positionType == PositionType.LONG) {
             require(
@@ -222,7 +226,8 @@ library PartyBFacetImpl {
                 statusModifyTimestamp: block.timestamp,
                 quantityToClose: 0,
                 lastFundingPaymentTimestamp: 0,
-                deadline: quote.deadline
+                deadline: quote.deadline,
+                tradingFee: quote.tradingFee
             });
 
             quoteLayout.quoteIdsOf[quote.partyA].push(currentId);
@@ -231,7 +236,7 @@ library PartyBFacetImpl {
 
             if (newStatus == QuoteStatus.CANCELED) {
                 // send trading Fee back to partyA
-                LibQuote.returnTradingFee(currentId);
+                accountLayout.allocatedBalances[newQuote.partyA] += LibQuote.getTradingFee(newQuote.id);
                 // part of quote has been filled and part of it has been canceled
                 accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
                 accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(

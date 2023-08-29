@@ -122,28 +122,13 @@ library LibQuote {
     function getTradingFee(uint256 quoteId) internal view returns (uint256 fee) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         Quote storage quote = quoteLayout.quotes[quoteId];
-        Symbol storage symbol = SymbolStorage.layout().symbols[quote.symbolId];
         if (quote.orderType == OrderType.LIMIT) {
             fee =
-                (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * symbol.tradingFee) /
+                (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee) /
                 1e36;
         } else {
-            fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * symbol.tradingFee) / 1e36;
+            fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee) / 1e36;
         }
-    }
-
-    function returnTradingFee(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        uint256 tradingFee = LibQuote.getTradingFee(quoteId);
-        accountLayout.allocatedBalances[QuoteStorage.layout().quotes[quoteId].partyA] += tradingFee;
-        accountLayout.balances[GlobalAppStorage.layout().feeCollector] -= tradingFee;
-    }
-
-    function receiveTradingFee(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        uint256 tradingFee = LibQuote.getTradingFee(quoteId);
-        accountLayout.allocatedBalances[QuoteStorage.layout().quotes[quoteId].partyA] -= tradingFee;
-        accountLayout.balances[GlobalAppStorage.layout().feeCollector] += tradingFee;
     }
 
     function closeQuote(Quote storage quote, uint256 filledAmount, uint256 closedPrice) internal {
@@ -239,7 +224,7 @@ library LibQuote {
             quote.statusModifyTimestamp = block.timestamp;
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             // send trading Fee back to partyA
-            LibQuote.returnTradingFee(quoteId);
+            accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
             removeFromPartyAPendingQuotes(quote);
             if (
                 quote.quoteStatus == QuoteStatus.LOCKED ||

@@ -60,6 +60,7 @@ struct Quote {
     uint256 statusModifyTimestamp;
     uint256 lastFundingPaymentTimestamp;
     uint256 deadline;
+    uint256 tradingFee;
 }
 
 library QuoteStorage {
