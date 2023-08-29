@@ -49,6 +49,7 @@ library AccountStorage {
         mapping(address => mapping(uint256 => Price)) symbolsPrices;
         mapping(address => int256) totalUnplForLiquidation;
         mapping(address => address[]) liquidators;
+        mapping(address => uint256) partyAReimbursement;
     }
 
     function layout() internal pure returns (Layout storage l) {
