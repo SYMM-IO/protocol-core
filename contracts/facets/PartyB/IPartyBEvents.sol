@@ -40,7 +40,7 @@ interface IPartyBEvents {
         uint256 cva,
         uint256 mm,
         uint256 lf,
-        uint256 maxInterestRate,
+        uint256 maxFundingRate,
         uint256 deadline,
         QuoteStatus quoteStatus
     );
@@ -57,4 +57,5 @@ interface IPartyBEvents {
         uint256 closedPrice,
         QuoteStatus quoteStatus
     );
+    event ChargeFundingRate(address partyB, address partyA, uint256[] quoteIds, int256[] rates);
 }

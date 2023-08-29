@@ -4,11 +4,8 @@ import {
   PairUpnlAndPriceSigStruct,
   SingleUpnlAndPriceSigStruct,
 } from "../../src/types/contracts/facets/PartyA/PartyAFacet";
-import { SingleUpnlSigStruct } from "../../src/types/contracts/facets/PartyB/PartyBFacet";
-import {
-  PriceSigStruct,
-  QuotePriceSigStruct,
-} from "../../src/types/contracts/facets/liquidation/LiquidationFacet";
+import { PairUpnlSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/facets/PartyB/PartyBFacet";
+import { PriceSigStruct, QuotePriceSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet";
 import { getBlockTimestamp } from "./Common";
 
 export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<SingleUpnlSigStruct> {
@@ -60,6 +57,24 @@ export async function getDummyPairUpnlAndPriceSig(
       nonce: "0x0000000000000000000000000000000000000000",
     },
     price: price,
+  };
+}
+
+export async function getDummyPairUpnlSig(
+  upnlPartyA: BigNumberish = 0,
+  upnlPartyB: BigNumberish = 0,
+): Promise<PairUpnlSigStruct> {
+  return {
+    reqId: "0x",
+    timestamp: getBlockTimestamp(),
+    upnlPartyA: upnlPartyA,
+    upnlPartyB: upnlPartyB,
+    gatewaySignature: "0x0000000000000000000000000000000000000000",
+    sigs: {
+      signature: "0",
+      owner: "0x0000000000000000000000000000000000000000",
+      nonce: "0x0000000000000000000000000000000000000000",
+    },
   };
 }
 
