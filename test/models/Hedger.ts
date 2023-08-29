@@ -10,12 +10,10 @@ import { getPrice } from "../utils/PriceUtils";
 import { getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig } from "../utils/SignatureUtils";
 import { PositionType } from "./Enums";
 import { RunContext } from "./RunContext";
-import {
-  EmergencyCloseRequest,
-  emergencyCloseRequestBuilder,
-} from "./requestModels/EmergencyCloseRequest";
+import { EmergencyCloseRequest, emergencyCloseRequestBuilder } from "./requestModels/EmergencyCloseRequest";
 import { FillCloseRequest, limitFillCloseRequestBuilder } from "./requestModels/FillCloseRequest";
 import { limitOpenRequestBuilder, OpenRequest } from "./requestModels/OpenRequest";
+import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/PartyB/PartyBFacet";
 import { runTx } from "../utils/TxUtils";
 
 export class Hedger {
@@ -145,6 +143,11 @@ export class Hedger {
         await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
       ));
     logger.info(`Hedger::FillCloseRequest: ${id}`);
+  }
+
+  public async chargeFundingRate(partyA: string, quoteIds: BigNumberish[], rates: BigNumberish[], signature: PairUpnlSigStructOutput) {
+    await this.context.partyBFacet.connect(this.signer).chargeFundingRate(partyA, quoteIds, rates, signature);
+    logger.info(`Hedger::ChargeFundingRate: ${partyA}, ${quoteIds}, ${rates}`);
   }
 
   public async acceptCancelCloseRequest(id: PromiseOrValue<BigNumberish>) {

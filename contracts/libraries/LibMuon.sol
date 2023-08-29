@@ -47,24 +47,26 @@ library LibMuon {
 //       );
     }
 
-    function verifyPrices(PriceSig memory priceSig, address partyA) internal view {
+    function verifyLiquidationSig(LiquidationSig memory liquidationSig, address partyA) internal view {
         MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(priceSig.prices.length == priceSig.symbolIds.length, "LibMuon: Invalid length");
+        require(liquidationSig.prices.length == liquidationSig.symbolIds.length, "LibMuon: Invalid length");
         bytes32 hash = keccak256(
             abi.encodePacked(
                 muonLayout.muonAppId,
-                priceSig.reqId,
+                liquidationSig.reqId,
+                liquidationSig.liquidationId,
                 address(this),
+                "verifyPrices",
                 partyA,
-                priceSig.upnl,
-                priceSig.totalUnrealizedLoss,
-                priceSig.symbolIds,
-                priceSig.prices,
-                priceSig.timestamp,
+                liquidationSig.upnl,
+                liquidationSig.totalUnrealizedLoss,
+                liquidationSig.symbolIds,
+                liquidationSig.prices,
+                liquidationSig.timestamp,
                 getChainId()
             )
         );
-        verifyTSSAndGateway(hash, priceSig.sigs, priceSig.gatewaySignature);
+        verifyTSSAndGateway(hash, liquidationSig.sigs, liquidationSig.gatewaySignature);
     }
 
     function verifyQuotePrices(QuotePriceSig memory priceSig) internal view {

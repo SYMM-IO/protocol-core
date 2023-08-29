@@ -14,11 +14,13 @@ enum LiquidationType {
 }
 
 struct LiquidationDetail {
+    bytes liquidationId;
     LiquidationType liquidationType;
     int256 upnl;
     int256 totalUnrealizedLoss;
     uint256 deficit;
     uint256 liquidationFee;
+    uint256 timestamp;
 }
 
 struct Price {
@@ -47,6 +49,7 @@ library AccountStorage {
         mapping(address => mapping(uint256 => Price)) symbolsPrices;
         mapping(address => int256) totalUnplForLiquidation;
         mapping(address => address[]) liquidators;
+        mapping(address => uint256) partyAReimbursement;
     }
 
     function layout() internal pure returns (Layout storage l) {
