@@ -146,7 +146,7 @@ library PartyBFacetImpl {
 
         quote.openedPrice = openedPrice;
         quote.initialOpenedPrice = openedPrice;
-        LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
+        
 
         accountLayout.partyANonces[quote.partyA] += 1;
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
@@ -158,8 +158,7 @@ library PartyBFacetImpl {
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
             quote.lockedValues.mul(openedPrice).div(quote.requestedOpenPrice);
-            accountLayout.lockedBalances[quote.partyA].addQuote(quote);
-            accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
+            
             // check locked values
             require(
                 quote.lockedValues.total() >=
@@ -248,11 +247,12 @@ library PartyBFacetImpl {
             newQuote.initialLockedValues = newQuote.lockedValues;
             quote.quantity = filledAmount;
             quote.lockedValues = appliedFilledLockedValues;
-
-            // lock with amount of filledAmount
-            accountLayout.lockedBalances[quote.partyA].addQuote(quote);
-            accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
         }
+        // lock with amount of filledAmount
+        accountLayout.lockedBalances[quote.partyA].addQuote(quote);
+        accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
+        
+        LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
         // check leverage (is in 18 decimals)
         require(
             quote.quantity * quote.openedPrice / quote.lockedValues.total() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
