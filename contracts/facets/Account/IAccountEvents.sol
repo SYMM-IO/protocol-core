@@ -11,7 +11,6 @@ interface IAccountEvents {
     event DeallocatePartyA(address user, uint256 amount);
 
     event AllocateForPartyB(address partyB, address partyA, uint256 amount);
-    event DepositForPartyB(address partyB, uint256 amount);
     event DeallocateForPartyB(address partyB, address partyA, uint256 amount);
     event TransferAllocation(uint256 amount, address origin, address recipient);
 }
