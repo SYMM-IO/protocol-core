@@ -150,8 +150,6 @@ library LibQuote {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
-
-        quote.modifyTimestamp = block.timestamp;
         require(quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         require(quote.lockedValues.mm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         require(quote.lockedValues.lf * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
@@ -195,6 +193,7 @@ library LibQuote {
         quote.quantityToClose -= filledAmount;
 
         if (quote.closedAmount == quote.quantity) {
+            quote.statusModifyTimestamp = block.timestamp;
             quote.quoteStatus = QuoteStatus.CLOSED;
             quote.requestedClosePrice = 0;
             removeFromOpenPositions(quote.id);
@@ -204,6 +203,7 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING || quote.quantityToClose == 0
         ) {
             quote.quoteStatus = QuoteStatus.OPENED;
+            quote.statusModifyTimestamp = block.timestamp;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
         }
@@ -236,7 +236,7 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.LOCKED ||
             quote.quoteStatus == QuoteStatus.CANCEL_PENDING
         ) {
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             // send trading Fee back to partyA
             LibQuote.returnTradingFee(quoteId);
@@ -256,7 +256,7 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING
         ) {
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0;
             quote.quoteStatus = QuoteStatus.OPENED;
