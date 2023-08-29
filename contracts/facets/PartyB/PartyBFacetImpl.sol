@@ -321,7 +321,7 @@ library PartyBFacetImpl {
     function emergencyClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) internal {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        require(quote.quoteStatus == QuoteStatus.OPENED, "PartyBFacet: Invalid state");
+        require(quote.quoteStatus == QuoteStatus.OPENED || quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyBFacet: Invalid state");
         LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
         uint256 filledAmount = LibQuote.quoteOpenAmount(quote);
         quote.quantityToClose = filledAmount;
