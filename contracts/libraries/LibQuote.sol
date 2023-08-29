@@ -64,8 +64,8 @@ library LibQuote {
 
         quoteLayout.partyAPositionsIndex[quote.id] = quoteLayout.partyAPositionsCount[quote.partyA];
         quoteLayout.partyBPositionsIndex[quote.id] = quoteLayout.partyBPositionsCount[quote.partyB][
-            quote.partyA
-        ];
+                        quote.partyA
+            ];
 
         quoteLayout.partyAPositionsCount[quote.partyA] += 1;
         quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] += 1;
@@ -80,16 +80,16 @@ library LibQuote {
         quoteLayout.partyAOpenPositions[quote.partyA][indexOfPartyAPosition] = quoteLayout
             .partyAOpenPositions[quote.partyA][lastOpenPositionIndex];
         quoteLayout.partyAPositionsIndex[
-            quoteLayout.partyAOpenPositions[quote.partyA][lastOpenPositionIndex]
+        quoteLayout.partyAOpenPositions[quote.partyA][lastOpenPositionIndex]
         ] = indexOfPartyAPosition;
         quoteLayout.partyAOpenPositions[quote.partyA].pop();
 
         lastOpenPositionIndex = quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] - 1;
         quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][
-            indexOfPartyBPosition
+        indexOfPartyBPosition
         ] = quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][lastOpenPositionIndex];
         quoteLayout.partyBPositionsIndex[
-            quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][lastOpenPositionIndex]
+        quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][lastOpenPositionIndex]
         ] = indexOfPartyBPosition;
         quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA].pop();
 
@@ -149,6 +149,7 @@ library LibQuote {
     function closeQuote(Quote storage quote, uint256 filledAmount, uint256 closedPrice) internal {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+        SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 
         quote.modifyTimestamp = block.timestamp;
         require(quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
@@ -156,17 +157,22 @@ library LibQuote {
         require(quote.lockedValues.lf * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         LockedValues memory lockedValues = LockedValues(
             quote.lockedValues.cva -
-                ((quote.lockedValues.cva * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
+            ((quote.lockedValues.cva * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
             quote.lockedValues.mm -
-                ((quote.lockedValues.mm * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
+            ((quote.lockedValues.mm * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
             quote.lockedValues.lf -
-                ((quote.lockedValues.lf * filledAmount) / (LibQuote.quoteOpenAmount(quote)))
+            ((quote.lockedValues.lf * filledAmount) / (LibQuote.quoteOpenAmount(quote)))
         );
         accountLayout.lockedBalances[quote.partyA].subQuote(quote).add(lockedValues);
         accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].subQuote(quote).add(
             lockedValues
         );
         quote.lockedValues = lockedValues;
+
+        if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {
+            require(quote.lockedValues.total() >= symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
+                "LibQuote: Remaining quote value is low");
+        }
 
         (bool hasMadeProfit, uint256 pnl) = LibQuote.getValueOfQuoteForPartyA(
             closedPrice,
@@ -200,12 +206,6 @@ library LibQuote {
             quote.quoteStatus = QuoteStatus.OPENED;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
-        } else {
-            require(
-                quote.lockedValues.total() >=
-                    SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
-                "LibQuote: Remaining quote value is low"
-            );
         }
     }
 
@@ -217,10 +217,10 @@ library LibQuote {
         require(block.timestamp > quote.deadline, "LibQuote: Quote isn't expired");
         require(
             quote.quoteStatus == QuoteStatus.PENDING ||
-                quote.quoteStatus == QuoteStatus.CANCEL_PENDING ||
-                quote.quoteStatus == QuoteStatus.LOCKED ||
-                quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
-                quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
+            quote.quoteStatus == QuoteStatus.CANCEL_PENDING ||
+            quote.quoteStatus == QuoteStatus.LOCKED ||
+            quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
+            quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
             "LibQuote: Invalid state"
         );
         require(
