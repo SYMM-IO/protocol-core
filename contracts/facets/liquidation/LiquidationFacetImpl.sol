@@ -107,7 +107,7 @@ library LiquidationFacetImpl {
                 .partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
             }
             quote.quoteStatus = QuoteStatus.CANCELED;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
         }
         AccountStorage.layout().pendingLockedBalances[partyA].makeZero();
         delete quoteLayout.partyAPendingQuotes[partyA];
@@ -141,7 +141,7 @@ library LiquidationFacetImpl {
                 "LiquidationFacet: Price should be set"
             );
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
             
             accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
             
@@ -286,7 +286,7 @@ library LiquidationFacetImpl {
                 pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
                 pendingQuotes.pop();
                 quote.quoteStatus = QuoteStatus.CANCELED;
-                quote.modifyTimestamp = block.timestamp;
+                quote.statusModifyTimestamp = block.timestamp;
             } else {
                 index++;
             }
@@ -343,7 +343,7 @@ library LiquidationFacetImpl {
             );
 
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
 
             accountLayout.lockedBalances[partyA].subQuote(quote);
 
