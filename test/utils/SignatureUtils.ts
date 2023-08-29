@@ -5,7 +5,10 @@ import {
   SingleUpnlAndPriceSigStruct,
 } from "../../src/types/contracts/facets/PartyA/PartyAFacet";
 import { PairUpnlSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/facets/PartyB/PartyBFacet";
-import { PriceSigStruct, QuotePriceSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet";
+import {
+  LiquidationSigStruct,
+  QuotePriceSigStruct,
+} from "../../src/types/contracts/facets/liquidation/LiquidationFacet";
 import { getBlockTimestamp } from "./Common";
 
 export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<SingleUpnlSigStruct> {
@@ -13,6 +16,29 @@ export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<Sin
     reqId: "0x",
     timestamp: getBlockTimestamp(),
     upnl: upnl,
+    gatewaySignature: "0x0000000000000000000000000000000000000000",
+    sigs: {
+      signature: "0",
+      owner: "0x0000000000000000000000000000000000000000",
+      nonce: "0x0000000000000000000000000000000000000000",
+    },
+  };
+}
+
+export async function getDummyLiquidationSig(
+  liquidationId: string,
+  upnl: BigNumberish = 0,
+  symbolIds: BigNumberish[],
+  prices: BigNumberish[],
+  totalUnrealizedLoss: BigNumberish): Promise<LiquidationSigStruct> {
+  return {
+    reqId: "0x",
+    timestamp: getBlockTimestamp(),
+    liquidationId: liquidationId,
+    upnl: upnl,
+    totalUnrealizedLoss: totalUnrealizedLoss,
+    prices: prices,
+    symbolIds: symbolIds,
     gatewaySignature: "0x0000000000000000000000000000000000000000",
     sigs: {
       signature: "0",
@@ -96,24 +122,3 @@ export async function getDummyQuotesPriceSig(
   };
 }
 
-export async function getDummyPriceSig(
-  symbolIds: BigNumberish[],
-  prices: BigNumberish[],
-  unpl: BigNumberish,
-  totalUnrealizedLoss: BigNumberish,
-): Promise<PriceSigStruct> {
-  return {
-    symbolIds: symbolIds,
-    prices: prices,
-    totalUnrealizedLoss: totalUnrealizedLoss,
-    upnl: unpl,
-    reqId: "0x",
-    timestamp: getBlockTimestamp(),
-    gatewaySignature: "0x0000000000000000000000000000000000000000",
-    sigs: {
-      signature: "0",
-      owner: "0x0000000000000000000000000000000000000000",
-      nonce: "0x0000000000000000000000000000000000000000",
-    },
-  };
-}

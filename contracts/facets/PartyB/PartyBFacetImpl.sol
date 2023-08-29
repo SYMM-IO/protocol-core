@@ -9,6 +9,7 @@ import "../../libraries/LibMuon.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
+import "../../libraries/LibPartyB.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -25,7 +26,7 @@ library PartyBFacetImpl {
 
         Quote storage quote = quoteLayout.quotes[quoteId];
         LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
-        checkPartyBValidationToLockQuote(quoteId, upnlSig.upnl);
+        LibPartyB.checkPartyBValidationToLockQuote(quoteId, upnlSig.upnl);
         if (increaseNonce) {
             accountLayout.partyBNonces[msg.sender][quote.partyA] += 1;
         }
@@ -70,43 +71,6 @@ library PartyBFacetImpl {
         LibQuote.removeFromPendingQuotes(quote);
     }
 
-    function checkPartyBValidationToLockQuote(uint256 quoteId, int256 upnl) internal view {
-        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-        MAStorage.Layout storage maLayout = MAStorage.layout();
-
-        Quote storage quote = quoteLayout.quotes[quoteId];
-        require(quote.quoteStatus == QuoteStatus.PENDING, "PartyBFacet: Invalid state");
-        require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
-        require(quoteId <= quoteLayout.lastId, "PartyBFacet: Invalid quoteId");
-        int256 availableBalance = LibAccount.partyBAvailableForQuote(
-            upnl,
-            msg.sender,
-            quote.partyA
-        );
-        require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
-        require(
-            uint256(availableBalance) >= quote.lockedValues.total(),
-            "PartyBFacet: insufficient available balance"
-        );
-        require(
-            !maLayout.partyBLiquidationStatus[msg.sender][quote.partyA],
-            "PartyBFacet: PartyB isn't solvent"
-        );
-        bool isValidPartyB;
-        if (quote.partyBsWhiteList.length == 0) {
-            require(msg.sender != quote.partyA, "PartyBFacet: PartyA can't be partyB too");
-            isValidPartyB = true;
-        } else {
-            for (uint8 index = 0; index < quote.partyBsWhiteList.length; index++) {
-                if (msg.sender == quote.partyBsWhiteList[index]) {
-                    isValidPartyB = true;
-                    break;
-                }
-            }
-        }
-        require(isValidPartyB, "PartyBFacet: Sender isn't whitelisted");
-    }
-
     function openPosition(
         uint256 quoteId,
         uint256 filledAmount,
@@ -119,7 +83,7 @@ library PartyBFacetImpl {
         Quote storage quote = quoteLayout.quotes[quoteId];
         require(accountLayout.suspendedAddresses[quote.partyA] == false, "PartyBFacet: PartyA is suspended");
         require(
-            SymbolStorage.layout().symbols[quote.symbolId].isValid, 
+            SymbolStorage.layout().symbols[quote.symbolId].isValid,
             "PartyBFacet: Symbol is not valid"
         );
 
@@ -137,11 +101,11 @@ library PartyBFacetImpl {
                 quote.quantity >= filledAmount && filledAmount > 0,
                 "PartyBFacet: Invalid filledAmount"
             );
-            accountLayout.balances[GlobalAppStorage.layout().feeCollector] += 
+            accountLayout.balances[GlobalAppStorage.layout().feeCollector] +=
                 (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
         } else {
             require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
-            accountLayout.balances[GlobalAppStorage.layout().feeCollector] += 
+            accountLayout.balances[GlobalAppStorage.layout().feeCollector] +=
                 (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
         }
         if (quote.positionType == PositionType.LONG) {
@@ -159,7 +123,7 @@ library PartyBFacetImpl {
 
         quote.openedPrice = openedPrice;
         quote.initialOpenedPrice = openedPrice;
-        
+
 
         accountLayout.partyANonces[quote.partyA] += 1;
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
@@ -171,7 +135,7 @@ library PartyBFacetImpl {
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
             quote.lockedValues.mul(openedPrice).div(quote.requestedOpenPrice);
-            
+
             // check locked values
             require(
                 quote.lockedValues.total() >=
@@ -265,7 +229,7 @@ library PartyBFacetImpl {
         // lock with amount of filledAmount
         accountLayout.lockedBalances[quote.partyA].addQuote(quote);
         accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
-        
+
         LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
         // check leverage (is in 18 decimals)
         require(

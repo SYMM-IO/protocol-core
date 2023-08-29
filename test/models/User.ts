@@ -119,7 +119,6 @@ export class User {
         request.quantityToClose,
         request.orderType,
         request.deadline,
-        await getDummySingleUpnlAndPriceSig(request.price, request.upnl),
       ));
     logger.info(`User::::RequestToClosePosition: ${id}`);
   }

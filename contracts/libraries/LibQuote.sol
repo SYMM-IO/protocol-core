@@ -152,7 +152,7 @@ library LibQuote {
         );
         quote.lockedValues = lockedValues;
 
-        if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {
+        if (LibQuote.quoteOpenAmount(quote) != quote.quantityToClose) {
             require(quote.lockedValues.total() >= symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
                 "LibQuote: Remaining quote value is low");
         }

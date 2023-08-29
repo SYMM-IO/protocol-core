@@ -135,7 +135,7 @@ export class OpenPositionValidator implements TransactionValidator {
     } else {
       expectToBeApproximately(
         newBalanceInfoPartyB.totalPendingLocked,
-        oldBalanceInfoPartyB.totalPendingLocked.sub(partialLockedValues),
+        oldBalanceInfoPartyB.totalPendingLocked.sub(oldLockedValues),
       );
     }
     expectToBeApproximately(
