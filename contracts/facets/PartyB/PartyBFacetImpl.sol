@@ -244,8 +244,8 @@ library PartyBFacetImpl {
                 );
             } else {
                 accountLayout.pendingLockedBalances[quote.partyA].sub(filledLockedValues);
-                accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].sub(
-                    filledLockedValues
+                accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(
+                    quote
                 );
             }
             newQuote.lockedValues = quote.lockedValues.sub(filledLockedValues);
