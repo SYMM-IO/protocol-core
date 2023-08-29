@@ -114,7 +114,7 @@ function sendQuote(
    uint256 cva,
    uint256 mm,
    uint256 lf,
-   uint256 maxInterestRate,
+   uint256 maxFundingRate,
    uint256 deadline,
    SingleUpnlAndPriceSig memory upnlSig
 );
@@ -139,7 +139,7 @@ Let's examine each parameter individually:
 
 **`lf`**: Liquidation Fee. It is the prize that will be paid to the liquidator user 
 
-**`maxInterestRate`**: Max interest rate
+**`maxFundingRate`**: Max funding rate
 
 **`deadline`**: The user should set a deadline for their request. If no PartyB takes action on the quote within this timeframe, the request will expire (further details about the expiration procedure will be provided later)
 

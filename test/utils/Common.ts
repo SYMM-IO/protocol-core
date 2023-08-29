@@ -9,6 +9,7 @@ import { RunContext } from "../models/RunContext";
 import { QuoteStructOutput, SymbolStructOutput } from "../../src/types/contracts/facets/ViewFacet";
 import { safeDiv } from "./SafeMath";
 import { getDummyPriceSig, getDummySingleUpnlSig } from "./SignatureUtils";
+import { network } from "hardhat";
 
 const defaultSerializer = new JsonSerializer();
 
@@ -21,7 +22,10 @@ export function unDecimal(value: BigNumber, decimal: number = 18): BigNumber {
 }
 
 export async function getBlockTimestamp(additional: number = 0): Promise<number> {
-  return (await time.latest()) + 1 + additional;
+  if (network.name == "hardhat") {
+    return (await time.latest()) + 1 + additional;
+  }
+  return 1722859307;
 }
 
 export async function getQuoteQuantity(context: RunContext, quoteId: PromiseOrValue<BigNumberish>) {

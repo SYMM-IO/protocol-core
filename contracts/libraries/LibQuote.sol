@@ -64,8 +64,8 @@ library LibQuote {
 
         quoteLayout.partyAPositionsIndex[quote.id] = quoteLayout.partyAPositionsCount[quote.partyA];
         quoteLayout.partyBPositionsIndex[quote.id] = quoteLayout.partyBPositionsCount[quote.partyB][
-            quote.partyA
-        ];
+                        quote.partyA
+            ];
 
         quoteLayout.partyAPositionsCount[quote.partyA] += 1;
         quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] += 1;
@@ -80,16 +80,16 @@ library LibQuote {
         quoteLayout.partyAOpenPositions[quote.partyA][indexOfPartyAPosition] = quoteLayout
             .partyAOpenPositions[quote.partyA][lastOpenPositionIndex];
         quoteLayout.partyAPositionsIndex[
-            quoteLayout.partyAOpenPositions[quote.partyA][lastOpenPositionIndex]
+        quoteLayout.partyAOpenPositions[quote.partyA][lastOpenPositionIndex]
         ] = indexOfPartyAPosition;
         quoteLayout.partyAOpenPositions[quote.partyA].pop();
 
         lastOpenPositionIndex = quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] - 1;
         quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][
-            indexOfPartyBPosition
+        indexOfPartyBPosition
         ] = quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][lastOpenPositionIndex];
         quoteLayout.partyBPositionsIndex[
-            quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][lastOpenPositionIndex]
+        quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA][lastOpenPositionIndex]
         ] = indexOfPartyBPosition;
         quoteLayout.partyBOpenPositions[quote.partyB][quote.partyA].pop();
 
@@ -122,49 +122,40 @@ library LibQuote {
     function getTradingFee(uint256 quoteId) internal view returns (uint256 fee) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         Quote storage quote = quoteLayout.quotes[quoteId];
-        Symbol storage symbol = SymbolStorage.layout().symbols[quote.symbolId];
         if (quote.orderType == OrderType.LIMIT) {
             fee =
-                (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * symbol.tradingFee) /
+                (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee) /
                 1e36;
         } else {
-            fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * symbol.tradingFee) / 1e36;
+            fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee) / 1e36;
         }
-    }
-
-    function returnTradingFee(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        uint256 tradingFee = LibQuote.getTradingFee(quoteId);
-        accountLayout.allocatedBalances[QuoteStorage.layout().quotes[quoteId].partyA] += tradingFee;
-        accountLayout.balances[GlobalAppStorage.layout().feeCollector] -= tradingFee;
-    }
-
-    function receiveTradingFee(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        uint256 tradingFee = LibQuote.getTradingFee(quoteId);
-        accountLayout.allocatedBalances[QuoteStorage.layout().quotes[quoteId].partyA] -= tradingFee;
-        accountLayout.balances[GlobalAppStorage.layout().feeCollector] += tradingFee;
     }
 
     function closeQuote(Quote storage quote, uint256 filledAmount, uint256 closedPrice) internal {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-
-        quote.modifyTimestamp = block.timestamp;
-
+        SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+        require(quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.mm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.lf * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         LockedValues memory lockedValues = LockedValues(
             quote.lockedValues.cva -
-                ((quote.lockedValues.cva * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
+            ((quote.lockedValues.cva * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
             quote.lockedValues.mm -
-                ((quote.lockedValues.mm * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
+            ((quote.lockedValues.mm * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
             quote.lockedValues.lf -
-                ((quote.lockedValues.lf * filledAmount) / (LibQuote.quoteOpenAmount(quote)))
+            ((quote.lockedValues.lf * filledAmount) / (LibQuote.quoteOpenAmount(quote)))
         );
         accountLayout.lockedBalances[quote.partyA].subQuote(quote).add(lockedValues);
         accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].subQuote(quote).add(
             lockedValues
         );
         quote.lockedValues = lockedValues;
+
+        if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {
+            require(quote.lockedValues.total() >= symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
+                "LibQuote: Remaining quote value is low");
+        }
 
         (bool hasMadeProfit, uint256 pnl) = LibQuote.getValueOfQuoteForPartyA(
             closedPrice,
@@ -187,6 +178,7 @@ library LibQuote {
         quote.quantityToClose -= filledAmount;
 
         if (quote.closedAmount == quote.quantity) {
+            quote.statusModifyTimestamp = block.timestamp;
             quote.quoteStatus = QuoteStatus.CLOSED;
             quote.requestedClosePrice = 0;
             removeFromOpenPositions(quote.id);
@@ -196,14 +188,9 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING || quote.quantityToClose == 0
         ) {
             quote.quoteStatus = QuoteStatus.OPENED;
+            quote.statusModifyTimestamp = block.timestamp;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
-        } else {
-            require(
-                quote.lockedValues.total() >=
-                    SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
-                "LibQuote: Remaining quote value is low"
-            );
         }
     }
 
@@ -215,10 +202,10 @@ library LibQuote {
         require(block.timestamp > quote.deadline, "LibQuote: Quote isn't expired");
         require(
             quote.quoteStatus == QuoteStatus.PENDING ||
-                quote.quoteStatus == QuoteStatus.CANCEL_PENDING ||
-                quote.quoteStatus == QuoteStatus.LOCKED ||
-                quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
-                quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
+            quote.quoteStatus == QuoteStatus.CANCEL_PENDING ||
+            quote.quoteStatus == QuoteStatus.LOCKED ||
+            quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
+            quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
             "LibQuote: Invalid state"
         );
         require(
@@ -234,17 +221,15 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.LOCKED ||
             quote.quoteStatus == QuoteStatus.CANCEL_PENDING
         ) {
-            quote.modifyTimestamp = block.timestamp;
-            accountLayout.partyANonces[quote.partyA] += 1;
+            quote.statusModifyTimestamp = block.timestamp;
             accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
             // send trading Fee back to partyA
-            LibQuote.returnTradingFee(quoteId);
+            accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
             removeFromPartyAPendingQuotes(quote);
             if (
                 quote.quoteStatus == QuoteStatus.LOCKED ||
                 quote.quoteStatus == QuoteStatus.CANCEL_PENDING
             ) {
-                accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
                 accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(
                     quote
                 );
@@ -256,9 +241,7 @@ library LibQuote {
             quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING
         ) {
-            quote.modifyTimestamp = block.timestamp;
-            accountLayout.partyANonces[quote.partyA] += 1;
-            accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+            quote.statusModifyTimestamp = block.timestamp;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0;
             quote.quoteStatus = QuoteStatus.OPENED;

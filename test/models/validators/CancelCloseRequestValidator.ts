@@ -6,7 +6,7 @@ import { QuoteStatus } from "../Enums";
 import { Hedger } from "../Hedger";
 import { RunContext } from "../RunContext";
 import { BalanceInfo, User } from "../User";
-import { logger } from "../../utils/LoggerUtils";
+import { logger } from "./../../utils/LoggerUtils";
 import { TransactionValidator } from "./TransactionValidator";
 
 export type CancelCloseRequestValidatorBeforeArg = {

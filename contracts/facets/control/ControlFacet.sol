@@ -4,6 +4,7 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../utils/Ownable.sol";
 import "../../utils/Accessibility.sol";
 import "../../storages/MAStorage.sol";
@@ -59,6 +60,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     function registerPartyB(
         address partyB
     ) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
+        require(partyB != address(0), "ControlFacet: Zero address");
         require(
             !MAStorage.layout().partyBStatus[partyB],
             "ControlFacet: Address is already registered"
@@ -66,6 +68,21 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         MAStorage.layout().partyBStatus[partyB] = true;
         MAStorage.layout().partyBList.push(partyB);
         emit RegisterPartyB(partyB);
+    }
+
+    function deregisterPartyB(
+        address partyB,
+        uint256 index
+    ) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
+        require(partyB != address(0), "ControlFacet: Zero address");
+        require(MAStorage.layout().partyBStatus[partyB], "ControlFacet: Address is not registered");
+        require(MAStorage.layout().partyBList[index] == partyB, "ControlFacet: Invalid index");
+        uint256 lastIndex = MAStorage.layout().partyBList.length - 1;
+        require(index <= lastIndex, "ControlFacet: Invalid index");
+        MAStorage.layout().partyBStatus[partyB] = false;
+        MAStorage.layout().partyBList[index] = MAStorage.layout().partyBList[lastIndex];
+        MAStorage.layout().partyBList.pop();
+        emit DeregisterPartyB(partyB, index);
     }
 
     function setMuonConfig(
@@ -95,6 +112,16 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     function setCollateral(
         address collateral
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        require(
+            IERC20Metadata(collateral).decimals() <= 18,
+            "ControlFacet: Token with more than 18 decimals not allowed"
+        );
+        if (GlobalAppStorage.layout().collateral != address(0)) {
+            require(
+                IERC20Metadata(GlobalAppStorage.layout().collateral).balanceOf(address(this)) == 0,
+                "ControlFacet: There is still collateral in the contract"
+            );
+        }
         GlobalAppStorage.layout().collateral = collateral;
         emit SetCollateral(collateral);
     }
@@ -105,8 +132,16 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         string memory name,
         uint256 minAcceptableQuoteValue,
         uint256 minAcceptablePortionLF,
-        uint256 tradingFee
+        uint256 tradingFee,
+        uint256 maxLeverage,
+        uint256 fundingRateEpochDuration,
+        uint256 fundingRateWindowTime
     ) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+        require(
+            fundingRateWindowTime < fundingRateEpochDuration / 2,
+            "ControlFacet: High window time"
+        );
+        require(tradingFee <= 1e18, "ControlFacet: High trading fee");
         uint256 lastId = ++SymbolStorage.layout().lastId;
         Symbol memory symbol = Symbol(
             lastId,
@@ -114,10 +149,22 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
             true,
             minAcceptableQuoteValue,
             minAcceptablePortionLF,
-            tradingFee
+            tradingFee,
+            maxLeverage,
+            fundingRateEpochDuration,
+            fundingRateWindowTime
         );
         SymbolStorage.layout().symbols[lastId] = symbol;
-        emit AddSymbol(lastId, name, minAcceptableQuoteValue, minAcceptablePortionLF, tradingFee);
+        emit AddSymbol(
+            lastId,
+            name,
+            minAcceptableQuoteValue,
+            minAcceptablePortionLF,
+            tradingFee, 
+            maxLeverage,
+            fundingRateEpochDuration,
+            fundingRateWindowTime
+        );
     }
 
     function addSymbols(
@@ -128,9 +175,28 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
                 symbols[i].name,
                 symbols[i].minAcceptableQuoteValue,
                 symbols[i].minAcceptablePortionLF,
-                symbols[i].tradingFee
+                symbols[i].tradingFee,
+                symbols[i].maxLeverage,
+                symbols[i].fundingRateEpochDuration,
+                symbols[i].fundingRateWindowTime
             );
         }
+    }
+
+    function setSymbolFundingState(
+        uint256 symbolId,
+        uint256 fundingRateEpochDuration,
+        uint256 fundingRateWindowTime
+    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+        SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+        require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+        require(
+            fundingRateWindowTime < fundingRateEpochDuration / 2,
+            "ControlFacet: High window time"
+        );
+        symbolLayout.symbols[symbolId].fundingRateEpochDuration = fundingRateEpochDuration;
+        symbolLayout.symbols[symbolId].fundingRateWindowTime = fundingRateWindowTime;
+        emit SetSymbolFundingState(symbolId, fundingRateEpochDuration, fundingRateWindowTime);
     }
 
     function setSymbolValidationState(
@@ -141,6 +207,16 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
         emit SetSymbolValidationState(symbolId, symbolLayout.symbols[symbolId].isValid, isValid);
         symbolLayout.symbols[symbolId].isValid = isValid;
+    }
+
+    function setSymbolMaxLeverage(
+        uint256 symbolId,
+        uint256 maxLeverage
+    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+        SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+        require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+        emit SetSymbolMaxLeverage(symbolId, symbolLayout.symbols[symbolId].maxLeverage, maxLeverage);
+        symbolLayout.symbols[symbolId].maxLeverage = maxLeverage;
     }
 
     function setSymbolAcceptableValues(

@@ -46,7 +46,6 @@ library AccountFacetImpl {
             "AccountFacet: Allocated balance limit reached"
         );
         require(accountLayout.balances[msg.sender] >= amount, "AccountFacet: Insufficient balance");
-        accountLayout.partyANonces[msg.sender] += 1;
         accountLayout.balances[msg.sender] -= amount;
         accountLayout.allocatedBalances[msg.sender] += amount;
     }
@@ -84,6 +83,14 @@ library AccountFacetImpl {
             !maLayout.partyBLiquidationStatus[msg.sender][recipient],
             "PartyBFacet: PartyB isn't solvent"
         );
+        require(
+            !MAStorage.layout().liquidationStatus[origin],
+            "PartyBFacet: Origin isn't solvent"
+        );
+        require(
+            !MAStorage.layout().liquidationStatus[recipient],
+            "PartyBFacet: Recipient isn't solvent"
+        );
         // deallocate from origin
         require(
             accountLayout.partyBAllocatedBalances[msg.sender][origin] >= amount,
@@ -101,22 +108,10 @@ library AccountFacetImpl {
         accountLayout.partyBNonces[msg.sender][origin] += 1;
         accountLayout.partyBAllocatedBalances[msg.sender][origin] -= amount;
         // allocate for recipient
-        accountLayout.partyBNonces[msg.sender][recipient] += 1;
         accountLayout.partyBAllocatedBalances[msg.sender][recipient] += amount;
     }
 
-    function depositForPartyB(uint256 amount) internal {
-        IERC20(GlobalAppStorage.layout().collateral).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
-        uint256 amountWith18Decimals = (amount * 1e18) /
-        (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
-        AccountStorage.layout().balances[msg.sender] += amountWith18Decimals;
-    }
-
-    function allocateForPartyB(uint256 amount, address partyA, bool increaseNonce) internal {
+    function allocateForPartyB(uint256 amount, address partyA) internal {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
         require(accountLayout.balances[msg.sender] >= amount, "PartyBFacet: Insufficient balance");
@@ -124,9 +119,6 @@ library AccountFacetImpl {
             !MAStorage.layout().partyBLiquidationStatus[msg.sender][partyA],
             "PartyBFacet: PartyB isn't solvent"
         );
-        if (increaseNonce) {
-            accountLayout.partyBNonces[msg.sender][partyA] += 1;
-        }
         accountLayout.balances[msg.sender] -= amount;
         accountLayout.partyBAllocatedBalances[msg.sender][partyA] += amount;
     }

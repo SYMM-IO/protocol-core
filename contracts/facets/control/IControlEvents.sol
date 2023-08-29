@@ -19,10 +19,14 @@ interface IControlEvents {
         string name,
         uint256 minAcceptableQuoteValue,
         uint256 minAcceptablePortionLF,
-        uint256 tradingFee
+        uint256 tradingFee,
+        uint256 maxLeverage,
+        uint256 fundingRateEpochDuration,
+        uint256 fundingRateWindowTime
     );
     event SetFeeCollector(address oldFeeCollector, address newFeeCollector);
     event SetSymbolValidationState(uint256 id, bool oldState, bool isValid);
+    event SetSymbolFundingState(uint256 id, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime);
     event SetSymbolAcceptableValues(
         uint256 symbolId,
         uint256 oldMinAcceptableQuoteValue,
@@ -32,6 +36,7 @@ interface IControlEvents {
     );
     event SetSymbolTradingFee(uint256 symbolId, uint256 oldTradingFee, uint256 tradingFee);
     event SetSymbolMaxSlippage(uint256 symbolId, uint256 oldMaxSlippage, uint256 maxSlippage);
+    event SetSymbolMaxLeverage(uint256 symbolId, uint256 oldMaxLeverage, uint256 maxLeverage);
     event SetDeallocateCooldown(uint256 oldDeallocateCooldown, uint256 newDeallocateCooldown);
     event SetForceCancelCooldown(uint256 oldForceCancelCooldown, uint256 newForceCancelCooldown);
     event SetForceCloseCooldown(uint256 oldForceCloseCooldown, uint256 newForceCloseCooldown);
@@ -62,4 +67,5 @@ interface IControlEvents {
     event SetPartyBEmergencyStatus(address partyB, bool status);
     event SetBalanceLimitPerUser(uint256 balanceLimitPerUser);
     event RegisterPartyB(address partyB);
+    event DeregisterPartyB(address partyB, uint256 index);
 }

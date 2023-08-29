@@ -6,7 +6,7 @@ import { getTotalLockedValuesForQuotes, getTradingFeeForQuotes } from "../../uti
 import { QuoteStatus } from "../Enums";
 import { RunContext } from "../RunContext";
 import { BalanceInfo, User } from "../User";
-import { logger } from "../../utils/LoggerUtils";
+import { logger } from "./../../utils/LoggerUtils";
 import { TransactionValidator } from "./TransactionValidator";
 import { expectToBeApproximately } from "../../utils/SafeMath";
 

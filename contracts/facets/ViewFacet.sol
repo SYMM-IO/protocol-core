@@ -120,6 +120,17 @@ contract ViewFacet {
         return AccountStorage.layout().partyBAllocatedBalances[partyB][partyA];
     }
 
+    function allocatedBalanceOfPartyBs(
+        address partyA,
+        address[] memory partyBs
+    ) external view returns (uint256[] memory) {
+        uint256[] memory allocatedBalances = new uint256[](partyBs.length);
+        for (uint256 i = 0; i < partyBs.length; i++) {
+            allocatedBalances[i] = AccountStorage.layout().partyBAllocatedBalances[partyBs[i]][partyA];
+        }
+        return allocatedBalances;
+    }
+
     function withdrawCooldownOf(address user) external view returns (uint256) {
         return AccountStorage.layout().withdrawCooldown[user];
     }
@@ -134,6 +145,10 @@ contract ViewFacet {
 
     function isSuspended(address user) external view returns (bool) {
         return AccountStorage.layout().suspendedAddresses[user];
+    }
+
+    function getLiquidatedStateOfPartyA(address partyA) external view returns (LiquidationDetail memory){
+        return AccountStorage.layout().liquidationDetails[partyA];
     }
 
     ///////////////////////////////////////////
@@ -349,10 +364,6 @@ contract ViewFacet {
 
     function liquidationTimeout() external view returns (uint256) {
         return MAStorage.layout().liquidationTimeout;
-    }
-
-    function partyALiquidationTimestamp(address partyA) external view returns (uint256) {
-        return MAStorage.layout().liquidationTimestamp[partyA];
     }
 
     function partyBLiquidationTimestamp(

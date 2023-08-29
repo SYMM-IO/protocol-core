@@ -17,55 +17,52 @@ import "../../storages/SymbolStorage.sol";
 library LiquidationFacetImpl {
     using LockedValuesOps for LockedValues;
 
-    function liquidatePartyA(address partyA, SingleUpnlSig memory upnlSig) internal {
+    function liquidatePartyA(address partyA, LiquidationSig memory liquidationSig) internal {
         MAStorage.Layout storage maLayout = MAStorage.layout();
 
-        LibMuon.verifyPartyAUpnl(upnlSig, partyA);
+        LibMuon.verifyLiquidationSig(liquidationSig, partyA);
         int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
-            upnlSig.upnl,
+            liquidationSig.upnl,
             partyA
         );
         require(availableBalance < 0, "LiquidationFacet: PartyA is solvent");
         maLayout.liquidationStatus[partyA] = true;
-        maLayout.liquidationTimestamp[partyA] = upnlSig.timestamp;
+        AccountStorage.layout().liquidationDetails[partyA] = LiquidationDetail({
+            liquidationId: liquidationSig.liquidationId,
+            liquidationType: LiquidationType.NONE,
+            upnl: liquidationSig.upnl,
+            totalUnrealizedLoss: liquidationSig.totalUnrealizedLoss,
+            deficit: 0,
+            liquidationFee: 0,
+            timestamp: liquidationSig.timestamp
+        });
         AccountStorage.layout().liquidators[partyA].push(msg.sender);
     }
 
-    function setSymbolsPrice(address partyA, PriceSig memory priceSig) internal {
+    function setSymbolsPrice(address partyA, LiquidationSig memory liquidationSig) internal {
         MAStorage.Layout storage maLayout = MAStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-        LibMuon.verifyPrices(priceSig, partyA);
+        LibMuon.verifyLiquidationSig(liquidationSig, partyA);
         require(maLayout.liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
         require(
-            priceSig.timestamp <=
-                maLayout.liquidationTimestamp[partyA] + maLayout.liquidationTimeout,
-            "LiquidationFacet: Expired signature"
+            keccak256(accountLayout.liquidationDetails[partyA].liquidationId) ==
+                keccak256(liquidationSig.liquidationId),
+            "LiquidationFacet: Invalid liqiudationId"
         );
-        for (uint256 index = 0; index < priceSig.symbolIds.length; index++) {
-            accountLayout.symbolsPrices[partyA][priceSig.symbolIds[index]] = Price(
-                priceSig.prices[index],
-                maLayout.liquidationTimestamp[partyA]
+        for (uint256 index = 0; index < liquidationSig.symbolIds.length; index++) {
+            accountLayout.symbolsPrices[partyA][liquidationSig.symbolIds[index]] = Price(
+                liquidationSig.prices[index],
+                accountLayout.liquidationDetails[partyA].timestamp
             );
         }
 
         int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
-            priceSig.upnl,
+            liquidationSig.upnl,
             partyA
         );
         if (accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.NONE) {
-            accountLayout.liquidationDetails[partyA] = LiquidationDetail({
-                liquidationType: LiquidationType.NONE,
-                upnl: priceSig.upnl,
-                totalUnrealizedLoss: priceSig.totalUnrealizedLoss,
-                deficit: 0,
-                liquidationFee: 0
-            });
-            if (availableBalance >= 0) {
-                uint256 remainingLf = accountLayout.lockedBalances[partyA].lf;
-                accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.NORMAL;
-                accountLayout.liquidationDetails[partyA].liquidationFee = remainingLf;
-            } else if (uint256(-availableBalance) < accountLayout.lockedBalances[partyA].lf) {
+            if (uint256(-availableBalance) < accountLayout.lockedBalances[partyA].lf) {
                 uint256 remainingLf = accountLayout.lockedBalances[partyA].lf -
                     uint256(-availableBalance);
                 accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.NORMAL;
@@ -86,13 +83,6 @@ library LiquidationFacetImpl {
                 accountLayout.liquidationDetails[partyA].deficit = deficit;
             }
             AccountStorage.layout().liquidators[partyA].push(msg.sender);
-        } else {
-            require(
-                accountLayout.liquidationDetails[partyA].upnl == priceSig.upnl &&
-                    accountLayout.liquidationDetails[partyA].totalUnrealizedLoss ==
-                    priceSig.totalUnrealizedLoss,
-                "LiquidationFacet: Invalid upnl sig"
-            );
         }
     }
 
@@ -116,8 +106,9 @@ library LiquidationFacetImpl {
                 .layout()
                 .partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
             }
-            quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
+            AccountStorage.layout().partyAReimbursement[partyA] += LibQuote.getTradingFee(quote.id);
+            quote.quoteStatus = QuoteStatus.CANCELED;
+            quote.statusModifyTimestamp = block.timestamp;
         }
         AccountStorage.layout().pendingLockedBalances[partyA].makeZero();
         delete quoteLayout.partyAPendingQuotes[partyA];
@@ -140,15 +131,21 @@ library LiquidationFacetImpl {
                     quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
                 "LiquidationFacet: Invalid state"
             );
+            require(
+                !maLayout.partyBLiquidationStatus[quote.partyB][partyA],
+                "LiquidationFacet: PartyB is in liquidation process"
+            );
             require(quote.partyA == partyA, "LiquidationFacet: Invalid party");
             require(
                 accountLayout.symbolsPrices[partyA][quote.symbolId].timestamp ==
-                    maLayout.liquidationTimestamp[partyA],
+                    accountLayout.liquidationDetails[partyA].timestamp,
                 "LiquidationFacet: Price should be set"
             );
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
-
+            quote.statusModifyTimestamp = block.timestamp;
+            
+            accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+            
             (bool hasMadeProfit, uint256 amount) = LibQuote.getValueOfQuoteForPartyA(
                 accountLayout.symbolsPrices[partyA][quote.symbolId].price,
                 LibQuote.quoteOpenAmount(quote),
@@ -159,6 +156,10 @@ library LiquidationFacetImpl {
             } else {
                 accountLayout.totalUnplForLiquidation[partyA] -= int256(amount);
             }
+            uint256 amountToDeduct = amount >
+                accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
+                ? accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
+                : amount;
 
             if (
                 accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.NORMAL
@@ -167,7 +168,7 @@ library LiquidationFacetImpl {
                     .lockedValues
                     .cva;
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amount;
+                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
                 } else {
                     accountLayout.partyBAllocatedBalances[quote.partyB][partyA] += amount;
                 }
@@ -179,7 +180,7 @@ library LiquidationFacetImpl {
                     ((quote.lockedValues.cva * accountLayout.liquidationDetails[partyA].deficit) /
                         accountLayout.lockedBalances[partyA].cva);
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amount;
+                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
                 } else {
                     accountLayout.partyBAllocatedBalances[quote.partyB][partyA] += amount;
                 }
@@ -187,7 +188,7 @@ library LiquidationFacetImpl {
                 accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.OVERDUE
             ) {
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amount;
+                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
                 } else {
                     accountLayout.partyBAllocatedBalances[quote.partyB][partyA] +=
                         amount -
@@ -213,7 +214,10 @@ library LiquidationFacetImpl {
                 quoteLayout.partyAPendingQuotes[partyA].length == 0,
                 "LiquidationFacet: Pending quotes should be liquidated first"
             );
-            accountLayout.allocatedBalances[partyA] = 0;
+            accountLayout.allocatedBalances[partyA] = AccountStorage.layout().partyAReimbursement[
+                partyA
+            ];
+            AccountStorage.layout().partyAReimbursement[partyA] = 0;
             accountLayout.lockedBalances[partyA].makeZero();
 
             uint256 lf = accountLayout.liquidationDetails[partyA].liquidationFee;
@@ -222,9 +226,8 @@ library LiquidationFacetImpl {
                 accountLayout.allocatedBalances[accountLayout.liquidators[partyA][1]] += lf / 2;
             }
             delete accountLayout.liquidators[partyA];
+            delete accountLayout.liquidationDetails[partyA].liquidationType;
             maLayout.liquidationStatus[partyA] = false;
-            maLayout.liquidationTimestamp[partyA] = 0;
-            accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.NONE;
             if (
                 accountLayout.totalUnplForLiquidation[partyA] !=
                 accountLayout.liquidationDetails[partyA].upnl
@@ -233,6 +236,7 @@ library LiquidationFacetImpl {
                 return false;
             }
             accountLayout.totalUnplForLiquidation[partyA] = 0;
+            accountLayout.partyANonces[partyA] += 1;
         }
         return true;
     }
@@ -282,11 +286,11 @@ library LiquidationFacetImpl {
                     quote.quoteStatus == QuoteStatus.CANCEL_PENDING)
             ) {
                 accountLayout.pendingLockedBalances[partyA].subQuote(quote);
-
+                accountLayout.allocatedBalances[partyA] += LibQuote.getTradingFee(quote.id);
                 pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
                 pendingQuotes.pop();
-                quote.quoteStatus = QuoteStatus.LIQUIDATED;
-                quote.modifyTimestamp = block.timestamp;
+                quote.quoteStatus = QuoteStatus.CANCELED;
+                quote.statusModifyTimestamp = block.timestamp;
             } else {
                 index++;
             }
@@ -299,6 +303,7 @@ library LiquidationFacetImpl {
         accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
         accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
         accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
+        accountLayout.partyANonces[partyA] += 1;
 
         if (liquidatorShare > 0) {
             accountLayout.allocatedBalances[msg.sender] += liquidatorShare;
@@ -318,15 +323,15 @@ library LiquidationFacetImpl {
         require(
             priceSig.timestamp <=
                 maLayout.partyBLiquidationTimestamp[partyB][partyA] + maLayout.liquidationTimeout,
-            "LiquidationFacet: Expired signature"
+            "LiquidationFacet: Invalid signature"
         );
         require(
             maLayout.partyBLiquidationStatus[partyB][partyA],
             "LiquidationFacet: PartyB is solvent"
         );
         require(
-            block.timestamp <= priceSig.timestamp + maLayout.liquidationTimeout,
-            "LiquidationFacet: Expired price sig"
+            maLayout.partyBLiquidationTimestamp[partyB][partyA] <= priceSig.timestamp,
+            "LiquidationFacet: Expired signature"
         );
         for (uint256 index = 0; index < priceSig.quoteIds.length; index++) {
             Quote storage quote = quoteLayout.quotes[priceSig.quoteIds[index]];
@@ -342,22 +347,10 @@ library LiquidationFacetImpl {
             );
 
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
-            quote.modifyTimestamp = block.timestamp;
+            quote.statusModifyTimestamp = block.timestamp;
 
-            // accountLayout.allocatedBalances[partyA] += quote.lockedValues.cva;
             accountLayout.lockedBalances[partyA].subQuote(quote);
 
-            // (bool hasMadeProfit, uint256 amount) = LibQuote.getValueOfQuoteForPartyA(
-            //     priceSig.prices[index],
-            //     LibQuote.quoteOpenAmount(quote),
-            //     quote
-            // );
-
-            // if (hasMadeProfit) {
-            //     accountLayout.allocatedBalances[partyA] += amount;
-            // } else {
-            //     accountLayout.allocatedBalances[partyA] -= amount;
-            // }
             quote.avgClosedPrice =
                 (quote.avgClosedPrice *
                     quote.closedAmount +
@@ -379,6 +372,7 @@ library LiquidationFacetImpl {
         if (quoteLayout.partyBPositionsCount[partyB][partyA] == 0) {
             maLayout.partyBLiquidationStatus[partyB][partyA] = false;
             maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
+            accountLayout.partyBNonces[partyB][partyA] += 1;
         }
     }
 }
