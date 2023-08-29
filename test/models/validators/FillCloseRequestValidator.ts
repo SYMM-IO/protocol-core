@@ -4,12 +4,12 @@ import { BigNumber } from "ethers";
 import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet";
 import { getTotalLockedValuesForQuotes, unDecimal } from "../../utils/Common";
 import { logger } from "../../utils/LoggerUtils";
-import { expectToBeApproximately } from "../../utils/SafeMath";
 import { PositionType, QuoteStatus } from "../Enums";
 import { Hedger } from "../Hedger";
 import { RunContext } from "../RunContext";
 import { BalanceInfo, User } from "../User";
 import { TransactionValidator } from "./TransactionValidator";
+import { expectToBeApproximately } from "../../utils/SafeMath";
 
 export type FillCloseRequestValidatorBeforeArg = {
   user: User;
@@ -28,7 +28,7 @@ export type FillCloseRequestValidatorAfterArg = {
   hedger: Hedger;
   quoteId: BigNumber;
   closePrice: BigNumber;
-  filledAmount: BigNumber;
+  fillAmount: BigNumber;
   beforeOutput: FillCloseRequestValidatorBeforeOutput;
 };
 
@@ -61,20 +61,20 @@ export class FillCloseRequestValidator implements TransactionValidator {
       expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING);
     }
 
-    expect(newQuote.closedAmount).to.be.equal(oldQuote.closedAmount.add(arg.filledAmount));
-    expect(newQuote.quantityToClose).to.be.equal(oldQuote.quantityToClose.sub(arg.filledAmount));
+    expect(newQuote.closedAmount).to.be.equal(oldQuote.closedAmount.add(arg.fillAmount));
+    expect(newQuote.quantityToClose).to.be.equal(oldQuote.quantityToClose.sub(arg.fillAmount));
 
     const oldLockedValues = await getTotalLockedValuesForQuotes([oldQuote]);
     const newLockedValues = await getTotalLockedValuesForQuotes([newQuote]);
 
     let profit;
     if (newQuote.positionType == PositionType.LONG) {
-      profit = unDecimal(arg.closePrice.sub(newQuote.openedPrice).mul(arg.filledAmount));
+      profit = unDecimal(arg.closePrice.sub(newQuote.openedPrice).mul(arg.fillAmount));
     } else {
-      profit = unDecimal(newQuote.openedPrice.sub(arg.closePrice).mul(arg.filledAmount));
+      profit = unDecimal(newQuote.openedPrice.sub(arg.closePrice).mul(arg.fillAmount));
     }
 
-    let returnedLockedValues = oldLockedValues.mul(arg.filledAmount).div(oldQuote.quantity);
+    let returnedLockedValues = oldLockedValues.mul(arg.fillAmount).div(oldQuote.quantity);
 
     // Check Balances partyA
     const newBalanceInfoPartyA = await arg.user.getBalanceInfo();

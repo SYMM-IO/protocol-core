@@ -33,18 +33,9 @@ import {
   FillCloseRequestValidator,
   FillCloseRequestValidatorBeforeOutput,
 } from "./validators/FillCloseRequestValidator";
-import {
-  LockQuoteValidator,
-  LockQuoteValidatorBeforeOutput,
-} from "./validators/LockQuoteValidator";
-import {
-  OpenPositionValidator,
-  OpenPositionValidatorBeforeOutput,
-} from "./validators/OpenPositionValidator";
-import {
-  UnlockQuoteValidator,
-  UnlockQuoteValidatorBeforeOutput,
-} from "./validators/UnlockQuoteValidator";
+import { LockQuoteValidator, LockQuoteValidatorBeforeOutput } from "./validators/LockQuoteValidator";
+import { OpenPositionValidator, OpenPositionValidatorBeforeOutput } from "./validators/OpenPositionValidator";
+import { UnlockQuoteValidator, UnlockQuoteValidatorBeforeOutput } from "./validators/UnlockQuoteValidator";
 
 export class HedgerController {
   private context: RunContext;
@@ -103,9 +94,9 @@ export class HedgerController {
     var actionWrapper: ActionWrapper = pick(expandActions(actions));
     logger.debug(
       "Hedger selects the action: " +
-        actionNamesMap.get(actionWrapper.action) +
-        " for quote: " +
-        quote.id,
+      actionNamesMap.get(actionWrapper.action) +
+      " for quote: " +
+      quote.id,
     );
 
     let validator = this.manager.validators.get(actionWrapper.action);
@@ -199,7 +190,7 @@ export class HedgerController {
       }
       case Action.OPEN_POSITION: {
         const quantity = await getQuoteQuantity(this.context, quote.id);
-        let filledAmount = undefined;
+        let fillAmount = undefined;
         let partially = false;
         const symbol: SymbolStructOutput = await this.context.viewFacet.getSymbol(quote.symbolId);
         if (quote.orderType == OrderType.LIMIT) {
@@ -208,13 +199,13 @@ export class HedgerController {
           const max = quantity.sub(minQuantity);
           if (max.gt(minQuantity)) {
             const partialQuantity = randomBigNumber(quantity.sub(minQuantity), minQuantity);
-            filledAmount = randomExt.pick([partialQuantity, quantity]);
-            partially = filledAmount.eq(partialQuantity);
+            fillAmount = randomExt.pick([partialQuantity, quantity]);
+            partially = fillAmount.eq(partialQuantity);
           } else {
-            filledAmount = quantity;
+            fillAmount = quantity;
           }
         } else {
-          filledAmount = quantity;
+          fillAmount = quantity;
         }
         const price = await getPrice(symbol.name);
         const partyAUpnl = await this.manager.getUser(quote.partyA).getUpnl();
@@ -235,7 +226,7 @@ export class HedgerController {
         await this.hedger.openPosition(
           quote.id,
           Builder<OpenRequest>()
-            .filledAmount(filledAmount)
+            .fillAmount(fillAmount)
             .openPrice(openPrice)
             .upnlPartyA(partyAUpnl)
             .upnlPartyB(partyBUpnl)
@@ -247,7 +238,7 @@ export class HedgerController {
             user: user,
             hedger: this.hedger,
             quoteId: quote.id,
-            filledAmount: filledAmount,
+            fillAmount: fillAmount,
             openedPrice: openPrice,
             beforeOutput: before!,
             //FIXME: newQuoteId
@@ -257,7 +248,7 @@ export class HedgerController {
         break;
       }
       case Action.FILL_POSITION: {
-        let filledAmount = undefined;
+        let fillAmount = undefined;
         const symbol: SymbolStructOutput = await this.context.viewFacet.getSymbol(quote.symbolId);
         const minLeftQuantity = await getQuoteMinLeftQuantityForFill(
           this.manager.context,
@@ -267,12 +258,12 @@ export class HedgerController {
           const maxFillAmount = quote.quantityToClose.sub(minLeftQuantity);
           if (maxFillAmount.gt(0)) {
             const partialQuantity = randomBigNumber(maxFillAmount);
-            filledAmount = randomExt.pick([partialQuantity, quote.quantityToClose]);
+            fillAmount = randomExt.pick([partialQuantity, quote.quantityToClose]);
           } else {
-            filledAmount = quote.quantityToClose;
+            fillAmount = quote.quantityToClose;
           }
         } else {
-          filledAmount = quote.quantityToClose;
+          fillAmount = quote.quantityToClose;
         }
         const price = await getPrice(symbol.name);
         const partyAUpnl = await this.manager.getUser(quote.partyA).getUpnl();
@@ -293,7 +284,7 @@ export class HedgerController {
         await this.hedger.fillCloseRequest(
           quote.id,
           Builder<FillCloseRequest>()
-            .filledAmount(filledAmount)
+            .fillAmount(fillAmount)
             .closedPrice(closePrice)
             .upnlPartyA(partyAUpnl)
             .upnlPartyB(partyBUpnl)
@@ -305,7 +296,7 @@ export class HedgerController {
             user: user,
             hedger: this.hedger,
             quoteId: quote.id,
-            filledAmount: filledAmount,
+            fillAmount: fillAmount,
             closePrice: closePrice,
             beforeOutput: before!,
           });

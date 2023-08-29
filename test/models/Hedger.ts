@@ -14,6 +14,7 @@ import { EmergencyCloseRequest, emergencyCloseRequestBuilder } from "./requestMo
 import { FillCloseRequest, limitFillCloseRequestBuilder } from "./requestModels/FillCloseRequest";
 import { limitOpenRequestBuilder, OpenRequest } from "./requestModels/OpenRequest";
 import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/PartyB/PartyBFacet";
+import { runTx } from "../utils/TxUtils";
 
 export class Hedger {
   constructor(private context: RunContext, private signer: SignerWithAddress) {
@@ -26,13 +27,13 @@ export class Hedger {
   public async setBalances(collateralAmount?: BigNumberish, depositAmount?: BigNumberish) {
     const userAddress = this.signer.getAddress();
 
-    await this.context.collateral
+    await runTx(this.context.collateral
       .connect(this.signer)
-      .approve(this.context.diamond, ethers.constants.MaxUint256);
+      .approve(this.context.diamond, ethers.constants.MaxUint256));
 
     if (collateralAmount)
-      await this.context.collateral.connect(this.signer).mint(userAddress, collateralAmount);
-    if (depositAmount) await this.context.accountFacet.connect(this.signer).deposit(depositAmount);
+      await runTx(this.context.collateral.connect(this.signer).mint(userAddress, collateralAmount));
+    if (depositAmount) await runTx(this.context.accountFacet.connect(this.signer).deposit(depositAmount));
   }
 
   public async setNativeBalance(amount: bigint) {
@@ -40,9 +41,9 @@ export class Hedger {
   }
 
   public async register() {
-    await this.context.controlFacet
+    await runTx(this.context.controlFacet
       .connect(this.context.signers.admin)
-      .registerPartyB(this.signer.getAddress());
+      .registerPartyB(this.signer.getAddress()));
   }
 
   public async lockQuote(
@@ -53,22 +54,22 @@ export class Hedger {
     if (allocateCoefficient != null) {
       const quote = await this.context.viewFacet.getQuote(id);
       const notional = unDecimal(quote.quantity.mul(quote.requestedOpenPrice));
-      await this.context.accountFacet
+      await runTx(this.context.accountFacet
         .connect(this.signer)
         .allocateForPartyB(
           unDecimal(notional.mul(BigNumber.from(allocateCoefficient))),
           quote.partyA,
-        );
+        ));
     }
-    await this.context.partyBFacet
+    await runTx(this.context.partyBFacet
       .connect(this.signer)
-      .lockQuote(id, await getDummySingleUpnlSig(upnl));
+      .lockQuote(id, await getDummySingleUpnlSig(upnl)));
 
     logger.info(`Hedger::LockQuote: ${id}`);
   }
 
   public async unlockQuote(id: PromiseOrValue<BigNumberish>) {
-    await this.context.partyBFacet.connect(this.signer).unlockQuote(id);
+    await runTx(this.context.partyBFacet.connect(this.signer).unlockQuote(id));
     logger.info(`Hedger::UnLockQuote: ${id}`);
   }
 
@@ -87,14 +88,14 @@ export class Hedger {
         userUpnl: await user.getUpnl(),
       }),
     );
-    await this.context.partyBFacet
+    await runTx(this.context.partyBFacet
       .connect(this.signer)
       .openPosition(
         id,
         request.filledAmount,
         request.openPrice,
         await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
-      );
+      ));
     logger.info(`Hedger::OpenPosition: ${id}`);
   }
 
@@ -114,7 +115,7 @@ export class Hedger {
   }
 
   public async acceptCancelRequest(id: PromiseOrValue<BigNumberish>) {
-    await this.context.partyBFacet.connect(this.signer).acceptCancelRequest(id);
+    await runTx(this.context.partyBFacet.connect(this.signer).acceptCancelRequest(id));
     logger.info(`Hedger::AcceptCancelRequest: ${id}`);
   }
 
@@ -133,14 +134,14 @@ export class Hedger {
         userUpnl: await user.getUpnl(),
       }),
     );
-    await this.context.partyBFacet
+    await runTx(this.context.partyBFacet
       .connect(this.signer)
       .fillCloseRequest(
         id,
         request.filledAmount,
         request.closedPrice,
         await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
-      );
+      ));
     logger.info(`Hedger::FillCloseRequest: ${id}`);
   }
 
@@ -150,7 +151,7 @@ export class Hedger {
   }
 
   public async acceptCancelCloseRequest(id: PromiseOrValue<BigNumberish>) {
-    await this.context.partyBFacet.connect(this.signer).acceptCancelCloseRequest(id);
+    await runTx(this.context.partyBFacet.connect(this.signer).acceptCancelCloseRequest(id));
     logger.info(`Hedger::AcceptCancelCloseRequest: ${id}`);
   }
 
@@ -169,12 +170,12 @@ export class Hedger {
         userUpnl: await user.getUpnl(),
       }),
     );
-    await this.context.partyBFacet
+    await runTx(this.context.partyBFacet
       .connect(this.signer)
       .emergencyClosePosition(
         id,
         await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
-      );
+      ));
     logger.info(`Hedger::EmergencyClosePosition: ${id}`);
   }
 
