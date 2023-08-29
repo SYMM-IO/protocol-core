@@ -8,7 +8,7 @@ import { OrderType, QuoteStatus } from "../models/Enums";
 import { RunContext } from "../models/RunContext";
 import { QuoteStructOutput, SymbolStructOutput } from "../../src/types/contracts/facets/ViewFacet";
 import { safeDiv } from "./SafeMath";
-import { getDummyPriceSig, getDummySingleUpnlSig } from "./SignatureUtils";
+import { getDummyLiquidationSig } from "./SignatureUtils";
 import { network } from "hardhat";
 
 const defaultSerializer = new JsonSerializer();
@@ -128,14 +128,15 @@ export async function liquidatePartyA(
   symbolIds: BigNumberish[] = [1],
   prices: BigNumberish[] = [decimal(1)],
 ) {
+  const sign = await getDummyLiquidationSig("0x10", upnl, symbolIds, prices, totalUnrealizedLoss);
   await context.liquidationFacet
     .connect(liquidator)
-    .liquidatePartyA(liquidatedUser, await getDummySingleUpnlSig(upnl));
+    .liquidatePartyA(liquidatedUser, sign);
   await context.liquidationFacet
     .connect(liquidator)
     .setSymbolsPrice(
       liquidatedUser,
-      await getDummyPriceSig(symbolIds, prices, upnl, totalUnrealizedLoss),
+      sign,
     );
 }
 

@@ -7,7 +7,7 @@ import { Hedger } from "./models/Hedger";
 import { RunContext } from "./models/RunContext";
 import { BalanceInfo, User } from "./models/User";
 import { decimal, getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes, liquidatePartyA } from "./utils/Common";
-import { getDummySingleUpnlSig } from "./utils/SignatureUtils";
+import { getDummyLiquidationSig, getDummySingleUpnlSig } from "./utils/SignatureUtils";
 
 export function shouldBehaveLikeLiquidationFacet(): void {
   beforeEach(async function() {
@@ -60,7 +60,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
       await expect(
         context.liquidationFacet.liquidatePartyA(
           context.signers.user.getAddress(),
-          await getDummySingleUpnlSig(),
+          await getDummyLiquidationSig("0x10", 0, [], [], 0),
         ),
       ).to.be.revertedWith("LiquidationFacet: PartyA is solvent");
     });
@@ -74,8 +74,8 @@ export function shouldBehaveLikeLiquidationFacet(): void {
         .connect(context.signers.liquidator)
         .liquidatePendingPositionsPartyA(await context.signers.user.getAddress());
 
-      expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED);
-      expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED);
+      expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.CANCELED);
+      expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.CANCELED);
 
       let balanceInfoOfPartyA: BalanceInfo = await this.user.getBalanceInfo();
       expect(balanceInfoOfPartyA.allocatedBalances).to.be.equal(
@@ -214,7 +214,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
       expect(balanceInfo.pendingLockedLf).to.be.equal("0");
       expect(balanceInfo.totalPendingLocked).to.be.equal("0");
 
-      expect((await context.viewFacet.getQuote(5)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED);
+      expect((await context.viewFacet.getQuote(5)).quoteStatus).to.be.equal(QuoteStatus.CANCELED);
     });
 
     it("Should fail to liquidate a partyB twice", async function() {
