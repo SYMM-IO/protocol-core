@@ -155,7 +155,6 @@ library PartyAFacetImpl {
         uint256 deadline
     ) internal {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
         require(quote.quoteStatus == QuoteStatus.OPENED, "PartyAFacet: Invalid state");
@@ -184,7 +183,6 @@ library PartyAFacetImpl {
     }
 
     function requestToCancelCloseRequest(uint256 quoteId) internal returns (QuoteStatus) {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
         require(quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyAFacet: Invalid state");
@@ -220,7 +218,6 @@ library PartyAFacetImpl {
     }
 
     function forceCancelCloseRequest(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         MAStorage.Layout storage maLayout = MAStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
