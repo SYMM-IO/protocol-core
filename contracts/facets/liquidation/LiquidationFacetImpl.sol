@@ -38,7 +38,10 @@ library LiquidationFacetImpl {
             totalUnrealizedLoss: liquidationSig.totalUnrealizedLoss,
             deficit: 0,
             liquidationFee: 0,
-            timestamp: liquidationSig.timestamp
+            timestamp: liquidationSig.timestamp,
+            involvedPartyBCounts: 0,
+            partyAAccumulatedUpnl: 0,
+            disputed: false
         });
         AccountStorage.layout().liquidators[partyA].push(msg.sender);
     }
@@ -118,10 +121,7 @@ library LiquidationFacetImpl {
         delete quoteLayout.partyAPendingQuotes[partyA];
     }
 
-    function liquidatePositionsPartyA(
-        address partyA,
-        uint256[] memory quoteIds
-    ) internal returns (bool) {
+    function liquidatePositionsPartyA(address partyA, uint256[] memory quoteIds) internal returns(bool){
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         MAStorage.Layout storage maLayout = MAStorage.layout();
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
@@ -147,57 +147,54 @@ library LiquidationFacetImpl {
             );
             quote.quoteStatus = QuoteStatus.LIQUIDATED;
             quote.statusModifyTimestamp = block.timestamp;
-            
+
             accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-            
+
             (bool hasMadeProfit, uint256 amount) = LibQuote.getValueOfQuoteForPartyA(
                 accountLayout.symbolsPrices[partyA][quote.symbolId].price,
                 LibQuote.quoteOpenAmount(quote),
                 quote
             );
-            if (hasMadeProfit) {
-                accountLayout.totalUnplForLiquidation[partyA] += int256(amount);
-            } else {
-                accountLayout.totalUnplForLiquidation[partyA] -= int256(amount);
-            }
-            uint256 amountToDeduct = amount >
-                accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
-                ? accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
-                : amount;
 
+            if (!accountLayout.settlementStates[partyA][quote.partyB].shouldSettled) {
+                accountLayout.settlementStates[partyA][quote.partyB].shouldSettled = true;
+                accountLayout.liquidationDetails[partyA].involvedPartyBCounts += 1;
+            }
             if (
                 accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.NORMAL
             ) {
-                accountLayout.partyBAllocatedBalances[quote.partyB][partyA] += quote
-                    .lockedValues
-                    .cva;
+                accountLayout.settlementStates[partyA][quote.partyB].cva += quote.lockedValues.cva;
+
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
+                    accountLayout.settlementStates[partyA][quote.partyB].amount -= int256(amount);
                 } else {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] += amount;
+                    accountLayout.settlementStates[partyA][quote.partyB].amount += int256(amount);
                 }
             } else if (
                 accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.LATE
             ) {
-                accountLayout.partyBAllocatedBalances[quote.partyB][partyA] +=
+                accountLayout.settlementStates[partyA][quote.partyB].cva +=
                     quote.lockedValues.cva -
                     ((quote.lockedValues.cva * accountLayout.liquidationDetails[partyA].deficit) /
                         accountLayout.lockedBalances[partyA].cva);
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
+                    accountLayout.settlementStates[partyA][quote.partyB].amount -= int256(amount);
                 } else {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] += amount;
+                    accountLayout.settlementStates[partyA][quote.partyB].amount += int256(amount);
                 }
             } else if (
                 accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.OVERDUE
             ) {
                 if (hasMadeProfit) {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] -= amountToDeduct;
+                    accountLayout.settlementStates[partyA][quote.partyB].amount -= int256(amount);
                 } else {
-                    accountLayout.partyBAllocatedBalances[quote.partyB][partyA] +=
+                    accountLayout.settlementStates[partyA][quote.partyB].amount += int256(
                         amount -
-                        ((amount * accountLayout.liquidationDetails[partyA].deficit) /
-                            uint256(-accountLayout.liquidationDetails[partyA].totalUnrealizedLoss));
+                            ((amount * accountLayout.liquidationDetails[partyA].deficit) /
+                                uint256(
+                                    -accountLayout.liquidationDetails[partyA].totalUnrealizedLoss
+                                ))
+                    );
                 }
             }
             accountLayout.partyBLockedBalances[quote.partyB][partyA].subQuote(quote);
@@ -212,16 +209,95 @@ library LiquidationFacetImpl {
             LibQuote.removeFromOpenPositions(quote.id);
             quoteLayout.partyAPositionsCount[partyA] -= 1;
             quoteLayout.partyBPositionsCount[quote.partyB][partyA] -= 1;
+
+            if (quoteLayout.partyBPositionsCount[quote.partyB][partyA] == 0) {
+                int256 settleAmount = accountLayout.settlementStates[partyA][quote.partyB].amount;
+                if (settleAmount >= 0) {
+                    accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl += settleAmount;
+                } else {
+                    if (
+                        accountLayout.partyBAllocatedBalances[quote.partyB][partyA] >=
+                        uint256(-settleAmount)
+                    ) {
+                        accountLayout
+                            .liquidationDetails[partyA]
+                            .partyAAccumulatedUpnl += settleAmount;
+                    } else {
+                        accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl -= int256(
+                            accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
+                        );
+                    }
+                }
+            }
         }
-        if (quoteLayout.partyAPositionsCount[partyA] == 0) {
-            require(
+        if (
+            quoteLayout.partyAPositionsCount[partyA] == 0 &&
+            accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl !=
+            accountLayout.liquidationDetails[partyA].upnl
+        ) {
+            accountLayout.liquidationDetails[partyA].disputed = true;
+            return true;
+        }
+        return false;
+    }
+
+    function resolveLiquidationDispute(
+        address partyA,
+        address[] memory partyBs,
+        int256[] memory amounts,
+        bool disputed
+    ) internal {
+        AccountStorage.layout().liquidationDetails[partyA].disputed = disputed;
+        require(partyBs.length == amounts.length, "LiquidationFacet: Invalid length");
+        for (uint256 i = 0; i < partyBs.length; i++) {
+            AccountStorage.layout().settlementStates[partyA][partyBs[i]].amount = amounts[i];
+        }
+    }
+
+    function settlePartyALiquidation(address partyA, address[] memory partyBs) internal {
+        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        require(
+            quoteLayout.partyAPositionsCount[partyA] == 0 &&
                 quoteLayout.partyAPendingQuotes[partyA].length == 0,
-                "LiquidationFacet: Pending quotes should be liquidated first"
+            "LiquidationFacet: PartyA has still open positions"
+        );
+        require(
+            MAStorage.layout().liquidationStatus[partyA],
+            "LiquidationFacet: PartyA is solvent"
+        );
+        require(
+            !accountLayout.liquidationDetails[partyA].disputed,
+            "LiquidationFacet: PartyA liquidation process get disputed"
+        );
+        for (uint256 i = 0; i < partyBs.length; i++) {
+            address partyB = partyBs[i];
+            require(
+                accountLayout.settlementStates[partyA][partyB].shouldSettled,
+                "LiquidationFacet: PartyB is not in settlement"
             );
-            accountLayout.allocatedBalances[partyA] = AccountStorage.layout().partyAReimbursement[
-                partyA
-            ];
-            AccountStorage.layout().partyAReimbursement[partyA] = 0;
+            accountLayout.settlementStates[partyA][partyB].shouldSettled = false;
+            accountLayout.liquidationDetails[partyA].involvedPartyBCounts -= 1;
+
+            int256 settleAmount = accountLayout.settlementStates[partyA][partyB].amount;
+            accountLayout.partyBAllocatedBalances[partyB][partyA] += accountLayout
+            .settlementStates[partyA][partyB].cva;
+            if (settleAmount >= 0) {
+                accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(settleAmount);
+            } else {
+                if (
+                    accountLayout.partyBAllocatedBalances[partyB][partyA] >= uint256(-settleAmount)
+                ) {
+                    accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(-settleAmount);
+                } else {
+                    accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
+                }
+            }
+            delete accountLayout.settlementStates[partyA][partyB];
+        }
+        if (accountLayout.liquidationDetails[partyA].involvedPartyBCounts == 0) {
+            accountLayout.allocatedBalances[partyA] = accountLayout.partyAReimbursement[partyA];
+            accountLayout.partyAReimbursement[partyA] = 0;
             accountLayout.lockedBalances[partyA].makeZero();
 
             uint256 lf = accountLayout.liquidationDetails[partyA].liquidationFee;
@@ -231,18 +307,9 @@ library LiquidationFacetImpl {
             }
             delete accountLayout.liquidators[partyA];
             delete accountLayout.liquidationDetails[partyA].liquidationType;
-            maLayout.liquidationStatus[partyA] = false;
-            if (
-                accountLayout.totalUnplForLiquidation[partyA] !=
-                accountLayout.liquidationDetails[partyA].upnl
-            ) {
-                accountLayout.totalUnplForLiquidation[partyA] = 0;
-                return false;
-            }
-            accountLayout.totalUnplForLiquidation[partyA] = 0;
+            MAStorage.layout().liquidationStatus[partyA] = false;
             accountLayout.partyANonces[partyA] += 1;
         }
-        return true;
     }
 
     function liquidatePartyB(
