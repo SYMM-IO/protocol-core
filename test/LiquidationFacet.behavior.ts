@@ -2,12 +2,13 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 
 import { initializeFixture } from "./Initialize.fixture";
-import { QuoteStatus } from "./models/Enums";
+import { PositionType, QuoteStatus } from "./models/Enums";
 import { Hedger } from "./models/Hedger";
 import { RunContext } from "./models/RunContext";
 import { BalanceInfo, User } from "./models/User";
 import { decimal, getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes, liquidatePartyA } from "./utils/Common";
 import { getDummyLiquidationSig, getDummySingleUpnlSig } from "./utils/SignatureUtils";
+import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest";
 
 export function shouldBehaveLikeLiquidationFacet(): void {
   beforeEach(async function() {
@@ -33,7 +34,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
     await this.hedger2.setBalances(decimal(2000), decimal(1000));
 
     // Quote1 -> opened
-    await this.user.sendQuote();
+    await this.user.sendQuote(limitQuoteRequestBuilder().positionType(PositionType.SHORT).build());
     await this.hedger.lockQuote(1);
     await this.hedger.openPosition(1);
 
@@ -115,9 +116,24 @@ export function shouldBehaveLikeLiquidationFacet(): void {
     describe("Liquidate Positions", async function() {
       beforeEach(async function() {
         const context: RunContext = this.context;
+        const symbolIds = [1];
+        const prices = [decimal(572, 16)];
+        const priceFetcher = async (symbolId: string) => {
+          if (symbolId == "BTCUSDT") {
+            return decimal(572, 16);
+          }
+          return decimal(1);
+        };
+        const upnl = await this.user.getUpnl(priceFetcher);
+        const totalUnrealizedLoss = await this.user.getTotalUnrealisedLoss(priceFetcher);
         await liquidatePartyA(
           context,
           context.signers.user.getAddress(),
+          context.signers.liquidator,
+          upnl,
+          totalUnrealizedLoss,
+          symbolIds,
+          prices,
         );
         await liquidatePartyA(
           context,
@@ -172,11 +188,35 @@ export function shouldBehaveLikeLiquidationFacet(): void {
         expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(
           QuoteStatus.LIQUIDATED,
         );
-        expect(await context.viewFacet.allocatedBalanceOfPartyB(hedger, user)).to.be.equal(
-          decimal(382),
-        );
-        let balanceInfoOfLiquidator = await this.liquidator.getBalanceInfo();
-        expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(decimal(1));
+      });
+
+      describe("Settle liquidation", async function() {
+        beforeEach(async function() {
+          const context: RunContext = this.context;
+          let user = context.signers.user.getAddress();
+          let hedger = context.signers.hedger.getAddress();
+          await context.liquidationFacet
+            .connect(context.signers.liquidator)
+            .liquidatePendingPositionsPartyA(user);
+
+          await context.liquidationFacet
+            .connect(context.signers.liquidator)
+            .liquidatePositionsPartyA(user, [1]);
+        });
+
+        it("Should settle liquidation", async function() {
+          const context: RunContext = this.context;
+          let user = context.signers.user.getAddress();
+          let hedger = context.signers.hedger.getAddress();
+          await context.liquidationFacet
+            .connect(context.signers.liquidator)
+            .settlePartyALiquidation(user, [hedger]);
+          expect(await context.viewFacet.allocatedBalanceOfPartyB(hedger, user)).to.be.equal(
+            decimal(854),
+          );
+          let balanceInfoOfLiquidator = await this.liquidator.getBalanceInfo();
+          expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(decimal(2));
+        });
       });
     });
   });
