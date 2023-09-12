@@ -6,7 +6,6 @@ import { PromiseOrValue } from "../../src/types/common";
 import { serializeToJson, unDecimal } from "../utils/Common";
 import { logger } from "../utils/LoggerUtils";
 import { getPrice } from "../utils/PriceUtils";
-import { getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils";
 import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet";
 import { PositionType } from "./Enums";
 import { RunContext } from "./RunContext";
@@ -139,7 +138,7 @@ export class User {
     return this.signer.getAddress();
   }
 
-  public async getUpnl(): Promise<BigNumber> {
+  public async getUpnl(priceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
     let openPositions: QuoteStructOutput[] = [];
     const pageSize = 30;
     let last = 0;
@@ -156,11 +155,38 @@ export class User {
     let upnl = BigNumber.from(0);
     for (const pos of openPositions) {
       const priceDiff = pos.openedPrice.sub(
-        await getPrice((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
+        await priceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
       );
       const amount = pos.quantity.sub(pos.closedAmount);
-      upnl.add(
-        unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? 1 : -1),
+      upnl = upnl.add(
+        unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? -1 : 1),
+      );
+    }
+    return upnl;
+  }
+
+  public async getTotalUnrealisedLoss(priceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
+    let openPositions: QuoteStructOutput[] = [];
+    const pageSize = 30;
+    let last = 0;
+    while (true) {
+      let page = await this.context.viewFacet.getPartyAOpenPositions(
+        this.getAddress(),
+        last,
+        pageSize,
+      );
+      openPositions.push(...page);
+      if (page.length < pageSize) break;
+    }
+
+    let upnl = BigNumber.from(0);
+    for (const pos of openPositions) {
+      const priceDiff = pos.openedPrice.sub(
+        await priceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
+      );
+      const amount = pos.quantity.sub(pos.closedAmount);
+      upnl = upnl.add(
+        unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? 0 : 1),
       );
     }
     return upnl;

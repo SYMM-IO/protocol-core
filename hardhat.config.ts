@@ -63,7 +63,7 @@ const config: HardhatUserConfig = {
       accounts: privateKeyList,
     },
     bsc: {
-      url: "https://bsc-dataseed3.defibit.io",
+      url: "https://1rpc.io/bnb",
       accounts: [privateKey],
     },
     base: {
