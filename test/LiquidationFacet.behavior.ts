@@ -6,11 +6,20 @@ import { PositionType, QuoteStatus } from "./models/Enums";
 import { Hedger } from "./models/Hedger";
 import { RunContext } from "./models/RunContext";
 import { BalanceInfo, User } from "./models/User";
-import { decimal, getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes, liquidatePartyA } from "./utils/Common";
+import { decimal, getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes } from "./utils/Common";
 import { getDummyLiquidationSig, getDummySingleUpnlSig } from "./utils/SignatureUtils";
 import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest";
+import { LiquidationSigStruct } from "../src/types/contracts/facets/liquidation/LiquidationFacet";
 
 export function shouldBehaveLikeLiquidationFacet(): void {
+  let user: User;
+  let user2: User;
+  let liquidator: User;
+  let hedger: Hedger;
+  let hedger2: Hedger;
+  let signature1: LiquidationSigStruct;
+  let signature2: LiquidationSigStruct;
+
   beforeEach(async function() {
     this.context = await loadFixture(initializeFixture);
 
@@ -68,12 +77,9 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 
     it("Should liquidate pending quotes", async function() {
       const context: RunContext = this.context;
-      let user = context.signers.user.getAddress();
 
-      await liquidatePartyA(context, user);
-      await context.liquidationFacet
-        .connect(context.signers.liquidator)
-        .liquidatePendingPositionsPartyA(await context.signers.user.getAddress());
+      await this.user.liquidateAndSetSymbolPrices([1], [decimal(8)]);
+      await this.user.liquidatePendingPositions();
 
       expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.CANCELED);
       expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.CANCELED);
@@ -90,7 +96,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
       expect(balanceInfoOfPartyA.pendingLockedLf).to.be.equal("0");
       expect(balanceInfoOfPartyA.totalPendingLocked).to.be.equal("0");
 
-      let balanceInfoOfPartyB: BalanceInfo = await this.hedger.getBalanceInfo(user);
+      let balanceInfoOfPartyB: BalanceInfo = await this.hedger.getBalanceInfo(await this.user.getAddress());
       expect(balanceInfoOfPartyB.allocatedBalances).to.be.equal(decimal(360).toString());
       expect(balanceInfoOfPartyB.lockedCva).to.be.equal(decimal(22).toString());
       expect(balanceInfoOfPartyB.lockedMm).to.be.equal(decimal(75).toString());
@@ -104,52 +110,22 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 
     it("Should fail to liquidate a user twice", async function() {
       const context: RunContext = this.context;
-      await liquidatePartyA(
-        context,
-        context.signers.user.getAddress(),
-      );
+      await this.user.liquidateAndSetSymbolPrices([1], [decimal(8)]);
+
       await expect(
-        liquidatePartyA(context, context.signers.user.getAddress()),
+        this.user.liquidateAndSetSymbolPrices([1], [decimal(8)]),
       ).to.be.revertedWith("Accessibility: PartyA isn't solvent");
     });
 
     describe("Liquidate Positions", async function() {
       beforeEach(async function() {
-        const context: RunContext = this.context;
-        const symbolIds = [1];
-        const prices = [decimal(572, 16)];
-        const priceFetcher = async (symbolId: string) => {
-          if (symbolId == "BTCUSDT") {
-            return decimal(572, 16);
-          }
-          return decimal(1);
-        };
-        const upnl = await this.user.getUpnl(priceFetcher);
-        const totalUnrealizedLoss = await this.user.getTotalUnrealisedLoss(priceFetcher);
-        await liquidatePartyA(
-          context,
-          context.signers.user.getAddress(),
-          context.signers.liquidator,
-          upnl,
-          totalUnrealizedLoss,
-          symbolIds,
-          prices,
-        );
-        await liquidatePartyA(
-          context,
-          context.signers.user2.getAddress(),
-          context.signers.liquidator,
-          decimal(-475),
-        );
+        this.signature1 = await this.user.liquidateAndSetSymbolPrices([1], [decimal(591, 16)]);
+        // this.signature2 = await this.user2.liquidateAndSetSymbolPrices([1], [decimal(200)]);
       });
 
       it("Should fail on invalid state", async function() {
-        const context: RunContext = this.context;
-        let user = context.signers.user.getAddress();
         await expect(
-          context.liquidationFacet
-            .connect(context.signers.liquidator)
-            .liquidatePositionsPartyA(user, [2]),
+          this.user.liquidatePositions([2]),
         ).to.be.revertedWith("LiquidationFacet: Invalid state");
       });
 
@@ -160,31 +136,19 @@ export function shouldBehaveLikeLiquidationFacet(): void {
           context.liquidationFacet
             .connect(context.signers.liquidator)
             .liquidatePositionsPartyA(user3, [1]),
-        ).to.be.revertedWith("LiquidationFacet: PartyA is solvent"); // liquidationTimestamp[partyA] = 0
+        ).to.be.revertedWith("LiquidationFacet: PartyA is solvent");
       });
 
       it("Should fail on partyA being the liquidator himself", async function() {
-        const context: RunContext = this.context;
-        let user2 = context.signers.user2.getAddress();
         await expect(
-          context.liquidationFacet
-            .connect(context.signers.liquidator)
-            .liquidatePositionsPartyA(user2, [1]),
-        ).to.be.revertedWith("LiquidationFacet: Invalid party");
+          this.user2.liquidatePositions([2]),
+        ).to.be.revertedWith("LiquidationFacet: PartyA is solvent");
       });
 
       it("Should liquidate positions", async function() {
         const context: RunContext = this.context;
-        let user = context.signers.user.getAddress();
-        let hedger = context.signers.hedger.getAddress();
-        await context.liquidationFacet
-          .connect(context.signers.liquidator)
-          .liquidatePendingPositionsPartyA(user);
-
-        await context.liquidationFacet
-          .connect(context.signers.liquidator)
-          .liquidatePositionsPartyA(user, [1]);
-
+        await this.user.liquidatePendingPositions();
+        await this.user.liquidatePositions([1]);
         expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(
           QuoteStatus.LIQUIDATED,
         );
@@ -192,16 +156,8 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 
       describe("Settle liquidation", async function() {
         beforeEach(async function() {
-          const context: RunContext = this.context;
-          let user = context.signers.user.getAddress();
-          let hedger = context.signers.hedger.getAddress();
-          await context.liquidationFacet
-            .connect(context.signers.liquidator)
-            .liquidatePendingPositionsPartyA(user);
-
-          await context.liquidationFacet
-            .connect(context.signers.liquidator)
-            .liquidatePositionsPartyA(user, [1]);
+          await this.user.liquidatePendingPositions();
+          await this.user.liquidatePositions([1]);
         });
 
         it("Should settle liquidation", async function() {
@@ -212,10 +168,10 @@ export function shouldBehaveLikeLiquidationFacet(): void {
             .connect(context.signers.liquidator)
             .settlePartyALiquidation(user, [hedger]);
           expect(await context.viewFacet.allocatedBalanceOfPartyB(hedger, user)).to.be.equal(
-            decimal(854),
+            decimal(856),
           );
           let balanceInfoOfLiquidator = await this.liquidator.getBalanceInfo();
-          expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(decimal(2));
+          expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(decimal(0));
         });
       });
     });

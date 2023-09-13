@@ -1,5 +1,4 @@
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, BigNumberish } from "ethers";
 import { JsonSerializer } from "typescript-json-serializer";
 
@@ -8,7 +7,6 @@ import { OrderType, QuoteStatus } from "../models/Enums";
 import { RunContext } from "../models/RunContext";
 import { QuoteStructOutput, SymbolStructOutput } from "../../src/types/contracts/facets/ViewFacet";
 import { safeDiv } from "./SafeMath";
-import { getDummyLiquidationSig } from "./SignatureUtils";
 import { network } from "hardhat";
 
 const defaultSerializer = new JsonSerializer();
@@ -119,27 +117,6 @@ export async function getTradingFeeForQuotes(
   return out;
 }
 
-export async function liquidatePartyA(
-  context: RunContext,
-  liquidatedUser: Promise<string>,
-  liquidator: SignerWithAddress = context.signers.liquidator,
-  upnl: BigNumberish = decimal(-473),
-  totalUnrealizedLoss: BigNumberish = 0,
-  symbolIds: BigNumberish[] = [1],
-  prices: BigNumberish[] = [decimal(1)],
-) {
-  const sign = await getDummyLiquidationSig("0x10", upnl, symbolIds, prices, totalUnrealizedLoss);
-  await context.liquidationFacet
-    .connect(liquidator)
-    .liquidatePartyA(liquidatedUser, sign);
-  await context.liquidationFacet
-    .connect(liquidator)
-    .setSymbolsPrice(
-      liquidatedUser,
-      sign,
-    );
-}
-
 export async function pausePartyB(context: RunContext) {
   await context.controlFacet.connect(context.signers.admin).pausePartyBActions();
 }
@@ -184,4 +161,14 @@ export async function checkStatus(
   quoteStatus: QuoteStatus,
 ) {
   return (await context.viewFacet.getQuote(quoteId)).quoteStatus == quoteStatus;
+}
+
+export function getPriceFetcher(symbolIds: BigNumberish[], prices: BigNumber[]) {
+  return async (symbolId: BigNumber) => {
+    for (let i = 0; i < symbolIds.length; i++) {
+      if (symbolIds[i] == symbolId)
+        return prices[i];
+    }
+    throw new Error("Invalid price requested");
+  };
 }
