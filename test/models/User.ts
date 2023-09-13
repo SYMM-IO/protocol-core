@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, BigNumberish, ethers } from "ethers";
 
 import { PromiseOrValue } from "../../src/types/common";
-import { serializeToJson, unDecimal } from "../utils/Common";
+import { getPriceFetcher, serializeToJson, unDecimal } from "../utils/Common";
 import { logger } from "../utils/LoggerUtils";
 import { getPrice } from "../utils/PriceUtils";
 import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet";
@@ -12,6 +12,8 @@ import { RunContext } from "./RunContext";
 import { CloseRequest, limitCloseRequestBuilder } from "./requestModels/CloseRequest";
 import { limitQuoteRequestBuilder, QuoteRequest } from "./requestModels/QuoteRequest";
 import { runTx } from "../utils/TxUtils";
+import { getDummyLiquidationSig } from "../utils/SignatureUtils";
+import { LiquidationSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet";
 
 export class User {
   constructor(private context: RunContext, private signer: SignerWithAddress) {
@@ -138,24 +140,14 @@ export class User {
     return this.signer.getAddress();
   }
 
-  public async getUpnl(priceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
-    let openPositions: QuoteStructOutput[] = [];
-    const pageSize = 30;
-    let last = 0;
-    while (true) {
-      let page = await this.context.viewFacet.getPartyAOpenPositions(
-        this.getAddress(),
-        last,
-        pageSize,
-      );
-      openPositions.push(...page);
-      if (page.length < pageSize) break;
-    }
-
+  public async getUpnl(symbolIdPriceFetcher: ((symbolId: BigNumber) => Promise<BigNumber>) | null = null,
+                       symbolNamePriceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
+    let openPositions = await this.getOpenPositions();
     let upnl = BigNumber.from(0);
     for (const pos of openPositions) {
       const priceDiff = pos.openedPrice.sub(
-        await priceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
+        symbolIdPriceFetcher != null ? await symbolIdPriceFetcher(pos.symbolId) :
+          await symbolNamePriceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
       );
       const amount = pos.quantity.sub(pos.closedAmount);
       upnl = upnl.add(
@@ -165,24 +157,14 @@ export class User {
     return upnl;
   }
 
-  public async getTotalUnrealisedLoss(priceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
-    let openPositions: QuoteStructOutput[] = [];
-    const pageSize = 30;
-    let last = 0;
-    while (true) {
-      let page = await this.context.viewFacet.getPartyAOpenPositions(
-        this.getAddress(),
-        last,
-        pageSize,
-      );
-      openPositions.push(...page);
-      if (page.length < pageSize) break;
-    }
-
+  public async getTotalUnrealisedLoss(symbolIdPriceFetcher: ((symbolId: BigNumber) => Promise<BigNumber>) | null = null,
+                                      symbolNamePriceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
+    let openPositions = await this.getOpenPositions();
     let upnl = BigNumber.from(0);
     for (const pos of openPositions) {
       const priceDiff = pos.openedPrice.sub(
-        await priceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
+        symbolIdPriceFetcher != null ? await symbolIdPriceFetcher(pos.symbolId) :
+          await symbolNamePriceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
       );
       const amount = pos.quantity.sub(pos.closedAmount);
       upnl = upnl.add(
@@ -209,6 +191,62 @@ export class User {
     }
     return available;
   }
+
+  public async liquidateAndSetSymbolPrices(
+    symbolIds: BigNumberish[],
+    prices: BigNumber[],
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ): Promise<LiquidationSigStruct> {
+    const upnl = await this.getUpnl(getPriceFetcher(symbolIds, prices));
+    const totalUnrealizedLoss = await this.getTotalUnrealisedLoss(getPriceFetcher(symbolIds, prices));
+    const sign = await getDummyLiquidationSig("0x10", upnl, symbolIds, prices, totalUnrealizedLoss);
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .liquidatePartyA(this.getAddress(), sign);
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .setSymbolsPrice(
+        this.getAddress(),
+        sign,
+      );
+    return sign;
+  }
+
+  public async liquidatePendingPositions(
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ) {
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .liquidatePendingPositionsPartyA(this.getAddress());
+  }
+
+  public async liquidatePositions(
+    positions: BigNumberish[] = [],
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ) {
+    if (positions.length == 0)
+      positions = (await this.getOpenPositions()).map(value => value.id);
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .liquidatePositionsPartyA(this.getAddress(), positions);
+  }
+
+  public async getOpenPositions(): Promise<QuoteStructOutput[]> {
+    let openPositions: QuoteStructOutput[] = [];
+    const pageSize = 30;
+    let last = 0;
+    while (true) {
+      let page = await this.context.viewFacet.getPartyAOpenPositions(
+        this.getAddress(),
+        last,
+        pageSize,
+      );
+      openPositions.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return openPositions;
+  }
+
 }
 
 export interface BalanceInfo {
