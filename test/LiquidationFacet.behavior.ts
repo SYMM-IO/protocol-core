@@ -2,11 +2,11 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 
 import { initializeFixture } from "./Initialize.fixture";
-import { PositionType, QuoteStatus } from "./models/Enums";
+import { LiquidationType, PositionType, QuoteStatus } from "./models/Enums";
 import { Hedger } from "./models/Hedger";
 import { RunContext } from "./models/RunContext";
 import { BalanceInfo, User } from "./models/User";
-import { decimal, getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes } from "./utils/Common";
+import { decimal, getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes, unDecimal } from "./utils/Common";
 import { getDummyLiquidationSig, getDummySingleUpnlSig } from "./utils/SignatureUtils";
 import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest";
 import { LiquidationSigStruct } from "../src/types/contracts/facets/liquidation/LiquidationFacet";
@@ -109,7 +109,6 @@ export function shouldBehaveLikeLiquidationFacet(): void {
     });
 
     it("Should fail to liquidate a user twice", async function() {
-      const context: RunContext = this.context;
       await this.user.liquidateAndSetSymbolPrices([1], [decimal(8)]);
 
       await expect(
@@ -117,10 +116,13 @@ export function shouldBehaveLikeLiquidationFacet(): void {
       ).to.be.revertedWith("Accessibility: PartyA isn't solvent");
     });
 
-    describe("Liquidate Positions", async function() {
+    describe("Test normal branch", async function() {
+      const price = decimal(572, 16);
+
       beforeEach(async function() {
-        this.signature1 = await this.user.liquidateAndSetSymbolPrices([1], [decimal(591, 16)]);
-        // this.signature2 = await this.user2.liquidateAndSetSymbolPrices([1], [decimal(200)]);
+        this.signature1 = await this.user.liquidateAndSetSymbolPrices([1], [price]);
+        const liquidationState = await this.user.getLiquidatedStateOfPartyA();
+        expect(liquidationState["liquidationType"]).to.be.equal(LiquidationType.NORMAL);
       });
 
       it("Should fail on invalid state", async function() {
@@ -164,16 +166,62 @@ export function shouldBehaveLikeLiquidationFacet(): void {
           const context: RunContext = this.context;
           let user = context.signers.user.getAddress();
           let hedger = context.signers.hedger.getAddress();
-          await context.liquidationFacet
-            .connect(context.signers.liquidator)
-            .settlePartyALiquidation(user, [hedger]);
+
+          const hedgerBalance = await this.hedger.getBalanceInfo(await this.user.getAddress());
+          const userBalance = await this.user.getBalanceInfo();
+          const available = userBalance.allocatedBalances.sub(userBalance.lockedCva);
+          const pnl = unDecimal(price.sub(decimal(1)).mul(decimal(100)));
+          const diff = available.sub(pnl);
+          const partyBAfter = hedgerBalance.allocatedBalances.add(pnl).add(userBalance.lockedCva);
+
+          await this.user.settleLiquidation();
           expect(await context.viewFacet.allocatedBalanceOfPartyB(hedger, user)).to.be.equal(
-            decimal(856),
+            partyBAfter,
           );
           let balanceInfoOfLiquidator = await this.liquidator.getBalanceInfo();
-          expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(decimal(0));
+          expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(diff);
         });
       });
+    });
+
+    describe("Test late branches", async function() {
+      it("Late liquidation", async function() {
+        const price = decimal(594, 16);
+        await this.user.liquidateAndSetSymbolPrices([1], [price]);
+        const liquidationState = await this.user.getLiquidatedStateOfPartyA();
+        expect(liquidationState["liquidationType"]).to.be.equal(LiquidationType.LATE);
+
+        const hedgerBalance = await this.hedger.getBalanceInfo(await this.user.getAddress());
+        const userBalance = await this.user.getBalanceInfo();
+        const available = userBalance.allocatedBalances.sub(userBalance.lockedCva);
+        const pnl = unDecimal(price.sub(decimal(1)).mul(decimal(100)));
+        const diff = available.sub(pnl);
+        const partyBAfter = hedgerBalance.allocatedBalances.add(pnl).add(userBalance.lockedCva).add(diff);
+
+        await this.user.liquidatePendingPositions();
+        await this.user.liquidatePositions([1]);
+        await this.user.settleLiquidation();
+        expect((await this.hedger.getBalanceInfo(await this.user.getAddress())).allocatedBalances)
+          .to.be.equal(partyBAfter);
+        let balanceInfoOfLiquidator = await this.liquidator.getBalanceInfo();
+        expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(decimal(0));
+      });
+
+      it("Overdue liquidation", async function() {
+        await this.user.liquidateAndSetSymbolPrices([1], [decimal(599, 16)]);
+        const liquidationState = await this.user.getLiquidatedStateOfPartyA();
+        expect(liquidationState["liquidationType"]).to.be.equal(LiquidationType.OVERDUE);
+        await this.user.liquidatePendingPositions();
+        await this.user.liquidatePositions([1]);
+        await this.user.settleLiquidation();
+
+        expect(await this.context.viewFacet.allocatedBalanceOfPartyB(this.hedger.getAddress(), this.user.getAddress())).to.be.equal(
+          decimal(856),
+        );
+        let balanceInfoOfLiquidator = await this.liquidator.getBalanceInfo();
+        expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(decimal(0));
+      });
+
     });
   });
 
