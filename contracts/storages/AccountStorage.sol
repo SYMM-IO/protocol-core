@@ -14,7 +14,8 @@ enum LiquidationType {
 }
 
 struct SettlementState {
-    int256 amount;
+    int256 actualAmount; 
+    int256 expectedAmount; 
     uint256 cva;
     bool pending;
 }
