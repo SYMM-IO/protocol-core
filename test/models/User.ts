@@ -247,6 +247,19 @@ export class User {
     return openPositions;
   }
 
+  public async settleLiquidation(
+    partyB: SignerWithAddress = this.context.signers.hedger,
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ): Promise<void> {
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .settlePartyALiquidation(await this.getAddress(), [await partyB.getAddress()]);
+  }
+
+  public async getLiquidatedStateOfPartyA() {
+    return this.context.viewFacet.getLiquidatedStateOfPartyA(await this.getAddress());
+  }
+
 }
 
 export interface BalanceInfo {
