@@ -28,7 +28,7 @@ library LibPartyB {
         );
         require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
         require(
-            uint256(availableBalance) >= quote.lockedValues.total(),
+            uint256(availableBalance) >= quote.lockedValues.totalForPartyB(),
             "PartyBFacet: insufficient available balance"
         );
         require(
