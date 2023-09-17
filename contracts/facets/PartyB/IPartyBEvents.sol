@@ -38,11 +38,11 @@ interface IPartyBEvents {
         uint256 marketPrice,
         uint256 quantity,
         uint256 cva,
-        uint256 mm,
         uint256 lf,
+        uint256 partyAmm,
+        uint256 partyBmm,
         uint256 maxFundingRate,
-        uint256 deadline,
-        QuoteStatus quoteStatus
+        uint256 deadline
     );
 
     event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId);

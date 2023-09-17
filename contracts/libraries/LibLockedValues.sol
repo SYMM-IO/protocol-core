@@ -9,8 +9,9 @@ import "../storages/QuoteStorage.sol";
 
 struct LockedValues {
     uint256 cva;
-    uint256 mm;
     uint256 lf;
+    uint256 partyAmm;
+    uint256 partyBmm;
 }
 
 library LockedValuesOps {
@@ -21,7 +22,8 @@ library LockedValuesOps {
         returns (LockedValues storage)
     {
         self.cva = self.cva.add(a.cva);
-        self.mm = self.mm.add(a.mm);
+        self.partyAmm = self.partyAmm.add(a.partyAmm);
+        self.partyBmm = self.partyBmm.add(a.partyBmm);
         self.lf = self.lf.add(a.lf);
         return self;
     }
@@ -38,7 +40,8 @@ library LockedValuesOps {
         returns (LockedValues storage)
     {
         self.cva = self.cva.sub(a.cva);
-        self.mm = self.mm.sub(a.mm);
+        self.partyAmm = self.partyAmm.sub(a.partyAmm);
+        self.partyBmm = self.partyBmm.sub(a.partyBmm);
         self.lf = self.lf.sub(a.lf);
         return self;
     }
@@ -52,18 +55,24 @@ library LockedValuesOps {
 
     function makeZero(LockedValues storage self) internal returns (LockedValues storage) {
         self.cva = 0;
-        self.mm = 0;
+        self.partyAmm = 0;
+        self.partyBmm = 0;
         self.lf = 0;
         return self;
     }
 
-    function total(LockedValues memory self) internal pure returns (uint256) {
-        return self.cva + self.mm + self.lf;
+    function totalForPartyA(LockedValues memory self) internal pure returns (uint256) {
+        return self.cva + self.partyAmm + self.lf;
+    }
+
+    function totalForPartyB(LockedValues memory self) internal pure returns (uint256) {
+        return self.cva + self.partyBmm + self.lf;
     }
 
     function mul(LockedValues storage self, uint256 a) internal returns (LockedValues storage) {
         self.cva = self.cva.mul(a);
-        self.mm = self.mm.mul(a);
+        self.partyAmm = self.partyAmm.mul(a);
+        self.partyBmm = self.partyBmm.mul(a);
         self.lf = self.lf.mul(a);
         return self;
     }
@@ -75,15 +84,17 @@ library LockedValuesOps {
     {
         LockedValues memory lockedValues = LockedValues(
             self.cva.mul(a),
-            self.mm.mul(a),
-            self.lf.mul(a)
+            self.lf.mul(a),
+            self.partyAmm.mul(a),
+            self.partyBmm.mul(a)
         );
         return lockedValues;
     }
 
     function div(LockedValues storage self, uint256 a) internal returns (LockedValues storage) {
         self.cva = self.cva.div(a);
-        self.mm = self.mm.div(a);
+        self.partyAmm = self.partyAmm.div(a);
+        self.partyBmm = self.partyBmm.div(a);
         self.lf = self.lf.div(a);
         return self;
     }
@@ -95,8 +106,9 @@ library LockedValuesOps {
     {
         LockedValues memory lockedValues = LockedValues(
             self.cva.div(a),
-            self.mm.div(a),
-            self.lf.div(a)
+            self.lf.div(a),
+            self.partyAmm.div(a),
+            self.partyBmm.div(a)
         );
         return lockedValues;
     }

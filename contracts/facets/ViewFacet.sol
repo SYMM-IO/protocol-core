@@ -52,13 +52,13 @@ contract ViewFacet {
             maLayout.liquidationStatus[partyA],
             accountLayout.allocatedBalances[partyA],
             accountLayout.lockedBalances[partyA].cva,
-            accountLayout.lockedBalances[partyA].mm,
             accountLayout.lockedBalances[partyA].lf,
-            accountLayout.lockedBalances[partyA].total(),
+            accountLayout.lockedBalances[partyA].partyAmm,
+            accountLayout.lockedBalances[partyA].partyBmm,
             accountLayout.pendingLockedBalances[partyA].cva,
-            accountLayout.pendingLockedBalances[partyA].mm,
             accountLayout.pendingLockedBalances[partyA].lf,
-            accountLayout.pendingLockedBalances[partyA].total(),
+            accountLayout.pendingLockedBalances[partyA].partyAmm,
+            accountLayout.pendingLockedBalances[partyA].partyBmm,
             quoteLayout.partyAPositionsCount[partyA],
             quoteLayout.partyAPendingQuotes[partyA].length,
             accountLayout.partyANonces[partyA],
@@ -77,13 +77,13 @@ contract ViewFacet {
         return (
             accountLayout.allocatedBalances[partyA],
             accountLayout.lockedBalances[partyA].cva,
-            accountLayout.lockedBalances[partyA].mm,
             accountLayout.lockedBalances[partyA].lf,
-            accountLayout.lockedBalances[partyA].total(),
+            accountLayout.lockedBalances[partyA].partyAmm,
+            accountLayout.lockedBalances[partyA].partyBmm,
             accountLayout.pendingLockedBalances[partyA].cva,
-            accountLayout.pendingLockedBalances[partyA].mm,
             accountLayout.pendingLockedBalances[partyA].lf,
-            accountLayout.pendingLockedBalances[partyA].total()
+            accountLayout.pendingLockedBalances[partyA].partyAmm,
+            accountLayout.pendingLockedBalances[partyA].partyBmm
         );
     }
 
@@ -99,13 +99,13 @@ contract ViewFacet {
         return (
             accountLayout.partyBAllocatedBalances[partyB][partyA],
             accountLayout.partyBLockedBalances[partyB][partyA].cva,
-            accountLayout.partyBLockedBalances[partyB][partyA].mm,
             accountLayout.partyBLockedBalances[partyB][partyA].lf,
-            accountLayout.partyBLockedBalances[partyB][partyA].total(),
+            accountLayout.partyBLockedBalances[partyB][partyA].partyAmm,
+            accountLayout.partyBLockedBalances[partyB][partyA].partyBmm,
             accountLayout.partyBPendingLockedBalances[partyB][partyA].cva,
-            accountLayout.partyBPendingLockedBalances[partyB][partyA].mm,
             accountLayout.partyBPendingLockedBalances[partyB][partyA].lf,
-            accountLayout.partyBPendingLockedBalances[partyB][partyA].total()
+            accountLayout.partyBPendingLockedBalances[partyB][partyA].partyAmm,
+            accountLayout.partyBPendingLockedBalances[partyB][partyA].partyBmm
         );
     }
 

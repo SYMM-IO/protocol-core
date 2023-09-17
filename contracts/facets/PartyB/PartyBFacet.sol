@@ -8,10 +8,9 @@ import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
 import "./IPartyBEvents.sol";
 import "../../storages/MuonStorage.sol";
-import "../Account/IAccountEvents.sol";
 import "../Account/AccountFacetImpl.sol";
 
-contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
+contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
     using LockedValuesOps for LockedValues;
 
     function lockQuote(
@@ -61,11 +60,11 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.marketPrice,
                     newQuote.quantity,
                     newQuote.lockedValues.cva,
-                    newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
+                    newQuote.lockedValues.partyAmm,
+                    newQuote.lockedValues.partyBmm,
                     newQuote.maxFundingRate,
-                    newQuote.deadline,
-                    newQuote.quoteStatus
+                    newQuote.deadline
                 );
             } else if (newQuote.quoteStatus == QuoteStatus.CANCELED) {
                 emit AcceptCancelRequest(newQuote.id, QuoteStatus.CANCELED);
@@ -122,11 +121,11 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.marketPrice,
                     newQuote.quantity,
                     newQuote.lockedValues.cva,
-                    newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
+                    newQuote.lockedValues.partyAmm,
+                    newQuote.lockedValues.partyBmm,
                     newQuote.maxFundingRate,
-                    newQuote.deadline,
-                    newQuote.quoteStatus
+                    newQuote.deadline
                 );
             } else if (newQuote.quoteStatus == QuoteStatus.CANCELED) {
                 emit AcceptCancelRequest(newQuote.id, QuoteStatus.CANCELED);
