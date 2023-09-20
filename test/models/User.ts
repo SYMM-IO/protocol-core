@@ -6,7 +6,6 @@ import { PromiseOrValue } from "../../src/types/common";
 import { serializeToJson, unDecimal } from "../utils/Common";
 import { logger } from "../utils/LoggerUtils";
 import { getPrice } from "../utils/PriceUtils";
-import { getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils";
 import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet";
 import { PositionType } from "./Enums";
 import { RunContext } from "./RunContext";
@@ -62,8 +61,9 @@ export class User {
         request.price,
         request.quantity,
         request.cva,
-        request.mm,
         request.lf,
+        request.partyAmm,
+        request.partyBmm,
         request.maxFundingRate,
         request.deadline,
         await request.upnlSig,
@@ -90,13 +90,17 @@ export class User {
     return {
       allocatedBalances: b[0],
       lockedCva: b[1],
-      lockedMm: b[2],
-      lockedLf: b[3],
-      totalLocked: b[4],
+      lockedLf: b[2],
+      lockedMmPartyA: b[3],
+      lockedMmPartyB: b[4],
+      totalLockedPartyA: b[1].add(b[2]).add(b[3]),
+      totalLockedPartyB: b[1].add(b[2]).add(b[4]),
       pendingLockedCva: b[5],
-      pendingLockedMm: b[6],
-      pendingLockedLf: b[7],
-      totalPendingLocked: b[8],
+      pendingLockedLf: b[6],
+      pendingLockedMmPartyA: b[7],
+      pendingLockedMmPartyB: b[8],
+      totalPendingLockedPartyA: b[5].add(b[6]).add(b[7]),
+      totalPendingLockedPartyB: b[5].add(b[6]).add(b[8]),
     };
   }
 
@@ -172,13 +176,13 @@ export class User {
     if (upnl.gt(0)) {
       available = balanceInfo.allocatedBalances
         .add(upnl)
-        .sub(balanceInfo.totalLocked.add(balanceInfo.totalPendingLocked));
+        .sub(balanceInfo.totalLockedPartyA.add(balanceInfo.totalPendingLockedPartyA));
     } else {
-      let mm = balanceInfo.lockedMm;
+      let mm = balanceInfo.lockedMmPartyA;
       let mUpnl = upnl.mul(-1);
       let considering_mm = mUpnl.gt(mm) ? mUpnl : mm;
       available = balanceInfo.allocatedBalances
-        .sub(balanceInfo.lockedCva.add(balanceInfo.lockedLf).add(balanceInfo.totalPendingLocked))
+        .sub(balanceInfo.lockedCva.add(balanceInfo.lockedLf).add(balanceInfo.totalPendingLockedPartyA))
         .sub(considering_mm);
     }
     return available;
@@ -188,11 +192,15 @@ export class User {
 export interface BalanceInfo {
   allocatedBalances: BigNumber;
   lockedCva: BigNumber;
-  lockedMm: BigNumber;
+  lockedMmPartyA: BigNumber;
+  lockedMmPartyB: BigNumber;
   lockedLf: BigNumber;
-  totalLocked: BigNumber;
+  totalLockedPartyA: BigNumber;
+  totalLockedPartyB: BigNumber;
   pendingLockedCva: BigNumber;
-  pendingLockedMm: BigNumber;
+  pendingLockedMmPartyA: BigNumber;
+  pendingLockedMmPartyB: BigNumber;
   pendingLockedLf: BigNumber;
-  totalPendingLocked: BigNumber;
+  totalPendingLockedPartyA: BigNumber;
+  totalPendingLockedPartyB: BigNumber;
 }

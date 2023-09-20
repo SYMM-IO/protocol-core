@@ -17,8 +17,8 @@ import { getPrice } from "../utils/PriceUtils";
 import { pick, randomBigNumber, randomBigNumberRatio } from "../utils/RandomUtils";
 import { roundToPrecision, safeDiv } from "../utils/SafeMath";
 import { getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils";
-import { QuoteStructOutput } from "./../../src/types/contracts/facets/ViewFacet";
-import { SymbolStructOutput } from "./../../src/types/contracts/facets/control/ControlFacet";
+import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet";
+import { SymbolStructOutput } from "../../src/types/contracts/facets/control/ControlFacet";
 import { Action, actionNamesMap, ActionWrapper, expandActions, userActionsMap } from "./Actions";
 import { OrderType, PositionType, QuoteStatus } from "./Enums";
 import { ManagedError } from "./ManagedError";
@@ -312,7 +312,8 @@ export class UserController {
       Builder<QuoteRequest>()
         .partyBWhiteList([])
         .quantity(quantity)
-        .mm(mm)
+        .partyAmm(mm)
+        .partyBmm(mm.div(2))
         .cva(cva)
         .lf(lf)
         .symbolId(symbol.symbolId)

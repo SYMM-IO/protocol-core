@@ -2,7 +2,11 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 
 import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet";
-import { getTotalLockedValuesForQuotes, unDecimal } from "../../utils/Common";
+import {
+  getTotalPartyALockedValuesForQuotes,
+  getTotalPartyBLockedValuesForQuotes,
+  unDecimal,
+} from "../../utils/Common";
 import { logger } from "../../utils/LoggerUtils";
 import { PositionType, QuoteStatus } from "../Enums";
 import { Hedger } from "../Hedger";
@@ -64,8 +68,11 @@ export class FillCloseRequestValidator implements TransactionValidator {
     expect(newQuote.closedAmount).to.be.equal(oldQuote.closedAmount.add(arg.fillAmount));
     expect(newQuote.quantityToClose).to.be.equal(oldQuote.quantityToClose.sub(arg.fillAmount));
 
-    const oldLockedValues = await getTotalLockedValuesForQuotes([oldQuote]);
-    const newLockedValues = await getTotalLockedValuesForQuotes([newQuote]);
+    const oldLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([oldQuote]);
+    const newLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([newQuote]);
+
+    const oldLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([oldQuote]);
+    const newLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([newQuote]);
 
     let profit;
     if (newQuote.positionType == PositionType.LONG) {
@@ -74,18 +81,19 @@ export class FillCloseRequestValidator implements TransactionValidator {
       profit = unDecimal(newQuote.openedPrice.sub(arg.closePrice).mul(arg.fillAmount));
     }
 
-    let returnedLockedValues = oldLockedValues.mul(arg.fillAmount).div(oldQuote.quantity);
+    let returnedLockedValuesPartyA = oldLockedValuesPartyA.mul(arg.fillAmount).div(oldQuote.quantity);
+    let returnedLockedValuesPartyB = oldLockedValuesPartyB.mul(arg.fillAmount).div(oldQuote.quantity);
 
     // Check Balances partyA
     const newBalanceInfoPartyA = await arg.user.getBalanceInfo();
     const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA;
 
-    expect(newBalanceInfoPartyA.totalPendingLocked).to.be.equal(
-      oldBalanceInfoPartyA.totalPendingLocked.toString(),
+    expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
     );
     expectToBeApproximately(
-      newBalanceInfoPartyA.totalLocked,
-      oldBalanceInfoPartyA.totalLocked.sub(returnedLockedValues),
+      newBalanceInfoPartyA.totalLockedPartyA,
+      oldBalanceInfoPartyA.totalLockedPartyA.sub(returnedLockedValuesPartyA),
     );
     expectToBeApproximately(
       newBalanceInfoPartyA.allocatedBalances,
@@ -96,12 +104,12 @@ export class FillCloseRequestValidator implements TransactionValidator {
     const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress());
     const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB;
 
-    expect(newBalanceInfoPartyB.totalPendingLocked).to.be.equal(
-      oldBalanceInfoPartyB.totalPendingLocked.toString(),
+    expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(
+      oldBalanceInfoPartyB.totalPendingLockedPartyB.toString(),
     );
     expectToBeApproximately(
-      newBalanceInfoPartyB.totalLocked,
-      oldBalanceInfoPartyB.totalLocked.sub(returnedLockedValues),
+      newBalanceInfoPartyB.totalLockedPartyB,
+      oldBalanceInfoPartyB.totalLockedPartyB.sub(returnedLockedValuesPartyB),
     );
     expectToBeApproximately(
       newBalanceInfoPartyB.allocatedBalances,

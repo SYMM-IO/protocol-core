@@ -19,7 +19,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
     ) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, true);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit LockQuote(quote.partyB, quoteId, quote.quoteStatus);
+        emit LockQuote(quote.partyB, quoteId);
     }
 
     function lockAndOpenQuote(
@@ -31,7 +31,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
     ) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, false);
-        emit LockQuote(quote.partyB, quoteId, quote.quoteStatus);
+        emit LockQuote(quote.partyB, quoteId);
         uint256 newId = PartyBFacetImpl.openPosition(
             quoteId,
             filledAmount,
@@ -43,8 +43,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
             quote.partyA,
             quote.partyB,
             filledAmount,
-            openedPrice,
-            QuoteStatus.OPENED
+            openedPrice
         );
         if (newId != 0) {
             Quote storage newQuote = QuoteStorage.layout().quotes[newId];
@@ -104,8 +103,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
             quote.partyA,
             quote.partyB,
             filledAmount,
-            openedPrice,
-            QuoteStatus.OPENED
+            openedPrice
         );
         if (newId != 0) {
             Quote storage newQuote = QuoteStorage.layout().quotes[newId];
