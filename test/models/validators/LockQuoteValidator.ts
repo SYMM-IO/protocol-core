@@ -5,7 +5,7 @@ import { QuoteStatus } from "../Enums";
 import { Hedger } from "../Hedger";
 import { RunContext } from "../RunContext";
 import { BalanceInfo, User } from "../User";
-import { logger } from "./../../utils/LoggerUtils";
+import { logger } from "../../utils/LoggerUtils";
 import { TransactionValidator } from "./TransactionValidator";
 
 export type LockQuoteValidatorBeforeArg = {
@@ -39,8 +39,8 @@ export class LockQuoteValidator implements TransactionValidator {
     const newBalanceInfo = await arg.user.getBalanceInfo();
     const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA;
 
-    expect(newBalanceInfo.totalPendingLocked).to.be.equal(
-      oldBalanceInfo.totalPendingLocked.toString(),
+    expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfo.totalPendingLockedPartyA.toString(),
     );
     expect(newBalanceInfo.allocatedBalances).to.be.equal(
       oldBalanceInfo.allocatedBalances.toString(),

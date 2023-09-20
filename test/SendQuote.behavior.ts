@@ -23,13 +23,13 @@ export function shouldBehaveLikeSendQuote(): void {
     const context: RunContext = this.context;
     await pausePartyA(context);
     await expect(
-      this.user.sendQuote(limitQuoteRequestBuilder().quantity(50).cva(50).mm(1).lf(100).build()),
+      this.user.sendQuote(limitQuoteRequestBuilder().quantity(50).cva(50).partyAmm(1).lf(100).build()),
     ).to.be.revertedWith("Pausable: PartyA actions paused");
   });
 
   it("Should fail on leverage being lower than one", async function() {
     await expect(
-      this.user.sendQuote(limitQuoteRequestBuilder().quantity(50).cva(50).mm(1).lf(100).build()),
+      this.user.sendQuote(limitQuoteRequestBuilder().quantity(50).cva(50).partyAmm(1).lf(100).build()),
     ).to.be.revertedWith("PartyAFacet: Leverage can't be lower than one");
 
     await expect(
@@ -37,7 +37,7 @@ export function shouldBehaveLikeSendQuote(): void {
         limitQuoteRequestBuilder()
           .quantity(decimal(0))
           .cva(decimal(3))
-          .mm(decimal(75))
+          .partyAmm(decimal(75))
           .lf(decimal(22))
           .build(),
       ),
@@ -51,7 +51,7 @@ export function shouldBehaveLikeSendQuote(): void {
           .symbolId(2)
           .quantity(decimal(0))
           .cva(decimal(3))
-          .mm(decimal(75))
+          .partyAmm(decimal(75))
           .lf(decimal(22))
           .build(),
       ),
@@ -64,7 +64,7 @@ export function shouldBehaveLikeSendQuote(): void {
         limitQuoteRequestBuilder()
           .quantity(decimal(100))
           .cva(decimal(1))
-          .mm(decimal(1))
+          .partyAmm(decimal(1))
           .lf(decimal(0))
           .build(),
       ),
@@ -77,7 +77,7 @@ export function shouldBehaveLikeSendQuote(): void {
         limitQuoteRequestBuilder()
           .quantity(decimal(50))
           .cva(decimal(1))
-          .mm(decimal(1))
+          .partyAmm(decimal(1))
           .lf(decimal(1))
           .build(),
       ),
@@ -91,7 +91,7 @@ export function shouldBehaveLikeSendQuote(): void {
           .partyBWhiteList([this.user.getAddress()])
           .quantity(decimal(50))
           .cva(decimal(3))
-          .mm(decimal(5))
+          .partyAmm(decimal(5))
           .lf(decimal(5))
           .build(),
       ),
@@ -105,7 +105,7 @@ export function shouldBehaveLikeSendQuote(): void {
           .price(decimal(16))
           .quantity(decimal(500))
           .cva(decimal(120))
-          .mm(this.user_allocated)
+          .partyAmm(this.user_allocated)
           .lf(decimal(50))
           .upnlSig(getDummySingleUpnlAndPriceSig(decimal(16)))
           .build(),
@@ -117,7 +117,7 @@ export function shouldBehaveLikeSendQuote(): void {
         limitQuoteRequestBuilder()
           .quantity(decimal(1600))
           .cva(decimal(250))
-          .mm(this.user_allocated)
+          .partyAmm(this.user_allocated)
           .lf(decimal(60))
           .build(),
       ),
