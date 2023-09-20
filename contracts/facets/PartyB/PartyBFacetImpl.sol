@@ -315,7 +315,7 @@ library PartyBFacetImpl {
         PairUpnlSig memory upnlSig
     ) internal {
         LibMuon.verifyPairUpnl(upnlSig, msg.sender, partyA);
-        require(quoteIds.length == rates.length, "PartyBFacet: Length not match");
+        require(quoteIds.length == rates.length && quoteIds.length > 0, "PartyBFacet: Length not match");
         int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(
             upnlSig.upnlPartyB,
             msg.sender,
