@@ -52,7 +52,10 @@ library PartyAFacetImpl {
             lockedValues.totalForPartyA() <= notionalValue,
             "PartyAFacet: Leverage can't be lower than one"
         );
-        // TODO: should we check for partyB
+        require(
+            lockedValues.totalForPartyB() <= notionalValue,
+            "PartyAFacet: Leverage for partyB can't be lower than one"
+        );
         require(
             lockedValues.lf >=
                 (symbolLayout.symbols[symbolId].minAcceptablePortionLF * lockedValues.totalForPartyA()) /
