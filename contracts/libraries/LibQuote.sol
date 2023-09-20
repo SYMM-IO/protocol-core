@@ -132,9 +132,9 @@ library LibQuote {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 
-        require(quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
-        require(quote.lockedValues.partyAmm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
-        require(quote.lockedValues.partyBmm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.cva == 0 || quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.partyAmm == 0 || quote.lockedValues.partyAmm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.partyBmm == 0 || quote.lockedValues.partyBmm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         require(quote.lockedValues.lf * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         LockedValues memory lockedValues = LockedValues(
             quote.lockedValues.cva -
