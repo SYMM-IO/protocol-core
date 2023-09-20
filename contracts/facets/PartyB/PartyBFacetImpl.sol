@@ -86,6 +86,10 @@ library PartyBFacetImpl {
             SymbolStorage.layout().symbols[quote.symbolId].isValid,
             "PartyBFacet: Symbol is not valid"
         );
+        require(
+            !AccountStorage.layout().suspendedAddresses[msg.sender],
+            "PartyBFacet: Sender is Suspended"
+        );
 
         require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
         require(!GlobalAppStorage.layout().emergencyMode, "PartyBFacet: System is in emergency mode");
