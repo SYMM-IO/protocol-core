@@ -36,8 +36,8 @@ export class UnlockQuoteValidator implements TransactionValidator {
     logger.debug("After UnlockQuoteValidator...");
     const newBalanceInfo = await arg.user.getBalanceInfo();
     const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA;
-    expect(newBalanceInfo.totalPendingLocked).to.be.equal(
-      oldBalanceInfo.totalPendingLocked.toString(),
+    expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfo.totalPendingLockedPartyA.toString(),
     );
     expect(newBalanceInfo.allocatedBalances).to.be.equal(
       oldBalanceInfo.allocatedBalances.toString(),

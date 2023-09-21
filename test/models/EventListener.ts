@@ -99,11 +99,7 @@ export class EventListener {
     context.partyBFacet.on(Event.SEND_QUOTE, async (...args) => {
       let value: SendQuoteEventObject = args[args.length - 1].args;
       this.eventTrackQueues.get(Event.SEND_QUOTE)!.next(value);
-      if (value.quoteStatus == QuoteStatus.PENDING) {
-        this.queues.get(QuoteStatus.PENDING)!.next(value.quoteId);
-      } else {
-        this.queues.get(QuoteStatus.CANCELED)!.next(value.quoteId);
-      }
+      this.queues.get(QuoteStatus.PENDING)!.next(value.quoteId);
     });
     context.partyAFacet.on(Event.REQUEST_TO_CANCEL_QUOTE, async (...args) => {
       let value: RequestToCancelQuoteEventObject = args[args.length - 1].args;

@@ -72,7 +72,7 @@ export async function getQuoteNotFilledAmount(
   return q.quantityToClose.sub(q.closedAmount);
 }
 
-export async function getTotalLockedValuesForQuotes(
+export async function getTotalPartyALockedValuesForQuotes(
   quotes: QuoteStructOutput[],
   includeMM: boolean = true,
   returnAfterOpened: boolean = true,
@@ -81,7 +81,26 @@ export async function getTotalLockedValuesForQuotes(
   for (const q of quotes) {
     let addition;
     addition = q.lockedValues.cva.add(q.lockedValues.lf);
-    if (includeMM) addition = addition.add(q.lockedValues.mm);
+    if (includeMM) addition = addition.add(q.lockedValues.partyAmm);
+    if (returnAfterOpened && q.orderType == OrderType.LIMIT) {
+      if (q.requestedOpenPrice.lt(q.openedPrice))
+        addition = addition.mul(q.openedPrice.div(q.requestedOpenPrice));
+    }
+    out = out.add(addition);
+  }
+  return out;
+}
+
+export async function getTotalPartyBLockedValuesForQuotes(
+  quotes: QuoteStructOutput[],
+  includeMM: boolean = true,
+  returnAfterOpened: boolean = true,
+): Promise<BigNumber> {
+  let out = BigNumber.from(0);
+  for (const q of quotes) {
+    let addition;
+    addition = q.lockedValues.cva.add(q.lockedValues.lf);
+    if (includeMM) addition = addition.add(q.lockedValues.partyBmm);
     if (returnAfterOpened && q.orderType == OrderType.LIMIT) {
       if (q.requestedOpenPrice.lt(q.openedPrice))
         addition = addition.mul(q.openedPrice.div(q.requestedOpenPrice));
@@ -99,7 +118,7 @@ export async function getTotalLockedValuesForQuoteIds(
 ): Promise<BigNumber> {
   let quotes = [];
   for (const quoteId of quoteIds) quotes.push(await context.viewFacet.getQuote(quoteId));
-  return getTotalLockedValuesForQuotes(quotes, includeMM, returnAfterOpened);
+  return getTotalPartyALockedValuesForQuotes(quotes, includeMM, returnAfterOpened);
 }
 
 export async function getTradingFeeForQuotes(
