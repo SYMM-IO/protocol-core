@@ -15,7 +15,6 @@ import {
   decimal,
   getTotalLockedValuesForQuoteIds,
   getTradingFeeForQuotes,
-  liquidatePartyA,
   pausePartyB,
 } from "./utils/Common";
 import { getDummySingleUpnlSig } from "./utils/SignatureUtils";
@@ -81,19 +80,9 @@ export function shouldBehaveLikeLockQuote(): void {
   });
 
   it("Should fail on liquidated partyA", async function() {
-    const context: RunContext = this.context;
     await this.hedger.lockQuote(2);
     await this.hedger.openPosition(2);
-    await liquidatePartyA(
-      context,
-      context.signers.user.getAddress(),
-      context.signers.liquidator,
-      this.user_allocated
-        .sub(await getTotalLockedValuesForQuoteIds(context, [2], false))
-        .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4, 5]))
-        .add(decimal(1))
-        .mul(-1),
-    );
+    await this.user.liquidateAndSetSymbolPrices([1],[decimal(200)]);
     await expect(this.hedger.lockQuote(1)).to.be.revertedWith(
       "Accessibility: PartyA isn't solvent",
     );

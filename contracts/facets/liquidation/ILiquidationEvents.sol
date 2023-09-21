@@ -8,7 +8,8 @@ interface ILiquidationEvents {
     event LiquidatePartyA(address liquidator, address partyA);
     event LiquidatePositionsPartyA(address liquidator, address partyA, uint256[] quoteIds);
     event LiquidatePendingPositionsPartyA(address liquidator, address partyA);
-    event FullyLiquidatedPartyA(address partyA);
+    event SettlePartyALiquidation(address partyA, address[] partyBs);
+    event LiquidationDisputed(address partyA);
     event LiquidatePartyB(address liquidator, address partyB, address partyA);
     event LiquidatePositionsPartyB(
         address liquidator,

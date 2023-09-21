@@ -126,7 +126,9 @@ contract ViewFacet {
     ) external view returns (uint256[] memory) {
         uint256[] memory allocatedBalances = new uint256[](partyBs.length);
         for (uint256 i = 0; i < partyBs.length; i++) {
-            allocatedBalances[i] = AccountStorage.layout().partyBAllocatedBalances[partyBs[i]][partyA];
+            allocatedBalances[i] = AccountStorage.layout().partyBAllocatedBalances[partyBs[i]][
+                partyA
+            ];
         }
         return allocatedBalances;
     }
@@ -147,8 +149,21 @@ contract ViewFacet {
         return AccountStorage.layout().suspendedAddresses[user];
     }
 
-    function getLiquidatedStateOfPartyA(address partyA) external view returns (LiquidationDetail memory){
+    function getLiquidatedStateOfPartyA(
+        address partyA
+    ) external view returns (LiquidationDetail memory) {
         return AccountStorage.layout().liquidationDetails[partyA];
+    }
+
+    function getSettlementStates(
+        address partyA,
+        address[] memory partyBs
+    ) external view returns (SettlementState[] memory) {
+        SettlementState[] memory states = new SettlementState[](partyBs.length);
+        for (uint256 i = 0; i < partyBs.length; i++) {
+            states[i] = AccountStorage.layout().settlementStates[partyA][partyBs[i]];
+        }
+        return states;
     }
 
     ///////////////////////////////////////////
