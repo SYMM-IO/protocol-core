@@ -107,7 +107,7 @@ contract MultiAccount is
                 salt
             )
         }
-        require(symmioAddress != address(0), "MultiAccount: create2 failed");
+        require(contractAddress != address(0), "MultiAccount: create2 failed");
         emit DeployContract(msg.sender, contractAddress);
         return contractAddress;
     }
