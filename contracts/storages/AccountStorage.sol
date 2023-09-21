@@ -13,6 +13,13 @@ enum LiquidationType {
     OVERDUE
 }
 
+struct SettlementState {
+    int256 actualAmount; 
+    int256 expectedAmount; 
+    uint256 cva;
+    bool pending;
+}
+
 struct LiquidationDetail {
     bytes liquidationId;
     LiquidationType liquidationType;
@@ -21,6 +28,9 @@ struct LiquidationDetail {
     uint256 deficit;
     uint256 liquidationFee;
     uint256 timestamp;
+    uint256 involvedPartyBCounts;
+    int256 partyAAccumulatedUpnl;
+    bool disputed;
 }
 
 struct Price {
@@ -47,9 +57,10 @@ library AccountStorage {
         mapping(address => bool) suspendedAddresses;
         mapping(address => LiquidationDetail) liquidationDetails;
         mapping(address => mapping(uint256 => Price)) symbolsPrices;
-        mapping(address => int256) totalUnplForLiquidation;
         mapping(address => address[]) liquidators;
         mapping(address => uint256) partyAReimbursement;
+        // partyA => partyB => SettlementState
+        mapping(address => mapping(address => SettlementState)) settlementStates;
     }
 
     function layout() internal pure returns (Layout storage l) {

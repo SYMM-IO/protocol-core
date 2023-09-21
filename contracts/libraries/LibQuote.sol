@@ -152,9 +152,13 @@ library LibQuote {
         );
         quote.lockedValues = lockedValues;
 
-        if (LibQuote.quoteOpenAmount(quote) != quote.quantityToClose) {
-            require(quote.lockedValues.totalForPartyA() >= symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
-                "LibQuote: Remaining quote value is low");
+        if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {
+            require(
+                quote.lockedValues.totalForPartyA() == 0 ||
+                    quote.lockedValues.totalForPartyA() >=
+                    symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
+                "LibQuote: Remaining quote value is low"
+            );
         }
 
         (bool hasMadeProfit, uint256 pnl) = LibQuote.getValueOfQuoteForPartyA(
