@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/ISymmio.sol";
 import "../interfaces/ISymmioPartyA.sol";
 import "../interfaces/IMultiAccount.sol";
@@ -166,13 +167,15 @@ contract MultiAccount is
         );
         IERC20Upgradeable(collateral).safeApprove(symmioAddress, amount);
         ISymmio(symmioAddress).depositFor(account, amount);
+        uint256 amountWith18Decimals = (amount * 1e18) /
+            (10 ** IERC20Metadata(collateral).decimals());
         bytes memory _callData = abi.encodeWithSignature(
             "allocate(uint256)",
-            amount
+            amountWith18Decimals
         );
         innerCall(account, _callData);
-        emit AllocateForAccount(msg.sender, account, amount);
         emit DepositForAccount(msg.sender, account, amount);
+        emit AllocateForAccount(msg.sender, account, amountWith18Decimals);
     }
 
     function withdrawFromAccount(
