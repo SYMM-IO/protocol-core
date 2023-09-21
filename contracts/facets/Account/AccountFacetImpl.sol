@@ -131,7 +131,7 @@ library AccountFacetImpl {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         require(
             accountLayout.partyBAllocatedBalances[msg.sender][partyA] >= amount,
-            "PartyBFacet: Insufficient locked balance"
+            "PartyBFacet: Insufficient allocated balance"
         );
         LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
         int256 availableBalance = LibAccount.partyBAvailableForQuote(

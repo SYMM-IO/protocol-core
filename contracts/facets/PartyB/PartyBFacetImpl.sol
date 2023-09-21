@@ -86,6 +86,10 @@ library PartyBFacetImpl {
             SymbolStorage.layout().symbols[quote.symbolId].isValid,
             "PartyBFacet: Symbol is not valid"
         );
+        require(
+            !AccountStorage.layout().suspendedAddresses[msg.sender],
+            "PartyBFacet: Sender is Suspended"
+        );
 
         require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
         require(!GlobalAppStorage.layout().emergencyMode, "PartyBFacet: System is in emergency mode");
@@ -138,7 +142,7 @@ library PartyBFacetImpl {
 
             // check locked values
             require(
-                quote.lockedValues.total() >=
+                quote.lockedValues.totalForPartyA() >=
                 SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyBFacet: Quote value is low"
             );
@@ -155,21 +159,22 @@ library PartyBFacetImpl {
             }
             LockedValues memory filledLockedValues = LockedValues(
                 (quote.lockedValues.cva * filledAmount) / quote.quantity,
-                (quote.lockedValues.mm * filledAmount) / quote.quantity,
-                (quote.lockedValues.lf * filledAmount) / quote.quantity
+                (quote.lockedValues.lf * filledAmount) / quote.quantity,
+                (quote.lockedValues.partyAmm * filledAmount) / quote.quantity,
+                (quote.lockedValues.partyBmm * filledAmount) / quote.quantity
             );
             LockedValues memory appliedFilledLockedValues = filledLockedValues;
             appliedFilledLockedValues = appliedFilledLockedValues.mulMem(openedPrice);
             appliedFilledLockedValues = appliedFilledLockedValues.divMem(quote.requestedOpenPrice);
             // check that opened position is not minor position
             require(
-                appliedFilledLockedValues.total() >=
+                appliedFilledLockedValues.totalForPartyA() >=
                     SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyBFacet: Quote value is low"
             );
             // check that new pending position is not minor position
             require(
-                (quote.lockedValues.total() - filledLockedValues.total()) >=
+                (quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
                     SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyBFacet: Quote value is low"
             );
@@ -186,8 +191,8 @@ library PartyBFacetImpl {
                 marketPrice: quote.marketPrice,
                 quantity: quote.quantity - filledAmount,
                 closedAmount: 0,
-                lockedValues: LockedValues(0, 0, 0),
-                initialLockedValues: LockedValues(0, 0, 0),
+                lockedValues: LockedValues(0, 0, 0, 0),
+                initialLockedValues: LockedValues(0, 0, 0, 0),
                 maxFundingRate: quote.maxFundingRate,
                 partyA: quote.partyA,
                 partyB: address(0),
@@ -233,7 +238,7 @@ library PartyBFacetImpl {
         LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
         // check leverage (is in 18 decimals)
         require(
-            quote.quantity * quote.openedPrice / quote.lockedValues.total() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
+            quote.quantity * quote.openedPrice / quote.lockedValues.totalForPartyA() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
             "PartyBFacet: Leverage is high"
         );
 
@@ -314,7 +319,7 @@ library PartyBFacetImpl {
         PairUpnlSig memory upnlSig
     ) internal {
         LibMuon.verifyPairUpnl(upnlSig, msg.sender, partyA);
-        require(quoteIds.length == rates.length, "PartyBFacet: Length not match");
+        require(quoteIds.length == rates.length && quoteIds.length > 0, "PartyBFacet: Length not match");
         int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(
             upnlSig.upnlPartyB,
             msg.sender,

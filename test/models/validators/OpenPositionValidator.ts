@@ -3,7 +3,11 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 
 import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet";
-import { getTotalLockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common";
+import {
+  getTotalPartyALockedValuesForQuotes,
+  getTotalPartyBLockedValuesForQuotes,
+  getTradingFeeForQuotes,
+} from "../../utils/Common";
 import { logger } from "../../utils/LoggerUtils";
 import { OrderType, QuoteStatus } from "../Enums";
 import { Hedger } from "../Hedger";
@@ -57,8 +61,11 @@ export class OpenPositionValidator implements TransactionValidator {
     expect(newQuote.openedPrice).to.be.equal(arg.openedPrice);
     expect(newQuote.quantity).to.be.equal(arg.fillAmount);
 
-    const oldLockedValues = await getTotalLockedValuesForQuotes([oldQuote]);
-    const newLockedValues = await getTotalLockedValuesForQuotes([newQuote]);
+    const oldLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([oldQuote]);
+    const newLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([newQuote]);
+
+    const oldLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([oldQuote]);
+    const newLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([newQuote]);
 
     const fillAmountCoef = new BN(arg.fillAmount.toString()).div(
       new BN(oldQuote.quantity.toString()),
@@ -75,42 +82,49 @@ export class OpenPositionValidator implements TransactionValidator {
     if (partially && arg.newQuoteId != null) {
       const newlyCreatedQuote = await context.viewFacet.getQuote(arg.newQuoteId!);
       expect(newlyCreatedQuote.quoteStatus).to.be.equal(arg.newQuoteTargetStatus!);
-      const lv = await getTotalLockedValuesForQuotes([newlyCreatedQuote]);
+      const lv = await getTotalPartyALockedValuesForQuotes([newlyCreatedQuote]);
       expect(newlyCreatedQuote.quantity).to.be.equal(oldQuote.quantity.sub(arg.fillAmount));
       expect(lv).to.be.equal(
-        new BN(oldLockedValues.toString()).times(new BN(1).minus(fillAmountCoef)).toString(),
+        new BN(oldLockedValuesPartyA.toString()).times(new BN(1).minus(fillAmountCoef)).toString(),
       );
     }
 
     const partialLockedValues = BigNumber.from(
-      new BN(oldLockedValues.toString()).times(fillAmountCoef).toFixed(0, BN.ROUND_DOWN).toString(),
+      new BN(oldLockedValuesPartyA.toString()).times(fillAmountCoef).toFixed(0, BN.ROUND_DOWN).toString(),
     );
-    const partialWithPriceLockedValues = BigNumber.from(
-      new BN(oldLockedValues.toString())
+    const partialWithPriceLockedValuesPartyA = BigNumber.from(
+      new BN(oldLockedValuesPartyA.toString())
         .times(fillAmountCoef)
         .times(priceCoef)
         .toFixed(0, BN.ROUND_DOWN)
         .toString(),
     );
-    expectToBeApproximately(newLockedValues, partialWithPriceLockedValues);
+    const partialWithPriceLockedValuesPartyB = BigNumber.from(
+      new BN(oldLockedValuesPartyB.toString())
+        .times(fillAmountCoef)
+        .times(priceCoef)
+        .toFixed(0, BN.ROUND_DOWN)
+        .toString(),
+    );
+    expectToBeApproximately(newLockedValuesPartyA, partialWithPriceLockedValuesPartyA);
 
     // Check Balances partyA
     const newBalanceInfoPartyA = await arg.user.getBalanceInfo();
     const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA;
 
     if (arg.newQuoteTargetStatus == QuoteStatus.CANCELED) {
-      expect(newBalanceInfoPartyA.totalPendingLocked).to.be.equal(
-        oldBalanceInfoPartyA.totalPendingLocked.sub(oldLockedValues).toString(),
+      expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
+        oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(oldLockedValuesPartyA).toString(),
       );
     } else {
       expectToBeApproximately(
-        newBalanceInfoPartyA.totalPendingLocked,
-        oldBalanceInfoPartyA.totalPendingLocked.sub(partialLockedValues),
+        newBalanceInfoPartyA.totalPendingLockedPartyA,
+        oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(partialLockedValues),
       );
     }
     expectToBeApproximately(
-      newBalanceInfoPartyA.totalLocked,
-      oldBalanceInfoPartyA.totalLocked.add(partialWithPriceLockedValues),
+      newBalanceInfoPartyA.totalLockedPartyA,
+      oldBalanceInfoPartyA.totalLockedPartyA.add(partialWithPriceLockedValuesPartyA),
     );
     if (arg.newQuoteTargetStatus == QuoteStatus.CANCELED) {
       expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(
@@ -129,18 +143,18 @@ export class OpenPositionValidator implements TransactionValidator {
     const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB;
 
     if (arg.newQuoteTargetStatus == QuoteStatus.CANCELED) {
-      expect(newBalanceInfoPartyB.totalPendingLocked).to.be.equal(
-        oldBalanceInfoPartyB.totalPendingLocked.sub(oldLockedValues).toString(),
+      expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(
+        oldBalanceInfoPartyB.totalPendingLockedPartyB.sub(oldLockedValuesPartyB).toString(),
       );
     } else {
       expectToBeApproximately(
-        newBalanceInfoPartyB.totalPendingLocked,
-        oldBalanceInfoPartyB.totalPendingLocked.sub(oldLockedValues),
+        newBalanceInfoPartyB.totalPendingLockedPartyB,
+        oldBalanceInfoPartyB.totalPendingLockedPartyB.sub(oldLockedValuesPartyB),
       );
     }
     expectToBeApproximately(
-      newBalanceInfoPartyB.totalLocked,
-      oldBalanceInfoPartyB.totalLocked.add(partialWithPriceLockedValues),
+      newBalanceInfoPartyB.totalLockedPartyB,
+      oldBalanceInfoPartyB.totalLockedPartyB.add(partialWithPriceLockedValuesPartyB),
     );
     expect(newBalanceInfoPartyB.allocatedBalances).to.be.equal(
       oldBalanceInfoPartyB.allocatedBalances.toString(),

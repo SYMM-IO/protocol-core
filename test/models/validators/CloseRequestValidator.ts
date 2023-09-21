@@ -56,11 +56,11 @@ export class CloseRequestValidator implements TransactionValidator {
     const newBalanceInfoPartyA = await arg.user.getBalanceInfo();
     const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA;
 
-    expect(newBalanceInfoPartyA.totalPendingLocked).to.be.equal(
-      oldBalanceInfoPartyA.totalPendingLocked.toString(),
+    expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
     );
-    expect(newBalanceInfoPartyA.totalLocked).to.be.equal(
-      oldBalanceInfoPartyA.totalLocked.toString(),
+    expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
+      oldBalanceInfoPartyA.totalLockedPartyA.toString(),
     );
     expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(
       oldBalanceInfoPartyA.allocatedBalances.toString(),
@@ -70,11 +70,11 @@ export class CloseRequestValidator implements TransactionValidator {
     const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress());
     const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB;
 
-    expect(newBalanceInfoPartyB.totalPendingLocked).to.be.equal(
-      oldBalanceInfoPartyB.totalPendingLocked.toString(),
+    expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(
+      oldBalanceInfoPartyB.totalPendingLockedPartyB.toString(),
     );
-    expect(newBalanceInfoPartyB.totalLocked).to.be.equal(
-      oldBalanceInfoPartyB.totalLocked.toString(),
+    expect(newBalanceInfoPartyB.totalLockedPartyB).to.be.equal(
+      oldBalanceInfoPartyB.totalLockedPartyB.toString(),
     );
     expect(newBalanceInfoPartyB.allocatedBalances).to.be.equal(
       oldBalanceInfoPartyB.allocatedBalances.toString(),

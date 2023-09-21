@@ -104,13 +104,17 @@ export class Hedger {
     return {
       allocatedBalances: b[0],
       lockedCva: b[1],
-      lockedMm: b[2],
-      lockedLf: b[3],
-      totalLocked: b[4],
+      lockedLf: b[2],
+      lockedMmPartyA: b[3],
+      lockedMmPartyB: b[4],
+      totalLockedPartyA: b[1].add(b[2]).add(b[3]),
+      totalLockedPartyB: b[1].add(b[2]).add(b[4]),
       pendingLockedCva: b[5],
-      pendingLockedMm: b[6],
-      pendingLockedLf: b[7],
-      totalPendingLocked: b[8],
+      pendingLockedLf: b[6],
+      pendingLockedMmPartyA: b[7],
+      pendingLockedMmPartyB: b[8],
+      totalPendingLockedPartyA: b[5].add(b[6]).add(b[7]),
+      totalPendingLockedPartyB: b[5].add(b[6]).add(b[8]),
     };
   }
 
@@ -215,11 +219,16 @@ export class Hedger {
 export interface BalanceInfo {
   allocatedBalances: BigNumber;
   lockedCva: BigNumber;
-  lockedMm: BigNumber;
+  lockedMmPartyA: BigNumber;
+  lockedMmPartyB: BigNumber;
   lockedLf: BigNumber;
-  totalLocked: BigNumber;
+  totalLockedPartyA: BigNumber;
+  totalLockedPartyB: BigNumber;
   pendingLockedCva: BigNumber;
-  pendingLockedMm: BigNumber;
+  pendingLockedMmPartyA: BigNumber;
+  pendingLockedMmPartyB: BigNumber;
   pendingLockedLf: BigNumber;
-  totalPendingLocked: BigNumber;
+  totalPendingLockedPartyA: BigNumber;
+  totalPendingLockedPartyB: BigNumber;
 }
+

@@ -18,8 +18,9 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         uint256 price,
         uint256 quantity,
         uint256 cva,
-        uint256 mm,
         uint256 lf,
+        uint256 partyAmm,
+        uint256 partyBmm,
         uint256 maxFundingRate,
         uint256 deadline,
         SingleUpnlAndPriceSig memory upnlSig
@@ -32,8 +33,9 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
             price,
             quantity,
             cva,
-            mm,
             lf,
+            partyAmm,
+            partyBmm,
             maxFundingRate,
             deadline,
             upnlSig
@@ -50,11 +52,11 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
             upnlSig.price,
             quantity,
             quote.lockedValues.cva,
-            quote.lockedValues.mm,
             quote.lockedValues.lf,
+            quote.lockedValues.partyAmm,
+            quote.lockedValues.partyBmm,
             maxFundingRate,
-            deadline,
-            QuoteStatus.PENDING
+            deadline
         );
     }
 

@@ -88,24 +88,24 @@ export function shouldBehaveLikeLiquidationFacet(): void {
       expect(balanceInfoOfPartyA.allocatedBalances).to.be.equal(
         decimal(500).sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4])),
       );
-      expect(balanceInfoOfPartyA.totalLocked).to.be.equal(
+      expect(balanceInfoOfPartyA.totalLockedPartyA).to.be.equal(
         await getTotalLockedValuesForQuoteIds(context, [1]),
       );
       expect(balanceInfoOfPartyA.pendingLockedCva).to.be.equal("0");
-      expect(balanceInfoOfPartyA.pendingLockedMm).to.be.equal("0");
+      expect(balanceInfoOfPartyA.pendingLockedMmPartyA).to.be.equal("0");
       expect(balanceInfoOfPartyA.pendingLockedLf).to.be.equal("0");
-      expect(balanceInfoOfPartyA.totalPendingLocked).to.be.equal("0");
+      expect(balanceInfoOfPartyA.totalPendingLockedPartyA).to.be.equal("0");
 
       let balanceInfoOfPartyB: BalanceInfo = await this.hedger.getBalanceInfo(await this.user.getAddress());
       expect(balanceInfoOfPartyB.allocatedBalances).to.be.equal(decimal(360).toString());
       expect(balanceInfoOfPartyB.lockedCva).to.be.equal(decimal(22).toString());
-      expect(balanceInfoOfPartyB.lockedMm).to.be.equal(decimal(75).toString());
+      expect(balanceInfoOfPartyB.lockedMmPartyB).to.be.equal(decimal(40).toString());
       expect(balanceInfoOfPartyB.lockedLf).to.be.equal(decimal(3).toString());
-      expect(balanceInfoOfPartyB.totalLocked).to.be.equal(decimal(100).toString());
+      expect(balanceInfoOfPartyB.totalLockedPartyB).to.be.equal(decimal(65).toString());
       expect(balanceInfoOfPartyB.pendingLockedCva).to.be.equal("0");
-      expect(balanceInfoOfPartyB.pendingLockedMm).to.be.equal("0");
+      expect(balanceInfoOfPartyB.pendingLockedMmPartyB).to.be.equal("0");
       expect(balanceInfoOfPartyB.pendingLockedLf).to.be.equal("0");
-      expect(balanceInfoOfPartyB.totalPendingLocked).to.be.equal("0");
+      expect(balanceInfoOfPartyB.totalPendingLockedPartyB).to.be.equal("0");
     });
 
     it("Should fail to liquidate a user twice", async function() {
@@ -250,13 +250,13 @@ export function shouldBehaveLikeLiquidationFacet(): void {
       let balanceInfo: BalanceInfo = await this.hedger.getBalanceInfo(user);
       expect(balanceInfo.allocatedBalances).to.be.equal("0");
       expect(balanceInfo.lockedCva).to.be.equal("0");
-      expect(balanceInfo.lockedMm).to.be.equal("0");
+      expect(balanceInfo.lockedMmPartyB).to.be.equal("0");
       expect(balanceInfo.lockedLf).to.be.equal("0");
-      expect(balanceInfo.totalLocked).to.be.equal("0");
+      expect(balanceInfo.totalLockedPartyB).to.be.equal("0");
       expect(balanceInfo.pendingLockedCva).to.be.equal("0");
-      expect(balanceInfo.pendingLockedMm).to.be.equal("0");
+      expect(balanceInfo.pendingLockedMmPartyB).to.be.equal("0");
       expect(balanceInfo.pendingLockedLf).to.be.equal("0");
-      expect(balanceInfo.totalPendingLocked).to.be.equal("0");
+      expect(balanceInfo.totalPendingLockedPartyB).to.be.equal("0");
 
       expect((await context.viewFacet.getQuote(5)).quoteStatus).to.be.equal(QuoteStatus.CANCELED);
     });

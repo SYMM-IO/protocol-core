@@ -37,6 +37,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     }
 
     function setAdmin(address user) external onlyOwner {
+        require(user != address(0),"ControlFacet: Zero address");
         GlobalAppStorage.layout().hasRole[user][LibAccessibility.DEFAULT_ADMIN_ROLE] = true;
         emit RoleGranted(LibAccessibility.DEFAULT_ADMIN_ROLE, user);
     }
@@ -45,6 +46,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         address user,
         bytes32 role
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        require(user != address(0),"ControlFacet: Zero address");
         GlobalAppStorage.layout().hasRole[user][role] = true;
         emit RoleGranted(role, user);
     }
@@ -112,6 +114,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     function setCollateral(
         address collateral
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        require(collateral != address(0),"ControlFacet: Zero address");
         require(
             IERC20Metadata(collateral).decimals() <= 18,
             "ControlFacet: Token with more than 18 decimals not allowed"
@@ -311,6 +314,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     function setFeeCollector(
         address feeCollector
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        require(feeCollector != address(0),"ControlFacet: Zero address");
         emit SetFeeCollector(GlobalAppStorage.layout().feeCollector, feeCollector);
         GlobalAppStorage.layout().feeCollector = feeCollector;
     }
@@ -377,12 +381,20 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         MAStorage.layout().liquidationTimeout = liquidationTimeout;
     }
 
-    function setSuspendedAddress(
-        address user,
-        bool isSuspended
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
-        emit SetSuspendedAddress(user, isSuspended);
-        AccountStorage.layout().suspendedAddresses[user] = isSuspended;
+    function suspendedAddress(
+        address user
+    ) external onlyRole(LibAccessibility.SUSPENDER_ROLE) {
+        require(user != address(0),"ControlFacet: Zero address");
+        emit SetSuspendedAddress(user, true);
+        AccountStorage.layout().suspendedAddresses[user] = true;
+    }
+
+    function unsuspendedAddress(
+        address user
+    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        require(user != address(0),"ControlFacet: Zero address");
+        emit SetSuspendedAddress(user, false);
+        AccountStorage.layout().suspendedAddresses[user] = false;
     }
 
     function deactiveEmergencyMode() external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
@@ -402,6 +414,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         bool status
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         for (uint8 i; i < partyBs.length; i++) {
+            require(partyBs[i] != address(0),"ControlFacet: Zero address");
             GlobalAppStorage.layout().partyBEmergencyStatus[partyBs[i]] = status;
             emit SetPartyBEmergencyStatus(partyBs[i], status);
         }
