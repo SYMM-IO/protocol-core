@@ -98,39 +98,31 @@ library LibSolvency {
             quote.partyA
         ) + int256(unlockedAmount);
 
+        if (quote.positionType == PositionType.LONG) {
+            if (closedPrice >= upnlSig.price) {
+                uint256 diff = (filledAmount * (closedPrice - upnlSig.price)) / 1e18;
+                partyBAvailableBalance -= int256(diff);
+                partyAAvailableBalance += int256(diff);
+            } else {
+                uint256 diff = (filledAmount * (upnlSig.price - closedPrice)) / 1e18;
+                partyBAvailableBalance += int256(diff);
+                partyAAvailableBalance -= int256(diff);
+            }
+        } else if (quote.positionType == PositionType.SHORT) {
+            if (closedPrice <= upnlSig.price) {
+                uint256 diff = (filledAmount * (upnlSig.price - closedPrice)) / 1e18;
+                partyBAvailableBalance -= int256(diff);
+                partyAAvailableBalance += int256(diff);
+            } else {
+                uint256 diff = (filledAmount * (closedPrice - upnlSig.price)) / 1e18;
+                partyBAvailableBalance += int256(diff);
+                partyAAvailableBalance -= int256(diff);
+            }
+        }
         require(
             partyBAvailableBalance >= 0 && partyAAvailableBalance >= 0,
             "LibSolvency: Available balance is lower than zero"
         );
-        if (quote.positionType == PositionType.LONG) {
-            if (closedPrice >= upnlSig.price) {
-                require(
-                    uint256(partyBAvailableBalance) >=
-                        ((filledAmount * (closedPrice - upnlSig.price)) / 1e18),
-                    "LibSolvency: PartyB will be liquidatable"
-                );
-            } else {
-                require(
-                    uint256(partyAAvailableBalance) >=
-                        ((filledAmount * (upnlSig.price - closedPrice)) / 1e18),
-                    "LibSolvency: PartyA will be liquidatable"
-                );
-            }
-        } else if (quote.positionType == PositionType.SHORT) {
-            if (closedPrice <= upnlSig.price) {
-                require(
-                    uint256(partyBAvailableBalance) >=
-                        ((filledAmount * (upnlSig.price - closedPrice)) / 1e18),
-                    "LibSolvency: PartyB will be liquidatable"
-                );
-            } else {
-                require(
-                    uint256(partyAAvailableBalance) >=
-                        ((filledAmount * (closedPrice - upnlSig.price)) / 1e18),
-                    "LibSolvency: PartyA will be liquidatable"
-                );
-            }
-        }
         return true;
     }
 

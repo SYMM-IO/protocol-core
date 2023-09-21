@@ -16,6 +16,7 @@ library LibAccessibility {
     bytes32 public constant PARTY_B_MANAGER_ROLE = keccak256("PARTY_B_MANAGER_ROLE");
     bytes32 public constant LIQUIDATOR_ROLE = keccak256("LIQUIDATOR_ROLE");
     bytes32 public constant SUSPENDER_ROLE = keccak256("SUSPENDER_ROLE");
+    bytes32 public constant DISPUTE_ROLE = keccak256("DISPUTE_ROLE");
 
     function hasRole(address user, bytes32 role) internal view returns (bool) {
         GlobalAppStorage.Layout storage layout = GlobalAppStorage.layout();
