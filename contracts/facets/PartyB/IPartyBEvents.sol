@@ -56,5 +56,4 @@ interface IPartyBEvents {
         uint256 closedPrice,
         QuoteStatus quoteStatus
     );
-    event ChargeFundingRate(address partyB, address partyA, uint256[] quoteIds, int256[] rates);
 }

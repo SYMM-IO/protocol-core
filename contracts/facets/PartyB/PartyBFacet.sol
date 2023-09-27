@@ -178,14 +178,4 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
             quote.quoteStatus
         );
     }
-
-    function chargeFundingRate(
-        address partyA,
-        uint256[] memory quoteIds,
-        int256[] memory rates,
-        PairUpnlSig memory upnlSig
-    ) external whenNotPartyBActionsPaused {
-        PartyBFacetImpl.chargeFundingRate(partyA, quoteIds, rates, upnlSig);
-        emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
-    }
 }
