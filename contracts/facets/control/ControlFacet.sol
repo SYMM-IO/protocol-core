@@ -14,28 +14,7 @@ import "../../storages/SymbolStorage.sol";
 import "./IControlEvents.sol";
 
 contract ControlFacet is Accessibility, Ownable, IControlEvents {
-    // Just For Testnet
-    function init(address user, address collateral, address feeCollector) external onlyOwner {
-        MAStorage.Layout storage maLayout = MAStorage.layout();
-        GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
-
-        appLayout.collateral = collateral;
-        appLayout.balanceLimitPerUser = 500e18;
-        appLayout.feeCollector = feeCollector;
-        maLayout.deallocateCooldown = 300;
-        maLayout.forceCancelCooldown = 3000000000000000;
-        maLayout.forceCloseCooldown = 3000000000000000;
-        maLayout.forceCancelCloseCooldown = 3000000000000000;
-        maLayout.pendingQuotesValidLength = 15;
-        maLayout.liquidatorShare = 80e16;
-        maLayout.liquidationTimeout = 600;
-        appLayout.hasRole[user][LibAccessibility.DEFAULT_ADMIN_ROLE] = true;
-        appLayout.hasRole[user][LibAccessibility.SYMBOL_MANAGER_ROLE] = true;
-        appLayout.hasRole[user][LibAccessibility.MUON_SETTER_ROLE] = true;
-        appLayout.hasRole[user][LibAccessibility.SETTER_ROLE] = true;
-        appLayout.hasRole[user][LibAccessibility.PARTY_B_MANAGER_ROLE] = true;
-    }
-
+    
     function setAdmin(address user) external onlyOwner {
         require(user != address(0),"ControlFacet: Zero address");
         GlobalAppStorage.layout().hasRole[user][LibAccessibility.DEFAULT_ADMIN_ROLE] = true;
