@@ -6,4 +6,5 @@ export const FacetNames = [
   "PartyAFacet",
   "PartyBFacet",
   "ViewFacet",
+  "FundingRateFacet",
 ];
