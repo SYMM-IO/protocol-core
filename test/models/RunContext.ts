@@ -6,6 +6,7 @@ import {
   ControlFacet,
   DiamondCutFacet,
   DiamondLoupeFacet,
+  FundingRateFacet,
   LiquidationFacet,
   PartyAFacet,
   PartyBFacet,
@@ -22,6 +23,7 @@ export class RunContext {
   viewFacet!: ViewFacet;
   liquidationFacet!: LiquidationFacet;
   controlFacet!: ControlFacet;
+  fundingRateFacet!: FundingRateFacet;
   signers!: {
     admin: SignerWithAddress;
     user: SignerWithAddress;
@@ -64,6 +66,7 @@ export async function createRunContext(
   context.viewFacet = await ethers.getContractAt("ViewFacet", diamond);
   context.liquidationFacet = await ethers.getContractAt("LiquidationFacet", diamond);
   context.controlFacet = await ethers.getContractAt("ControlFacet", diamond);
+  context.fundingRateFacet = await ethers.getContractAt("FundingRateFacet", diamond);
 
   context.manager = new TestManager(context, onlyInitialize);
   if (!onlyInitialize)

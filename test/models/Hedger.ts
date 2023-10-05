@@ -150,7 +150,7 @@ export class Hedger {
   }
 
   public async chargeFundingRate(partyA: string, quoteIds: BigNumberish[], rates: BigNumberish[], signature: PairUpnlSigStructOutput) {
-    await this.context.partyBFacet.connect(this.signer).chargeFundingRate(partyA, quoteIds, rates, signature);
+    await this.context.fundingRateFacet.connect(this.signer).chargeFundingRate(partyA, quoteIds, rates, signature);
     logger.info(`Hedger::ChargeFundingRate: ${partyA}, ${quoteIds}, ${rates}`);
   }
 
