@@ -26,8 +26,9 @@ library PartyAFacetImpl {
         uint256 price,
         uint256 quantity,
         uint256 cva,
-        uint256 mm,
         uint256 lf,
+        uint256 partyAmm,
+        uint256 partyBmm,
         uint256 maxFundingRate,
         uint256 deadline,
         SingleUpnlAndPriceSig memory upnlSig
@@ -44,23 +45,26 @@ library PartyAFacetImpl {
         require(symbolLayout.symbols[symbolId].isValid, "PartyAFacet: Symbol is not valid");
         require(deadline >= block.timestamp, "PartyAFacet: Low deadline");
 
-        LockedValues memory lockedValues = LockedValues(cva, mm, lf);
+        LockedValues memory lockedValues = LockedValues(cva, lf, partyAmm, partyBmm);
         uint256 tradingPrice = orderType == OrderType.LIMIT ? price : upnlSig.price;
         uint256 notionalValue = (quantity * tradingPrice) / 1e18;
         require(
-            lockedValues.total() <= notionalValue,
+            lockedValues.totalForPartyA() <= notionalValue,
             "PartyAFacet: Leverage can't be lower than one"
         );
-
+        require(
+            lockedValues.totalForPartyB() <= notionalValue,
+            "PartyAFacet: Leverage for partyB can't be lower than one"
+        );
         require(
             lockedValues.lf >=
-                (symbolLayout.symbols[symbolId].minAcceptablePortionLF * lockedValues.total()) /
+                (symbolLayout.symbols[symbolId].minAcceptablePortionLF * lockedValues.totalForPartyA()) /
                     1e18,
             "PartyAFacet: LF is not enough"
         );
 
         require(
-            lockedValues.total() >= symbolLayout.symbols[symbolId].minAcceptableQuoteValue,
+            lockedValues.totalForPartyA() >= symbolLayout.symbols[symbolId].minAcceptableQuoteValue,
             "PartyAFacet: Quote value is low"
         );
         for (uint8 i = 0; i < partyBsWhiteList.length; i++) {
@@ -76,7 +80,7 @@ library PartyAFacetImpl {
         require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
         require(
             uint256(availableBalance) >=
-                lockedValues.total() +
+                lockedValues.totalForPartyA() +
                     ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
             "PartyAFacet: insufficient available balance"
         );
@@ -167,7 +171,7 @@ library PartyAFacetImpl {
         // check that remaining position is not too small
         if (LibQuote.quoteOpenAmount(quote) > quantityToClose) {
             require(
-                ((LibQuote.quoteOpenAmount(quote) - quantityToClose) * quote.lockedValues.total()) /
+                ((LibQuote.quoteOpenAmount(quote) - quantityToClose) * quote.lockedValues.totalForPartyA()) /
                     LibQuote.quoteOpenAmount(quote) >=
                     symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyAFacet: Remaining quote value is low"

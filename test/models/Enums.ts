@@ -44,3 +44,10 @@ export enum Event {
   FULLY_LIQUIDATED_PARTYB = "FullyLiquidatedPartyB",
   EXPIRE_QUOTE = "ExpireQuote",
 }
+
+export enum LiquidationType {
+  NONE,
+  NORMAL,
+  LATE,
+  OVERDUE
+}

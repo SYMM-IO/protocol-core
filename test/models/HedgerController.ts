@@ -226,7 +226,7 @@ export class HedgerController {
         await this.hedger.openPosition(
           quote.id,
           Builder<OpenRequest>()
-            .fillAmount(fillAmount)
+            .filledAmount(fillAmount)
             .openPrice(openPrice)
             .upnlPartyA(partyAUpnl)
             .upnlPartyB(partyBUpnl)
@@ -284,7 +284,7 @@ export class HedgerController {
         await this.hedger.fillCloseRequest(
           quote.id,
           Builder<FillCloseRequest>()
-            .fillAmount(fillAmount)
+            .filledAmount(fillAmount)
             .closedPrice(closePrice)
             .upnlPartyA(partyAUpnl)
             .upnlPartyB(partyBUpnl)

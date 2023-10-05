@@ -86,6 +86,10 @@ library PartyBFacetImpl {
             SymbolStorage.layout().symbols[quote.symbolId].isValid,
             "PartyBFacet: Symbol is not valid"
         );
+        require(
+            !AccountStorage.layout().suspendedAddresses[msg.sender],
+            "PartyBFacet: Sender is Suspended"
+        );
 
         require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
         require(!GlobalAppStorage.layout().emergencyMode, "PartyBFacet: System is in emergency mode");
@@ -138,7 +142,7 @@ library PartyBFacetImpl {
 
             // check locked values
             require(
-                quote.lockedValues.total() >=
+                quote.lockedValues.totalForPartyA() >=
                 SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyBFacet: Quote value is low"
             );
@@ -155,21 +159,22 @@ library PartyBFacetImpl {
             }
             LockedValues memory filledLockedValues = LockedValues(
                 (quote.lockedValues.cva * filledAmount) / quote.quantity,
-                (quote.lockedValues.mm * filledAmount) / quote.quantity,
-                (quote.lockedValues.lf * filledAmount) / quote.quantity
+                (quote.lockedValues.lf * filledAmount) / quote.quantity,
+                (quote.lockedValues.partyAmm * filledAmount) / quote.quantity,
+                (quote.lockedValues.partyBmm * filledAmount) / quote.quantity
             );
             LockedValues memory appliedFilledLockedValues = filledLockedValues;
             appliedFilledLockedValues = appliedFilledLockedValues.mulMem(openedPrice);
             appliedFilledLockedValues = appliedFilledLockedValues.divMem(quote.requestedOpenPrice);
             // check that opened position is not minor position
             require(
-                appliedFilledLockedValues.total() >=
+                appliedFilledLockedValues.totalForPartyA() >=
                     SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyBFacet: Quote value is low"
             );
             // check that new pending position is not minor position
             require(
-                (quote.lockedValues.total() - filledLockedValues.total()) >=
+                (quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
                     SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyBFacet: Quote value is low"
             );
@@ -186,8 +191,8 @@ library PartyBFacetImpl {
                 marketPrice: quote.marketPrice,
                 quantity: quote.quantity - filledAmount,
                 closedAmount: 0,
-                lockedValues: LockedValues(0, 0, 0),
-                initialLockedValues: LockedValues(0, 0, 0),
+                lockedValues: LockedValues(0, 0, 0, 0),
+                initialLockedValues: LockedValues(0, 0, 0, 0),
                 maxFundingRate: quote.maxFundingRate,
                 partyA: quote.partyA,
                 partyB: address(0),
@@ -233,7 +238,7 @@ library PartyBFacetImpl {
         LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
         // check leverage (is in 18 decimals)
         require(
-            quote.quantity * quote.openedPrice / quote.lockedValues.total() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
+            quote.quantity * quote.openedPrice / quote.lockedValues.totalForPartyA() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
             "PartyBFacet: Leverage is high"
         );
 
@@ -305,92 +310,5 @@ library PartyBFacetImpl {
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
         accountLayout.partyANonces[quote.partyA] += 1;
         LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
-    }
-
-    function chargeFundingRate(
-        address partyA,
-        uint256[] memory quoteIds,
-        int256[] memory rates,
-        PairUpnlSig memory upnlSig
-    ) internal {
-        LibMuon.verifyPairUpnl(upnlSig, msg.sender, partyA);
-        require(quoteIds.length == rates.length, "PartyBFacet: Length not match");
-        int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(
-            upnlSig.upnlPartyB,
-            msg.sender,
-            partyA
-        );
-        int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
-            upnlSig.upnlPartyA,
-            partyA
-        );
-        uint256 epochDuration;
-        uint256 windowTime;
-        for (uint256 i = 0; i < quoteIds.length; i++) {
-            Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
-            require(quote.partyA == partyA, "PartyBFacet: Invalid quote");
-            require(quote.partyB == msg.sender, "PartyBFacet: Sender isn't partyB of quote");
-            require(
-                quote.quoteStatus == QuoteStatus.OPENED ||
-                    quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
-                    quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
-                "PartyBFacet: Invalid state"
-            );
-            epochDuration = SymbolStorage.layout().symbols[quote.symbolId].fundingRateEpochDuration;
-            require(epochDuration > 0, "PartyBFacet: Zero funding epoch duration");
-            windowTime = SymbolStorage.layout().symbols[quote.symbolId].fundingRateWindowTime;
-            uint256 latestEpochTimestamp = (block.timestamp / epochDuration) * epochDuration;
-            uint256 paidTimestamp;
-            if (block.timestamp <= latestEpochTimestamp + windowTime) {
-                require(
-                    latestEpochTimestamp > quote.lastFundingPaymentTimestamp,
-                    "PartyBFacet: Funding already paid for this window"
-                );
-                paidTimestamp = latestEpochTimestamp;
-            } else {
-                uint256 nextEpochTimestamp = latestEpochTimestamp + epochDuration;
-                require(
-                    block.timestamp >= nextEpochTimestamp - windowTime,
-                    "PartyBFacet: Current timestamp is out of window"
-                );
-                require(
-                    nextEpochTimestamp > quote.lastFundingPaymentTimestamp,
-                    "PartyBFacet: Funding already paid for this window"
-                );
-                paidTimestamp = nextEpochTimestamp;
-            }
-            if (rates[i] >= 0) {
-                require(
-                    uint256(rates[i]) <= quote.maxFundingRate,
-                    "PartyBFacet: High funding rate"
-                );
-                uint256 priceDiff = (quote.openedPrice * uint256(rates[i])) / 1e18;
-                if (quote.positionType == PositionType.LONG) {
-                    quote.openedPrice += priceDiff;
-                } else {
-                    quote.openedPrice -= priceDiff;
-                }
-                partyAAvailableBalance -= int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
-                partyBAvailableBalance += int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
-            } else {
-                require(
-                    uint256(-rates[i]) <= quote.maxFundingRate,
-                    "PartyBFacet: High funding rate"
-                );
-                uint256 priceDiff = (quote.openedPrice * uint256(-rates[i])) / 1e18;
-                if (quote.positionType == PositionType.LONG) {
-                    quote.openedPrice -= priceDiff;
-                } else {
-                    quote.openedPrice += priceDiff;
-                }
-                partyAAvailableBalance += int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
-                partyBAvailableBalance -= int256(LibQuote.quoteOpenAmount(quote) * priceDiff / 1e18);
-            }
-            quote.lastFundingPaymentTimestamp = paidTimestamp;
-        }
-        require(partyAAvailableBalance >= 0, "PartyBFacet: PartyA will be insolvent");
-        require(partyBAvailableBalance >= 0, "PartyBFacet: PartyB will be insolvent");
-        AccountStorage.layout().partyBNonces[msg.sender][partyA] += 1;
-        AccountStorage.layout().partyANonces[partyA] += 1;
     }
 }

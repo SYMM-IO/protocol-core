@@ -38,8 +38,8 @@ export class SendQuoteValidator implements TransactionValidator {
     const newBalanceInfo = await arg.user.getBalanceInfo();
     const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA;
 
-    expect(newBalanceInfo.totalPendingLocked).to.be.equal(
-      oldBalanceInfo.totalPendingLocked
+    expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfo.totalPendingLockedPartyA
         .add(await getTotalLockedValuesForQuoteIds(context, [arg.quoteId]))
         .toString(),
     );
