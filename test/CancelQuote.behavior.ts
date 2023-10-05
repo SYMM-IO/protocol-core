@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 
 import { initializeFixture } from "./Initialize.fixture";
-import { QuoteStatus } from "./models/Enums";
+import { PositionType, QuoteStatus } from "./models/Enums";
 import { Hedger } from "./models/Hedger";
 import { RunContext } from "./models/RunContext";
 import { User } from "./models/User";
@@ -11,18 +11,11 @@ import { limitOpenRequestBuilder } from "./models/requestModels/OpenRequest";
 import { AcceptCancelRequestValidator } from "./models/validators/AcceptCancelRequestValidator";
 import { CancelQuoteValidator } from "./models/validators/CancelQuoteValidator";
 import { OpenPositionValidator } from "./models/validators/OpenPositionValidator";
-import {
-  decimal,
-  getQuoteQuantity,
-  getTotalLockedValuesForQuoteIds,
-  getTradingFeeForQuotes,
-  liquidatePartyA,
-  pausePartyA,
-  pausePartyB,
-} from "./utils/Common";
+import { decimal, getQuoteQuantity, pausePartyA, pausePartyB } from "./utils/Common";
+import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest";
 
 export function shouldBehaveLikeCancelQuote(): void {
-  beforeEach(async function () {
+  beforeEach(async function() {
     this.context = await loadFixture(initializeFixture);
     this.user_allocated = decimal(500);
     this.hedger_allocated = decimal(4000);
@@ -42,18 +35,18 @@ export function shouldBehaveLikeCancelQuote(): void {
     await this.user.sendQuote();
   });
 
-  it("Should fail due to invalid quoteId", async function () {
+  it("Should fail due to invalid quoteId", async function() {
     await expect(this.user.requestToCancelQuote(3)).to.be.reverted;
   });
 
-  it("Should fail on invalid partyA", async function () {
+  it("Should fail on invalid partyA", async function() {
     const context: RunContext = this.context;
     await expect(context.partyAFacet.requestToCancelQuote(1)).to.be.revertedWith(
       "Accessibility: Should be partyA of quote",
     );
   });
 
-  it("Should fail on paused partyA", async function () {
+  it("Should fail on paused partyA", async function() {
     const context: RunContext = this.context;
     await pausePartyA(context);
     await expect(this.user.requestToCancelQuote(1)).to.be.revertedWith(
@@ -61,27 +54,17 @@ export function shouldBehaveLikeCancelQuote(): void {
     );
   });
 
-  it("Should fail on liquidated partyA", async function () {
-    const context: RunContext = this.context;
-    await this.user.sendQuote();
+  it("Should fail on liquidated partyA", async function() {
+    await this.user.sendQuote(limitQuoteRequestBuilder().positionType(PositionType.SHORT).build());
     await this.hedger.lockQuote(2);
     await this.hedger.openPosition(2);
-    await liquidatePartyA(
-      context,
-      context.signers.user.getAddress(),
-      context.signers.liquidator,
-      this.user_allocated
-        .sub(await getTradingFeeForQuotes(context, [1, 2]))
-        .sub(await getTotalLockedValuesForQuoteIds(context, [2], false))
-        .add(decimal(1))
-        .mul(-1),
-    );
+    await this.user.liquidateAndSetSymbolPrices([1], [decimal(2000)]);
     await expect(this.user.requestToCancelQuote(1)).to.be.revertedWith(
       "Accessibility: PartyA isn't solvent",
     );
   });
 
-  it("Should fail on invalid state", async function () {
+  it("Should fail on invalid state", async function() {
     await this.user.sendQuote();
     await this.hedger.lockQuote(2);
     await this.hedger.openPosition(2);
@@ -90,7 +73,7 @@ export function shouldBehaveLikeCancelQuote(): void {
     );
   });
 
-  it("Should cancel a pending quote", async function () {
+  it("Should cancel a pending quote", async function() {
     const context: RunContext = this.context;
     const validator = new CancelQuoteValidator();
     const beforeOut = await validator.before(context, {
@@ -106,7 +89,7 @@ export function shouldBehaveLikeCancelQuote(): void {
     });
   });
 
-  it("Should cancel a expired pending quote", async function () {
+  it("Should cancel a expired pending quote", async function() {
     const context: RunContext = this.context;
     const validator = new CancelQuoteValidator();
     const beforeOut = await validator.before(context, {
@@ -123,23 +106,23 @@ export function shouldBehaveLikeCancelQuote(): void {
     });
   });
 
-  describe("Should cancel a locked quote", async function () {
-    beforeEach(async function () {
+  describe("Should cancel a locked quote", async function() {
+    beforeEach(async function() {
       await this.hedger.lockQuote(1);
     });
 
-    it("Should fail to accept cancel request on invalid quoteId", async function () {
+    it("Should fail to accept cancel request on invalid quoteId", async function() {
       await expect(this.hedger.acceptCancelRequest(2)).to.be.reverted;
     });
 
-    it("Should fail to accept cancel request on invalid partyB", async function () {
+    it("Should fail to accept cancel request on invalid partyB", async function() {
       await this.user.requestToCancelQuote(1);
       await expect(this.hedger2.acceptCancelRequest(1)).to.be.revertedWith(
         "Accessibility: Should be partyB of quote",
       );
     });
 
-    it("Should fail to accept cancel request on paused partyB", async function () {
+    it("Should fail to accept cancel request on paused partyB", async function() {
       const context: RunContext = this.context;
       await this.user.requestToCancelQuote(1);
       await pausePartyB(context);
@@ -148,8 +131,8 @@ export function shouldBehaveLikeCancelQuote(): void {
       );
     });
 
-    describe("Should cancel successfully", async function () {
-      it("Accept cancel request", async function () {
+    describe("Should cancel successfully", async function() {
+      it("Accept cancel request", async function() {
         const context: RunContext = this.context;
         const cqValidator = new CancelQuoteValidator();
         const cqBeforeOut = await cqValidator.before(context, {
@@ -176,7 +159,7 @@ export function shouldBehaveLikeCancelQuote(): void {
         });
       });
 
-      it("Open position partially", async function () {
+      it("Open position partially", async function() {
         const context: RunContext = this.context;
         const quantity = await getQuoteQuantity(context, 1);
         await this.user.requestToCancelQuote(1);
@@ -208,7 +191,7 @@ export function shouldBehaveLikeCancelQuote(): void {
         });
       });
 
-      it("Open position fully", async function () {
+      it("Open position fully", async function() {
         const context: RunContext = this.context;
         const quantity = await getQuoteQuantity(context, 1);
         await this.user.requestToCancelQuote(1);

@@ -8,10 +8,9 @@ import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
 import "./IPartyBEvents.sol";
 import "../../storages/MuonStorage.sol";
-import "../Account/IAccountEvents.sol";
 import "../Account/AccountFacetImpl.sol";
 
-contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
+contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
     using LockedValuesOps for LockedValues;
 
     function lockQuote(
@@ -20,7 +19,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
     ) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, true);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit LockQuote(quote.partyB, quoteId, quote.quoteStatus);
+        emit LockQuote(quote.partyB, quoteId);
     }
 
     function lockAndOpenQuote(
@@ -32,7 +31,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
     ) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, false);
-        emit LockQuote(quote.partyB, quoteId, quote.quoteStatus);
+        emit LockQuote(quote.partyB, quoteId);
         uint256 newId = PartyBFacetImpl.openPosition(
             quoteId,
             filledAmount,
@@ -44,8 +43,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
             quote.partyA,
             quote.partyB,
             filledAmount,
-            openedPrice,
-            QuoteStatus.OPENED
+            openedPrice
         );
         if (newId != 0) {
             Quote storage newQuote = QuoteStorage.layout().quotes[newId];
@@ -61,11 +59,11 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.marketPrice,
                     newQuote.quantity,
                     newQuote.lockedValues.cva,
-                    newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
+                    newQuote.lockedValues.partyAmm,
+                    newQuote.lockedValues.partyBmm,
                     newQuote.maxFundingRate,
-                    newQuote.deadline,
-                    newQuote.quoteStatus
+                    newQuote.deadline
                 );
             } else if (newQuote.quoteStatus == QuoteStatus.CANCELED) {
                 emit AcceptCancelRequest(newQuote.id, QuoteStatus.CANCELED);
@@ -105,8 +103,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
             quote.partyA,
             quote.partyB,
             filledAmount,
-            openedPrice,
-            QuoteStatus.OPENED
+            openedPrice
         );
         if (newId != 0) {
             Quote storage newQuote = QuoteStorage.layout().quotes[newId];
@@ -122,11 +119,11 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
                     newQuote.marketPrice,
                     newQuote.quantity,
                     newQuote.lockedValues.cva,
-                    newQuote.lockedValues.mm,
                     newQuote.lockedValues.lf,
+                    newQuote.lockedValues.partyAmm,
+                    newQuote.lockedValues.partyBmm,
                     newQuote.maxFundingRate,
-                    newQuote.deadline,
-                    newQuote.quoteStatus
+                    newQuote.deadline
                 );
             } else if (newQuote.quoteStatus == QuoteStatus.CANCELED) {
                 emit AcceptCancelRequest(newQuote.id, QuoteStatus.CANCELED);
@@ -180,15 +177,5 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents, IAccountEvents {
             upnlSig.price,
             quote.quoteStatus
         );
-    }
-
-    function chargeFundingRate(
-        address partyA,
-        uint256[] memory quoteIds,
-        int256[] memory rates,
-        PairUpnlSig memory upnlSig
-    ) external whenNotPartyBActionsPaused {
-        PartyBFacetImpl.chargeFundingRate(partyA, quoteIds, rates, upnlSig);
-        emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
     }
 }

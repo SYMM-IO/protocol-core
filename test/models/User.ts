@@ -3,16 +3,17 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, BigNumberish, ethers } from "ethers";
 
 import { PromiseOrValue } from "../../src/types/common";
-import { serializeToJson, unDecimal } from "../utils/Common";
+import { getPriceFetcher, serializeToJson, unDecimal } from "../utils/Common";
 import { logger } from "../utils/LoggerUtils";
 import { getPrice } from "../utils/PriceUtils";
-import { getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils";
 import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet";
 import { PositionType } from "./Enums";
 import { RunContext } from "./RunContext";
 import { CloseRequest, limitCloseRequestBuilder } from "./requestModels/CloseRequest";
 import { limitQuoteRequestBuilder, QuoteRequest } from "./requestModels/QuoteRequest";
 import { runTx } from "../utils/TxUtils";
+import { getDummyLiquidationSig } from "../utils/SignatureUtils";
+import { LiquidationSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet";
 
 export class User {
   constructor(private context: RunContext, private signer: SignerWithAddress) {
@@ -62,8 +63,9 @@ export class User {
         request.price,
         request.quantity,
         request.cva,
-        request.mm,
         request.lf,
+        request.partyAmm,
+        request.partyBmm,
         request.maxFundingRate,
         request.deadline,
         await request.upnlSig,
@@ -90,13 +92,17 @@ export class User {
     return {
       allocatedBalances: b[0],
       lockedCva: b[1],
-      lockedMm: b[2],
-      lockedLf: b[3],
-      totalLocked: b[4],
+      lockedLf: b[2],
+      lockedMmPartyA: b[3],
+      lockedMmPartyB: b[4],
+      totalLockedPartyA: b[1].add(b[2]).add(b[3]),
+      totalLockedPartyB: b[1].add(b[2]).add(b[4]),
       pendingLockedCva: b[5],
-      pendingLockedMm: b[6],
-      pendingLockedLf: b[7],
-      totalPendingLocked: b[8],
+      pendingLockedLf: b[6],
+      pendingLockedMmPartyA: b[7],
+      pendingLockedMmPartyB: b[8],
+      totalPendingLockedPartyA: b[5].add(b[6]).add(b[7]),
+      totalPendingLockedPartyB: b[5].add(b[6]).add(b[8]),
     };
   }
 
@@ -139,7 +145,98 @@ export class User {
     return this.signer.getAddress();
   }
 
-  public async getUpnl(): Promise<BigNumber> {
+  public async getUpnl(symbolIdPriceFetcher: ((symbolId: BigNumber) => Promise<BigNumber>) | null = null,
+                       symbolNamePriceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
+    let openPositions = await this.getOpenPositions();
+    let upnl = BigNumber.from(0);
+    for (const pos of openPositions) {
+      const priceDiff = pos.openedPrice.sub(
+        symbolIdPriceFetcher != null ? await symbolIdPriceFetcher(pos.symbolId) :
+          await symbolNamePriceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
+      );
+      const amount = pos.quantity.sub(pos.closedAmount);
+      upnl = upnl.add(
+        unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? -1 : 1),
+      );
+    }
+    return upnl;
+  }
+
+  public async getTotalUnrealisedLoss(symbolIdPriceFetcher: ((symbolId: BigNumber) => Promise<BigNumber>) | null = null,
+                                      symbolNamePriceFetcher: (symbol: string) => Promise<BigNumber> = getPrice): Promise<BigNumber> {
+    let openPositions = await this.getOpenPositions();
+    let upnl = BigNumber.from(0);
+    for (const pos of openPositions) {
+      const priceDiff = pos.openedPrice.sub(
+        symbolIdPriceFetcher != null ? await symbolIdPriceFetcher(pos.symbolId) :
+          await symbolNamePriceFetcher((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
+      );
+      const amount = pos.quantity.sub(pos.closedAmount);
+      upnl = upnl.add(
+        unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? 0 : 1),
+      );
+    }
+    return upnl;
+  }
+
+  public async getAvailableBalanceForQuote(upnl: BigNumber): Promise<BigNumber> {
+    const balanceInfo = await this.getBalanceInfo();
+    let available: BigNumber;
+    if (upnl.gt(0)) {
+      available = balanceInfo.allocatedBalances
+        .add(upnl)
+        .sub(balanceInfo.totalLockedPartyA.add(balanceInfo.totalPendingLockedPartyA));
+    } else {
+      let mm = balanceInfo.lockedMmPartyA;
+      let mUpnl = upnl.mul(-1);
+      let considering_mm = mUpnl.gt(mm) ? mUpnl : mm;
+      available = balanceInfo.allocatedBalances
+        .sub(balanceInfo.lockedCva.add(balanceInfo.lockedLf).add(balanceInfo.totalPendingLockedPartyA))
+        .sub(considering_mm);
+    }
+    return available;
+  }
+
+  public async liquidateAndSetSymbolPrices(
+    symbolIds: BigNumberish[],
+    prices: BigNumber[],
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ): Promise<LiquidationSigStruct> {
+    const upnl = await this.getUpnl(getPriceFetcher(symbolIds, prices));
+    const totalUnrealizedLoss = await this.getTotalUnrealisedLoss(getPriceFetcher(symbolIds, prices));
+    const sign = await getDummyLiquidationSig("0x10", upnl, symbolIds, prices, totalUnrealizedLoss);
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .liquidatePartyA(this.getAddress(), sign);
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .setSymbolsPrice(
+        this.getAddress(),
+        sign,
+      );
+    return sign;
+  }
+
+  public async liquidatePendingPositions(
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ) {
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .liquidatePendingPositionsPartyA(this.getAddress());
+  }
+
+  public async liquidatePositions(
+    positions: BigNumberish[] = [],
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ) {
+    if (positions.length == 0)
+      positions = (await this.getOpenPositions()).map(value => value.id);
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .liquidatePositionsPartyA(this.getAddress(), positions);
+  }
+
+  public async getOpenPositions(): Promise<QuoteStructOutput[]> {
     let openPositions: QuoteStructOutput[] = [];
     const pageSize = 30;
     let last = 0;
@@ -152,47 +249,36 @@ export class User {
       openPositions.push(...page);
       if (page.length < pageSize) break;
     }
-
-    let upnl = BigNumber.from(0);
-    for (const pos of openPositions) {
-      const priceDiff = pos.openedPrice.sub(
-        await getPrice((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
-      );
-      const amount = pos.quantity.sub(pos.closedAmount);
-      upnl.add(
-        unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? 1 : -1),
-      );
-    }
-    return upnl;
+    return openPositions;
   }
 
-  public async getAvailableBalanceForQuote(upnl: BigNumber): Promise<BigNumber> {
-    const balanceInfo = await this.getBalanceInfo();
-    let available: BigNumber;
-    if (upnl.gt(0)) {
-      available = balanceInfo.allocatedBalances
-        .add(upnl)
-        .sub(balanceInfo.totalLocked.add(balanceInfo.totalPendingLocked));
-    } else {
-      let mm = balanceInfo.lockedMm;
-      let mUpnl = upnl.mul(-1);
-      let considering_mm = mUpnl.gt(mm) ? mUpnl : mm;
-      available = balanceInfo.allocatedBalances
-        .sub(balanceInfo.lockedCva.add(balanceInfo.lockedLf).add(balanceInfo.totalPendingLocked))
-        .sub(considering_mm);
-    }
-    return available;
+  public async settleLiquidation(
+    partyB: SignerWithAddress = this.context.signers.hedger,
+    liquidator: SignerWithAddress = this.context.signers.liquidator,
+  ): Promise<void> {
+    await this.context.liquidationFacet
+      .connect(liquidator)
+      .settlePartyALiquidation(await this.getAddress(), [await partyB.getAddress()]);
   }
+
+  public async getLiquidatedStateOfPartyA() {
+    return this.context.viewFacet.getLiquidatedStateOfPartyA(await this.getAddress());
+  }
+
 }
 
 export interface BalanceInfo {
   allocatedBalances: BigNumber;
   lockedCva: BigNumber;
-  lockedMm: BigNumber;
+  lockedMmPartyA: BigNumber;
+  lockedMmPartyB: BigNumber;
   lockedLf: BigNumber;
-  totalLocked: BigNumber;
+  totalLockedPartyA: BigNumber;
+  totalLockedPartyB: BigNumber;
   pendingLockedCva: BigNumber;
-  pendingLockedMm: BigNumber;
+  pendingLockedMmPartyA: BigNumber;
+  pendingLockedMmPartyB: BigNumber;
   pendingLockedLf: BigNumber;
-  totalPendingLocked: BigNumber;
+  totalPendingLockedPartyA: BigNumber;
+  totalPendingLockedPartyB: BigNumber;
 }

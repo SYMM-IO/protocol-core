@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 
 import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet";
-import { getTotalLockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common";
+import { getTotalPartyALockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common";
 import { logger } from "../../utils/LoggerUtils";
 import { QuoteStatus } from "../Enums";
 import { RunContext } from "../RunContext";
@@ -49,13 +49,13 @@ export class AcceptCancelRequestValidator implements TransactionValidator {
     const newBalanceInfoPartyA = await arg.user.getBalanceInfo();
     const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA;
 
-    const lockedValues = await getTotalLockedValuesForQuotes([oldQuote]);
+    const lockedValues = await getTotalPartyALockedValuesForQuotes([oldQuote]);
 
-    expect(newBalanceInfoPartyA.totalPendingLocked).to.be.equal(
-      oldBalanceInfoPartyA.totalPendingLocked.sub(lockedValues).toString(),
+    expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString(),
     );
-    expect(newBalanceInfoPartyA.totalLocked).to.be.equal(
-      oldBalanceInfoPartyA.totalLocked.toString(),
+    expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
+      oldBalanceInfoPartyA.totalLockedPartyA.toString(),
     );
     let tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId]);
     expectToBeApproximately(

@@ -15,7 +15,8 @@ export interface QuoteRequest {
   price: BigNumberish;
   quantity: BigNumberish;
   cva: BigNumberish;
-  mm: BigNumberish;
+  partyAmm: BigNumberish;
+  partyBmm: BigNumberish;
   lf: BigNumberish;
   maxFundingRate: BigNumberish;
   deadline: PromiseOrValue<BigNumberish>;
@@ -30,7 +31,8 @@ const limitDefaultQuoteRequest: QuoteRequest = {
   price: decimal(1),
   quantity: decimal(100),
   cva: decimal(22),
-  mm: decimal(75),
+  partyAmm: decimal(75),
+  partyBmm: decimal(40),
   lf: decimal(3),
   maxFundingRate: decimal(2, 16),
   deadline: getBlockTimestamp(500),
@@ -45,7 +47,8 @@ const marketDefaultQuoteRequest: QuoteRequest = {
   price: decimal(1),
   quantity: decimal(1000),
   cva: decimal(22),
-  mm: decimal(75),
+  partyAmm: decimal(75),
+  partyBmm: decimal(40),
   lf: decimal(3),
   maxFundingRate: decimal(2, 16),
   deadline: getBlockTimestamp(500),

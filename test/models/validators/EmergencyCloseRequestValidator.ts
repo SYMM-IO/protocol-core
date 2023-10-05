@@ -2,7 +2,11 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 
 import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet";
-import { getTotalLockedValuesForQuotes, unDecimal } from "../../utils/Common";
+import {
+  getTotalPartyALockedValuesForQuotes,
+  getTotalPartyBLockedValuesForQuotes,
+  unDecimal,
+} from "../../utils/Common";
 import { logger } from "../../utils/LoggerUtils";
 import { PositionType, QuoteStatus } from "../Enums";
 import { Hedger } from "../Hedger";
@@ -53,8 +57,11 @@ export class EmergencyCloseRequestValidator implements TransactionValidator {
     expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSED);
     expect(newQuote.closedAmount).to.be.equal(oldQuote.quantity);
 
-    const oldLockedValues = await getTotalLockedValuesForQuotes([oldQuote]);
-    const newLockedValues = await getTotalLockedValuesForQuotes([newQuote]);
+    const oldLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([oldQuote]);
+    const newLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([newQuote]);
+
+    const oldLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([oldQuote]);
+    const newLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([newQuote]);
 
     const closedAmount = newQuote.closedAmount.sub(oldQuote.closedAmount);
     let profit;
@@ -64,18 +71,19 @@ export class EmergencyCloseRequestValidator implements TransactionValidator {
       profit = unDecimal(newQuote.openedPrice.sub(arg.price).mul(closedAmount));
     }
 
-    let returnedLockedValues = oldLockedValues.mul(closedAmount).div(oldQuote.quantity);
+    let returnedLockedValuesPartyA = oldLockedValuesPartyA.mul(closedAmount).div(oldQuote.quantity);
+    let returnedLockedValuesPartyB = oldLockedValuesPartyB.mul(closedAmount).div(oldQuote.quantity);
 
     // Check Balances partyA
     const newBalanceInfoPartyA = await arg.user.getBalanceInfo();
     const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA;
 
-    expect(newBalanceInfoPartyA.totalPendingLocked).to.be.equal(
-      oldBalanceInfoPartyA.totalPendingLocked.toString(),
+    expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
     );
     expectToBeApproximately(
-      newBalanceInfoPartyA.totalLocked,
-      oldBalanceInfoPartyA.totalLocked.sub(returnedLockedValues),
+      newBalanceInfoPartyA.totalLockedPartyA,
+      oldBalanceInfoPartyA.totalLockedPartyA.sub(returnedLockedValuesPartyA),
     );
     expectToBeApproximately(
       newBalanceInfoPartyA.allocatedBalances,
@@ -86,12 +94,12 @@ export class EmergencyCloseRequestValidator implements TransactionValidator {
     const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress());
     const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB;
 
-    expect(newBalanceInfoPartyB.totalPendingLocked).to.be.equal(
-      oldBalanceInfoPartyB.totalPendingLocked.toString(),
+    expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(
+      oldBalanceInfoPartyB.totalPendingLockedPartyB.toString(),
     );
     expectToBeApproximately(
-      newBalanceInfoPartyB.totalLocked,
-      oldBalanceInfoPartyB.totalLocked.sub(returnedLockedValues),
+      newBalanceInfoPartyB.totalLockedPartyB,
+      oldBalanceInfoPartyB.totalLockedPartyB.sub(returnedLockedValuesPartyB),
     );
     expectToBeApproximately(
       newBalanceInfoPartyB.allocatedBalances,

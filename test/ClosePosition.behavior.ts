@@ -7,9 +7,15 @@ import { OrderType, PositionType, QuoteStatus } from "./models/Enums";
 import { Hedger } from "./models/Hedger";
 import { RunContext } from "./models/RunContext";
 import { User } from "./models/User";
-import { limitCloseRequestBuilder, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest";
+import {
+  limitCloseRequestBuilder,
+  marketCloseRequestBuilder,
+} from "./models/requestModels/CloseRequest";
 import { emergencyCloseRequestBuilder } from "./models/requestModels/EmergencyCloseRequest";
-import { limitFillCloseRequestBuilder, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest";
+import {
+  limitFillCloseRequestBuilder,
+  marketFillCloseRequestBuilder,
+} from "./models/requestModels/FillCloseRequest";
 import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest";
 import { AcceptCancelCloseRequestValidator } from "./models/validators/AcceptCancelCloseRequestValidator";
 import { CancelCloseRequestValidator } from "./models/validators/CancelCloseRequestValidator";
@@ -28,7 +34,7 @@ import {
 } from "./utils/Common";
 
 export function shouldBehaveLikeClosePosition(): void {
-  beforeEach(async function() {
+  beforeEach(async function () {
     this.context = await loadFixture(initializeFixture);
     this.user_allocated = decimal(500);
     this.hedger_allocated = decimal(4000);
@@ -64,7 +70,7 @@ export function shouldBehaveLikeClosePosition(): void {
     await this.hedger.openPosition(4);
   });
 
-  it("Should fail on invalid partyA", async function() {
+  it("Should fail on invalid partyA", async function () {
     const context: RunContext = this.context;
     await expect(
       context.partyAFacet.requestToClosePosition(
@@ -77,7 +83,7 @@ export function shouldBehaveLikeClosePosition(): void {
     ).to.be.revertedWith("Accessibility: Should be partyA of quote");
   });
 
-  it("Should fail on paused partyA", async function() {
+  it("Should fail on paused partyA", async function () {
     const context: RunContext = this.context;
     await pausePartyA(context);
     await expect(this.user.requestToClosePosition(2)).to.be.revertedWith(
@@ -85,17 +91,17 @@ export function shouldBehaveLikeClosePosition(): void {
     );
   });
 
-  it("Should fail on invalid quoteId", async function() {
+  it("Should fail on invalid quoteId", async function () {
     await expect(this.user.requestToClosePosition(50)).to.be.reverted;
   });
 
-  it("Should fail on invalid quote state", async function() {
+  it("Should fail on invalid quote state", async function () {
     await expect(this.user.requestToClosePosition(3)).to.be.revertedWith(
       "PartyAFacet: Invalid state",
     );
   });
 
-  it("Should fail on invalid quantityToClose", async function() {
+  it("Should fail on invalid quantityToClose", async function () {
     const context: RunContext = this.context;
     const quantity = await getQuoteQuantity(context, 1);
     await expect(
@@ -116,7 +122,7 @@ export function shouldBehaveLikeClosePosition(): void {
     ).to.be.revertedWith("PartyAFacet: Remaining quote value is low");
   });
 
-  it("Should request limit successfully", async function() {
+  it("Should request limit successfully", async function () {
     const context: RunContext = this.context;
     const validator = new CloseRequestValidator();
     const beforeOut = await validator.before(context, {
@@ -140,7 +146,7 @@ export function shouldBehaveLikeClosePosition(): void {
     });
   });
 
-  it("Should request limit successfully partially", async function() {
+  it("Should request limit successfully partially", async function () {
     const context: RunContext = this.context;
     const quantity = await getQuoteQuantity(context, 1);
     const validator = new CloseRequestValidator();
@@ -165,7 +171,7 @@ export function shouldBehaveLikeClosePosition(): void {
     });
   });
 
-  it("Should request market successfully", async function() {
+  it("Should request market successfully", async function () {
     const context: RunContext = this.context;
     const validator = new CloseRequestValidator();
     const beforeOut = await validator.before(context, {
@@ -189,7 +195,7 @@ export function shouldBehaveLikeClosePosition(): void {
     });
   });
 
-  it("Should request market successfully partially", async function() {
+  it("Should request market successfully partially", async function () {
     const context: RunContext = this.context;
     const quantity = await getQuoteQuantity(context, 1);
     const validator = new CloseRequestValidator();
@@ -214,7 +220,7 @@ export function shouldBehaveLikeClosePosition(): void {
     });
   });
 
-  it("Should expire close request", async function() {
+  it("Should expire close request", async function () {
     const context: RunContext = this.context;
     await this.user.requestToClosePosition(
       1,
@@ -229,8 +235,8 @@ export function shouldBehaveLikeClosePosition(): void {
     expect(q.quoteStatus).to.be.equal(QuoteStatus.OPENED);
   });
 
-  describe("Fill Close Request", async function() {
-    beforeEach(async function() {
+  describe("Fill Close Request", async function () {
+    beforeEach(async function () {
       const context: RunContext = this.context;
       await this.user.requestToClosePosition(
         1,
@@ -255,7 +261,7 @@ export function shouldBehaveLikeClosePosition(): void {
       );
     });
 
-    it("Should fail on invalid partyB", async function() {
+    it("Should fail on invalid partyB", async function () {
       const context: RunContext = this.context;
       await expect(
         this.hedger2.fillCloseRequest(
@@ -268,7 +274,7 @@ export function shouldBehaveLikeClosePosition(): void {
       ).to.be.revertedWith("Accessibility: Should be partyB of quote");
     });
 
-    it("Should fail on paused partyB", async function() {
+    it("Should fail on paused partyB", async function () {
       const context: RunContext = this.context;
       await pausePartyB(context);
       await expect(
@@ -282,7 +288,7 @@ export function shouldBehaveLikeClosePosition(): void {
       ).to.be.revertedWith("Pausable: PartyB actions paused");
     });
 
-    it("Should fail on fill amount", async function() {
+    it("Should fail on fill amount", async function () {
       const context: RunContext = this.context;
       const quantity = await getQuoteQuantity(context, 1);
       await expect(
@@ -303,7 +309,7 @@ export function shouldBehaveLikeClosePosition(): void {
       ).to.be.revertedWith("PartyBFacet: Invalid filledAmount");
     });
 
-    it("Should fail on invalid close price", async function() {
+    it("Should fail on invalid close price", async function () {
       const context: RunContext = this.context;
       await expect(
         this.hedger.fillCloseRequest(
@@ -326,7 +332,7 @@ export function shouldBehaveLikeClosePosition(): void {
       ).to.be.revertedWith("PartyBFacet: Closed price isn't valid");
     });
 
-    it("Should fail on negative balance of partyA/partyB", async function() {
+    it("Should fail on negative balance of partyA/partyB", async function () {
       const context: RunContext = this.context;
       await expect(
         this.hedger.fillCloseRequest(
@@ -350,7 +356,7 @@ export function shouldBehaveLikeClosePosition(): void {
       ).to.be.revertedWith("LibSolvency: Available balance is lower than zero");
     });
 
-    it("Should fail on partyB becoming liquidatable", async function() {
+    it("Should fail on partyB becoming liquidatable", async function () {
       const context: RunContext = this.context;
       await expect(
         this.hedger.fillCloseRequest(
@@ -362,7 +368,7 @@ export function shouldBehaveLikeClosePosition(): void {
             .price(decimal(1, 17))
             .build(),
         ),
-      ).to.be.revertedWith("LibSolvency: PartyB will be liquidatable");
+      ).to.be.revertedWith("LibSolvency: Available balance is lower than zero");
       await expect(
         this.hedger.fillCloseRequest(
           2,
@@ -372,10 +378,10 @@ export function shouldBehaveLikeClosePosition(): void {
             .upnlPartyB(decimal(-300))
             .build(),
         ),
-      ).to.be.revertedWith("LibSolvency: PartyB will be liquidatable");
+      ).to.be.revertedWith("LibSolvency: Available balance is lower than zero");
     });
 
-    it("Should fail on partyA becoming liquidatable", async function() {
+    it("Should fail on partyA becoming liquidatable", async function () {
       const context: RunContext = this.context;
 
       let quantity = await getQuoteQuantity(context, 1);
@@ -396,7 +402,7 @@ export function shouldBehaveLikeClosePosition(): void {
             .price(price)
             .build(),
         ),
-      ).to.be.revertedWith("LibSolvency: PartyA will be liquidatable");
+      ).to.be.revertedWith("LibSolvency: Available balance is lower than zero");
 
       quantity = await getQuoteQuantity(context, 1);
       price = decimal(1, 17);
@@ -416,10 +422,10 @@ export function shouldBehaveLikeClosePosition(): void {
             .price(price)
             .build(),
         ),
-      ).to.be.revertedWith("LibSolvency: PartyA will be liquidatable");
+      ).to.be.revertedWith("LibSolvency: Available balance is lower than zero");
     });
 
-    it("Should fail due to expired request", async function() {
+    it("Should fail due to expired request", async function () {
       const context: RunContext = this.context;
       await time.increase(1000);
       let closePrice = decimal(11, 17);
@@ -434,7 +440,7 @@ export function shouldBehaveLikeClosePosition(): void {
       ).to.be.revertedWith("PartyBFacet: Quote is expired");
     });
 
-    it("Should run successfully for limit", async function() {
+    it("Should run successfully for limit", async function () {
       const context: RunContext = this.context;
       const validator = new FillCloseRequestValidator();
       const beforeOut = await validator.before(context, {
@@ -458,7 +464,7 @@ export function shouldBehaveLikeClosePosition(): void {
       });
     });
 
-    it("Should run successfully partially for limit", async function() {
+    it("Should run successfully partially for limit", async function () {
       const context: RunContext = this.context;
       const closePrice = decimal(11, 17);
       const quantity = await getQuoteQuantity(context, 1);
@@ -483,7 +489,7 @@ export function shouldBehaveLikeClosePosition(): void {
       });
     });
 
-    it("Should run successfully for market", async function() {
+    it("Should run successfully for market", async function () {
       const context: RunContext = this.context;
       let closePrice = decimal(11, 17);
       const validator = new FillCloseRequestValidator();
@@ -508,8 +514,8 @@ export function shouldBehaveLikeClosePosition(): void {
     });
   });
 
-  describe("Cancel Close Request", async function() {
-    beforeEach(async function() {
+  describe("Cancel Close Request", async function () {
+    beforeEach(async function () {
       const context: RunContext = this.context;
       await this.user.requestToClosePosition(
         1,
@@ -519,18 +525,18 @@ export function shouldBehaveLikeClosePosition(): void {
       );
     });
 
-    it("Should fail on invalid quoteId", async function() {
+    it("Should fail on invalid quoteId", async function () {
       await expect(this.user.requestToCancelCloseRequest(3)).to.be.reverted;
     });
 
-    it("Should fail on invalid partyA", async function() {
+    it("Should fail on invalid partyA", async function () {
       const context: RunContext = this.context;
       await expect(
         context.partyAFacet.connect(context.signers.user2).requestToCancelCloseRequest(1),
       ).to.be.revertedWith("Accessibility: Should be partyA of quote");
     });
 
-    it("Should fail on paused partyA", async function() {
+    it("Should fail on paused partyA", async function () {
       const context: RunContext = this.context;
       await pausePartyA(context);
       await expect(this.user.requestToCancelCloseRequest(1)).to.be.revertedWith(
@@ -538,13 +544,13 @@ export function shouldBehaveLikeClosePosition(): void {
       );
     });
 
-    it("Should fail on invalid state", async function() {
+    it("Should fail on invalid state", async function () {
       await expect(this.user.requestToCancelCloseRequest(2)).to.be.revertedWith(
         "PartyAFacet: Invalid state",
       );
     });
 
-    it("Should send cancel request successfully", async function() {
+    it("Should send cancel request successfully", async function () {
       const context: RunContext = this.context;
       const validator = new CancelCloseRequestValidator();
       const beforeOut = await validator.before(context, {
@@ -561,29 +567,29 @@ export function shouldBehaveLikeClosePosition(): void {
       });
     });
 
-    it("Should expire request", async function() {
+    it("Should expire request", async function () {
       const context: RunContext = this.context;
       await time.increase(1000);
       await this.user.requestToCancelCloseRequest(1);
       expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED);
     });
 
-    describe("Accepting cancel request", async function() {
-      this.beforeEach(async function() {
+    describe("Accepting cancel request", async function () {
+      this.beforeEach(async function () {
         await this.user.requestToCancelCloseRequest(1);
       });
 
-      it("Should fail on invalid quoteId", async function() {
+      it("Should fail on invalid quoteId", async function () {
         await expect(this.hedger.acceptCancelCloseRequest(3)).to.be.reverted;
       });
 
-      it("Should fail on invalid partyB", async function() {
+      it("Should fail on invalid partyB", async function () {
         await expect(this.hedger2.acceptCancelCloseRequest(1)).to.be.revertedWith(
           "Accessibility: Should be partyB of quote",
         );
       });
 
-      it("Should fail on paused partyB", async function() {
+      it("Should fail on paused partyB", async function () {
         const context: RunContext = this.context;
         await pausePartyB(context);
         await expect(this.hedger.acceptCancelCloseRequest(1)).to.be.revertedWith(
@@ -591,13 +597,13 @@ export function shouldBehaveLikeClosePosition(): void {
         );
       });
 
-      it("Should fail on invalid state", async function() {
+      it("Should fail on invalid state", async function () {
         await expect(this.hedger.acceptCancelCloseRequest(2)).to.be.revertedWith(
           "PartyBFacet: Invalid state",
         );
       });
 
-      it("Should run successfully", async function() {
+      it("Should run successfully", async function () {
         const context: RunContext = this.context;
         const validator = new AcceptCancelCloseRequestValidator();
         const beforeOut = await validator.before(context, {
@@ -616,19 +622,19 @@ export function shouldBehaveLikeClosePosition(): void {
     });
   });
 
-  describe("Emergency Close", async function() {
-    beforeEach(async function() {
+  describe("Emergency Close", async function () {
+    beforeEach(async function () {
       const context: RunContext = this.context;
     });
 
-    it("Should fail when not emergency mode", async function() {
+    it("Should fail when not emergency mode", async function () {
       await expect(
         this.hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build()),
       ).to.be.revertedWith("Pausable: It isn't emergency mode");
     });
 
-    describe("Emergency mode activated", async function() {
-      beforeEach(async function() {
+    describe("Emergency mode activated", async function () {
+      beforeEach(async function () {
         const context: RunContext = this.context;
         await context.controlFacet.setPartyBEmergencyStatus(
           [await this.hedger2.getAddress()],
@@ -637,13 +643,13 @@ export function shouldBehaveLikeClosePosition(): void {
         await context.controlFacet.setPartyBEmergencyStatus([await this.hedger.getAddress()], true);
       });
 
-      it("Should fail on invalid partyB", async function() {
+      it("Should fail on invalid partyB", async function () {
         await expect(
           this.hedger2.emergencyClosePosition(1, emergencyCloseRequestBuilder().build()),
         ).to.be.revertedWith("Accessibility: Should be partyB of quote");
       });
 
-      it("Should fail on paused partyB", async function() {
+      it("Should fail on paused partyB", async function () {
         const context: RunContext = this.context;
         await pausePartyB(context);
         await expect(
@@ -651,7 +657,7 @@ export function shouldBehaveLikeClosePosition(): void {
         ).to.be.revertedWith("Pausable: PartyB actions paused");
       });
 
-      it("Should fail on negative balance of partyA/partyB", async function() {
+      it("Should fail on negative balance of partyA/partyB", async function () {
         await expect(
           this.hedger.emergencyClosePosition(
             1,
@@ -666,7 +672,7 @@ export function shouldBehaveLikeClosePosition(): void {
         ).to.be.revertedWith("LibSolvency: Available balance is lower than zero");
       });
 
-      it("Should run successfully", async function() {
+      it("Should run successfully", async function () {
         const context: RunContext = this.context;
         const validator = new EmergencyCloseRequestValidator();
         const beforeOut = await validator.before(context, {

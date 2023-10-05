@@ -14,10 +14,6 @@ import "../storages/MAStorage.sol";
 library LibQuote {
     using LockedValuesOps for LockedValues;
 
-    function getAmountToLockOfQuote(Quote storage quote) internal view returns (uint256) {
-        return quote.lockedValues.total();
-    }
-
     function quoteOpenAmount(Quote storage quote) internal view returns (uint256) {
         return quote.quantity - quote.closedAmount;
     }
@@ -135,16 +131,20 @@ library LibQuote {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
-        require(quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
-        require(quote.lockedValues.mm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+
+        require(quote.lockedValues.cva == 0 || quote.lockedValues.cva * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.partyAmm == 0 || quote.lockedValues.partyAmm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
+        require(quote.lockedValues.partyBmm == 0 || quote.lockedValues.partyBmm * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         require(quote.lockedValues.lf * filledAmount / LibQuote.quoteOpenAmount(quote) > 0, "LibQuote: Low filled amount");
         LockedValues memory lockedValues = LockedValues(
             quote.lockedValues.cva -
             ((quote.lockedValues.cva * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
-            quote.lockedValues.mm -
-            ((quote.lockedValues.mm * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
             quote.lockedValues.lf -
-            ((quote.lockedValues.lf * filledAmount) / (LibQuote.quoteOpenAmount(quote)))
+            ((quote.lockedValues.lf * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
+            quote.lockedValues.partyAmm -
+            ((quote.lockedValues.partyAmm * filledAmount) / (LibQuote.quoteOpenAmount(quote))),
+            quote.lockedValues.partyBmm -
+            ((quote.lockedValues.partyBmm * filledAmount) / (LibQuote.quoteOpenAmount(quote)))
         );
         accountLayout.lockedBalances[quote.partyA].subQuote(quote).add(lockedValues);
         accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].subQuote(quote).add(
@@ -152,9 +152,13 @@ library LibQuote {
         );
         quote.lockedValues = lockedValues;
 
-        if (LibQuote.quoteOpenAmount(quote) != quote.quantityToClose) {
-            require(quote.lockedValues.total() >= symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
-                "LibQuote: Remaining quote value is low");
+        if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {
+            require(
+                quote.lockedValues.totalForPartyA() == 0 ||
+                    quote.lockedValues.totalForPartyA() >=
+                    symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
+                "LibQuote: Remaining quote value is low"
+            );
         }
 
         (bool hasMadeProfit, uint256 pnl) = LibQuote.getValueOfQuoteForPartyA(

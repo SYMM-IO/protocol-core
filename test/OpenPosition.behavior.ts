@@ -7,23 +7,10 @@ import { PositionType, QuoteStatus } from "./models/Enums";
 import { Hedger } from "./models/Hedger";
 import { RunContext } from "./models/RunContext";
 import { User } from "./models/User";
-import {
-  limitOpenRequestBuilder,
-  marketOpenRequestBuilder,
-} from "./models/requestModels/OpenRequest";
-import {
-  limitQuoteRequestBuilder,
-  marketQuoteRequestBuilder,
-} from "./models/requestModels/QuoteRequest";
+import { limitOpenRequestBuilder, marketOpenRequestBuilder } from "./models/requestModels/OpenRequest";
+import { limitQuoteRequestBuilder, marketQuoteRequestBuilder } from "./models/requestModels/QuoteRequest";
 import { OpenPositionValidator } from "./models/validators/OpenPositionValidator";
-import {
-  decimal,
-  getQuoteQuantity,
-  getTotalLockedValuesForQuoteIds,
-  getTradingFeeForQuotes,
-  liquidatePartyA,
-  pausePartyB,
-} from "./utils/Common";
+import { decimal, getQuoteQuantity, pausePartyB } from "./utils/Common";
 
 export function shouldBehaveLikeOpenPosition(): void {
   beforeEach(async function () {
@@ -64,19 +51,10 @@ export function shouldBehaveLikeOpenPosition(): void {
   });
 
   it("Should fail on liquidated quote", async function () {
-    const context: RunContext = this.context;
-    await this.hedger.openPosition(1);
-    await liquidatePartyA(
-      context,
-      context.signers.user.getAddress(),
-      context.signers.liquidator,
-      this.user_allocated
-        .sub(await getTotalLockedValuesForQuoteIds(context, [1], false))
-        .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
-        .add(decimal(1))
-        .mul(-1),
-    );
-    await expect(this.hedger2.openPosition(2)).to.be.revertedWith(
+    await this.hedger2.openPosition(2);
+    await this.hedger2.lockQuote(3);
+    await this.user.liquidateAndSetSymbolPrices([1],[decimal(2000)]);
+    await expect(this.hedger2.openPosition(3)).to.be.revertedWith(
       "Accessibility: PartyA isn't solvent",
     );
   });
