@@ -12,9 +12,15 @@ import "../../storages/MuonStorage.sol";
 import "../../storages/GlobalAppStorage.sol";
 import "../../storages/SymbolStorage.sol";
 import "./IControlEvents.sol";
+import "../../libraries/LibDiamond.sol";
 
 contract ControlFacet is Accessibility, Ownable, IControlEvents {
     
+    function transferOwnership(address owner) external onlyOwner{
+        require(owner != address(0),"ControlFacet: Zero address");
+        LibDiamond.setContractOwner(owner); 
+    }
+
     function setAdmin(address user) external onlyOwner {
         require(user != address(0),"ControlFacet: Zero address");
         GlobalAppStorage.layout().hasRole[user][LibAccessibility.DEFAULT_ADMIN_ROLE] = true;
