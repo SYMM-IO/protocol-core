@@ -457,4 +457,8 @@ contract ViewFacet {
     ) external view {
         LibMuon.verifyTSSAndGateway(hash, sign, gatewaySignature);
     }
+
+    function getNextQuoteId() external view returns (uint256){
+        return QuoteStorage.layout().lastId;
+    }
 }
