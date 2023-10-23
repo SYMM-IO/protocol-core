@@ -1,100 +1,129 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { Builder } from "builder-pattern";
-import { ethers } from "hardhat";
+import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
 
-import { initializeFixture } from "./Initialize.fixture";
-import { OrderType, PositionType } from "./models/Enums";
-import { Hedger } from "./models/Hedger";
-import { RunContext } from "./models/RunContext";
-import { User } from "./models/User";
-import { OpenRequest } from "./models/requestModels/OpenRequest";
-import { QuoteRequest } from "./models/requestModels/QuoteRequest";
-import { decimal } from "./utils/Common";
-import { getDummySingleUpnlAndPriceSig } from "./utils/SignatureUtils";
+import {initializeFixture} from "./Initialize.fixture"
+import {RunContext} from "./models/RunContext"
+import {User} from "./models/User"
+import {decimal, unDecimal} from "./utils/Common"
+import {Hedger} from "./models/Hedger"
+import {expect} from "chai"
 
 export function shouldBehaveLikeSpecificScenario(): void {
-  beforeEach(async function () {
-    this.context = await loadFixture(initializeFixture);
-  });
+    describe("Multiple Hedgers", function () {
+        let context: RunContext
+        let user: User
+        let user2: User
+        let hedger: Hedger
+        let hedger2: Hedger
+        let liquidator: User
 
-  it("Closing position with allocated less than quote value and with positive upnl", async function () {
-    const context: RunContext = this.context;
+        beforeEach(async function () {
+            context = await loadFixture(initializeFixture)
 
-    const uSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address);
-    const user = new User(context, uSigner);
-    await user.setup();
-    await user.setNativeBalance(100n ** 18n);
+            user = new User(context, context.signers.user)
+            await user.setup()
+            await user.setBalances(decimal(2000), decimal(1000), decimal(500))
 
-    const hSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address);
-    const hedger = new Hedger(context, hSigner);
-    await hedger.setNativeBalance(100n ** 18n);
-    await hedger.setBalances(decimal(50000), decimal(50000));
-    await hedger.register();
+            user2 = new User(context, context.signers.user2)
+            await user2.setup()
+            await user2.setBalances(decimal(2000), decimal(1000), decimal(500))
 
-    let b = decimal(5000);
-    await user.setBalances(b, b, b);
+            hedger = new Hedger(context, context.signers.hedger)
+            await hedger.setup()
+            await hedger.setBalances(decimal(2000), decimal(1000))
 
-    console.log("going to send code");
-    await user.sendQuote(
-      Builder<QuoteRequest>()
-        .partyBWhiteList([])
-        .quantity("32000000000000000")
-        .partyAmm("69706470325210735106")
-        .partyBmm("69706470325210735106")
-        .cva("14394116573201404621")
-        .lf("8104916153486468905")
-        .price("22207600000000000000000")
-        .upnlSig(getDummySingleUpnlAndPriceSig("20817400000000000000000"))
-        .maxFundingRate(0)
-        .symbolId(1)
-        .orderType(OrderType.MARKET)
-        .positionType(PositionType.SHORT)
-        .deadline("100000000000000000")
-        .build(),
-    );
-    await hedger.lockQuote(1);
-    await hedger.openPosition(
-      1,
-      Builder<OpenRequest>()
-        .filledAmount("32000000000000000")
-        .openPrice("22207600000000000000000")
-        .price("20817400000000000000000")
-        .upnlPartyA(0)
-        .upnlPartyB(0)
-        .build(),
-    );
-    // await user.requestToClosePosition(
-    //   1,
-    //   Builder<CloseRequest>()
-    //     .closePrice("22944000000000000000")
-    //     .orderType(OrderType.LIMIT)
-    //     .quantityToClose("197200000000000000000")
-    //     .deadline("1000000000000000")
-    //     .upnl(0)
-    //     .build(),
-    // );
-    // await context.accountFacet
-    //   .connect(uSigner)
-    //   .deallocate("4376707987620000000000", await getDummySingleUpnlSig("0"));
-    // console.log(await user.getBalanceInfo());
+            hedger2 = new Hedger(context, context.signers.hedger2)
+            await hedger2.setup()
+            await hedger2.setBalances(decimal(2000), decimal(1000))
 
-    // await context.partyBFacet
-    //   .connect(hSigner)
-    //   .deallocateForPartyB(
-    //     "4746758351632000000000",
-    //     await user.getAddress(),
-    //     await getDummySingleUpnlSig("531317547460000000000"),
-    //   );
-    // console.log(await hedger.getBalanceInfo(await user.getAddress()));
-    // await hedger.fillCloseRequest(
-    //   1,
-    //   Builder<FillCloseRequest>()
-    //     .filledAmount("197200000000000000000")
-    //     .closedPrice("22919000000000000000")
-    //     .upnlPartyA("-513272021960000000000")
-    //     .upnlPartyB("513277955708000000000")
-    //     .price("22885951200000000000")
-    //     .build(),
-    // );
-  });
+            liquidator = new User(context, context.signers.liquidator)
+            await liquidator.setup()
+        })
+
+        it("Open/Close quote", async function () {
+            await user.sendQuote() //1 user hedger
+            await user.sendQuote() //2 user hedger2
+            await user2.sendQuote() //3 user2 hedger
+            await user2.sendQuote() //4 user2 hedger 2
+
+            await hedger.lockQuote(1)
+            await hedger2.lockQuote(2)
+            await hedger.lockQuote(3)
+            await hedger2.lockQuote(4)
+
+            await hedger.openPosition(1)
+            await hedger2.openPosition(2)
+            await hedger.openPosition(3)
+
+            expect((await context.viewFacet.getPartyBOpenPositions(hedger2.getAddress(), user2.getAddress(), 0, 10)).length)
+                .to.be.equal(0)
+
+            expect((await context.viewFacet.getPartyBOpenPositions(hedger.getAddress(), user.getAddress(), 0, 10)).length)
+                .to.be.equal(1)
+
+            await user.requestToClosePosition(1)
+            await hedger.fillCloseRequest(1)
+
+            await user.requestToClosePosition(2)
+            await hedger2.fillCloseRequest(2)
+
+            await user2.requestToClosePosition(3)
+            await hedger.fillCloseRequest(3)
+
+            await user2.requestToCancelQuote(4)
+            await hedger2.acceptCancelRequest(4)
+        })
+
+        it("User liquidation", async function () {
+            await user.sendQuote() //1 user hedger
+            await user.sendQuote() //2 user hedger2
+            await user2.sendQuote() //3 user2 hedger
+            await user2.sendQuote() //4 user2 hedger 2
+            await user.sendQuote() //5 user hedger2
+            await user.sendQuote() //6 user hedger2
+
+            await hedger.lockQuote(1)
+            await hedger2.lockQuote(2)
+            await hedger.lockQuote(3)
+            await hedger2.lockQuote(4)
+            await hedger2.lockQuote(5)
+            await hedger2.lockQuote(6)
+
+            await hedger.openPosition(1)
+            await hedger2.openPosition(2)
+            await hedger.openPosition(3)
+            await hedger2.openPosition(4)
+            await hedger2.openPosition(5)
+            await hedger2.openPosition(6)
+
+            let liquidPrice = decimal(0)
+            await user.liquidateAndSetSymbolPrices([1], [liquidPrice])
+            await user.liquidatePendingPositions()
+            await user.liquidatePositions([1, 2, 5, 6])
+
+            const pnlOfEachPosition = unDecimal(liquidPrice.sub(decimal(1)).mul(decimal(100)))
+
+            const hedgerBalance = await hedger.getBalanceInfo(await user.getAddress())
+            const hedger2Balance = await hedger2.getBalanceInfo(await user.getAddress())
+
+            const userBalance = await user.getBalanceInfo()
+
+            const userLockedCvaOfEachPosition = userBalance.lockedCva.div(4)
+            const hedgerAfter = hedgerBalance.allocatedBalances.sub(pnlOfEachPosition.mul(1)).add(userLockedCvaOfEachPosition.mul(1))
+            const hedger2After = hedger2Balance.allocatedBalances.sub(pnlOfEachPosition.mul(3)).add(userLockedCvaOfEachPosition.mul(3))
+
+            const available = userBalance.allocatedBalances.sub(userBalance.lockedCva)
+            const diff = available.add(pnlOfEachPosition.mul(4))
+
+            await user.settleLiquidation([await hedger.getAddress(), await hedger2.getAddress()])
+
+            expect(await context.viewFacet.allocatedBalanceOfPartyB(hedger.getAddress(), user.getAddress())).to.be.equal(
+                hedgerAfter,
+            )
+            expect(await context.viewFacet.allocatedBalanceOfPartyB(hedger2.getAddress(), user.getAddress())).to.be.equal(
+                hedger2After,
+            )
+            let balanceInfoOfLiquidator = await liquidator.getBalanceInfo()
+            expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(diff)
+        })
+    })
 }
