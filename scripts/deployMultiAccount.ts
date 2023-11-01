@@ -10,7 +10,7 @@ async function main() {
   // Deploy SymmioPartyB as upgradeable
   const Factory = await ethers.getContractFactory("MultiAccount");
   const contract = await upgrades.deployProxy(Factory, [
-    "0x9BC9CA7e6A8F013f40617c4585508A988DB7C1c7", "0x52e2230cDb80EDEBDaDafcf24033608C9A636D7D",
+    "", "",
     SymmioPartyA.bytecode,
   ], { initializer: "initialize" });
   await contract.deployed();
