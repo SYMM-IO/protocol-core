@@ -66,6 +66,10 @@ const config: HardhatUserConfig = {
       url: "https://1rpc.io/bnb",
       accounts: [privateKey],
     },
+    polygon: {
+      url: "https://rpc.ankr.com/polygon",
+      accounts: [privateKey],
+    },
     base: {
       url: "https://base.meowrpc.com",
       accounts: [privateKey],
@@ -80,6 +84,7 @@ const config: HardhatUserConfig = {
       opera: ftmscanAPIKey,
       bscTestnet: APIKey,
       bsc: bscApiKey,
+      polygon:"ZGE5T95MWKDZB4ZH3127JY4Z37STM6HPKC",
     },
   },
   paths: {
