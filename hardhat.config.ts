@@ -1,42 +1,30 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-toolbox";
 import "@openzeppelin/hardhat-upgrades";
-import { config as dotenvConfig } from "dotenv";
-import type { HardhatUserConfig } from "hardhat/config";
-import { resolve } from "path";
+import {config as dotenvConfig} from "dotenv";
+import type {HardhatUserConfig} from "hardhat/config";
+import {resolve} from "path";
 
 import "./tasks/deploy";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
-dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
+dotenvConfig({path: resolve(__dirname, dotenvConfigPath)});
 
 // Ensure that we have all the environment variables we need.
 const privateKey: string | undefined = process.env.PRIVATE_KEY;
-if (!privateKey) {
+if (!privateKey)
   throw new Error("Please set your PRIVATE_KEY in a .env file");
-}
 
 const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR;
 const privateKeyList: string[] = privateKeysStr?.split(",") || [];
 
-const fantomRpcURL: string | undefined = process.env.FANTOM_RPC_URL;
-if (!fantomRpcURL) {
-  throw new Error("Please set your FANTOM_RPC_URL in a .env file");
-}
-
-const ftmscanAPIKey: string | undefined = process.env.FTMSCAN_API_KEY;
-if (!ftmscanAPIKey) {
-  throw new Error("Please set your FTMSCAN_API_KEY in a .env file");
-}
-
-const bscApiKey: string | undefined = process.env.BSC_API_KEY;
-if (!bscApiKey) {
-  throw new Error("Please set your BSC_API_KEY in a .env file");
-}
+const ftmAPIKey: string = process.env.FTM_API_KEY || "";
+const bnbApiKey: string = process.env.BNB_API_KEY || "";
+const baseApiKey: string = process.env.BASE_API_KEY || "";
+const polygonApiKey: string = process.env.POLYGON_API_KEY || "";
+const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || "";
 
 const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || "";
-
-const APIKey: string = process.env.API_Key!;
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -49,7 +37,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       // forking: {
-      //   url: fantomRpcURL,
+      //   url: "",
       // },
       allowUnlimitedContractSize: false,
     },
@@ -59,33 +47,52 @@ const config: HardhatUserConfig = {
       accounts: privateKeyList,
     },
     fantom: {
-      url: fantomRpcURL,
+      url: "https://1rpc.io/ftm",
       accounts: privateKeyList,
     },
-    bsc: {
+    bnb: {
       url: "https://1rpc.io/bnb",
-      accounts: [privateKey],
-    },
-    polygon: {
-      url: "https://rpc.ankr.com/polygon",
       accounts: [privateKey],
     },
     base: {
       url: "https://base.meowrpc.com",
       accounts: [privateKey],
     },
-    bscTest: {
-      url: "https://bsc-testnet.public.blastapi.io",
+    polygon: {
+      url: "https://polygon-rpc.com",
+      accounts: [privateKey],
+    },
+    zkEvm: {
+      url: "https://zkevm-rpc.com",
       accounts: [privateKey],
     },
   },
   etherscan: {
     apiKey: {
-      opera: ftmscanAPIKey,
-      bscTestnet: APIKey,
-      bsc: bscApiKey,
-      polygon:"ZGE5T95MWKDZB4ZH3127JY4Z37STM6HPKC",
+      fantom: ftmAPIKey,
+      bnb: bnbApiKey,
+      base: baseApiKey,
+      polygon: polygonApiKey,
+      zkEvm: zkEvmApiKey,
     },
+    customChains: [
+      {
+        network: 'base',
+        chainId: 8453,
+        urls: {
+          apiURL: `https://api.basescan.org/api?apiKey=${baseApiKey}`,
+          browserURL: "https://basescan.org"
+        }
+      },
+      {
+        network: 'zkEvm',
+        chainId: 1101,
+        urls: {
+          apiURL: `https://api-zkevm.polygonscan.com/api?apikey=${zkEvmApiKey}`,
+          browserURL: "https://zkevm.polygonscan.com"
+        }
+      }
+    ],
   },
   paths: {
     artifacts: "./artifacts",
