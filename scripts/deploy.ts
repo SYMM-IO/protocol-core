@@ -1,12 +1,13 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const Facet = await ethers.getContractFactory("PartyBFacet");
+  const facetName = "PartyAFacet"; 
+  const Facet = await ethers.getContractFactory(facetName);
   const facet = await Facet.deploy();
 
   await facet.deployed();
 
-  console.log(`facet deployed to ${facet.address}`);
+  console.log(`${facetName} deployed: ${facet.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

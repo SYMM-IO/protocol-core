@@ -49,8 +49,8 @@ export function getSelectors(contract: Contract | ContractFactory) {
 
 async function main() {
   // let addr = "0x52e2230cdb80edebdadafcf24033608c9a636d7d"; // bsc testnet
-  let addr = "0x762407bEd807184F90F3eDcF2D7Ac9CB9d8901c6"; // ftm
-  let facetAddr = "0x9aB86B1063e19EFE722068B84bf325D62500fce7";
+  let addr = "0x7Bdc80663f25d4852a237247E4fb32c5FFbc808B"; // ftm
+  let facetAddr = "0x820263E7d80b39e7829e64fBD55E27d9433af972";
   const diamondCutFacet = await ethers.getContractAt("DiamondCutFacet", addr);
   const NewFacet = await ethers.getContractFactory("PartyAFacet");
   const selectors = getSelectors(NewFacet).selectors;
