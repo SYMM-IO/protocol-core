@@ -49,7 +49,7 @@ export async function initialize(): Promise<RunContext> {
 
   await runTx(context.controlFacet
     .connect(context.signers.admin)
-    .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16)));
+    .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900));
 
   await runTx(context.controlFacet.connect(context.signers.admin).setPendingQuotesValidLength(100));
   await runTx(context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1, 17)));
