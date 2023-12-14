@@ -47,15 +47,6 @@ library PartyAFacetImpl {
 
         LockedValues memory lockedValues = LockedValues(cva, lf, partyAmm, partyBmm);
         uint256 tradingPrice = orderType == OrderType.LIMIT ? price : upnlSig.price;
-        // uint256 notionalValue = (quantity * tradingPrice) / 1e18;
-        // require(
-        //     lockedValues.totalForPartyA() <= notionalValue,
-        //     "PartyAFacet: Leverage can't be lower than one"
-        // );
-        // require(
-        //     lockedValues.totalForPartyB() <= notionalValue,
-        //     "PartyAFacet: Leverage for partyB can't be lower than one"
-        // );
         require(
             lockedValues.lf >=
                 (symbolLayout.symbols[symbolId].minAcceptablePortionLF * lockedValues.totalForPartyA()) /
@@ -88,7 +79,6 @@ library PartyAFacetImpl {
         // lock funds the in middle of way
         accountLayout.pendingLockedBalances[msg.sender].add(lockedValues);
         currentId = ++quoteLayout.lastId;
-        // accountLayout.partyANonces[msg.sender] += 1;
 
         // create quote.
         Quote memory quote = Quote({
