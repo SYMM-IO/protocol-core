@@ -5,14 +5,16 @@
 pragma solidity >=0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 
-contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlUpgradeable {
+contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumerableUpgradeable {
     bytes32 public constant TRUSTED_ROLE = keccak256("TRUSTED_ROLE");
     address public symmioAddress;
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
     mapping(bytes4 => bool) public restrictedSelectors;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -63,11 +65,11 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlUpgrad
                 functionSelector := mload(add(_callData, 0x20))
             }
             if (restrictedSelectors[functionSelector]) {
-                _checkRole(MANAGER_ROLE);
+                _checkRole(MANAGER_ROLE, msg.sender);
             } else {
-                _checkRole(TRUSTED_ROLE);
+                require(hasRole(MANAGER_ROLE, msg.sender) || hasRole(TRUSTED_ROLE, msg.sender), "SymmioPartyB: Invalid access");
             }
-            (bool _success, ) = symmioAddress.call{ value: 0 }(_callDatas[i]);
+            (bool _success,) = symmioAddress.call{value: 0}(_callDatas[i]);
             require(_success, "SymmioPartyB: execution reverted");
         }
     }
@@ -77,5 +79,13 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlUpgrad
             IERC20Upgradeable(token).transfer(msg.sender, amount),
             "SymmioPartyB: Not transferred"
         );
+    }
+
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(UNPAUSER_ROLE) {
+        _unpause();
     }
 }
