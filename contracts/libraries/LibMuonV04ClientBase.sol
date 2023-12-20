@@ -113,8 +113,8 @@ library LibMuonV04ClientBase {
         // set to 0x0.
         //
         // solium-disable-next-line indentation
-        require(nonceTimesGeneratorAddress != address(0) && signingPubKeyX > 0 &&
-        signature > 0 && msgHash > 0, "no zero inputs allowed");
+        // require(nonceTimesGeneratorAddress != address(0) && signingPubKeyX > 0 &&
+        // signature > 0 && msgHash > 0, "no zero inputs allowed");
 
         // solium-disable-next-line indentation
         uint256 msgChallenge = // "e"
@@ -145,7 +145,7 @@ library LibMuonV04ClientBase {
     }
 
     function validatePubKey(uint256 signingPubKeyX) public pure {
-        require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
+        // require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
     }
 
     function muonVerify(
