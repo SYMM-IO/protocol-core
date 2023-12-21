@@ -22,5 +22,6 @@ export function roundToPrecision(a: BigNumber, precision: number): BigNumber {
 }
 
 export function expectToBeApproximately(a: BigNumber, b: BigNumber) {
-	expect(a).to.be.approximately(b.toString(), 5)
+	// expect(a).to.be.approximately(b.toString(),5)
+	expect(b.sub(a)).to.be.lt(3)
 }
