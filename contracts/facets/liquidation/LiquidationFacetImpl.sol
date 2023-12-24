@@ -258,7 +258,7 @@ library LiquidationFacetImpl {
         }
     }
 
-    function settlePartyALiquidation(address partyA, address[] memory partyBs) internal {
+    function settlePartyALiquidation(address partyA, address[] memory partyBs) internal returns (int256[] memory settleAmounts){
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         require(
@@ -274,6 +274,7 @@ library LiquidationFacetImpl {
             !accountLayout.liquidationDetails[partyA].disputed,
             "LiquidationFacet: PartyA liquidation process get disputed"
         );
+        settleAmounts = new int256[](partyBs.length);
         for (uint256 i = 0; i < partyBs.length; i++) {
             address partyB = partyBs[i];
             require(
@@ -288,12 +289,15 @@ library LiquidationFacetImpl {
                 .settlementStates[partyA][partyB].cva;
             if (settleAmount < 0) {
                 accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(- settleAmount);
+                settleAmounts[i] = settleAmount;
             } else {
                 if (
                     accountLayout.partyBAllocatedBalances[partyB][partyA] >= uint256(settleAmount)
                 ) {
                     accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(settleAmount);
+                    settleAmounts[i] = settleAmount;
                 } else {
+                    settleAmounts[i] = int256(accountLayout.partyBAllocatedBalances[partyB][partyA]);
                     accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
                 }
             }

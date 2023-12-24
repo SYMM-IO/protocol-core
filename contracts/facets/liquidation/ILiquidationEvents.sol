@@ -5,11 +5,13 @@
 pragma solidity >=0.8.18;
 
 interface ILiquidationEvents {
-    event LiquidatePartyA(address liquidator, address partyA);
+    event LiquidatePartyA(address liquidator, address partyA, uint256 allocatedBalance, int256 upnl, int256 totalUnrealizedLoss);
     event LiquidatePositionsPartyA(address liquidator, address partyA, uint256[] quoteIds);
     event LiquidatePendingPositionsPartyA(address liquidator, address partyA);
-    event SettlePartyALiquidation(address partyA, address[] partyBs);
+    event SettlePartyALiquidation(address partyA, address[] partyBs, int256[] amounts);
     event LiquidationDisputed(address partyA);
+    event ResolveLiquidationDispute(address partyA, address[] partyBs, int256[] amounts, bool disputed);
+    event FullyLiquidatedPartyA(address partyA);
     event LiquidatePartyB(address liquidator, address partyB, address partyA);
     event LiquidatePositionsPartyB(
         address liquidator,
