@@ -62,7 +62,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
                     newQuote.lockedValues.lf,
                     newQuote.lockedValues.partyAmm,
                     newQuote.lockedValues.partyBmm,
-                    newQuote.maxFundingRate,
+                    newQuote.tradingFee,
                     newQuote.deadline
                 );
             } else if (newQuote.quoteStatus == QuoteStatus.CANCELED) {
@@ -122,7 +122,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
                     newQuote.lockedValues.lf,
                     newQuote.lockedValues.partyAmm,
                     newQuote.lockedValues.partyBmm,
-                    newQuote.maxFundingRate,
+                    newQuote.tradingFee,
                     newQuote.deadline
                 );
             } else if (newQuote.quoteStatus == QuoteStatus.CANCELED) {

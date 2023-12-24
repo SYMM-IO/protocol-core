@@ -55,7 +55,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
             quote.lockedValues.lf,
             quote.lockedValues.partyAmm,
             quote.lockedValues.partyBmm,
-            maxFundingRate,
+            quote.tradingFee,
             deadline
         );
     }

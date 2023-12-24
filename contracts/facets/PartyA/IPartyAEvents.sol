@@ -21,7 +21,7 @@ interface IPartyAEvents {
         uint256 lf,
         uint256 partyAmm,
         uint256 partyBmm,
-        uint256 maxFundingRate,
+        uint256 tradingFee,
         uint256 deadline
     );
 
