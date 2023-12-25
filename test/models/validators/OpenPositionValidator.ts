@@ -110,8 +110,7 @@ export class OpenPositionValidator implements TransactionValidator {
     // Check Balances partyA
     const newBalanceInfoPartyA = await arg.user.getBalanceInfo();
     const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA;
-
-    if (arg.newQuoteTargetStatus == QuoteStatus.CANCELED) {
+    if (oldQuote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
       expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
         oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(oldLockedValuesPartyA).toString(),
       );
