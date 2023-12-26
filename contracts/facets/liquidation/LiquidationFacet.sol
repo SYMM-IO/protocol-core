@@ -92,7 +92,13 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationEvents {
         onlyRole(LibAccessibility.LIQUIDATOR_ROLE)
     {
         LiquidationFacetImpl.liquidatePartyB(partyB, partyA, upnlSig);
-        emit LiquidatePartyB(msg.sender, partyB, partyA);
+        emit LiquidatePartyB(
+            msg.sender,
+            partyB,
+            partyA,
+            AccountStorage.layout().partyBAllocatedBalances[partyB][partyA],
+            upnlSig.upnl
+        );
     }
 
     function liquidatePositionsPartyB(
