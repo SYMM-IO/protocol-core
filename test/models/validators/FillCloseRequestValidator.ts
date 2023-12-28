@@ -62,6 +62,14 @@ export class FillCloseRequestValidator implements TransactionValidator {
 		}
 		
 		expect(newQuote.closedAmount).to.be.equal(oldQuote.closedAmount.add(arg.fillAmount))
+		
+		// TODO: Sometimes fillCloseRequest has Error
+
+		console.log('New Quote ::: ',newQuote);
+		console.log('Old Quote ::: ',oldQuote);
+		console.log('Fill Amount ::: ',arg.fillAmount);
+		
+
 		expect(newQuote.quantityToClose).to.be.equal(oldQuote.quantityToClose.sub(arg.fillAmount))
 		
 		const oldLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([ oldQuote ])
