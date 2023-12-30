@@ -15,10 +15,10 @@ import "../interfaces/ISymmioPartyA.sol";
 import "../interfaces/IMultiAccount.sol";
 
 contract MultiAccount is
-    IMultiAccount,
-    Initializable,
-    PausableUpgradeable,
-    AccessControlUpgradeable
+IMultiAccount,
+Initializable,
+PausableUpgradeable,
+AccessControlUpgradeable
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -36,6 +36,8 @@ contract MultiAccount is
     address public symmioAddress; // Address of the Symmio platform
     uint256 public saltCounter; // Counter for generating unique addresses with create2
     bytes public accountImplementation;
+
+    mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses; // account -> target -> selector -> state
 
     modifier onlyOwner(address account, address sender) {
         require(
@@ -65,6 +67,11 @@ contract MultiAccount is
         accountsAdmin = admin;
         symmioAddress = symmioAddress_;
         accountImplementation = accountImplementation_;
+    }
+
+    function delegateAccess(address account, address target, bytes4 selector, bool state) external onlyOwner(account, msg.sender) {
+        emit DelegateAccess(account, target, selector, state);
+        delegatedAccesses[account][target][selector] = state;
     }
 
     function setAccountImplementation(
@@ -201,9 +208,19 @@ contract MultiAccount is
     function _call(
         address account,
         bytes[] memory _callDatas
-    ) public onlyOwner(account, msg.sender) whenNotPaused {
+    ) public whenNotPaused {
+        bool isOwner = owners[account] == msg.sender;
         for (uint8 i; i < _callDatas.length; i++) {
-            innerCall(account, _callDatas[i]);
+            bytes memory _callData = _callDatas[i];
+            if (!isOwner) {
+                require(_callData.length >= 4, "MultiAccount: Invalid call data");
+                bytes4 functionSelector;
+                assembly {
+                    functionSelector := mload(add(_callData, 0x20))
+                }
+                require(delegatedAccesses[account][msg.sender][functionSelector], "MultiAccount: Unauthorized access");
+            }
+            innerCall(account, _callData);
         }
     }
 
