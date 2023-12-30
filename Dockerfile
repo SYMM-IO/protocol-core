@@ -1,7 +1,7 @@
-# Project: v3-deus
+# Project: symmio
 # Description: -
 
-FROM node
+FROM node:lts
 
 ######################################################################
 # LABELS
