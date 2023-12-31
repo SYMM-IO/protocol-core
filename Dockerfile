@@ -31,10 +31,10 @@ WORKDIR /app
 
 RUN npm install --ignore-scripts
 
-RUN mkdir -p /app/deus
+RUN mkdir -p /app/symmio
 
-COPY . /app/deus
-WORKDIR /app/deus
+COPY . /app/symmio
+WORKDIR /app/symmio
 RUN cp .env.example .env
 RUN ln -s /app/node_modules .
 RUN npm run postinstall
