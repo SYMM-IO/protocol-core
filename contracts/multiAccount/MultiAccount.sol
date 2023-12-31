@@ -70,6 +70,7 @@ AccessControlUpgradeable
     }
 
     function delegateAccess(address account, address target, bytes4 selector, bool state) external onlyOwner(account, msg.sender) {
+        require(target != msg.sender && target != account, "MultiAccount: invalid target");
         emit DelegateAccess(account, target, selector, state);
         delegatedAccesses[account][target][selector] = state;
     }

@@ -60,7 +60,7 @@ const config: HardhatUserConfig = {
 			accounts: [ privateKey ],
 		},
 		base: {
-			url: "https://base.meowrpc.com",
+			url: "https://1rpc.io/base",
 			accounts: [ privateKey ],
 		},
 		polygon: {
