@@ -23,6 +23,9 @@ function getFunctionSelector(contract: Contract | ContractFactory, functionName:
 }
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
+
+  let upnl = await request.upnlSig
+  
   return [
     request.partyBWhiteList,
     request.symbolId,
@@ -35,9 +38,20 @@ async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> 
     request.partyAmm,
     request.partyBmm,
     request.maxFundingRate,
-    await request.deadline,
-    await request.upnlSig,
-  ];
+    await  request.deadline,
+    {
+      reqId: '0x',
+      timestamp: 1704295726,
+      upnl: 0,
+      gatewaySignature: '0x0000000000000000000000000000000000000000',
+      sigs: {
+        signature: '0',
+        owner: '0x0000000000000000000000000000000000000000',
+        nonce: '0x0000000000000000000000000000000000000000'
+      },
+      price: "1000000000000000000" 
+    }
+  ]
 }
 
 export function shouldBehaveLikMultiAccount() {
@@ -71,7 +85,14 @@ export function shouldBehaveLikMultiAccount() {
     );
 
     multiAccount = await MultiAccount.deployed();
+
+    await context.controlFacet
+      .connect(context.signers.admin)
+      .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900)
+
   });
+
+  
 
   describe("Initialization and Settings", function () {
     it("Should set the correct admin and Symmio address", async function () {
@@ -258,15 +279,12 @@ export function shouldBehaveLikMultiAccount() {
     });
     it("Should call single sendQuotes", async () => {
       let quoteRequest1 = limitQuoteRequestBuilder().build();
-      console.log("AAAAAAAAAAAAAAAAAAAAA");
-      let a = await getListFormatOfQuoteRequest(quoteRequest1)
-      console.log(a);
-      console.log("BBBBBBBBBBBBBBBB");
       let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
-        "sendQuote",a
+        "sendQuote",
+        await getListFormatOfQuoteRequest(quoteRequest1),
       );
-      console.log("CCCCCCCCCCCCCCCCCC");
       await multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1]);
     });
+
   });
 }
