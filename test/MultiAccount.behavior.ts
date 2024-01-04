@@ -7,8 +7,13 @@ import { decimal, getBlockTimestamp } from "./utils/Common";
 import { ethers, upgrades } from "hardhat";
 import { expect } from "chai";
 import { Contract, ContractFactory } from "ethers";
-import { QuoteRequest, limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest";
-import { getDummySingleUpnlAndPriceSig } from "./utils/SignatureUtils";
+import {
+  QuoteRequest,
+  limitQuoteRequestBuilder,
+  marketQuoteRequestBuilder,
+} from "./models/requestModels/QuoteRequest";
+import { getDummySingleUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils";
+import { PositionType } from "./models/Enums";
 
 function getFunctionAbi(contract: Contract | ContractFactory, functionName: string) {
   for (const abi of Object.keys(contract.interface.functions))
@@ -23,9 +28,6 @@ function getFunctionSelector(contract: Contract | ContractFactory, functionName:
 }
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
-
-  let upnl = await request.upnlSig
-  
   return [
     request.partyBWhiteList,
     request.symbolId,
@@ -38,20 +40,20 @@ async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> 
     request.partyAmm,
     request.partyBmm,
     request.maxFundingRate,
-    await  request.deadline,
+    await request.deadline,
     {
-      reqId: '0x',
+      reqId: "0x",
       timestamp: 1704295726,
       upnl: 0,
-      gatewaySignature: '0x0000000000000000000000000000000000000000',
+      gatewaySignature: "0x0000000000000000000000000000000000000000",
       sigs: {
-        signature: '0',
-        owner: '0x0000000000000000000000000000000000000000',
-        nonce: '0x0000000000000000000000000000000000000000'
+        signature: "0",
+        owner: "0x0000000000000000000000000000000000000000",
+        nonce: "0x0000000000000000000000000000000000000000",
       },
-      price: "1000000000000000000" 
-    }
-  ]
+      price: "1000000000000000000",
+    },
+  ];
 }
 
 export function shouldBehaveLikMultiAccount() {
@@ -60,6 +62,7 @@ export function shouldBehaveLikMultiAccount() {
   let user: User;
   let hedger: Hedger;
   let symmioAddress: any;
+  let symmioPartyB: any;
 
   beforeEach(async () => {
     context = await loadFixture(initializeFixture);
@@ -67,16 +70,22 @@ export function shouldBehaveLikMultiAccount() {
 
     user = new User(context, context.signers.user);
     await user.setup();
-    await user.setBalances(decimal(2000), decimal(2000), decimal(2000));
+    await user.setBalances(decimal(6000), decimal(6000), decimal(6000));
 
     hedger = new Hedger(context, context.signers.hedger);
     await hedger.setup();
-    await hedger.setBalances(decimal(2000), decimal(1000));
+    await hedger.setBalances(decimal(10000), decimal(10000));
 
     const SymmioPartyA = await ethers.getContractFactory("SymmioPartyA");
     const SymmioPartyB = await ethers.getContractFactory("SymmioPartyB");
 
     const Factory = await ethers.getContractFactory("MultiAccount");
+
+    const sssymmioPartyB = await upgrades.deployProxy(
+      SymmioPartyB,
+      [await context.signers.admin.getAddress(), symmioAddress],
+      { initializer: "initialize" },
+    );
 
     const MultiAccount = await upgrades.deployProxy(
       Factory,
@@ -85,14 +94,14 @@ export function shouldBehaveLikMultiAccount() {
     );
 
     multiAccount = await MultiAccount.deployed();
+    symmioPartyB = await sssymmioPartyB.deployed();
+
+    await context.controlFacet.connect(context.signers.admin).registerPartyB(symmioPartyB.address);
 
     await context.controlFacet
       .connect(context.signers.admin)
-      .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900)
-
+      .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900);
   });
-
-  
 
   describe("Initialization and Settings", function () {
     it("Should set the correct admin and Symmio address", async function () {
@@ -285,6 +294,80 @@ export function shouldBehaveLikMultiAccount() {
       );
       await multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1]);
     });
+  });
 
+  describe("Locking pair quotes", function () {
+    let partyAAccount: any;
+    beforeEach(async () => {
+      const userAddress = await context.signers.user.getAddress();
+
+      await multiAccount.connect(context.signers.user).addAccount("Test");
+      partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress;
+
+      let quoteRequest1 = marketQuoteRequestBuilder().build();
+      let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
+        "sendQuote",
+        await getListFormatOfQuoteRequest(quoteRequest1),
+      );
+      let quoteRequest2 = marketQuoteRequestBuilder().positionType(PositionType.SHORT).build();
+      let sendQuote2 = context.partyAFacet.interface.encodeFunctionData(
+        "sendQuote",
+        await getListFormatOfQuoteRequest(quoteRequest2),
+      );
+
+      await context.collateral.connect(context.signers.user).mint(userAddress, decimal(1000000));
+      await context.collateral
+        .connect(context.signers.admin)
+        .mint(context.signers.admin.address, decimal(1000000));
+
+      await context.collateral
+        .connect(context.signers.user)
+        .approve(multiAccount.address, ethers.constants.MaxUint256);
+
+      await multiAccount
+        .connect(context.signers.user)
+        .depositAndAllocateForAccount(partyAAccount, decimal(3000));
+
+      await multiAccount
+        .connect(context.signers.user)
+        ._call(partyAAccount, [sendQuote1, sendQuote2]);
+
+      await context.collateral
+        .connect(context.signers.admin)
+        .transfer(symmioPartyB.address, decimal(1000000));
+
+      await symmioPartyB
+        .connect(context.signers.admin)
+        ._approve(context.collateral.address, decimal(10000));
+
+      let deposit = context.accountFacet.interface.encodeFunctionData("deposit", [decimal(10000)]);
+
+      let allocate = context.accountFacet.interface.encodeFunctionData("allocateForPartyB", [
+        decimal(10000),
+        partyAAccount,
+      ]);
+
+      await symmioPartyB.connect(context.signers.admin)._call([deposit]);
+      await symmioPartyB.connect(context.signers.admin)._call([allocate]);
+    });
+
+    it("Should be able to call pair functions only for one quote", async () => {
+      let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [
+        1,
+        {
+          reqId: "0x",
+          timestamp: 1704295726,
+          upnl: 0,
+          gatewaySignature: "0x0000000000000000000000000000000000000000",
+          sigs: {
+            signature: "0",
+            owner: "0x0000000000000000000000000000000000000000",
+            nonce: "0x0000000000000000000000000000000000000000",
+          },
+        },
+      ]);
+
+      await expect(symmioPartyB.connect(context.signers.admin)._call([lockQuote])).to.not.be.reverted;
+    });
   });
 }
