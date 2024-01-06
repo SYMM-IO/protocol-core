@@ -295,7 +295,7 @@ library PartyAFacetImpl {
                     quote.partyA
                 );
                 require(availableBalancePartyB < 0, "PartyAFacet: partyB has insufficient realized PNL");
-                LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, sig.upnlPartyB, block.timestamp);
+                LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, sig.upnlPartyB - int256(pnl), block.timestamp);
             }
         } else {
             require(accountLayout.allocatedBalances[quote.partyA] >= pnl, "PartyAFacet: partyA will be liquidatable");
