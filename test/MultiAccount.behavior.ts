@@ -12,20 +12,9 @@ import {
   limitQuoteRequestBuilder,
   marketQuoteRequestBuilder,
 } from "./models/requestModels/QuoteRequest";
-import { getDummySingleUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils";
-import { PositionType } from "./models/Enums";
-
-function getFunctionAbi(contract: Contract | ContractFactory, functionName: string) {
-  for (const abi of Object.keys(contract.interface.functions))
-    if (abi.startsWith(functionName + "(")) return abi;
-  throw Error("Function not found: " + functionName);
-}
-
-function getFunctionSelector(contract: Contract | ContractFactory, functionName: string) {
-  return ethers.utils
-    .keccak256(ethers.utils.toUtf8Bytes(getFunctionAbi(contract, functionName)))
-    .slice(0, 10);
-}
+import { PositionType, QuoteStatus } from "./models/Enums";
+import { OpenRequest, marketOpenRequestBuilder } from "./models/requestModels/OpenRequest";
+import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest";
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
   return [
@@ -56,6 +45,30 @@ async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> 
   ];
 }
 
+async function getListFormatOfCloseRequest(request: CloseRequest): Promise<any> {
+  return [request.closePrice, request.quantityToClose, request.orderType, await request.deadline];
+}
+
+async function getListFormatOfOpenRequest(request: OpenRequest): Promise<any> {
+  return [
+    request.filledAmount,
+    request.openPrice,
+    {
+      reqId: "0x",
+      timestamp: 1704295726,
+      upnlPartyA: request.upnlPartyA,
+      upnlPartyB: request.upnlPartyB,
+      gatewaySignature: "0x0000000000000000000000000000000000000000",
+      sigs: {
+        signature: "0",
+        owner: "0x0000000000000000000000000000000000000000",
+        nonce: "0x0000000000000000000000000000000000000000",
+      },
+      price: request.price,
+    },
+  ];
+}
+
 export function shouldBehaveLikMultiAccount() {
   let multiAccount: any;
   let context: RunContext;
@@ -70,7 +83,7 @@ export function shouldBehaveLikMultiAccount() {
 
     user = new User(context, context.signers.user);
     await user.setup();
-    await user.setBalances(decimal(6000), decimal(6000), decimal(6000));
+    await user.setBalances(decimal(10000), decimal(6000), decimal(6000));
 
     hedger = new Hedger(context, context.signers.hedger);
     await hedger.setup();
@@ -300,7 +313,6 @@ export function shouldBehaveLikMultiAccount() {
     let partyAAccount: any;
     beforeEach(async () => {
       const userAddress = await context.signers.user.getAddress();
-
       await multiAccount.connect(context.signers.user).addAccount("Test");
       partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress;
 
@@ -315,10 +327,9 @@ export function shouldBehaveLikMultiAccount() {
         await getListFormatOfQuoteRequest(quoteRequest2),
       );
 
-      await context.collateral.connect(context.signers.user).mint(userAddress, decimal(1000000));
       await context.collateral
         .connect(context.signers.admin)
-        .mint(context.signers.admin.address, decimal(1000000));
+        .mint(symmioPartyB.address, decimal(1000000));
 
       await context.collateral
         .connect(context.signers.user)
@@ -331,10 +342,6 @@ export function shouldBehaveLikMultiAccount() {
       await multiAccount
         .connect(context.signers.user)
         ._call(partyAAccount, [sendQuote1, sendQuote2]);
-
-      await context.collateral
-        .connect(context.signers.admin)
-        .transfer(symmioPartyB.address, decimal(1000000));
 
       await symmioPartyB
         .connect(context.signers.admin)
@@ -351,7 +358,7 @@ export function shouldBehaveLikMultiAccount() {
       await symmioPartyB.connect(context.signers.admin)._call([allocate]);
     });
 
-    it("Should be able to call pair functions only for one quote", async () => {
+    it("Should be able to lock Quote", async () => {
       let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [
         1,
         {
@@ -367,7 +374,70 @@ export function shouldBehaveLikMultiAccount() {
         },
       ]);
 
-      await expect(symmioPartyB.connect(context.signers.admin)._call([lockQuote])).to.not.be.reverted;
+      await expect(symmioPartyB.connect(context.signers.admin)._call([lockQuote])).to.not.be
+        .reverted;
+      expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.LOCKED);
+    });
+
+    describe("Open quotes", function () {
+      beforeEach(async () => {
+        let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [
+          1,
+          {
+            reqId: "0x",
+            timestamp: 1704295726,
+            upnl: 0,
+            gatewaySignature: "0x0000000000000000000000000000000000000000",
+            sigs: {
+              signature: "0",
+              owner: "0x0000000000000000000000000000000000000000",
+              nonce: "0x0000000000000000000000000000000000000000",
+            },
+          },
+        ]);
+
+        await symmioPartyB.connect(context.signers.admin)._call([lockQuote]);
+      });
+
+      it("Should be able to Open Quote", async () => {
+        let openPosition2 = marketOpenRequestBuilder().build();
+        let a = await getListFormatOfOpenRequest(openPosition2);
+        let openPositionCallData2 = context.partyBFacet.interface.encodeFunctionData(
+          "openPosition",
+          [1, a[0], a[1], a[2]],
+        );
+        await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2]);
+
+        expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED);
+      });
+
+      describe("Request to close", function () {
+        beforeEach(async () => {
+          //! open Position
+          let openPosition2 = marketOpenRequestBuilder().build();
+          let a = await getListFormatOfOpenRequest(openPosition2);
+          let openPositionCallData2 = context.partyBFacet.interface.encodeFunctionData(
+            "openPosition",
+            [1, a[0], a[1], a[2]],
+          );
+          await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2]);
+        });
+        it("request to close position", async () => {
+          let closeRequest1 = marketCloseRequestBuilder().build();
+          let a = await getListFormatOfCloseRequest(closeRequest1);
+          let closeRequestCallData1 = context.partyAFacet.interface.encodeFunctionData(
+            "requestToClosePosition",
+            [1, a[0], a[1], a[2], a[3]],
+          );
+          await multiAccount
+            .connect(context.signers.user)
+            ._call(partyAAccount, [closeRequestCallData1]);
+
+          expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(
+            QuoteStatus.CLOSE_PENDING,
+          );
+        });
+      });
     });
   });
 }
