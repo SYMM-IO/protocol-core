@@ -393,7 +393,7 @@ contract ViewFacet {
             MAStorage.layout().deallocateCooldown,
             MAStorage.layout().forceCancelCooldown,
             MAStorage.layout().forceCancelCloseCooldown,
-            MAStorage.layout().forceCloseCooldown
+            MAStorage.layout().forceCloseFirstCooldown
         );
     }
 

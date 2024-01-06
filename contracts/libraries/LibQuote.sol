@@ -166,6 +166,7 @@ library LibQuote {
             filledAmount,
             quote
         );
+
         if (hasMadeProfit) {
             accountLayout.allocatedBalances[quote.partyA] += pnl;
             accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] -= pnl;

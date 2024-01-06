@@ -192,6 +192,29 @@ library LibMuon {
         verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 
+    function verifyHighLowPrice(
+        HighLowPriceSig memory sig,
+        uint256 symbolId
+    ) internal view {
+        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                muonLayout.muonAppId,
+                sig.reqId,
+                address(this),
+                symbolId,
+                sig.x,
+                sig.y,
+                sig.lowest,
+                sig.highest,
+                sig.averagePrice,
+                sig.upnlPartyB,
+                getChainId()
+            )
+        );
+        verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
+    }
+
     function verifyPairUpnl(
         PairUpnlSig memory upnlSig,
         address partyB,

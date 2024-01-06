@@ -14,7 +14,7 @@ library MAStorage {
         uint256 deallocateCooldown;
         uint256 forceCancelCooldown;
         uint256 forceCancelCloseCooldown;
-        uint256 forceCloseCooldown;
+        uint256 forceCloseFirstCooldown;
         uint256 liquidationTimeout;
         uint256 liquidatorShare; // in 18 decimals
         uint256 pendingQuotesValidLength;
@@ -25,6 +25,9 @@ library MAStorage {
         mapping(address => mapping(address => uint256)) partyBLiquidationTimestamp;
         mapping(address => mapping(address => uint256)) partyBPositionLiquidatorsShare;
         address[] partyBList;
+        uint256 forceCloseSecondCooldown;
+        uint256 forceClosePricePenalty;
+        uint256 forceCloseMinSigPeriod;
     }
 
     function layout() internal pure returns (Layout storage l) {

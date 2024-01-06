@@ -149,21 +149,20 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED);
     }
 
-    function forceClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig)
+    function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig)
         external
         notLiquidated(quoteId)
         whenNotPartyAActionsPaused
     {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         uint256 filledAmount = quote.quantityToClose;
-        uint256 requestedClosePrice = quote.requestedClosePrice;
-        PartyAFacetImpl.forceClosePosition(quoteId, upnlSig);
+        uint256 closePrice = PartyAFacetImpl.forceClosePosition(quoteId, sig);
         emit ForceClosePosition(
             quoteId,
             quote.partyA,
             quote.partyB,
             filledAmount,
-            requestedClosePrice,
+            closePrice,
             quote.quoteStatus
         );
     }
