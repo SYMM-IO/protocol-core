@@ -14,7 +14,7 @@ import { getBlockTimestamp } from "./Common"
 export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<SingleUpnlSigStruct> {
 	return {
 		reqId: "0x",
-		timestamp: getBlockTimestamp(),
+		timestamp: await getBlockTimestamp(),
 		upnl: upnl,
 		gatewaySignature: "0x0000000000000000000000000000000000000000",
 		sigs: {
@@ -54,7 +54,7 @@ export async function getDummySingleUpnlAndPriceSig(
 ): Promise<SingleUpnlAndPriceSigStruct> {
 	return {
 		reqId: "0x",
-		timestamp: getBlockTimestamp(),
+		timestamp: await getBlockTimestamp(),
 		upnl: upnl,
 		gatewaySignature: "0x0000000000000000000000000000000000000000",
 		sigs: {
@@ -73,7 +73,7 @@ export async function getDummyPairUpnlAndPriceSig(
 ): Promise<PairUpnlAndPriceSigStruct> {
 	return {
 		reqId: "0x",
-		timestamp: getBlockTimestamp(),
+		timestamp: await getBlockTimestamp(),
 		upnlPartyA: upnlPartyA,
 		upnlPartyB: upnlPartyB,
 		gatewaySignature: "0x0000000000000000000000000000000000000000",
