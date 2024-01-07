@@ -76,6 +76,7 @@ struct QuotePriceSig {
 
 struct HighLowPriceSig {
     bytes reqId;
+    uint256 timestamp;
     uint256 symbolId;
     uint256 highest;
     uint256 lowest;
@@ -83,6 +84,8 @@ struct HighLowPriceSig {
     uint256 x;
     uint256 y;
     int256 upnlPartyB;
+    int256 upnlPartyA;
+    uint256 currentPrice;
     bytes gatewaySignature;
     SchnorrSign sigs;
 }

@@ -50,8 +50,9 @@ library PartyAFacetImpl {
         uint256 tradingPrice = orderType == OrderType.LIMIT ? price : upnlSig.price;
         require(
             lockedValues.lf >=
-            (symbolLayout.symbols[symbolId].minAcceptablePortionLF * lockedValues.totalForPartyA()) /
-            1e18,
+                (symbolLayout.symbols[symbolId].minAcceptablePortionLF *
+                    lockedValues.totalForPartyA()) /
+                    1e18,
             "PartyAFacet: LF is not enough"
         );
 
@@ -72,8 +73,8 @@ library PartyAFacetImpl {
         require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
         require(
             uint256(availableBalance) >=
-            lockedValues.totalForPartyA() +
-            ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
+                lockedValues.totalForPartyA() +
+                    ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
             "PartyAFacet: insufficient available balance"
         );
 
@@ -162,9 +163,10 @@ library PartyAFacetImpl {
         // check that remaining position is not too small
         if (LibQuote.quoteOpenAmount(quote) > quantityToClose) {
             require(
-                ((LibQuote.quoteOpenAmount(quote) - quantityToClose) * quote.lockedValues.totalForPartyA()) /
-                LibQuote.quoteOpenAmount(quote) >=
-                symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
+                ((LibQuote.quoteOpenAmount(quote) - quantityToClose) *
+                    quote.lockedValues.totalForPartyA()) /
+                    LibQuote.quoteOpenAmount(quote) >=
+                    symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyAFacet: Remaining quote value is low"
             );
         }
@@ -231,7 +233,10 @@ library PartyAFacetImpl {
         quote.quantityToClose = 0;
     }
 
-    function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig) internal returns (uint256 closePrice) {
+    function forceClosePosition(
+        uint256 quoteId,
+        HighLowPriceSig memory sig
+    ) internal returns (uint256 closePrice) {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         MAStorage.Layout storage maLayout = MAStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
@@ -246,6 +251,11 @@ library PartyAFacetImpl {
             "PartyAFacet: Cooldown not reached"
         );
 
+        require(
+            sig.averagePrice <= sig.highest && sig.averagePrice >= sig.lowest,
+            "PartyAFacet: Invalid average price"
+        );
+
         require(quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyAFacet: Invalid state");
         require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
         require(
@@ -255,18 +265,28 @@ library PartyAFacetImpl {
         if (quote.positionType == PositionType.LONG) {
             require(
                 sig.highest >=
-                quote.requestedClosePrice + (quote.requestedClosePrice * maLayout.forceCloseGapRatio) / 1e18,
+                    quote.requestedClosePrice +
+                        (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
+                        1e18,
                 "PartyAFacet: Requested close price not reached"
             );
-            closePrice = quote.requestedClosePrice + (quote.requestedClosePrice * maLayout.forceClosePricePenalty) / 1e18;
+            closePrice =
+                quote.requestedClosePrice +
+                (quote.requestedClosePrice * maLayout.forceClosePricePenalty) /
+                1e18;
             closePrice = closePrice > sig.averagePrice ? closePrice : sig.averagePrice; // max
         } else {
             require(
                 sig.lowest <=
-                quote.requestedClosePrice - (quote.requestedClosePrice * maLayout.forceCloseGapRatio) / 1e18,
+                    quote.requestedClosePrice -
+                        (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
+                        1e18,
                 "PartyAFacet: Requested close price not reached"
             );
-            closePrice = quote.requestedClosePrice - (quote.requestedClosePrice * maLayout.forceClosePricePenalty) / 1e18;
+            closePrice =
+                quote.requestedClosePrice -
+                (quote.requestedClosePrice * maLayout.forceClosePricePenalty) /
+                1e18;
             closePrice = closePrice > sig.averagePrice ? sig.averagePrice : closePrice; // min
         }
 
@@ -276,29 +296,38 @@ library PartyAFacetImpl {
                 "PartyAFacet: Invalid signature period"
             );
 
-        LibMuon.verifyHighLowPrice(sig, quote.symbolId);
+        LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
         accountLayout.partyANonces[quote.partyA] += 1;
         accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 
-        (bool hasMadeProfit, uint256 pnl) = LibQuote.getValueOfQuoteForPartyA(
-            closePrice,
-            quote.quantityToClose,
-            quote
-        );
-        if (hasMadeProfit) {
-            if (accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] >= pnl) {
-                LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
-            } else {
-                int256 availableBalancePartyB = LibAccount.partyBAvailableBalanceForLiquidation(
-                    sig.upnlPartyB - int256(pnl),
-                    quote.partyB,
-                    quote.partyA
-                );
-                require(availableBalancePartyB < 0, "PartyAFacet: partyB has insufficient realized PNL");
-                LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, sig.upnlPartyB - int256(pnl), block.timestamp);
-            }
-        } else {
-            require(accountLayout.allocatedBalances[quote.partyA] >= pnl, "PartyAFacet: partyA will be liquidatable");
+        (int256 partyBAvailableBalance, int256 partyAAvailableBalance) = LibSolvency
+            .getAvailableBalanceAfterClosePosition(
+                quoteId,
+                quote.quantityToClose,
+                closePrice,
+                PairUpnlAndPriceSig({
+                    reqId: sig.reqId,
+                    timestamp: sig.timestamp,
+                    upnlPartyA: sig.upnlPartyA,
+                    upnlPartyB: sig.upnlPartyB,
+                    price: sig.currentPrice,
+                    gatewaySignature: sig.gatewaySignature,
+                    sigs: sig.sigs
+                })
+            );
+        // if partyA is liquidatable revert
+        require(partyAAvailableBalance >= 0, "PartyAFacet: PartyA will be insolvent");
+        // else if partyB is liquidatable liquid partyB
+        if (partyBAvailableBalance < 0) {
+            LibLiquidation.liquidatePartyB(
+                quote.partyB,
+                quote.partyA,
+                sig.upnlPartyB ,
+                block.timestamp
+            );
+        }
+        // else close
+        else {
             LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
         }
     }
