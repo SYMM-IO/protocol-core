@@ -9,6 +9,7 @@ import { shouldBehaveLikeOpenPosition } from "./OpenPosition.behavior"
 import { shouldBehaveLikeSendQuote } from "./SendQuote.behavior"
 import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
 import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior"
+import { shouldBehaveLikMultiAccount } from "./MultiAccount.behavior"
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == "static") {
@@ -46,6 +47,10 @@ describe("UnitTests", function () {
 		
 		describe("FundingRate", async function () {
 			shouldBehaveLikeFundingRate()
+		})
+
+		describe("MultiAccount", async function () {
+			shouldBehaveLikMultiAccount()
 		})
 		
 		describe("SpecificScenario", async function () {
