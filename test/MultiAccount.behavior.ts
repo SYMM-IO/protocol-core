@@ -125,10 +125,6 @@ export function shouldBehaveLikMultiAccount() {
       .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900);
   });
 
-  describe("", () => {
-    it("", () => {});
-  });
-
   describe("Initialization and Settings", function () {
     it("Should set the correct admin and Symmio address", async function () {
       const adminAddress = await context.signers.admin.getAddress();
