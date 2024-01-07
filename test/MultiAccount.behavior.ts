@@ -315,6 +315,7 @@ export function shouldBehaveLikMultiAccount() {
         await getListFormatOfQuoteRequest(quoteRequest1),
       );
       await multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1]);
+      expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING);
     });
 
     describe("Locking pair quotes", function () {
