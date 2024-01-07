@@ -15,6 +15,8 @@ import {
 import { PositionType, QuoteStatus } from "./models/Enums";
 import { OpenRequest, marketOpenRequestBuilder } from "./models/requestModels/OpenRequest";
 import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest";
+import { FillCloseRequest, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest";
+import { getDummyPairUpnlAndPriceSig } from "./utils/SignatureUtils";
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
   return [
@@ -53,6 +55,26 @@ async function getListFormatOfOpenRequest(request: OpenRequest): Promise<any> {
   return [
     request.filledAmount,
     request.openPrice,
+    {
+      reqId: "0x",
+      timestamp: 1704295726,
+      upnlPartyA: request.upnlPartyA,
+      upnlPartyB: request.upnlPartyB,
+      gatewaySignature: "0x0000000000000000000000000000000000000000",
+      sigs: {
+        signature: "0",
+        owner: "0x0000000000000000000000000000000000000000",
+        nonce: "0x0000000000000000000000000000000000000000",
+      },
+      price: request.price,
+    },
+  ];
+}
+
+async function getListFormatOfFillCloseRequest(request: FillCloseRequest): Promise<any> {
+  return [
+    request.filledAmount,
+    request.closedPrice,
     {
       reqId: "0x",
       timestamp: 1704295726,
@@ -437,6 +459,32 @@ export function shouldBehaveLikMultiAccount() {
             QuoteStatus.CLOSE_PENDING,
           );
         });
+        describe("Request to fill close", function () {
+          let partyAAccount: any;
+          beforeEach(async()=>{
+            const userAddress = await context.signers.user.getAddress();
+            partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress;
+            let closeRequest = marketCloseRequestBuilder().build();
+            let a  = await getListFormatOfCloseRequest(closeRequest)    
+            let closeRequestCallData = context.partyAFacet.interface.encodeFunctionData("requestToClosePosition",
+                  [1, a[0],a[1],a[2],a[3]],
+                );
+                await multiAccount.connect(context.signers.user)._call(partyAAccount,[closeRequestCallData]);
+          })
+
+          it("Should fill close quote", async () => {
+
+            let fillCloseRequest = marketFillCloseRequestBuilder().build();
+            let a = await getListFormatOfFillCloseRequest(fillCloseRequest)
+            let fillCloseRequestCallData = context.partyBFacet.interface.encodeFunctionData("fillCloseRequest",
+              [1,a[0],a[1],a[2]],
+            );
+            await symmioPartyB.connect(context.signers.admin)._call([fillCloseRequestCallData]);
+
+            expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.CLOSED);
+            // expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.CLOSED);
+          });
+        })
       });
     });
   });
