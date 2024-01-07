@@ -6,7 +6,7 @@ import { initializeFixture } from "./Initialize.fixture";
 import { decimal, getBlockTimestamp } from "./utils/Common";
 import { ethers, upgrades } from "hardhat";
 import { expect } from "chai";
-import { Contract, ContractFactory } from "ethers";
+import { BigNumberish } from "ethers";
 import {
   QuoteRequest,
   limitQuoteRequestBuilder,
@@ -15,8 +15,13 @@ import {
 import { PositionType, QuoteStatus } from "./models/Enums";
 import { OpenRequest, marketOpenRequestBuilder } from "./models/requestModels/OpenRequest";
 import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest";
-import { FillCloseRequest, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest";
-import { getDummyPairUpnlAndPriceSig } from "./utils/SignatureUtils";
+import {
+  FillCloseRequest,
+  marketFillCloseRequestBuilder,
+} from "./models/requestModels/FillCloseRequest";
+import { getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils";
+import { PromiseOrValue } from "../src/types/common";
+import { PairUpnlAndPriceSigStruct } from "../src/types/contracts/facets/PartyA/PartyAFacet";
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
   return [
@@ -32,62 +37,44 @@ async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> 
     request.partyBmm,
     request.maxFundingRate,
     await request.deadline,
-    {
-      reqId: "0x",
-      timestamp: 1704295726,
-      upnl: 0,
-      gatewaySignature: "0x0000000000000000000000000000000000000000",
-      sigs: {
-        signature: "0",
-        owner: "0x0000000000000000000000000000000000000000",
-        nonce: "0x0000000000000000000000000000000000000000",
-      },
-      price: "1000000000000000000",
-    },
+    await request.upnlSig,
   ];
 }
 
-async function getListFormatOfCloseRequest(request: CloseRequest): Promise<any> {
+async function getListFormatOfCloseRequest(
+  request: CloseRequest,
+): Promise<
+  [
+    PromiseOrValue<BigNumberish>,
+    PromiseOrValue<BigNumberish>,
+    PromiseOrValue<BigNumberish>,
+    PromiseOrValue<BigNumberish>,
+  ]
+> {
   return [request.closePrice, request.quantityToClose, request.orderType, await request.deadline];
 }
 
-async function getListFormatOfOpenRequest(request: OpenRequest): Promise<any> {
+async function getListFormatOfOpenRequest(
+  request: OpenRequest,
+): Promise<
+  [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]
+> {
   return [
     request.filledAmount,
     request.openPrice,
-    {
-      reqId: "0x",
-      timestamp: 1704295726,
-      upnlPartyA: request.upnlPartyA,
-      upnlPartyB: request.upnlPartyB,
-      gatewaySignature: "0x0000000000000000000000000000000000000000",
-      sigs: {
-        signature: "0",
-        owner: "0x0000000000000000000000000000000000000000",
-        nonce: "0x0000000000000000000000000000000000000000",
-      },
-      price: request.price,
-    },
+    await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
   ];
 }
 
-async function getListFormatOfFillCloseRequest(request: FillCloseRequest): Promise<any> {
+async function getListFormatOfFillCloseRequest(
+  request: FillCloseRequest,
+): Promise<
+  [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]
+> {
   return [
     request.filledAmount,
     request.closedPrice,
-    {
-      reqId: "0x",
-      timestamp: 1704295726,
-      upnlPartyA: request.upnlPartyA,
-      upnlPartyB: request.upnlPartyB,
-      gatewaySignature: "0x0000000000000000000000000000000000000000",
-      sigs: {
-        signature: "0",
-        owner: "0x0000000000000000000000000000000000000000",
-        nonce: "0x0000000000000000000000000000000000000000",
-      },
-      price: request.price,
-    },
+    await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
   ];
 }
 
@@ -116,7 +103,7 @@ export function shouldBehaveLikMultiAccount() {
 
     const Factory = await ethers.getContractFactory("MultiAccount");
 
-    const sssymmioPartyB = await upgrades.deployProxy(
+    const SymmioPartyBDeploy = await upgrades.deployProxy(
       SymmioPartyB,
       [await context.signers.admin.getAddress(), symmioAddress],
       { initializer: "initialize" },
@@ -129,13 +116,17 @@ export function shouldBehaveLikMultiAccount() {
     );
 
     multiAccount = await MultiAccount.deployed();
-    symmioPartyB = await sssymmioPartyB.deployed();
+    symmioPartyB = await SymmioPartyBDeploy.deployed();
 
     await context.controlFacet.connect(context.signers.admin).registerPartyB(symmioPartyB.address);
 
     await context.controlFacet
       .connect(context.signers.admin)
       .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900);
+  });
+
+  describe("", () => {
+    it("", () => {});
   });
 
   describe("Initialization and Settings", function () {
@@ -302,7 +293,7 @@ export function shouldBehaveLikMultiAccount() {
       });
     });
   });
-  describe("Should work with paired quotes", function () {
+  describe("send new quote", function () {
     let partyAAccount: any;
 
     beforeEach(async function () {
@@ -321,7 +312,7 @@ export function shouldBehaveLikMultiAccount() {
         .connect(context.signers.user)
         .depositAndAllocateForAccount(partyAAccount, decimal(500));
     });
-    it("Should call single sendQuotes", async () => {
+    it("Should be able to send Quotes", async () => {
       let quoteRequest1 = limitQuoteRequestBuilder().build();
       let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
         "sendQuote",
@@ -329,162 +320,128 @@ export function shouldBehaveLikMultiAccount() {
       );
       await multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1]);
     });
-  });
 
-  describe("Locking pair quotes", function () {
-    let partyAAccount: any;
-    beforeEach(async () => {
-      const userAddress = await context.signers.user.getAddress();
-      await multiAccount.connect(context.signers.user).addAccount("Test");
-      partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress;
-
-      let quoteRequest1 = marketQuoteRequestBuilder().build();
-      let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
-        "sendQuote",
-        await getListFormatOfQuoteRequest(quoteRequest1),
-      );
-      let quoteRequest2 = marketQuoteRequestBuilder().positionType(PositionType.SHORT).build();
-      let sendQuote2 = context.partyAFacet.interface.encodeFunctionData(
-        "sendQuote",
-        await getListFormatOfQuoteRequest(quoteRequest2),
-      );
-
-      await context.collateral
-        .connect(context.signers.admin)
-        .mint(symmioPartyB.address, decimal(1000000));
-
-      await context.collateral
-        .connect(context.signers.user)
-        .approve(multiAccount.address, ethers.constants.MaxUint256);
-
-      await multiAccount
-        .connect(context.signers.user)
-        .depositAndAllocateForAccount(partyAAccount, decimal(3000));
-
-      await multiAccount
-        .connect(context.signers.user)
-        ._call(partyAAccount, [sendQuote1, sendQuote2]);
-
-      await symmioPartyB
-        .connect(context.signers.admin)
-        ._approve(context.collateral.address, decimal(10000));
-
-      let deposit = context.accountFacet.interface.encodeFunctionData("deposit", [decimal(10000)]);
-
-      let allocate = context.accountFacet.interface.encodeFunctionData("allocateForPartyB", [
-        decimal(10000),
-        partyAAccount,
-      ]);
-
-      await symmioPartyB.connect(context.signers.admin)._call([deposit]);
-      await symmioPartyB.connect(context.signers.admin)._call([allocate]);
-    });
-
-    it("Should be able to lock Quote", async () => {
-      let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [
-        1,
-        {
-          reqId: "0x",
-          timestamp: 1704295726,
-          upnl: 0,
-          gatewaySignature: "0x0000000000000000000000000000000000000000",
-          sigs: {
-            signature: "0",
-            owner: "0x0000000000000000000000000000000000000000",
-            nonce: "0x0000000000000000000000000000000000000000",
-          },
-        },
-      ]);
-
-      await expect(symmioPartyB.connect(context.signers.admin)._call([lockQuote])).to.not.be
-        .reverted;
-      expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.LOCKED);
-    });
-
-    describe("Open quotes", function () {
+    describe("Locking pair quotes", function () {
       beforeEach(async () => {
-        let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [
-          1,
-          {
-            reqId: "0x",
-            timestamp: 1704295726,
-            upnl: 0,
-            gatewaySignature: "0x0000000000000000000000000000000000000000",
-            sigs: {
-              signature: "0",
-              owner: "0x0000000000000000000000000000000000000000",
-              nonce: "0x0000000000000000000000000000000000000000",
-            },
-          },
+        let quoteRequest1 = marketQuoteRequestBuilder().build();
+        let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
+          "sendQuote",
+          await getListFormatOfQuoteRequest(quoteRequest1),
+        );
+        let quoteRequest2 = marketQuoteRequestBuilder().positionType(PositionType.SHORT).build();
+        let sendQuote2 = context.partyAFacet.interface.encodeFunctionData(
+          "sendQuote",
+          await getListFormatOfQuoteRequest(quoteRequest2),
+        );
+
+        await context.collateral
+          .connect(context.signers.admin)
+          .mint(symmioPartyB.address, decimal(1000000));
+
+        await multiAccount
+          .connect(context.signers.user)
+          ._call(partyAAccount, [sendQuote1, sendQuote2]);
+
+        await symmioPartyB
+          .connect(context.signers.admin)
+          ._approve(context.collateral.address, decimal(10000));
+
+        let deposit = context.accountFacet.interface.encodeFunctionData("deposit", [
+          decimal(10000),
         ]);
 
-        await symmioPartyB.connect(context.signers.admin)._call([lockQuote]);
+        let allocate = context.accountFacet.interface.encodeFunctionData("allocateForPartyB", [
+          decimal(10000),
+          partyAAccount,
+        ]);
+
+        await symmioPartyB.connect(context.signers.admin)._call([deposit]);
+        await symmioPartyB.connect(context.signers.admin)._call([allocate]);
       });
 
-      it("Should be able to Open Quote", async () => {
-        let openPosition2 = marketOpenRequestBuilder().build();
-        let a = await getListFormatOfOpenRequest(openPosition2);
-        let openPositionCallData2 = context.partyBFacet.interface.encodeFunctionData(
-          "openPosition",
-          [1, a[0], a[1], a[2]],
-        );
-        await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2]);
+      it("Should be able to lock Quote", async () => {
+        let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [
+          1,
+          await getDummySingleUpnlSig(),
+        ]);
 
-        expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED);
+        await expect(symmioPartyB.connect(context.signers.admin)._call([lockQuote])).to.not.be
+          .reverted;
+        expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.LOCKED);
       });
 
-      describe("Request to close", function () {
+      describe("Open quotes", function () {
         beforeEach(async () => {
-          //! open Position
+          let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [
+            1,
+            await getDummySingleUpnlSig(),
+          ]);
+
+          await symmioPartyB.connect(context.signers.admin)._call([lockQuote]);
+        });
+
+        it("Should be able to Open Quote", async () => {
           let openPosition2 = marketOpenRequestBuilder().build();
-          let a = await getListFormatOfOpenRequest(openPosition2);
           let openPositionCallData2 = context.partyBFacet.interface.encodeFunctionData(
             "openPosition",
-            [1, a[0], a[1], a[2]],
+            [1, ...(await getListFormatOfOpenRequest(openPosition2))],
           );
           await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2]);
+
+          expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED);
         });
-        it("request to close position", async () => {
-          let closeRequest1 = marketCloseRequestBuilder().build();
-          let a = await getListFormatOfCloseRequest(closeRequest1);
-          let closeRequestCallData1 = context.partyAFacet.interface.encodeFunctionData(
-            "requestToClosePosition",
-            [1, a[0], a[1], a[2], a[3]],
-          );
-          await multiAccount
-            .connect(context.signers.user)
-            ._call(partyAAccount, [closeRequestCallData1]);
 
-          expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(
-            QuoteStatus.CLOSE_PENDING,
-          );
-        });
-        describe("Request to fill close", function () {
-          let partyAAccount: any;
-          beforeEach(async()=>{
-            const userAddress = await context.signers.user.getAddress();
-            partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress;
-            let closeRequest = marketCloseRequestBuilder().build();
-            let a  = await getListFormatOfCloseRequest(closeRequest)    
-            let closeRequestCallData = context.partyAFacet.interface.encodeFunctionData("requestToClosePosition",
-                  [1, a[0],a[1],a[2],a[3]],
-                );
-                await multiAccount.connect(context.signers.user)._call(partyAAccount,[closeRequestCallData]);
-          })
-
-          it("Should fill close quote", async () => {
-
-            let fillCloseRequest = marketFillCloseRequestBuilder().build();
-            let a = await getListFormatOfFillCloseRequest(fillCloseRequest)
-            let fillCloseRequestCallData = context.partyBFacet.interface.encodeFunctionData("fillCloseRequest",
-              [1,a[0],a[1],a[2]],
+        describe("Request to close", function () {
+          beforeEach(async () => {
+            //! open Position
+            let openPosition2 = marketOpenRequestBuilder().build();
+            let openPositionCallData2 = context.partyBFacet.interface.encodeFunctionData(
+              "openPosition",
+              [1, ...(await getListFormatOfOpenRequest(openPosition2))],
             );
-            await symmioPartyB.connect(context.signers.admin)._call([fillCloseRequestCallData]);
-
-            expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.CLOSED);
-            // expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.CLOSED);
+            await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2]);
           });
-        })
+          it("request to close position", async () => {
+            let closeRequest1 = marketCloseRequestBuilder().build();
+            let closeRequestCallData1 = context.partyAFacet.interface.encodeFunctionData(
+              "requestToClosePosition",
+              [1, ...(await getListFormatOfCloseRequest(closeRequest1))],
+            );
+            await multiAccount
+              .connect(context.signers.user)
+              ._call(partyAAccount, [closeRequestCallData1]);
+
+            expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(
+              QuoteStatus.CLOSE_PENDING,
+            );
+          });
+          describe("Request to fill close", function () {
+            // let partyAAccount: any;
+            beforeEach(async () => {
+              let closeRequest = marketCloseRequestBuilder().build();
+              let closeRequestCallData = context.partyAFacet.interface.encodeFunctionData(
+                "requestToClosePosition",
+                [1, ...(await getListFormatOfCloseRequest(closeRequest))],
+              );
+              await multiAccount
+                .connect(context.signers.user)
+                ._call(partyAAccount, [closeRequestCallData]);
+            });
+
+            it("Should fill close quote", async () => {
+              let fillCloseRequest = marketFillCloseRequestBuilder().build();
+              let fillCloseRequestCallData = context.partyBFacet.interface.encodeFunctionData(
+                "fillCloseRequest",
+                [1, ...(await getListFormatOfFillCloseRequest(fillCloseRequest))],
+              );
+              await symmioPartyB.connect(context.signers.admin)._call([fillCloseRequestCallData]);
+
+              expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(
+                QuoteStatus.CLOSED,
+              );
+            });
+          });
+        });
       });
     });
   });
