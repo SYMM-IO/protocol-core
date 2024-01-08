@@ -236,7 +236,15 @@ library PartyAFacetImpl {
     function forceClosePosition(
         uint256 quoteId,
         HighLowPriceSig memory sig
-    ) internal returns (uint256 closePrice) {
+    )
+        internal
+        returns (
+            uint256 closePrice,
+            bool isPartyBLiquidated,
+            int256 upnlPartyB,
+            uint256 partyBAllocatedBalance
+        )
+    {
         MAStorage.Layout storage maLayout = MAStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
@@ -321,6 +329,11 @@ library PartyAFacetImpl {
             if (quote.positionType == PositionType.LONG) {
                 diff = diff * -1;
             }
+            partyBAllocatedBalance = AccountStorage.layout().partyBAllocatedBalances[quote.partyB][
+                quote.partyA
+            ];
+            isPartyBLiquidated = true;
+            upnlPartyB = sig.upnlPartyB + diff;
             LibLiquidation.liquidatePartyB(
                 quote.partyB,
                 quote.partyA,

@@ -68,12 +68,9 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         }
     }
 
-    function requestToCancelQuote(uint256 quoteId)
-        external
-        whenNotPartyAActionsPaused
-        onlyPartyAOfQuote(quoteId)
-        notLiquidated(quoteId)
-    {
+    function requestToCancelQuote(
+        uint256 quoteId
+    ) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
         QuoteStatus result = PartyAFacetImpl.requestToCancelQuote(quoteId);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
@@ -111,12 +108,9 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         );
     }
 
-    function requestToCancelCloseRequest(uint256 quoteId)
-        external
-        whenNotPartyAActionsPaused
-        onlyPartyAOfQuote(quoteId)
-        notLiquidated(quoteId)
-    {
+    function requestToCancelCloseRequest(
+        uint256 quoteId
+    ) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
         QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         if (result == QuoteStatus.OPENED) {
@@ -131,39 +125,49 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         }
     }
 
-    function forceCancelQuote(uint256 quoteId)
-        external
-        notLiquidated(quoteId)
-        whenNotPartyAActionsPaused
-    {
+    function forceCancelQuote(
+        uint256 quoteId
+    ) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
         PartyAFacetImpl.forceCancelQuote(quoteId);
         emit ForceCancelQuote(quoteId, QuoteStatus.CANCELED);
     }
 
-    function forceCancelCloseRequest(uint256 quoteId)
-        external
-        notLiquidated(quoteId)
-        whenNotPartyAActionsPaused
-    {
+    function forceCancelCloseRequest(
+        uint256 quoteId
+    ) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
         PartyAFacetImpl.forceCancelCloseRequest(quoteId);
         emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED);
     }
 
-    function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig)
-        external
-        notLiquidated(quoteId)
-        whenNotPartyAActionsPaused
-    {
+    function forceClosePosition(
+        uint256 quoteId,
+        HighLowPriceSig memory sig
+    ) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         uint256 filledAmount = quote.quantityToClose;
-        uint256 closePrice = PartyAFacetImpl.forceClosePosition(quoteId, sig);
-        emit ForceClosePosition(
-            quoteId,
-            quote.partyA,
-            quote.partyB,
-            filledAmount,
-            closePrice,
-            quote.quoteStatus
-        );
+        (
+            uint256 closePrice,
+            bool isPartyBLiquidated,
+            int256 upnlPartyB,
+            uint256 partyBAllocatedBalance
+        ) = PartyAFacetImpl.forceClosePosition(quoteId, sig);
+        if (isPartyBLiquidated) {
+            emit LiquidatePartyB(
+                msg.sender,
+                quote.partyB,
+                quote.partyA,
+                partyBAllocatedBalance,
+                upnlPartyB
+            );
+        } else {
+            emit ForceClosePosition(
+                quoteId,
+                quote.partyA,
+                quote.partyB,
+                filledAmount,
+                closePrice,
+                quote.quoteStatus
+            );
+        }
     }
 }
