@@ -237,17 +237,16 @@ library PartyAFacetImpl {
         uint256 quoteId,
         HighLowPriceSig memory sig
     ) internal returns (uint256 closePrice) {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         MAStorage.Layout storage maLayout = MAStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
         require(
-            sig.x >= quote.statusModifyTimestamp + maLayout.forceCloseFirstCooldown,
+            sig.startTime >= quote.statusModifyTimestamp + maLayout.forceCloseFirstCooldown,
             "PartyAFacet: Cooldown not reached"
         );
 
         require(
-            sig.y <= block.timestamp - maLayout.forceCloseSecondCooldown,
+            sig.endTime <= block.timestamp - maLayout.forceCloseSecondCooldown,
             "PartyAFacet: Cooldown not reached"
         );
 
@@ -292,13 +291,13 @@ library PartyAFacetImpl {
 
         if (closePrice == sig.averagePrice)
             require(
-                sig.y - sig.x >= maLayout.forceCloseMinSigPeriod,
+                sig.endTime - sig.startTime >= maLayout.forceCloseMinSigPeriod,
                 "PartyAFacet: Invalid signature period"
             );
 
         LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
-        accountLayout.partyANonces[quote.partyA] += 1;
-        accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+        AccountStorage.layout().partyANonces[quote.partyA] += 1;
+        AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
 
         (int256 partyBAvailableBalance, int256 partyAAvailableBalance) = LibSolvency
             .getAvailableBalanceAfterClosePosition(
@@ -315,19 +314,20 @@ library PartyAFacetImpl {
                     sigs: sig.sigs
                 })
             );
-        // if partyA is liquidatable revert
         require(partyAAvailableBalance >= 0, "PartyAFacet: PartyA will be insolvent");
-        // else if partyB is liquidatable liquid partyB
         if (partyBAvailableBalance < 0) {
+            int256 diff = (int256(quote.quantityToClose) *
+                (int256(closePrice) - int256(sig.currentPrice))) / 1e18;
+            if (quote.positionType == PositionType.LONG) {
+                diff = diff * -1;
+            }
             LibLiquidation.liquidatePartyB(
                 quote.partyB,
                 quote.partyA,
-                sig.upnlPartyB ,
+                sig.upnlPartyB + diff,
                 block.timestamp
             );
-        }
-        // else close
-        else {
+        } else {
             LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
         }
     }

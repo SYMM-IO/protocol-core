@@ -81,8 +81,8 @@ struct HighLowPriceSig {
     uint256 highest;
     uint256 lowest;
     uint256 averagePrice;
-    uint256 x;
-    uint256 y;
+    uint256 startTime;
+    uint256 endTime;
     int256 upnlPartyB;
     int256 upnlPartyA;
     uint256 currentPrice;
