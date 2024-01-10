@@ -8,6 +8,7 @@ import { User } from "./models/User"
 import { UserController } from "./models/UserController"
 import { decimal } from "./utils/Common"
 import fsPromise from "fs/promises"
+import { BigNumber } from "ethers"
 
 export function shouldBehaveLikeFuzzTest(): void {
 	beforeEach(async function () {
@@ -29,13 +30,13 @@ export function shouldBehaveLikeFuzzTest(): void {
 		const hedger = new Hedger(context, hSigner)
 		await hedger.setup()
 		await hedger.setNativeBalance(100n ** 18n)
-		await hedger.setBalances(decimal(50000), decimal(50000))
+		await hedger.setBalances(BigNumber.from('10').pow(`50`), BigNumber.from('10').pow(`50`))
 		await hedger.register()
 		const hedgerController = new HedgerController(manager, hedger)
 		
 		await userController.start()
 		await hedgerController.start()
-		await user.setBalances(decimal(5000), decimal(5000), decimal(5000))
+		await user.setBalances(decimal(100000), decimal(100000), decimal(100000))
 		
 		const subscription = interval(1000).subscribe(() => {
 			manager.actionsLoop.next({

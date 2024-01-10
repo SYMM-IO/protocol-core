@@ -19,8 +19,8 @@ library AccountFacetImpl {
     function deposit(address user, uint256 amount) internal {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         IERC20(appLayout.collateral).safeTransferFrom(msg.sender, address(this), amount);
-        uint256 amountWith18Decimals = (amount * 1e18) /
-        (10 ** IERC20Metadata(appLayout.collateral).decimals());
+        uint256 decimal = (1e18 - (10 ** IERC20Metadata(appLayout.collateral).decimals()));
+        uint256 amountWith18Decimals = (decimal==0?1:decimal) * amount;
         AccountStorage.layout().balances[user] += amountWith18Decimals;
     }
 
