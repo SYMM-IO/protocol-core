@@ -213,6 +213,57 @@ export function shouldBehaveLikMultiAccount() {
       });
     });
 
+    describe("delegatedAccesses", function () {
+      let partyAAccount: any;
+      let selector: any;
+      let user2Address: any;
+      beforeEach(async () => {
+        const userAddress = await context.signers.user.getAddress();
+
+        await multiAccount.connect(context.signers.user).addAccount("Test");
+        partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress;
+        user2Address = await context.signers.user2.getAddress();
+        selector = ethers.utils.hexDataSlice("0x7f2755b2", 0, 4);
+
+        await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510));
+
+        await context.collateral
+          .connect(context.signers.user)
+          .approve(multiAccount.address, ethers.constants.MaxUint256);
+
+        await multiAccount
+          .connect(context.signers.user)
+          .depositAndAllocateForAccount(partyAAccount, decimal(500));
+      });
+      it("should access delegate call to another address", async () => {
+        expect(
+          await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector),
+        ).to.be.equal(false);
+
+        expect(
+          await multiAccount
+            .connect(context.signers.user)
+            .delegateAccess(partyAAccount, user2Address, selector, true),
+        ).to.not.be.reverted;
+
+        expect(
+          await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector),
+        ).to.be.equal(true);
+      });
+      it("should send quote with delegate access", async () => {
+        let quoteRequest1 = limitQuoteRequestBuilder().build();
+        let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
+          "sendQuote",
+          await getListFormatOfQuoteRequest(quoteRequest1),
+        );
+        await multiAccount
+          .connect(context.signers.user)
+          .delegateAccess(partyAAccount, user2Address, selector, true);
+        await multiAccount.connect(context.signers.user2)._call(partyAAccount, [sendQuote1]);
+        expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING);
+      });
+    });
+
     describe("Balance Management", function () {
       let partyAAccount: any;
 
@@ -307,7 +358,7 @@ export function shouldBehaveLikMultiAccount() {
       await multiAccount
         .connect(context.signers.user)
         .depositAndAllocateForAccount(partyAAccount, decimal(500));
-    });
+    }); //!-----------------------------------------------------------------------
     it("Should be able to send Quotes", async () => {
       let quoteRequest1 = limitQuoteRequestBuilder().build();
       let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
