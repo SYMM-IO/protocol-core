@@ -50,9 +50,9 @@ library PartyAFacetImpl {
         uint256 tradingPrice = orderType == OrderType.LIMIT ? price : upnlSig.price;
         require(
             lockedValues.lf >=
-                (symbolLayout.symbols[symbolId].minAcceptablePortionLF *
-                    lockedValues.totalForPartyA()) /
-                    1e18,
+            (symbolLayout.symbols[symbolId].minAcceptablePortionLF *
+                lockedValues.totalForPartyA()) /
+            1e18,
             "PartyAFacet: LF is not enough"
         );
 
@@ -73,8 +73,8 @@ library PartyAFacetImpl {
         require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
         require(
             uint256(availableBalance) >=
-                lockedValues.totalForPartyA() +
-                    ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
+            lockedValues.totalForPartyA() +
+            ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
             "PartyAFacet: insufficient available balance"
         );
 
@@ -165,8 +165,8 @@ library PartyAFacetImpl {
             require(
                 ((LibQuote.quoteOpenAmount(quote) - quantityToClose) *
                     quote.lockedValues.totalForPartyA()) /
-                    LibQuote.quoteOpenAmount(quote) >=
-                    symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
+                LibQuote.quoteOpenAmount(quote) >=
+                symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
                 "PartyAFacet: Remaining quote value is low"
             );
         }
@@ -237,44 +237,40 @@ library PartyAFacetImpl {
         uint256 quoteId,
         HighLowPriceSig memory sig
     )
-        internal
-        returns (
-            uint256 closePrice,
-            bool isPartyBLiquidated,
-            int256 upnlPartyB,
-            uint256 partyBAllocatedBalance
-        )
+    internal
+    returns (
+        uint256 closePrice,
+        bool isPartyBLiquidated,
+        int256 upnlPartyB,
+        uint256 partyBAllocatedBalance
+    )
     {
         MAStorage.Layout storage maLayout = MAStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-
-        require(
-            sig.startTime >= quote.statusModifyTimestamp + maLayout.forceCloseFirstCooldown,
-            "PartyAFacet: Cooldown not reached"
-        );
-
-        require(
-            sig.endTime <= block.timestamp - maLayout.forceCloseSecondCooldown,
-            "PartyAFacet: Cooldown not reached"
-        );
-
-        require(
-            sig.averagePrice <= sig.highest && sig.averagePrice >= sig.lowest,
-            "PartyAFacet: Invalid average price"
-        );
-
         require(quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyAFacet: Invalid state");
-        require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
+        require(sig.endTime + maLayout.forceCloseSecondCooldown <= quote.deadline, "PartyBFacet: Close request is expired");
         require(
             quote.orderType == OrderType.LIMIT,
             "PartyBFacet: Quote's order type should be LIMIT"
         );
+        require(
+            sig.startTime >= quote.statusModifyTimestamp + maLayout.forceCloseFirstCooldown,
+            "PartyAFacet: Cooldown not reached"
+        );
+        require(
+            sig.endTime <= block.timestamp - maLayout.forceCloseSecondCooldown,
+            "PartyAFacet: Cooldown not reached"
+        );
+        require(
+            sig.averagePrice <= sig.highest && sig.averagePrice >= sig.lowest,
+            "PartyAFacet: Invalid average price"
+        );
         if (quote.positionType == PositionType.LONG) {
             require(
                 sig.highest >=
-                    quote.requestedClosePrice +
-                        (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
-                        1e18,
+                quote.requestedClosePrice +
+                (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
+                1e18,
                 "PartyAFacet: Requested close price not reached"
             );
             closePrice =
@@ -285,9 +281,9 @@ library PartyAFacetImpl {
         } else {
             require(
                 sig.lowest <=
-                    quote.requestedClosePrice -
-                        (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
-                        1e18,
+                quote.requestedClosePrice -
+                (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
+                1e18,
                 "PartyAFacet: Requested close price not reached"
             );
             closePrice =
@@ -309,35 +305,33 @@ library PartyAFacetImpl {
 
         (int256 partyBAvailableBalance, int256 partyAAvailableBalance) = LibSolvency
             .getAvailableBalanceAfterClosePosition(
-                quoteId,
-                quote.quantityToClose,
-                closePrice,
-                PairUpnlAndPriceSig({
-                    reqId: sig.reqId,
-                    timestamp: sig.timestamp,
-                    upnlPartyA: sig.upnlPartyA,
-                    upnlPartyB: sig.upnlPartyB,
-                    price: sig.currentPrice,
-                    gatewaySignature: sig.gatewaySignature,
-                    sigs: sig.sigs
-                })
-            );
+            quoteId,
+            quote.quantityToClose,
+            closePrice,
+            PairUpnlAndPriceSig({
+                reqId: sig.reqId,
+                timestamp: sig.timestamp,
+                upnlPartyA: sig.upnlPartyA,
+                upnlPartyB: sig.upnlPartyB,
+                price: sig.currentPrice,
+                gatewaySignature: sig.gatewaySignature,
+                sigs: sig.sigs
+            })
+        );
         require(partyAAvailableBalance >= 0, "PartyAFacet: PartyA will be insolvent");
         if (partyBAvailableBalance < 0) {
             int256 diff = (int256(quote.quantityToClose) *
                 (int256(closePrice) - int256(sig.currentPrice))) / 1e18;
             if (quote.positionType == PositionType.LONG) {
-                diff = diff * -1;
+                diff = diff * - 1;
             }
-            partyBAllocatedBalance = AccountStorage.layout().partyBAllocatedBalances[quote.partyB][
-                quote.partyA
-            ];
+            partyBAllocatedBalance = AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA];
             isPartyBLiquidated = true;
             upnlPartyB = sig.upnlPartyB + diff;
             LibLiquidation.liquidatePartyB(
                 quote.partyB,
                 quote.partyA,
-                sig.upnlPartyB + diff,
+                upnlPartyB,
                 block.timestamp
             );
         } else {

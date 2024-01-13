@@ -1,5 +1,5 @@
-import {Contract, ContractFactory} from "ethers"
-import {ethers} from "hardhat"
+import { Contract, ContractFactory } from "ethers"
+import { ethers } from "hardhat"
 
 export enum FacetCutAction {
     Add,
@@ -65,7 +65,7 @@ async function main() {
     for (const facet in facets) {
         if (!facets.hasOwnProperty(facet))
             continue
-        const facetAddr = facets[facet]
+        const facetAddr = (facets as any)[facet as any]
         console.log(`Updating ${facet} with impl in ${facetAddr}`)
         const NewFacet = await ethers.getContractFactory(facet)
         const selectors = getSelectors(NewFacet).selectors
@@ -76,9 +76,9 @@ async function main() {
         })
     }
     await diamondCutFacet.diamondCut(
-        cutList,
-        ethers.constants.AddressZero,
-        "0x",
+      cutList,
+      ethers.constants.AddressZero,
+      "0x",
     )
 }
 

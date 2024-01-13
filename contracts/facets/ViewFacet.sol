@@ -373,6 +373,10 @@ contract ViewFacet {
         return MAStorage.layout().forceCloseGapRatio;
     }
 
+    function forceClosePricePenalty() external view returns (uint256) {
+        return MAStorage.layout().forceClosePricePenalty;
+    }
+
     function liquidatorShare() external view returns (uint256) {
         return MAStorage.layout().liquidatorShare;
     }
@@ -388,12 +392,13 @@ contract ViewFacet {
         return MAStorage.layout().partyBLiquidationTimestamp[partyB][partyA];
     }
 
-    function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256) {
+    function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256, uint256) {
         return (
             MAStorage.layout().deallocateCooldown,
             MAStorage.layout().forceCancelCooldown,
             MAStorage.layout().forceCancelCloseCooldown,
-            MAStorage.layout().forceCloseFirstCooldown
+            MAStorage.layout().forceCloseFirstCooldown,
+            MAStorage.layout().forceCloseSecondCooldown
         );
     }
 

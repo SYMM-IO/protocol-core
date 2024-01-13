@@ -1,4 +1,4 @@
-import {ethers, run, upgrades} from "hardhat"
+import { ethers, run, upgrades } from "hardhat"
 
 async function main() {
     const [deployer] = await ethers.getSigners()
@@ -9,14 +9,14 @@ async function main() {
     const SymmioPartyBFactory = await ethers.getContractFactory("SymmioPartyB")
     const symmioPartyB = await upgrades.deployProxy(SymmioPartyBFactory, [
         "", "",
-    ], {initializer: "initialize"})
+    ], { initializer: "initialize" })
     await symmioPartyB.deployed()
 
     const addresses = {
         proxy: symmioPartyB.address,
         admin: await upgrades.erc1967.getAdminAddress(symmioPartyB.address),
         implementation: await upgrades.erc1967.getImplementationAddress(
-            symmioPartyB.address,
+          symmioPartyB.address,
         ),
     }
     console.log(addresses)
@@ -24,13 +24,13 @@ async function main() {
     await new Promise((r) => setTimeout(r, 15000))
 
     console.log("Verifying contract...")
-    await run("verify:verify", {address: addresses.implementation})
+    await run("verify:verify", { address: addresses.implementation })
     console.log("Contract verified!")
 }
 
 main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error)
-        process.exit(1)
-    })
+  .then(() => process.exit(0))
+  .catch((error) => {
+      console.error(error)
+      process.exit(1)
+  })
