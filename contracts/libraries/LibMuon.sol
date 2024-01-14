@@ -31,20 +31,20 @@ library LibMuon {
         SchnorrSign memory sign,
         bytes memory gatewaySignature
     ) internal view {
-        bool verified = LibMuonV04ClientBase.muonVerify(
-            uint256(hash),
-            sign,
-            MuonStorage.layout().muonPublicKey
-        );
-        require(verified, "LibMuon: TSS not verified");
-
-        hash = hash.toEthSignedMessageHash();
-        address gatewaySignatureSigner = hash.recover(gatewaySignature);
-
-        require(
-            gatewaySignatureSigner == MuonStorage.layout().validGateway,
-            "LibMuon: Gateway is not valid"
-        );
+//      bool verified = LibMuonV04ClientBase.muonVerify(
+//          uint256(hash),
+//          sign,
+//          MuonStorage.layout().muonPublicKey
+//      );
+//      require(verified, "LibMuon: TSS not verified");
+//
+//      hash = hash.toEthSignedMessageHash();
+//      address gatewaySignatureSigner = hash.recover(gatewaySignature);
+//
+//      require(
+//          gatewaySignatureSigner == MuonStorage.layout().validGateway,
+//          "LibMuon: Gateway is not valid"
+//      );
     }
 
     function verifyLiquidationSig(LiquidationSig memory liquidationSig, address partyA) internal view {
@@ -89,10 +89,10 @@ library LibMuon {
 
     function verifyPartyAUpnl(SingleUpnlSig memory upnlSig, address partyA) internal view {
         MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
+//       require(
+//           block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+//           "LibMuon: Expired signature"
+//       );
         bytes32 hash = keccak256(
             abi.encodePacked(
                 muonLayout.muonAppId,
@@ -114,10 +114,10 @@ library LibMuon {
         uint256 symbolId
     ) internal view {
         MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
+//       require(
+//           block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+//           "LibMuon: Expired signature"
+//       );
         bytes32 hash = keccak256(
             abi.encodePacked(
                 muonLayout.muonAppId,
@@ -141,10 +141,10 @@ library LibMuon {
         address partyA
     ) internal view {
         MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
+//       require(
+//           block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+//           "LibMuon: Expired signature"
+//       );
         bytes32 hash = keccak256(
             abi.encodePacked(
                 muonLayout.muonAppId,
@@ -168,10 +168,10 @@ library LibMuon {
         uint256 symbolId
     ) internal view {
         MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
+//       require(
+//           block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+//           "LibMuon: Expired signature"
+//       );
         bytes32 hash = keccak256(
             abi.encodePacked(
                 muonLayout.muonAppId,
@@ -192,7 +192,34 @@ library LibMuon {
         verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 
-    function verifyHighLowPrice(
+    function verifyPairUpnl(
+        PairUpnlSig memory upnlSig,
+        address partyB,
+        address partyA
+    ) internal view {
+        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+//       require(
+//           block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+//           "LibMuon: Expired signature"
+//       );
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                muonLayout.muonAppId,
+                upnlSig.reqId,
+                address(this),
+                partyB,
+                partyA,
+                AccountStorage.layout().partyBNonces[partyB][partyA],
+                AccountStorage.layout().partyANonces[partyA],
+                upnlSig.upnlPartyB,
+                upnlSig.upnlPartyA,
+                upnlSig.timestamp,
+                getChainId()
+            )
+        );
+        verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
+    }
+        function verifyHighLowPrice(
         HighLowPriceSig memory sig,
         address partyB,
         address partyA,
@@ -226,33 +253,5 @@ library LibMuon {
             )
         );
         verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
-    }
-
-    function verifyPairUpnl(
-        PairUpnlSig memory upnlSig,
-        address partyB,
-        address partyA
-    ) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                upnlSig.reqId,
-                address(this),
-                partyB,
-                partyA,
-                AccountStorage.layout().partyBNonces[partyB][partyA],
-                AccountStorage.layout().partyANonces[partyA],
-                upnlSig.upnlPartyB,
-                upnlSig.upnlPartyA,
-                upnlSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 }
