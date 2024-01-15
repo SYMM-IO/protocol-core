@@ -712,7 +712,7 @@ export function shouldBehaveLikeClosePosition(): void {
 
         it("Should fail on invalid order type", async function() {
             await expect(user.forceClosePosition(4, await getDummyHighLowPriceSig()))
-              .to.be.revertedWith("PartyBFacet: Quote's order type should be LIMIT")
+              .to.be.revertedWith("PartyBFacet: Quote's order type Should be LIMIT")
         })
 
         it("Should fail on expired quote", async function() {
@@ -740,28 +740,28 @@ export function shouldBehaveLikeClosePosition(): void {
               .to.be.revertedWith("PartyAFacet: Invalid average price")
         })
 
-        it("should fail when price not reached to requested close price",async function(){
-          const sigTimes = await prepareSigTimes()
-          await expect(user.forceClosePosition(1,await getDummyHighLowPriceSig(sigTimes[0],sigTimes[1],decimal(0),decimal(0),decimal(0)))).to.be.revertedWith("PartyAFacet: Requested close price not reached")
-          await expect(user.forceClosePosition(2,await getDummyHighLowPriceSig(sigTimes[0],sigTimes[1],decimal(6),decimal(10),decimal(7),decimal(8)))).to.be.revertedWith("PartyAFacet: Requested close price not reached")
+        it("Should fail when price not reached to requested close price", async function() {
+            const sigTimes = await prepareSigTimes()
+            await expect(user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(0), decimal(0), decimal(0)))).to.be.revertedWith("PartyAFacet: Requested close price not reached")
+            await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(6), decimal(10), decimal(7), decimal(8)))).to.be.revertedWith("PartyAFacet: Requested close price not reached")
         })
 
-        it("should fail when the sig time is lower than forceCloseMinSigPeriod",async function(){
-          const sigTimes = await prepareSigTimes(5)
-          await expect(user.forceClosePosition(2,await getDummyHighLowPriceSig(sigTimes[0],sigTimes[1],decimal(1),decimal(1),decimal(1),decimal(1)))).to.be.revertedWith("PartyAFacet: Invalid signature period")
+        it("Should fail when the sig time is lower than forceCloseMinSigPeriod", async function() {
+            const sigTimes = await prepareSigTimes(5)
+            await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1)))).to.be.revertedWith("PartyAFacet: Invalid signature period")
         })
 
-        it("should fail when partyA will be insolvent",async function(){
-          const sigTimes = await prepareSigTimes()
+        it("Should fail when partyA will be insolvent", async function() {
+            const sigTimes = await prepareSigTimes()
 
-          const quantity = decimal(100)
+            const quantity = decimal(100)
 
-          let userAvailable = this.user_allocated
-          .sub(await getTotalLockedValuesForQuoteIds(context, [1, 4], false))
-          .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
-          .sub(unDecimal(quantity.mul(decimal(1).sub(decimal(1))))).add(decimal(1)).mul(-1)
+            let userAvailable = this.user_allocated
+              .sub(await getTotalLockedValuesForQuoteIds(context, [1, 4], false))
+              .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
+              .sub(unDecimal(quantity.mul(decimal(1).sub(decimal(1))))).add(decimal(1)).mul(-1)
 
-          await expect(user.forceClosePosition(2,await getDummyHighLowPriceSig(sigTimes[0],sigTimes[1],decimal(1),decimal(1),decimal(1),decimal(1),0,0,userAvailable))).to.be.revertedWith("PartyAFacet: PartyA will be insolvent")  
+            await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, 0, userAvailable))).to.be.revertedWith("PartyAFacet: PartyA will be insolvent")
         })
 
     })
