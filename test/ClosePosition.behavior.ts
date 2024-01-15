@@ -712,7 +712,7 @@ export function shouldBehaveLikeClosePosition(): void {
 
         it("Should fail on invalid order type", async function() {
             await expect(user.forceClosePosition(4, await getDummyHighLowPriceSig()))
-              .to.be.revertedWith("PartyBFacet: Quote's order type Should be LIMIT")
+              .to.be.revertedWith("PartyBFacet: Quote's order type should be LIMIT")
         })
 
         it("Should fail on expired quote", async function() {
