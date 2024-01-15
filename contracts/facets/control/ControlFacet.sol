@@ -270,6 +270,13 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         MAStorage.layout().forceClosePricePenalty = forceClosePricePenalty;
     }
 
+        function setForceCloseMinSigPeriod(
+        uint256 forceCloseMinSigPeriod
+    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+        emit SetForceCloseMinSigPeriod(MAStorage.layout().forceCloseMinSigPeriod, forceCloseMinSigPeriod);
+        MAStorage.layout().forceCloseMinSigPeriod = forceCloseMinSigPeriod;
+    }
+
     function setForceCancelCloseCooldown(
         uint256 forceCancelCloseCooldown
     ) external onlyRole(LibAccessibility.SETTER_ROLE) {

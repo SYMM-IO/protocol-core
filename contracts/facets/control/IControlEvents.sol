@@ -42,6 +42,7 @@ interface IControlEvents {
     event SetForceCloseCooldowns(uint256 oldForceCloseFirstCooldown, uint256 newForceCloseFirstCooldown,
         uint256 oldForceCloseSecondCooldown, uint256 newForceCloseSecondCooldown);
     event SetForceClosePricePenalty(uint256 oldPricePenalty, uint256 newPricePenalty);
+    event SetForceCloseMinSigPeriod(uint256 oldCloseMinSigPeriod, uint256 newCloseMinSigPeriod);
     event SetForceCancelCloseCooldown(
         uint256 oldForceCancelCloseCooldown,
         uint256 newForceCancelCloseCooldown
