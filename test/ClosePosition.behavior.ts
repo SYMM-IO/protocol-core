@@ -18,7 +18,7 @@ import {
     pausePartyB,
     unDecimal,
 } from "./utils/Common"
-import { getDummyHighLowPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import { getDummyHighLowPriceSig, getDummyLiquidationSig, getDummyPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
 import { CloseRequestValidator } from "./models/validators/CloseRequestValidator"
 import { BigNumber } from "ethers"
 import { limitFillCloseRequestBuilder, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest"
@@ -27,6 +27,7 @@ import { CancelCloseRequestValidator } from "./models/validators/CancelCloseRequ
 import { AcceptCancelCloseRequestValidator } from "./models/validators/AcceptCancelCloseRequestValidator"
 import { emergencyCloseRequestBuilder } from "./models/requestModels/EmergencyCloseRequest"
 import { EmergencyCloseRequestValidator } from "./models/validators/EmergencyCloseRequestValidator"
+import { QuotePriceSigStruct } from "../src/types/contracts/facets/liquidation/LiquidationFacet"
 
 export function shouldBehaveLikeClosePosition(): void {
     let user: User, hedger: Hedger, hedger2: Hedger
@@ -764,14 +765,24 @@ export function shouldBehaveLikeClosePosition(): void {
             await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, 0, userAvailable))).to.be.revertedWith("PartyAFacet: PartyA will be insolvent")
         })
 
-        it("Should fail when partyB will be insolvent", async function() {
+        it("Should liquidate partyB when partyB will be insolvent", async function() {
           const sigTimes = await prepareSigTimes()
-          const userAddress = await context.signers.hedger.getAddress()
+          const userAddress = await context.signers.user.getAddress()
+          const hedgerAddress = await context.signers.hedger.getAddress()
 
           await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, decimal(-500)))
           
           let balanceInfo: BalanceInfo = await hedger.getBalanceInfo(userAddress)
-          expect(balanceInfo.allocatedBalances).to.be.equal("0")
+          expect(balanceInfo.allocatedBalances).to.be.equal(0)
+
+          let sig = await getDummyPriceSig([4,2,1],[0,0,0])
+
+          await context.liquidationFacet.connect(context.signers.liquidator).liquidatePositionsPartyB(hedgerAddress,userAddress,sig)
+          
+          expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
+          expect((await context.viewFacet.getQuote(4)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
+          expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
+          expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
 
         })
 

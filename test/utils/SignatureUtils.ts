@@ -5,7 +5,7 @@ import {
     SingleUpnlAndPriceSigStruct,
 } from "../../src/types/contracts/facets/PartyA/PartyAFacet"
 import { PairUpnlAndPriceSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/facets/PartyB/PartyBFacet"
-import { LiquidationSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
+import { LiquidationSigStruct, QuotePriceSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
 import { getBlockTimestamp } from "./Common"
 import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
 
@@ -134,3 +134,20 @@ export async function getDummyHighLowPriceSig(
     }
 }
 
+export async function getDummyPriceSig(
+  quoteIds: BigNumberish[] = [],
+  prices: BigNumberish[] = [],
+): Promise<QuotePriceSigStruct> {
+  return {
+    reqId: "0x",
+    timestamp: await getBlockTimestamp(),
+    quoteIds: quoteIds,
+    prices: prices,
+    gatewaySignature: "0x0000000000000000000000000000000000000000",
+    sigs: {
+      signature: "0",
+      owner: "0x0000000000000000000000000000000000000000",
+      nonce: "0x0000000000000000000000000000000000000000",
+    },
+  };
+}
