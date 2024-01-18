@@ -788,8 +788,78 @@ export function shouldBehaveLikeClosePosition(): void {
 
         it("Should forceClose Quote correctly", async function() {
           const sigTimes = await prepareSigTimes()
-          await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1]))
+          await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(3),decimal(2),decimal(2)))
           expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.CLOSED)
+        })
+
+        describe("should calculate closePrice correctly when position is LONG", async function(){
+          it("closePrice is higher than avg price",async function() {
+            const sigTimes = await prepareSigTimes()
+
+            await context.controlFacet.setForceClosePricePenalty(decimal(1))
+
+            const penalty = await context.viewFacet.forceClosePricePenalty()
+            const quote = await context.viewFacet.getQuote(1)
+
+            const expectClosePrice = quote.requestedClosePrice.add((quote.requestedClosePrice.mul(penalty)).div(decimal(1)))
+            const expectedAvgClosedPrice = ((quote.avgClosedPrice.mul(quote.closedAmount)).add((quote.quantityToClose.mul(expectClosePrice)))).div((quote.closedAmount.add(quote.quantityToClose)))
+            
+            await user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(1),decimal(1),decimal(1)))
+
+            const avgClosePrice = (await context.viewFacet.getQuote(1)).avgClosedPrice
+
+            expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
+
+          })
+          it("closePrice is lower than or equal to avg price",async function() {
+
+            const sigTimes = await prepareSigTimes()
+
+            await context.controlFacet.setForceClosePricePenalty(decimal(1))
+            const quote = await context.viewFacet.getQuote(1)
+
+            const expectClosePrice = decimal(4) //sig.averagePrice
+            const expectedAvgClosedPrice = ((quote.avgClosedPrice.mul(quote.closedAmount)).add((quote.quantityToClose.mul(expectClosePrice)))).div((quote.closedAmount.add(quote.quantityToClose)))
+            
+            await user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(7),decimal(3),decimal(4)))
+
+            const avgClosePrice = (await context.viewFacet.getQuote(1)).avgClosedPrice
+            expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
+
+
+          })
+
+        })
+
+        describe("should calculate closePrice correctly when position is SHORT", async function(){
+          it("closePrice is higher than avg price",async function() {
+            const sigTimes = await prepareSigTimes()
+
+            await context.controlFacet.setForceClosePricePenalty(decimal(1).div(2))
+            
+            await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(0),decimal(1).div(6),decimal(1),(decimal(1).div(6)).div(2)))
+
+            const avgClosePrice = (await context.viewFacet.getQuote(2)).avgClosedPrice
+
+            expect(avgClosePrice).to.be.equal((decimal(1).div(6)).div(2)) //sig.averagePrice
+          })
+          it("closePrice is lower than or equal to avg price",async function() {
+            const sigTimes = await prepareSigTimes()
+
+            await context.controlFacet.setForceClosePricePenalty(decimal(1).div(2))
+
+            const penalty = await context.viewFacet.forceClosePricePenalty()
+            const quote = await context.viewFacet.getQuote(2)
+
+            const expectClosePrice = quote.requestedClosePrice.sub((quote.requestedClosePrice.mul(penalty)).div(decimal(1)))
+            const expectedAvgClosedPrice = ((quote.avgClosedPrice.mul(quote.closedAmount)).add((quote.quantityToClose.mul(expectClosePrice)))).div((quote.closedAmount.add(quote.quantityToClose)))
+            
+            await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(1),decimal(1),(decimal(1))))
+
+            const avgClosePrice = (await context.viewFacet.getQuote(2)).avgClosedPrice
+
+            expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
+          })
         })
 
     })
