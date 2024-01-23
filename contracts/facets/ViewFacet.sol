@@ -377,6 +377,14 @@ contract ViewFacet {
         return MAStorage.layout().forceClosePricePenalty;
     }
 
+    function forceCloseFirstCooldown() external view returns (uint256) {
+        return MAStorage.layout().forceCloseFirstCooldown;
+    }
+
+    function forceCloseSecondCooldown() external view returns (uint256) {
+        return MAStorage.layout().forceCloseSecondCooldown;
+    }
+
     function forceCloseMinSigPeriod() external view returns (uint256) {
         return MAStorage.layout().forceCloseMinSigPeriod;
     }
