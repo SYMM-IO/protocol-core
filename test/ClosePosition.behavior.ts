@@ -27,7 +27,7 @@ import { CancelCloseRequestValidator } from "./models/validators/CancelCloseRequ
 import { AcceptCancelCloseRequestValidator } from "./models/validators/AcceptCancelCloseRequestValidator"
 import { emergencyCloseRequestBuilder } from "./models/requestModels/EmergencyCloseRequest"
 import { EmergencyCloseRequestValidator } from "./models/validators/EmergencyCloseRequestValidator"
-import { QuotePriceSigStruct } from "../src/types/contracts/facets/liquidation/LiquidationFacet"
+import { ForceClosePositionValidator } from "./models/validators/ForceClosePositionValidator"
 
 export function shouldBehaveLikeClosePosition(): void {
     let user: User, hedger: Hedger, hedger2: Hedger
@@ -787,9 +787,40 @@ export function shouldBehaveLikeClosePosition(): void {
         })
 
         it("Should forceClose Quote correctly", async function() {
-          const sigTimes = await prepareSigTimes()
-          await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(3),decimal(2),decimal(2)))
-          expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.CLOSED)
+          const validator = new ForceClosePositionValidator()
+          const beforeOut = await validator.before(context, {
+              user: user,
+              hedger: hedger,
+              quoteId: BigNumber.from(2),
+          })
+          const sigTimes = await prepareSigTimes(100)
+          const sig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(3),decimal(2),decimal(2))
+          await user.forceClosePosition(2, sig)
+          await validator.after(context, {
+            user: user,
+            hedger: hedger,
+            quoteId: BigNumber.from(2),
+            sig: {
+              lowestPrice: decimal(1),
+              highestPrice: decimal(3),
+              averagePrice: decimal(2),
+              currentPrice: decimal(2),
+              endTime: sigTimes[0],
+              startTime: sigTimes[1]
+            },
+            beforeOutput: beforeOut
+          })
+
+          it("Should send cancel request successfully", async function() {
+            const validator = new CancelCloseRequestValidator()
+            await user.requestToCancelCloseRequest(1)
+            await validator.after(context, {
+                user: user,
+                hedger: hedger,
+                quoteId: BigNumber.from(1),
+                beforeOutput: beforeOut,
+            })
+        })
         })
 
         describe("should calculate closePrice correctly when position is LONG", async function(){

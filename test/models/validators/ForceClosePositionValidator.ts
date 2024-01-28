@@ -7,7 +7,8 @@ import { TransactionValidator } from "./TransactionValidator";
 import { logger } from "../../utils/LoggerUtils";
 import { expect } from "chai";
 import { OrderType, PositionType, QuoteStatus } from "../Enums";
-import { decimal } from "../../utils/Common";
+import { decimal, getBlockTimestamp, unDecimal } from "../../utils/Common";
+import { expectToBeApproximately } from "../../utils/SafeMath";
 
 export type ForceClosePositionValidatorBeforeArg = {
   user: User;
@@ -25,14 +26,14 @@ export type ForceClosePositionValidatorAfterArg = {
   user: User;
   hedger: Hedger;
   quoteId: BigNumber;
-  sig:{
+  sig: {
     lowestPrice: BigNumber;
     highestPrice: BigNumber;
     averagePrice: BigNumber;
     currentPrice: BigNumber;
     endTime: BigNumber;
     startTime: BigNumber;
-  }
+  };
   beforeOutput: ForceClosePositionValidatorBeforeOutput;
 };
 
@@ -64,58 +65,87 @@ export class ForceClosePositionValidator implements TransactionValidator {
     let closePrice: BigNumber;
 
     expect(newQuote.quoteStatus).to.be.equal(
-      isPartyBLiquidated ? QuoteStatus.CLOSE_PENDING : QuoteStatus.LIQUIDATED,
+      isPartyBLiquidated ? QuoteStatus.CLOSE_PENDING : QuoteStatus.CLOSED,
     );
     expect(newQuote.orderType).to.be.equal(OrderType.LIMIT);
-    //TODO: check the Final ClosePrice (Long and Short)
+    // check the Final ClosePrice (Long and Short)
     if (newQuote.positionType == PositionType.LONG) {
       const expectClosePrice = oldQuote.requestedClosePrice.add(
         oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */),
       );
 
-      closePrice = expectClosePrice > arg.sig.averagePrice ? expectClosePrice : arg.sig.averagePrice;
+      closePrice =
+        expectClosePrice > arg.sig.averagePrice ? expectClosePrice : arg.sig.averagePrice;
 
       const expectedAvgClosedPrice = oldQuote.avgClosedPrice
         .mul(oldQuote.closedAmount)
         .add(oldQuote.quantityToClose.mul(closePrice))
         .div(oldQuote.closedAmount.add(oldQuote.quantityToClose));
 
-      expect(newQuote.avgClosedPrice).to.be.equal(expectedAvgClosedPrice);
+      expectToBeApproximately(newQuote.avgClosedPrice, expectedAvgClosedPrice);
     } else {
       //SHORT
       const expectClosePrice = oldQuote.requestedClosePrice.sub(
         oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */),
       );
 
-      closePrice = expectClosePrice > arg.sig.averagePrice ? arg.sig.averagePrice : expectClosePrice;
+      closePrice =
+        expectClosePrice > arg.sig.averagePrice ? arg.sig.averagePrice : expectClosePrice;
 
       const expectedAvgClosedPrice = oldQuote.avgClosedPrice
         .mul(oldQuote.closedAmount)
         .add(oldQuote.quantityToClose.mul(closePrice))
         .div(oldQuote.closedAmount.add(oldQuote.quantityToClose));
 
-      expect(newQuote.avgClosedPrice).to.be.equal(expectedAvgClosedPrice);
+      expectToBeApproximately(newQuote.avgClosedPrice, expectedAvgClosedPrice);
     }
-    //TODO: check CoolDown(start and End Time)
-    // expect(arg.startTime).to.not.be.(newQuote.statusModifyTimestamp.add(forceCloseFirstCooldown))
-    
-    //* check AveragePrice
-    expect(arg.sig.averagePrice).to.be.least(arg.sig.highestPrice);
-    expect(arg.sig.averagePrice).to.be.most(arg.sig.lowestPrice);
+    //check CoolDown(start and End Time)
+    expect(arg.sig.startTime).to.be.least(
+      oldQuote.statusModifyTimestamp.add(forceCloseFirstCooldown),
+    );
+    expect(arg.sig.endTime).to.be.most(
+      BigNumber.from(await getBlockTimestamp()).sub(forceCloseSecondCooldown),
+    );
 
-    //* check signature period
+    // check AveragePrice
+    expect(arg.sig.averagePrice).to.be.least(arg.sig.lowestPrice);
+    expect(arg.sig.averagePrice).to.be.most(arg.sig.highestPrice);
+
+    // check signature period
     if (closePrice == arg.sig.averagePrice) {
       expect(arg.sig.endTime.sub(arg.sig.startTime)).to.be.most(forceCloseMinSigPeriod);
     }
 
-    //TODO: check partyA solvency
+    let profit;
+    if (newQuote.positionType == PositionType.LONG) {
+      profit = unDecimal(
+        newQuote.avgClosedPrice.sub(newQuote.openedPrice).mul(newQuote.closedAmount),
+      );
+    } else {
+      profit = unDecimal(
+        newQuote.openedPrice.sub(newQuote.avgClosedPrice).mul(newQuote.closedAmount),
+      );
+    }
 
-    //* check partyB liquidation
+    //check partyA balance
+    const newBalanceInfoPartyA = await arg.user.getBalanceInfo();
+    const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA;
+
+    expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
+      oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
+    );
+
+    expectToBeApproximately(
+      newBalanceInfoPartyA.allocatedBalances,
+      oldBalanceInfoPartyA.allocatedBalances.add(profit),
+    );
+
+    // check partyB liquidation
     if (isPartyBLiquidated) {
       const partyBBalanceInfo = await arg.hedger.getBalanceInfo(await arg.user.getAddress());
       expect(partyBBalanceInfo.allocatedBalances).to.be.equal(0);
     } else {
-      //* check closeQuote
+      // check closeQuote
       expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSED);
       expect(newQuote.requestedClosePrice).to.be.equal(0);
     }
