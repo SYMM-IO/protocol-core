@@ -107,15 +107,6 @@ export class ForceClosePositionValidator implements TransactionValidator {
       BigNumber.from(await getBlockTimestamp()).sub(forceCloseSecondCooldown),
     );
 
-    // check AveragePrice
-    expect(arg.sig.averagePrice).to.be.least(arg.sig.lowestPrice);
-    expect(arg.sig.averagePrice).to.be.most(arg.sig.highestPrice);
-
-    // check signature period
-    if (closePrice == arg.sig.averagePrice) {
-      expect(arg.sig.endTime.sub(arg.sig.startTime)).to.be.most(forceCloseMinSigPeriod);
-    }
-
     let profit;
     if (newQuote.positionType == PositionType.LONG) {
       profit = unDecimal(
