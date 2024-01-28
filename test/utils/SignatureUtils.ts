@@ -10,17 +10,17 @@ import { getBlockTimestamp } from "./Common"
 import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
 
 export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<SingleUpnlSigStruct> {
-    return {
-        reqId: "0x",
-        timestamp: getBlockTimestamp(),
-        upnl: upnl,
-        gatewaySignature: "0x0000000000000000000000000000000000000000",
-        sigs: {
-            signature: "0",
-            owner: "0x0000000000000000000000000000000000000000",
-            nonce: "0x0000000000000000000000000000000000000000",
-        },
-    }
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		upnl: upnl,
+		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		sigs: {
+			signature: "0",
+			owner: "0x0000000000000000000000000000000000000000",
+			nonce: "0x0000000000000000000000000000000000000000",
+		},
+	}
 }
 
 export async function getDummyLiquidationSig(
@@ -50,18 +50,18 @@ export async function getDummySingleUpnlAndPriceSig(
   price: BigNumberish = 1,
   upnl: BigNumberish = 0,
 ): Promise<SingleUpnlAndPriceSigStruct> {
-    return {
-        reqId: "0x",
-        timestamp: getBlockTimestamp(),
-        upnl: upnl,
-        gatewaySignature: "0x0000000000000000000000000000000000000000",
-        sigs: {
-            signature: "0",
-            owner: "0x0000000000000000000000000000000000000000",
-            nonce: "0x0000000000000000000000000000000000000000",
-        },
-        price: price,
-    }
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		upnl: upnl,
+		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		sigs: {
+			signature: "0",
+			owner: "0x0000000000000000000000000000000000000000",
+			nonce: "0x0000000000000000000000000000000000000000",
+		},
+		price: price,
+	}
 }
 
 export async function getDummyPairUpnlAndPriceSig(
@@ -69,19 +69,19 @@ export async function getDummyPairUpnlAndPriceSig(
   upnlPartyA: BigNumberish = 0,
   upnlPartyB: BigNumberish = 0,
 ): Promise<PairUpnlAndPriceSigStruct> {
-    return {
-        reqId: "0x",
-        timestamp: getBlockTimestamp(),
-        upnlPartyA: upnlPartyA,
-        upnlPartyB: upnlPartyB,
-        gatewaySignature: "0x0000000000000000000000000000000000000000",
-        sigs: {
-            signature: "0",
-            owner: "0x0000000000000000000000000000000000000000",
-            nonce: "0x0000000000000000000000000000000000000000",
-        },
-        price: price,
-    }
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		upnlPartyA: upnlPartyA,
+		upnlPartyB: upnlPartyB,
+		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		sigs: {
+			signature: "0",
+			owner: "0x0000000000000000000000000000000000000000",
+			nonce: "0x0000000000000000000000000000000000000000",
+		},
+		price: price,
+	}
 }
 
 export async function getDummyPairUpnlSig(

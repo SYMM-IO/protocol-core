@@ -9,6 +9,7 @@ import { shouldBehaveLikeCancelQuote } from "./CancelQuote.behavior"
 import { shouldBehaveLikeLiquidationFacet } from "./LiquidationFacet.behavior"
 import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior"
 import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
+import { shouldBehaveLikMultiAccount } from "./MultiAccount.behavior"
 
 describe("UnitTests", function() {
     if (process.env.TEST_MODE == "static") {
