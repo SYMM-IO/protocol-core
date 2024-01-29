@@ -139,15 +139,17 @@ export function shouldBehaveLikeSendQuote(): void {
 
     it("Should run successfully for limit", async function() {
         let validator = new SendQuoteValidator()
-        const before = await validator.before(context, { user: user })
-        let qId = await user.sendQuote()
+        const args = limitQuoteRequestBuilder().build()
+        const before = await validator.before(context, { user: user ,quote:args})
+        let qId = await user.sendQuote(args)
         validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
     })
 
     it("Should run successfully for market", async function() {
         let validator = new SendQuoteValidator()
-        const before = await validator.before(context, { user: user })
-        let qId = await user.sendQuote(marketQuoteRequestBuilder().build())
+        const args = marketQuoteRequestBuilder().build()
+        const before = await validator.before(context, { user: user,quote:args })
+        let qId = await user.sendQuote(args)
         validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
     })
 

@@ -311,27 +311,25 @@ export class UserController {
         if (availableForQuote.sub(tradingFee).lt(lockedAmount))
             throw new ManagedError("Random data lead to invalid quote... This request will be rejected")
 
-
-            let validator = new SendQuoteValidator()
-            const before = await validator.before(this.context, { user: this.user })
-            const qId = await this.user.sendQuote(
-                Builder<QuoteRequest>()
-                .partyBWhiteList([])
-                .quantity(quantity)
-                .partyAmm(mm)
-                .partyBmm(mm.div(2))
-                .cva(cva)
-                .lf(lf)
-                .symbolId(symbol.symbolId)
-                .positionType(positionType)
-                .orderType(orderType)
-                .deadline(getBlockTimestamp(10000))
-                .price(requestPrice)
-                .upnlSig(getDummySingleUpnlAndPriceSig(price, upnl))
-                .maxFundingRate(0)
-                .build(),
-                )
-                validator.after(this.context, { user: this.user, quoteId: qId, beforeOutput: before })
+            let validator = new SendQuoteValidator();
+            const args:QuoteRequest = Builder<QuoteRequest>()
+              .partyBWhiteList([])
+              .quantity(quantity)
+              .partyAmm(mm)
+              .partyBmm(mm.div(2))
+              .cva(cva)
+              .lf(lf)
+              .symbolId(symbol.symbolId)
+              .positionType(positionType)
+              .orderType(orderType)
+              .deadline(getBlockTimestamp(10000))
+              .price(requestPrice)
+              .upnlSig(getDummySingleUpnlAndPriceSig(price, upnl))
+              .maxFundingRate(0)
+              .build();
+            const before = await validator.before(this.context, { user: this.user,quote:args });
+            const qId = await this.user.sendQuote(args);
+            validator.after(this.context, { user: this.user, quoteId: qId, beforeOutput: before });
     }
 }
  

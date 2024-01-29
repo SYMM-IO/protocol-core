@@ -9,10 +9,11 @@ import { UserController } from "./models/UserController"
 import { decimal } from "./utils/Common"
 import fsPromise from "fs/promises"
 import { BigNumber } from "ethers"
+import path, { join } from "path"
 
 export function shouldBehaveLikeFuzzTest(): void {
     beforeEach(async function() {
-        const addresses = JSON.parse("" + (await fsPromise.readFile("addresses.json")))
+        const addresses = JSON.parse("" + (await fsPromise.readFile(join(__dirname,"..","output","addresses.json"))))
         this.context = await createRunContext(addresses.v3Address, addresses.collateralAddress)
     })
 
