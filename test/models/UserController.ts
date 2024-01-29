@@ -34,6 +34,7 @@ import {
 import { CancelQuoteValidator, CancelQuoteValidatorBeforeOutput } from "./validators/CancelQuoteValidator"
 import { CloseRequestValidator, CloseRequestValidatorBeforeOutput } from "./validators/CloseRequestValidator"
 import { BigNumber } from "ethers"
+import { SendQuoteValidator } from "./validators/SendQuoteValidator"
 
 export class UserController {
     private context: RunContext
@@ -310,22 +311,27 @@ export class UserController {
         if (availableForQuote.sub(tradingFee).lt(lockedAmount))
             throw new ManagedError("Random data lead to invalid quote... This request will be rejected")
 
-        await this.user.sendQuote(
-          Builder<QuoteRequest>()
-            .partyBWhiteList([])
-            .quantity(quantity)
-            .partyAmm(mm)
-            .partyBmm(mm.div(2))
-            .cva(cva)
-            .lf(lf)
-            .symbolId(symbol.symbolId)
-            .positionType(positionType)
-            .orderType(orderType)
-            .deadline(getBlockTimestamp(10000))
-            .price(requestPrice)
-            .upnlSig(getDummySingleUpnlAndPriceSig(price, upnl))
-            .maxFundingRate(0)
-            .build(),
-        )
+
+            let validator = new SendQuoteValidator()
+            const before = await validator.before(this.context, { user: this.user })
+            const qId = await this.user.sendQuote(
+                Builder<QuoteRequest>()
+                .partyBWhiteList([])
+                .quantity(quantity)
+                .partyAmm(mm)
+                .partyBmm(mm.div(2))
+                .cva(cva)
+                .lf(lf)
+                .symbolId(symbol.symbolId)
+                .positionType(positionType)
+                .orderType(orderType)
+                .deadline(getBlockTimestamp(10000))
+                .price(requestPrice)
+                .upnlSig(getDummySingleUpnlAndPriceSig(price, upnl))
+                .maxFundingRate(0)
+                .build(),
+                )
+                validator.after(this.context, { user: this.user, quoteId: qId, beforeOutput: before })
     }
 }
+ 
