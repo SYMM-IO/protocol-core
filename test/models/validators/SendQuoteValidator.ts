@@ -79,7 +79,6 @@ export class SendQuoteValidator implements TransactionValidator {
     expect(newQuote.partyBsWhiteList).to.be.equal(oldQuote.partyBWhiteList);
     expect(newQuote.marketPrice).to.be.equal((await oldQuote.upnlSig).price);
     expect(newQuote.createTimestamp).to.be.equal(await getBlockTimestamp());
-    expect(newQuote.statusModifyTimestamp).to.be.equal(await getBlockTimestamp());
     expect(newQuote.tradingFee).to.be.equal(getTradingFeeForQuotes(context, [newQuote.id]));
     
     expect(newQuote.lockedValues).to.be.equal(

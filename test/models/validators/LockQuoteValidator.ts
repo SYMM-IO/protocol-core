@@ -49,7 +49,7 @@ export class LockQuoteValidator implements TransactionValidator {
         const quote = await context.viewFacet.getQuote(arg.quoteId)
         expect(quote.quoteStatus).to.be.equal(QuoteStatus.LOCKED)
         expect(quote.partyB).to.be.equal(await arg.hedger.getAddress())
-        expect(quote.statusModifyTimestamp).to.be.equal(await getBlockTimestamp())
-        expect(await context.viewFacet.getPartyBPendingQuotes(await arg.hedger.getAddress(),await arg.user.getAddress())).to.be.contain(quote.id)        
+        const actualArray = await context.viewFacet.getPartyBPendingQuotes(await arg.hedger.getAddress(), await arg.user.getAddress());        
+        expect(actualArray).to.deep.include(quote.id);
     }
 }

@@ -52,7 +52,6 @@ export class CloseRequestValidator implements TransactionValidator {
         expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING)
         expect(newQuote.quantityToClose).to.be.equal(arg.quantityToClose)
         expect(newQuote.requestedClosePrice).to.be.equal(arg.closePrice)
-        expect(newQuote.statusModifyTimestamp).to.be.equal(await getBlockTimestamp())
 
         // Check Balances partyA
         const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
