@@ -8,6 +8,7 @@ import { Hedger } from "../Hedger"
 import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"
 import { TransactionValidator } from "./TransactionValidator"
+import { getBlockTimestamp } from "../../utils/Common"
 
 export type CloseRequestValidatorBeforeArg = {
     user: User;
@@ -51,6 +52,7 @@ export class CloseRequestValidator implements TransactionValidator {
         expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING)
         expect(newQuote.quantityToClose).to.be.equal(arg.quantityToClose)
         expect(newQuote.requestedClosePrice).to.be.equal(arg.closePrice)
+        expect(newQuote.statusModifyTimestamp).to.be.equal(await getBlockTimestamp())
 
         // Check Balances partyA
         const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
