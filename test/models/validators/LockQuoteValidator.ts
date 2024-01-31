@@ -7,6 +7,7 @@ import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"
 import { logger } from "../../utils/LoggerUtils"
 import { TransactionValidator } from "./TransactionValidator"
+import { getBlockTimestamp } from "../../utils/Common"
 
 export type LockQuoteValidatorBeforeArg = {
     user: User;
@@ -48,5 +49,7 @@ export class LockQuoteValidator implements TransactionValidator {
         const quote = await context.viewFacet.getQuote(arg.quoteId)
         expect(quote.quoteStatus).to.be.equal(QuoteStatus.LOCKED)
         expect(quote.partyB).to.be.equal(await arg.hedger.getAddress())
+        expect(quote.statusModifyTimestamp).to.be.equal(await getBlockTimestamp())
+        expect(await context.viewFacet.getPartyBPendingQuotes(await arg.hedger.getAddress(),await arg.user.getAddress())).to.be.contain(quote.id)        
     }
 }
