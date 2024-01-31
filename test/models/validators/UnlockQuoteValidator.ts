@@ -6,6 +6,7 @@ import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"
 import { TransactionValidator } from "./TransactionValidator"
 import { logger } from "../../utils/LoggerUtils"
+import { getBlockTimestamp } from "../../utils/Common"
 
 export type UnlockQuoteValidatorBeforeArg = {
     user: User;
@@ -36,6 +37,7 @@ export class UnlockQuoteValidator implements TransactionValidator {
         logger.debug("After UnlockQuoteValidator...")
         const newBalanceInfo = await arg.user.getBalanceInfo()
         const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA
+
         expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
           oldBalanceInfo.totalPendingLockedPartyA.toString(),
         )
@@ -44,7 +46,11 @@ export class UnlockQuoteValidator implements TransactionValidator {
         )
 
         const quote = await context.viewFacet.getQuote(arg.quoteId)
+        if(BigNumber.from(await getBlockTimestamp()).gt(quote.deadline)){
+        expect(quote.quoteStatus).to.be.equal(QuoteStatus.EXPIRED)
+        }else{
         expect(quote.quoteStatus).to.be.equal(QuoteStatus.PENDING)
+        }
         expect(quote.partyB).to.be.equal("0x0000000000000000000000000000000000000000")
     }
 }
