@@ -28,6 +28,8 @@ import { AcceptCancelCloseRequestValidator } from "./models/validators/AcceptCan
 import { emergencyCloseRequestBuilder } from "./models/requestModels/EmergencyCloseRequest"
 import { EmergencyCloseRequestValidator } from "./models/validators/EmergencyCloseRequestValidator"
 import { ForceClosePositionValidator } from "./models/validators/ForceClosePositionValidator"
+import { QuoteStructOutput } from "../src/types/contracts/facets/ViewFacet"
+import { calculateExpectedAvgPriceForForceClose, calculateExpectedClosePriceForForceClose } from "./utils/PriceUtils"
 
 export function shouldBehaveLikeClosePosition(): void {
     let user: User, hedger: Hedger, hedger2: Hedger
@@ -718,15 +720,20 @@ export function shouldBehaveLikeClosePosition(): void {
 
         it("Should fail on expired quote", async function() {
             const sigTimes = await prepareSigTimes()
-            await expect(user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1].add(800))))
+            const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1].add(800))
+            await expect(user.forceClosePosition(1, dummySig))
               .to.be.revertedWith("PartyBFacet: Close request is expired")
         })
 
         it("Should fail when cooldowns not reached", async function() {
             const sigTimes = await prepareSigTimes()
-            await expect(user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0].sub(50), sigTimes[1])))
+
+            let dummySig = await getDummyHighLowPriceSig(sigTimes[0].sub(50), sigTimes[1])
+            await expect(user.forceClosePosition(1, dummySig))
               .to.be.revertedWith("PartyAFacet: Cooldown not reached")
-            await expect(user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1].add(200))))
+
+              dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1].add(200))
+            await expect(user.forceClosePosition(1, dummySig ))
               .to.be.revertedWith("PartyAFacet: Cooldown not reached")
         })
 
@@ -743,13 +750,18 @@ export function shouldBehaveLikeClosePosition(): void {
 
         it("Should fail when price not reached to requested close price", async function() {
             const sigTimes = await prepareSigTimes()
-            await expect(user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(0), decimal(0), decimal(0)))).to.be.revertedWith("PartyAFacet: Requested close price not reached")
-            await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(6), decimal(10), decimal(7), decimal(8)))).to.be.revertedWith("PartyAFacet: Requested close price not reached")
+
+            let dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(0), decimal(0), decimal(0))
+            await expect(user.forceClosePosition(1, dummySig)).to.be.revertedWith("PartyAFacet: Requested close price not reached")
+            
+            dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(6), decimal(10), decimal(7), decimal(8))
+            await expect(user.forceClosePosition(2, dummySig)).to.be.revertedWith("PartyAFacet: Requested close price not reached")
         })
 
         it("Should fail when the sig time is lower than forceCloseMinSigPeriod", async function() {
             const sigTimes = await prepareSigTimes(5)
-            await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1)))).to.be.revertedWith("PartyAFacet: Invalid signature period")
+            const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1))
+            await expect(user.forceClosePosition(2, dummySig)).to.be.revertedWith("PartyAFacet: Invalid signature period")
         })
 
         it("Should fail when partyA will be insolvent", async function() {
@@ -762,15 +774,17 @@ export function shouldBehaveLikeClosePosition(): void {
               .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
               .sub(unDecimal(quantity.mul(decimal(1).sub(decimal(1))))).add(decimal(1)).mul(-1)
 
-            await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, 0, userAvailable))).to.be.revertedWith("PartyAFacet: PartyA will be insolvent")
+              const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, 0, userAvailable)
+            await expect(user.forceClosePosition(2, dummySig)).to.be.revertedWith("PartyAFacet: PartyA will be insolvent")
         })
 
         it("Should liquidate partyB when partyB will be insolvent", async function() {
           const sigTimes = await prepareSigTimes()
           const userAddress = await context.signers.user.getAddress()
           const hedgerAddress = await context.signers.hedger.getAddress()
+          let dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, decimal(-500))
 
-          await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, decimal(-500)))
+          await user.forceClosePosition(2,dummySig)
           
           let balanceInfo: BalanceInfo = await hedger.getBalanceInfo(userAddress)
           expect(balanceInfo.allocatedBalances).to.be.equal(0)
@@ -794,8 +808,8 @@ export function shouldBehaveLikeClosePosition(): void {
               quoteId: BigNumber.from(2),
           })
           const sigTimes = await prepareSigTimes(100)
-          const sig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(3),decimal(2),decimal(2))
-          await user.forceClosePosition(2, sig)
+          const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(3),decimal(2),decimal(2))
+          await user.forceClosePosition(2, dummySig)
           await validator.after(context, {
             user: user,
             hedger: hedger,
@@ -832,16 +846,18 @@ export function shouldBehaveLikeClosePosition(): void {
             const penalty = await context.viewFacet.forceClosePricePenalty()
             const quote = await context.viewFacet.getQuote(1)
 
-            const expectClosePrice = quote.requestedClosePrice.add((quote.requestedClosePrice.mul(penalty)).div(decimal(1)))
-            const expectedAvgClosedPrice = ((quote.avgClosedPrice.mul(quote.closedAmount)).add((quote.quantityToClose.mul(expectClosePrice)))).div((quote.closedAmount.add(quote.quantityToClose)))
+            const expectedClosePrice = calculateExpectedClosePriceForForceClose(quote,penalty,true)
+            const expectedAvgClosedPrice = calculateExpectedAvgPriceForForceClose(quote,expectedClosePrice)
             
-            await user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(1),decimal(1),decimal(1)))
+            const dummySig =  await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(1),decimal(1),decimal(1))
+            await user.forceClosePosition(1,dummySig)
 
             const avgClosePrice = (await context.viewFacet.getQuote(1)).avgClosedPrice
 
             expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
 
           })
+
           it("closePrice is lower than or equal to avg price",async function() {
 
             const sigTimes = await prepareSigTimes()
@@ -849,10 +865,11 @@ export function shouldBehaveLikeClosePosition(): void {
             await context.controlFacet.setForceClosePricePenalty(decimal(1))
             const quote = await context.viewFacet.getQuote(1)
 
-            const expectClosePrice = decimal(4) //sig.averagePrice
-            const expectedAvgClosedPrice = ((quote.avgClosedPrice.mul(quote.closedAmount)).add((quote.quantityToClose.mul(expectClosePrice)))).div((quote.closedAmount.add(quote.quantityToClose)))
+            const expectedClosePrice = decimal(4) //sig.averagePrice
+            const expectedAvgClosedPrice = calculateExpectedAvgPriceForForceClose(quote,expectedClosePrice)
             
-            await user.forceClosePosition(1, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(7),decimal(3),decimal(4)))
+            const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(7),decimal(3),decimal(4))
+            await user.forceClosePosition(1, dummySig)
 
             const avgClosePrice = (await context.viewFacet.getQuote(1)).avgClosedPrice
             expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
@@ -868,7 +885,8 @@ export function shouldBehaveLikeClosePosition(): void {
 
             await context.controlFacet.setForceClosePricePenalty(decimal(1).div(2))
             
-            await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(0),decimal(1).div(6),decimal(1),(decimal(1).div(6)).div(2)))
+            const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(0),decimal(1).div(6),decimal(1),(decimal(1).div(6)).div(2))
+            await user.forceClosePosition(2, dummySig)
 
             const avgClosePrice = (await context.viewFacet.getQuote(2)).avgClosedPrice
 
@@ -882,10 +900,11 @@ export function shouldBehaveLikeClosePosition(): void {
             const penalty = await context.viewFacet.forceClosePricePenalty()
             const quote = await context.viewFacet.getQuote(2)
 
-            const expectClosePrice = quote.requestedClosePrice.sub((quote.requestedClosePrice.mul(penalty)).div(decimal(1)))
-            const expectedAvgClosedPrice = ((quote.avgClosedPrice.mul(quote.closedAmount)).add((quote.quantityToClose.mul(expectClosePrice)))).div((quote.closedAmount.add(quote.quantityToClose)))
+            const expectClosePrice = calculateExpectedClosePriceForForceClose(quote,penalty,false)
+            const expectedAvgClosedPrice = calculateExpectedAvgPriceForForceClose(quote,expectClosePrice)
             
-            await user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(1),decimal(1),(decimal(1))))
+            const dummySig =  await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1],decimal(1),decimal(1),decimal(1),(decimal(1)))
+            await user.forceClosePosition(2,dummySig)
 
             const avgClosePrice = (await context.viewFacet.getQuote(2)).avgClosedPrice
 
