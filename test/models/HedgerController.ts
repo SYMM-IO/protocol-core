@@ -36,6 +36,7 @@ import {
 import { LockQuoteValidator, LockQuoteValidatorBeforeOutput } from "./validators/LockQuoteValidator"
 import { OpenPositionValidator, OpenPositionValidatorBeforeOutput } from "./validators/OpenPositionValidator"
 import { UnlockQuoteValidator, UnlockQuoteValidatorBeforeOutput } from "./validators/UnlockQuoteValidator"
+import { QuoteCheckpoint } from "./quoteCheckpoint"
 
 export class HedgerController {
     private context: RunContext
@@ -247,7 +248,11 @@ export class HedgerController {
                 }
                 break
             }
-            case Action.FILL_POSITION: {
+            case Action.FILL_POSITION: { 
+                if(QuoteCheckpoint.getInstance().isBlockedQuote(quote.id)){
+                    logger.info(`Hedger::Blocked Quote :))))))))))))))))))))))))))))))))))))))))))))))) : ${quote.id}`)
+                    break
+                }
                 let fillAmount = undefined
                 const symbol: SymbolStructOutput = await this.context.viewFacet.getSymbol(quote.symbolId)
                 const minLeftQuantity = await getQuoteMinLeftQuantityForFill(

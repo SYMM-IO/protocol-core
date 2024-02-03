@@ -34,6 +34,7 @@ import {
 import { CancelQuoteValidator, CancelQuoteValidatorBeforeOutput } from "./validators/CancelQuoteValidator"
 import { CloseRequestValidator, CloseRequestValidatorBeforeOutput } from "./validators/CloseRequestValidator"
 import { BigNumber } from "ethers"
+import { QuoteCheckpoint } from "./quoteCheckpoint"
 
 export class UserController {
     private context: RunContext
@@ -310,7 +311,7 @@ export class UserController {
         if (availableForQuote.sub(tradingFee).lt(lockedAmount))
             throw new ManagedError("Random data lead to invalid quote... This request will be rejected")
 
-        await this.user.sendQuote(
+        const id = await this.user.sendQuote(
           Builder<QuoteRequest>()
             .partyBWhiteList([])
             .quantity(quantity)
@@ -327,5 +328,10 @@ export class UserController {
             .maxFundingRate(0)
             .build(),
         )
+        
+        if(randomBigNumber(BigNumber.from(100),BigNumber.from(1)) >= BigNumber.from(20)){
+            const checkpoint = QuoteCheckpoint.getInstance()
+            checkpoint.addBlockedQuotes(id)
+        }
     }
 }

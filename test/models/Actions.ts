@@ -7,6 +7,7 @@ export enum Action {
     UNLOCK_QUOTE,
     OPEN_POSITION,
     CLOSE_REQUEST,
+    FORCE_CLOSE_REQUEST,
     CANCEL_CLOSE_REQUEST,
     ACCEPT_CANCEL_CLOSE_REQUEST,
     FILL_POSITION,
@@ -29,6 +30,7 @@ export const actionNamesMap: Map<Action, string> = new Map([
     [Action.UNLOCK_QUOTE, "UNLOCK_QUOTE"],
     [Action.OPEN_POSITION, "OPEN_POSITION"],
     [Action.CLOSE_REQUEST, "CLOSE_REQUEST"],
+    [Action.FORCE_CLOSE_REQUEST, "FORCE_CLOSE_REQUEST"],
     [Action.CANCEL_CLOSE_REQUEST, "CANCEL_CLOSE_REQUEST"],
     [Action.ACCEPT_CANCEL_CLOSE_REQUEST, "ACCEPT_CANCEL_CLOSE_REQUEST"],
     [Action.FILL_POSITION, "FILL_POSITION"],
@@ -52,7 +54,7 @@ export const userActionsMap: Map<QuoteStatus, ActionWrapper[]> = new Map([
     ],
     [
         QuoteStatus.CLOSE_PENDING,
-        [new ActionWrapper(Action.CANCEL_CLOSE_REQUEST, 1), new ActionWrapper(Action.NOTHING, 3)],
+        [new ActionWrapper(Action.CANCEL_CLOSE_REQUEST, 3), new ActionWrapper(Action.NOTHING, 7),new ActionWrapper(Action.FORCE_CLOSE_REQUEST, 1)],
     ],
     [QuoteStatus.CANCEL_CLOSE_PENDING, [new ActionWrapper(Action.NOTHING)]],
     [QuoteStatus.CLOSED, [new ActionWrapper(Action.NOTHING)]],
@@ -75,7 +77,7 @@ export const hedgerActionsMap: Map<QuoteStatus, ActionWrapper[]> = new Map([
     ],
     [QuoteStatus.CANCELED, [new ActionWrapper(Action.NOTHING)]],
     [QuoteStatus.OPENED, [new ActionWrapper(Action.NOTHING)]],
-    [QuoteStatus.CLOSE_PENDING, [new ActionWrapper(Action.FILL_POSITION)]],
+    [QuoteStatus.CLOSE_PENDING, [new ActionWrapper(Action.FILL_POSITION,4),new ActionWrapper(Action.NOTHING,1)]], //TODO : Review
     [
         QuoteStatus.CANCEL_CLOSE_PENDING,
         [

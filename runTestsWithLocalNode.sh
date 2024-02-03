@@ -3,9 +3,7 @@
 # Replace these with your commands
 command1="npx hardhat node"
 command2="npx hardhat run scripts/Initialize.ts --network localhost"
-command3=". ../v3-hedger/.venv/bin/activate"
-command4="../v3-hedger/runner ../v3-hedger/server_runner.py"
-command5="npx hardhat test --network localhost"
+command3="npx hardhat test --network localhost"
 
 # Log file path
 logfile="output.log"
@@ -25,13 +23,7 @@ sleep 3
 echo "Initializing..."
 eval "$command2" 2>&1 | tee -a $logfile
 
-# Activate the Python virtual environment
-$command3
-
-echo "Running hedger server"
-eval "$command4" 2>&1 > $serverLogfile &
-
 sleep 6
 
 echo "Running Fuzz tests..."
-eval "$command5" 2>&1 | tee -a $logfile
+eval "$command3" 2>&1 | tee -a $logfile

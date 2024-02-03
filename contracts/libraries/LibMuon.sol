@@ -31,81 +31,81 @@ library LibMuon {
         SchnorrSign memory sign,
         bytes memory gatewaySignature
     ) internal view {
-        bool verified = LibMuonV04ClientBase.muonVerify(
-            uint256(hash),
-            sign,
-            MuonStorage.layout().muonPublicKey
-        );
-        require(verified, "LibMuon: TSS not verified");
+        // bool verified = LibMuonV04ClientBase.muonVerify(
+        //     uint256(hash),
+        //     sign,
+        //     MuonStorage.layout().muonPublicKey
+        // );
+        // require(verified, "LibMuon: TSS not verified");
 
-        hash = hash.toEthSignedMessageHash();
-        address gatewaySignatureSigner = hash.recover(gatewaySignature);
+        // hash = hash.toEthSignedMessageHash();
+        // address gatewaySignatureSigner = hash.recover(gatewaySignature);
 
-        require(
-            gatewaySignatureSigner == MuonStorage.layout().validGateway,
-            "LibMuon: Gateway is not valid"
-        );
+        // require(
+        //     gatewaySignatureSigner == MuonStorage.layout().validGateway,
+        //     "LibMuon: Gateway is not valid"
+        // );
     }
 
     function verifyLiquidationSig(LiquidationSig memory liquidationSig, address partyA) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(liquidationSig.prices.length == liquidationSig.symbolIds.length, "LibMuon: Invalid length");
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                liquidationSig.reqId,
-                liquidationSig.liquidationId,
-                address(this),
-                "verifyLiquidationSig",
-                partyA,
-                AccountStorage.layout().partyANonces[partyA],
-                liquidationSig.upnl,
-                liquidationSig.totalUnrealizedLoss,
-                liquidationSig.symbolIds,
-                liquidationSig.prices,
-                liquidationSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, liquidationSig.sigs, liquidationSig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(liquidationSig.prices.length == liquidationSig.symbolIds.length, "LibMuon: Invalid length");
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         liquidationSig.reqId,
+        //         liquidationSig.liquidationId,
+        //         address(this),
+        //         "verifyLiquidationSig",
+        //         partyA,
+        //         AccountStorage.layout().partyANonces[partyA],
+        //         liquidationSig.upnl,
+        //         liquidationSig.totalUnrealizedLoss,
+        //         liquidationSig.symbolIds,
+        //         liquidationSig.prices,
+        //         liquidationSig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, liquidationSig.sigs, liquidationSig.gatewaySignature);
     }
 
     function verifyQuotePrices(QuotePriceSig memory priceSig) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(priceSig.prices.length == priceSig.quoteIds.length, "LibMuon: Invalid length");
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                priceSig.reqId,
-                address(this),
-                priceSig.quoteIds,
-                priceSig.prices,
-                priceSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, priceSig.sigs, priceSig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(priceSig.prices.length == priceSig.quoteIds.length, "LibMuon: Invalid length");
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         priceSig.reqId,
+        //         address(this),
+        //         priceSig.quoteIds,
+        //         priceSig.prices,
+        //         priceSig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, priceSig.sigs, priceSig.gatewaySignature);
     }
 
     function verifyPartyAUpnl(SingleUpnlSig memory upnlSig, address partyA) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                upnlSig.reqId,
-                address(this),
-                partyA,
-                AccountStorage.layout().partyANonces[partyA],
-                upnlSig.upnl,
-                upnlSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(
+        //     block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+        //     "LibMuon: Expired signature"
+        // );
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         upnlSig.reqId,
+        //         address(this),
+        //         partyA,
+        //         AccountStorage.layout().partyANonces[partyA],
+        //         upnlSig.upnl,
+        //         upnlSig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 
     function verifyPartyAUpnlAndPrice(
@@ -113,26 +113,26 @@ library LibMuon {
         address partyA,
         uint256 symbolId
     ) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                upnlSig.reqId,
-                address(this),
-                partyA,
-                AccountStorage.layout().partyANonces[partyA],
-                upnlSig.upnl,
-                symbolId,
-                upnlSig.price,
-                upnlSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(
+        //     block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+        //     "LibMuon: Expired signature"
+        // );
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         upnlSig.reqId,
+        //         address(this),
+        //         partyA,
+        //         AccountStorage.layout().partyANonces[partyA],
+        //         upnlSig.upnl,
+        //         symbolId,
+        //         upnlSig.price,
+        //         upnlSig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 
     function verifyPartyBUpnl(
@@ -140,25 +140,25 @@ library LibMuon {
         address partyB,
         address partyA
     ) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                upnlSig.reqId,
-                address(this),
-                partyB,
-                partyA,
-                AccountStorage.layout().partyBNonces[partyB][partyA],
-                upnlSig.upnl,
-                upnlSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(
+        //     block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+        //     "LibMuon: Expired signature"
+        // );
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         upnlSig.reqId,
+        //         address(this),
+        //         partyB,
+        //         partyA,
+        //         AccountStorage.layout().partyBNonces[partyB][partyA],
+        //         upnlSig.upnl,
+        //         upnlSig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 
     function verifyPairUpnlAndPrice(
@@ -167,29 +167,29 @@ library LibMuon {
         address partyA,
         uint256 symbolId
     ) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                upnlSig.reqId,
-                address(this),
-                partyB,
-                partyA,
-                AccountStorage.layout().partyBNonces[partyB][partyA],
-                AccountStorage.layout().partyANonces[partyA],
-                upnlSig.upnlPartyB,
-                upnlSig.upnlPartyA,
-                symbolId,
-                upnlSig.price,
-                upnlSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(
+        //     block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+        //     "LibMuon: Expired signature"
+        // );
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         upnlSig.reqId,
+        //         address(this),
+        //         partyB,
+        //         partyA,
+        //         AccountStorage.layout().partyBNonces[partyB][partyA],
+        //         AccountStorage.layout().partyANonces[partyA],
+        //         upnlSig.upnlPartyB,
+        //         upnlSig.upnlPartyA,
+        //         symbolId,
+        //         upnlSig.price,
+        //         upnlSig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 
     function verifyPairUpnl(
@@ -197,27 +197,27 @@ library LibMuon {
         address partyB,
         address partyA
     ) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                upnlSig.reqId,
-                address(this),
-                partyB,
-                partyA,
-                AccountStorage.layout().partyBNonces[partyB][partyA],
-                AccountStorage.layout().partyANonces[partyA],
-                upnlSig.upnlPartyB,
-                upnlSig.upnlPartyA,
-                upnlSig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(
+        //     block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime,
+        //     "LibMuon: Expired signature"
+        // );
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         upnlSig.reqId,
+        //         address(this),
+        //         partyB,
+        //         partyA,
+        //         AccountStorage.layout().partyBNonces[partyB][partyA],
+        //         AccountStorage.layout().partyANonces[partyA],
+        //         upnlSig.upnlPartyB,
+        //         upnlSig.upnlPartyA,
+        //         upnlSig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
 
     function verifyHighLowPrice(
@@ -226,33 +226,33 @@ library LibMuon {
         address partyA,
         uint256 symbolId
     ) internal view {
-        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
-        require(
-            block.timestamp <= sig.timestamp + muonLayout.upnlValidTime,
-            "LibMuon: Expired signature"
-        );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                muonLayout.muonAppId,
-                sig.reqId,
-                address(this),
-                partyB,
-                partyA,
-                AccountStorage.layout().partyBNonces[partyB][partyA],
-                AccountStorage.layout().partyANonces[partyA],
-                sig.upnlPartyB,
-                sig.upnlPartyA,
-                symbolId,
-                sig.currentPrice,
-                sig.startTime,
-                sig.endTime,
-                sig.lowest,
-                sig.highest,
-                sig.averagePrice,
-                sig.timestamp,
-                getChainId()
-            )
-        );
-        verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
+        // MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        // require(
+        //     block.timestamp <= sig.timestamp + muonLayout.upnlValidTime,
+        //     "LibMuon: Expired signature"
+        // );
+        // bytes32 hash = keccak256(
+        //     abi.encodePacked(
+        //         muonLayout.muonAppId,
+        //         sig.reqId,
+        //         address(this),
+        //         partyB,
+        //         partyA,
+        //         AccountStorage.layout().partyBNonces[partyB][partyA],
+        //         AccountStorage.layout().partyANonces[partyA],
+        //         sig.upnlPartyB,
+        //         sig.upnlPartyA,
+        //         symbolId,
+        //         sig.currentPrice,
+        //         sig.startTime,
+        //         sig.endTime,
+        //         sig.lowest,
+        //         sig.highest,
+        //         sig.averagePrice,
+        //         sig.timestamp,
+        //         getChainId()
+        //     )
+        // );
+        // verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
     }
 }

@@ -46,7 +46,7 @@ export class User {
         await setBalance(this.signer.address, amount)
     }
 
-    public async sendQuote(request: QuoteRequest = limitQuoteRequestBuilder().build()) {
+    public async sendQuote(request: QuoteRequest = limitQuoteRequestBuilder().build()):Promise<BigNumber> {
         logger.detailedDebug(
           serializeToJson({
               request: request,

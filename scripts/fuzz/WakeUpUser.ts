@@ -6,13 +6,14 @@ import { createRunContext } from "../../test/models/RunContext"
 import { User } from "../../test/models/User"
 import { UserController } from "../../test/models/UserController"
 import { decimal } from "../../test/utils/Common"
+import { join } from "path"
 
 function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 async function main() {
-    const addresses = JSON.parse("" + (await fsPromise.readFile("addresses.json")))
+    const addresses = JSON.parse("" + (await fsPromise.readFile(join(__dirname,"..","output","addresses.json"))))
     const context = await createRunContext(addresses.v3Address, addresses.collateralAddress)
     const signer = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address)
     const user = new User(context, signer)
