@@ -77,26 +77,27 @@ library LibSolvency {
         return true;
     }
 
-    function isSolventAfterClosePosition(
+    function getAvailableBalanceAfterClosePosition(
         uint256 quoteId,
         uint256 filledAmount,
         uint256 closedPrice,
         PairUpnlAndPriceSig memory upnlSig
-    ) internal view returns (bool) {
+    ) internal view returns (int256 partyBAvailableBalance, int256 partyAAvailableBalance) {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         uint256 unlockedAmount = (filledAmount * (quote.lockedValues.cva + quote.lockedValues.lf)) /
-            LibQuote.quoteOpenAmount(quote);
+                            LibQuote.quoteOpenAmount(quote);
 
-        int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(
-            upnlSig.upnlPartyB,
-            quote.partyB,
-            quote.partyA
-        ) + int256(unlockedAmount);
+        partyBAvailableBalance =
+            LibAccount.partyBAvailableBalanceForLiquidation(
+                upnlSig.upnlPartyB,
+                quote.partyB,
+                quote.partyA
+            ) +
+            int256(unlockedAmount);
 
-        int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
-            upnlSig.upnlPartyA,
-            quote.partyA
-        ) + int256(unlockedAmount);
+        partyAAvailableBalance =
+            LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnlPartyA, quote.partyA) +
+            int256(unlockedAmount);
 
         if (quote.positionType == PositionType.LONG) {
             if (closedPrice >= upnlSig.price) {
@@ -119,6 +120,18 @@ library LibSolvency {
                 partyAAvailableBalance -= int256(diff);
             }
         }
+    }
+
+    function isSolventAfterClosePosition(
+        uint256 quoteId,
+        uint256 filledAmount,
+        uint256 closedPrice,
+        PairUpnlAndPriceSig memory upnlSig
+    ) internal view returns (bool) {
+        (
+            int256 partyBAvailableBalance,
+            int256 partyAAvailableBalance
+        ) = getAvailableBalanceAfterClosePosition(quoteId, filledAmount, closedPrice, upnlSig);
         require(
             partyBAvailableBalance >= 0 && partyAAvailableBalance >= 0,
             "LibSolvency: Available balance is lower than zero"
@@ -145,13 +158,13 @@ library LibSolvency {
         if (quote.positionType == PositionType.LONG && closePrice <= upnlSig.price) {
             require(
                 uint256(availableBalance) >=
-                    ((quantityToClose * (upnlSig.price - closePrice)) / 1e18),
+                ((quantityToClose * (upnlSig.price - closePrice)) / 1e18),
                 "LibSolvency: partyA will be liquidatable"
             );
         } else if (quote.positionType == PositionType.SHORT && closePrice >= upnlSig.price) {
             require(
                 uint256(availableBalance) >=
-                    ((quantityToClose * (closePrice - upnlSig.price)) / 1e18),
+                ((quantityToClose * (closePrice - upnlSig.price)) / 1e18),
                 "LibSolvency: partyA will be liquidatable"
             );
         }

@@ -28,8 +28,8 @@ export type AcceptCancelRequestValidatorAfterArg = {
 
 export class AcceptCancelRequestValidator implements TransactionValidator {
 	async before(
-		context: RunContext,
-		arg: AcceptCancelRequestValidatorBeforeArg,
+	  context: RunContext,
+	  arg: AcceptCancelRequestValidatorBeforeArg,
 	): Promise<AcceptCancelRequestValidatorBeforeOutput> {
 		logger.debug("Before AcceptCancelRequestValidator...")
 		return {
@@ -37,30 +37,30 @@ export class AcceptCancelRequestValidator implements TransactionValidator {
 			quote: await context.viewFacet.getQuote(arg.quoteId),
 		}
 	}
-	
+
 	async after(context: RunContext, arg: AcceptCancelRequestValidatorAfterArg) {
 		logger.debug("After AcceptCancelRequestValidator...")
 		// Check Quote
 		const newQuote = await context.viewFacet.getQuote(arg.quoteId)
 		const oldQuote = arg.beforeOutput.quote
 		expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CANCELED)
-		
+
 		// Check Balances partyA
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
-		
-		const lockedValues = await getTotalPartyALockedValuesForQuotes([ oldQuote ])
-		
+
+		const lockedValues = await getTotalPartyALockedValuesForQuotes([oldQuote])
+
 		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
-			oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString(),
+		  oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString(),
 		)
 		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
-			oldBalanceInfoPartyA.totalLockedPartyA.toString(),
+		  oldBalanceInfoPartyA.totalLockedPartyA.toString(),
 		)
-		let tradingFee = await getTradingFeeForQuotes(context, [ arg.quoteId ])
+		let tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
 		expectToBeApproximately(
-			newBalanceInfoPartyA.allocatedBalances,
-			oldBalanceInfoPartyA.allocatedBalances.add(tradingFee),
+		  newBalanceInfoPartyA.allocatedBalances,
+		  oldBalanceInfoPartyA.allocatedBalances.add(tradingFee),
 		)
 	}
 }
