@@ -14,6 +14,7 @@ import "../storages/GlobalAppStorage.sol";
 import "../storages/SymbolStorage.sol";
 import "../storages/MuonStorage.sol";
 import "../libraries/LibLockedValues.sol";
+import "../storages/BridgeStorage.sol";
 
 contract ViewFacet {
     using LockedValuesOps for LockedValues;
@@ -465,5 +466,9 @@ contract ViewFacet {
 
     function getNextQuoteId() external view returns (uint256){
         return QuoteStorage.layout().lastId;
+    }
+
+    function getBridgeTransaction(uint256 transactionId) external view returns (BridgeTransaction memory) {
+        return BridgeStorage.layout().transactions[transactionId];
     }
 }
