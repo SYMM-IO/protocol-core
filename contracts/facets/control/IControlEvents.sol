@@ -71,4 +71,6 @@ interface IControlEvents {
     event SetBalanceLimitPerUser(uint256 balanceLimitPerUser);
     event RegisterPartyB(address partyB);
     event DeregisterPartyB(address partyB, uint256 index);
+
+    event NewWhiteListedBridge(address bridge);
 }

@@ -13,6 +13,8 @@ import "../../storages/GlobalAppStorage.sol";
 import "../../storages/SymbolStorage.sol";
 import "./IControlEvents.sol";
 import "../../libraries/LibDiamond.sol";
+import "../../storages/BridgeStorage.sol";
+
 
 contract ControlFacet is Accessibility, Ownable, IControlEvents {
 
@@ -420,5 +422,12 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
             GlobalAppStorage.layout().partyBEmergencyStatus[partyBs[i]] = status;
             emit SetPartyBEmergencyStatus(partyBs[i], status);
         }
+    }
+
+    function newWhiteListedBridge(
+        address bridgeAddress
+    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        emit NewWhiteListedBridge(bridgeAddress);
+        BridgeStorage.layout().whiteListedBridge[bridgeAddress] = true;
     }
 }
