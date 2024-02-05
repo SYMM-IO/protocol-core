@@ -8,6 +8,8 @@ import { runTx } from "../test/utils/TxUtils";
 
 export async function initialize(): Promise<RunContext> {
   let collateral = await run("deploy:stablecoin");
+  let hedger_proxy = await run("deploy:hedger_proxy");
+  let multiaccount = await run("deploy:multiaccount");
   let diamond = await run("deploy:diamond", {
     logData: false,
     genABI: false,
@@ -65,7 +67,8 @@ export async function initialize(): Promise<RunContext> {
   } else {
     if (!fs.existsSync("./output"))
       fs.mkdirSync("./output");
-    output = { v3Address: diamond.address, collateralAddress: collateral.address };
+    output = { v3Address: diamond.address, collateralAddress: collateral.address, hedgerProxy: hedger_proxy.address,
+    multiAccount: multiaccount.address};
   }
   fs.writeFileSync("./output/addresses.json", JSON.stringify(output));
 
