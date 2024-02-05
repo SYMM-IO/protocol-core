@@ -41,7 +41,7 @@ import { QuoteCheckpoint } from "./quoteCheckpoint"
 export class HedgerController {
     private context: RunContext
 
-    constructor(private manager: TestManager, private hedger: Hedger) {
+    constructor(private manager: TestManager, private hedger: Hedger,private checkpoint:QuoteCheckpoint) {
         this.context = manager.context
     }
 
@@ -248,9 +248,8 @@ export class HedgerController {
                 }
                 break
             }
-            case Action.FILL_POSITION: { 
-                if(QuoteCheckpoint.getInstance().isBlockedQuote(quote.id)){
-                    logger.info(`Hedger::Blocked Quote :))))))))))))))))))))))))))))))))))))))))))))))) : ${quote.id}`)
+            case Action.FILL_POSITION: {
+                if(this.checkpoint.isBlockedQuote(quote.id)){                    
                     break
                 }
                 let fillAmount = undefined

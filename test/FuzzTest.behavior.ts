@@ -10,6 +10,7 @@ import { decimal } from "./utils/Common"
 import fsPromise from "fs/promises"
 import { BigNumber } from "ethers"
 import { join } from "path"
+import { QuoteCheckpoint } from "./models/quoteCheckpoint"
 
 export function shouldBehaveLikeFuzzTest(): void {
     beforeEach(async function() {
@@ -20,12 +21,13 @@ export function shouldBehaveLikeFuzzTest(): void {
     it("Should run fine", async function() {
         const context: RunContext = this.context
         const manager = context.manager
+        const checkpoint = QuoteCheckpoint.getInstance()
 
         const uSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address)
         const user = new User(context, uSigner)
         await user.setup()
         await user.setNativeBalance(100n ** 18n)
-        const userController = new UserController(manager, user)
+        const userController = new UserController(manager, user,checkpoint)
 
         const hSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address)
         const hedger = new Hedger(context, hSigner)
@@ -33,7 +35,7 @@ export function shouldBehaveLikeFuzzTest(): void {
         await hedger.setNativeBalance(100n ** 18n)
         await hedger.setBalances(BigNumber.from("10").pow(`50`), BigNumber.from("10").pow(`50`))
         await hedger.register()
-        const hedgerController = new HedgerController(manager, hedger)
+        const hedgerController = new HedgerController(manager, hedger,checkpoint)
 
         await userController.start()
         await hedgerController.start()

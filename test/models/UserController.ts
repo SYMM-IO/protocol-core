@@ -1,6 +1,6 @@
 import { Builder } from "builder-pattern"
 // @ts-ignore
-import * as randomExt from "random-ext"
+import { time } from "@nomicfoundation/hardhat-network-helpers"
 import { concatMap, filter, from } from "rxjs"
 
 import {
@@ -16,7 +16,7 @@ import { logger } from "../utils/LoggerUtils"
 import { getPrice } from "../utils/PriceUtils"
 import { pick, randomBigNumber, randomBigNumberRatio } from "../utils/RandomUtils"
 import { roundToPrecision, safeDiv } from "../utils/SafeMath"
-import { getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils"
+import { getDummyHighLowPriceSig, getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils"
 import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet"
 import { SymbolStructOutput } from "../../src/types/contracts/facets/control/ControlFacet"
 import { Action, actionNamesMap, ActionWrapper, expandActions, userActionsMap } from "./Actions"
@@ -35,11 +35,12 @@ import { CancelQuoteValidator, CancelQuoteValidatorBeforeOutput } from "./valida
 import { CloseRequestValidator, CloseRequestValidatorBeforeOutput } from "./validators/CloseRequestValidator"
 import { BigNumber } from "ethers"
 import { QuoteCheckpoint } from "./quoteCheckpoint"
+import { ForceClosePositionValidator, ForceClosePositionValidatorBeforeOutput } from "./validators/ForceClosePositionValidator"
 
 export class UserController {
     private context: RunContext
 
-    constructor(private manager: TestManager, private user: User) {
+    constructor(private manager: TestManager, private user: User,private checkpoint:QuoteCheckpoint) {
         this.context = manager.context
     }
 
@@ -208,6 +209,51 @@ export class UserController {
                 }
                 break
             }
+            case Action.FORCE_CLOSE_REQUEST:
+
+            //     if(this.checkpoint.isBlockedQuote(quote.id)){
+            //         //remove from blocked
+            //     }
+
+
+
+
+
+            //     const closePrice = quote.requestedClosePrice
+
+            //     // const dummySig = await getDummyHighLowPriceSig(startTime, endTime,closePrice.sub(decimal(1)),closePrice.add(decimal(1)),closePrice,closePrice)
+
+            //     const hedger = this.manager.getHedger(quote.partyB)
+
+            //     let before: ForceClosePositionValidatorBeforeOutput
+            //     if (validate) {
+            //     this.manager.setPauseState(true)
+            //      before = await (validator as ForceClosePositionValidator).before(this.context, {
+            //         user: this.user,
+            //         hedger: hedger,
+            //         quoteId: quote.id,
+            //     })
+            //     }
+            //     // await this.user.forceClosePosition(quote.id, dummySig)
+
+            //     if(validator){
+            //     await (validator as ForceClosePositionValidator).after(this.context, {
+            //       user: this.user,
+            //       hedger: hedger,
+            //       quoteId: quote.id,
+            //       sig: {
+            //         lowestPrice: closePrice.sub(decimal(1)),
+            //         highestPrice: closePrice.add(decimal(1)),
+            //         averagePrice: closePrice,
+            //         currentPrice: closePrice,
+            //         endTime: startTime,
+            //         startTime: endTime
+            //       },
+            //       beforeOutput: before!
+            //     })
+            //     this.manager.setPauseState(false)
+            // }
+                break
             case Action.NOTHING: {
                 if (actionWrapper.rethink) {
                     logger.info(`User::::ReThinking about quote: ${quote.id}`)
@@ -322,16 +368,16 @@ export class UserController {
             .symbolId(symbol.symbolId)
             .positionType(positionType)
             .orderType(orderType)
-            .deadline(getBlockTimestamp(10000))
+            .deadline(1722889307)
             .price(requestPrice)
             .upnlSig(getDummySingleUpnlAndPriceSig(price, upnl))
             .maxFundingRate(0)
             .build(),
         )
+        console.log((await this.context.viewFacet.getQuote(id)).deadline);
         
-        if(randomBigNumber(BigNumber.from(100),BigNumber.from(1)) >= BigNumber.from(20)){
-            const checkpoint = QuoteCheckpoint.getInstance()
-            checkpoint.addBlockedQuotes(id)
+        if(randomBigNumber(BigNumber.from(100),BigNumber.from(1)) <= BigNumber.from(110)){
+            this.checkpoint.addBlockedQuotes(id)
         }
     }
 }

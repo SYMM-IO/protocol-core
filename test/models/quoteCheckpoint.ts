@@ -1,23 +1,22 @@
-import { BigNumber, BigNumberish } from "ethers";
+import { BigNumber } from "ethers";
 
 export class QuoteCheckpoint {
   private static instance: QuoteCheckpoint | null = null;
   private constructor() {}
 
-  private _blockedQuotes: Map<BigNumber, boolean> = new Map<BigNumber, boolean>();
+  private _blockedQuotes: Map<string, boolean> = new Map<string, boolean>();
 
   public addBlockedQuotes(quoteId: BigNumber): void {
-    this._blockedQuotes.set(quoteId, true);
-    console.log(`Quote Blocked!!!!!!!!!!!!!! ::: ${quoteId}`);
+    this._blockedQuotes.set(quoteId.toString(), true);
   }
 
   public deleteBlockedQuotes(quoteId: BigNumber): void {
-    this._blockedQuotes.set(quoteId, false);
+    this._blockedQuotes.set(quoteId.toString(), false);
   }
 
-  public isBlockedQuote(quoteId: BigNumber): boolean {
-    console.log(`is Quote Blocked ????????? ::: ${quoteId}`);
-    return this._blockedQuotes.get(quoteId) || false;
+  public isBlockedQuote(quoteId: BigNumber): boolean|undefined {
+    console.log(this._blockedQuotes.keys());
+    return this._blockedQuotes.get(quoteId.toString());
   }
 
   public static getInstance(): QuoteCheckpoint {

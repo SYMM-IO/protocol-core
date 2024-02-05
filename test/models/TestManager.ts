@@ -19,6 +19,7 @@ import { LockQuoteValidator } from "./validators/LockQuoteValidator"
 import { OpenPositionValidator } from "./validators/OpenPositionValidator"
 import { TransactionValidator } from "./validators/TransactionValidator"
 import { UnlockQuoteValidator } from "./validators/UnlockQuoteValidator"
+import { ForceClosePositionValidator } from "./validators/ForceClosePositionValidator"
 
 type LoopAction = {
     title: string;
@@ -45,6 +46,7 @@ export class TestManager {
         [Action.CANCEL_CLOSE_REQUEST, new CancelCloseRequestValidator()],
         [Action.ACCEPT_CANCEL_CLOSE_REQUEST, new AcceptCancelCloseRequestValidator()],
         [Action.FILL_POSITION, new FillCloseRequestValidator()],
+        [Action.FORCE_CLOSE_REQUEST, new ForceClosePositionValidator()],
     ])
 
     constructor(public context: RunContext, onlyInitialize: boolean) {

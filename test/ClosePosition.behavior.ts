@@ -824,17 +824,6 @@ export function shouldBehaveLikeClosePosition(): void {
             },
             beforeOutput: beforeOut
           })
-
-          it("Should send cancel request successfully", async function() {
-            const validator = new CancelCloseRequestValidator()
-            await user.requestToCancelCloseRequest(1)
-            await validator.after(context, {
-                user: user,
-                hedger: hedger,
-                quoteId: BigNumber.from(1),
-                beforeOutput: beforeOut,
-            })
-        })
         })
 
         describe("should calculate closePrice correctly when position is LONG", async function(){

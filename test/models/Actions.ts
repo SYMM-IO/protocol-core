@@ -50,11 +50,11 @@ export const userActionsMap: Map<QuoteStatus, ActionWrapper[]> = new Map([
     [QuoteStatus.CANCELED, [new ActionWrapper(Action.NOTHING)]],
     [
         QuoteStatus.OPENED,
-        [new ActionWrapper(Action.CLOSE_REQUEST, 6), new ActionWrapper(Action.NOTHING, 4, true)],
+        [new ActionWrapper(Action.CLOSE_REQUEST, 10), new ActionWrapper(Action.NOTHING, 1, true)],
     ],
     [
         QuoteStatus.CLOSE_PENDING,
-        [new ActionWrapper(Action.CANCEL_CLOSE_REQUEST, 3), new ActionWrapper(Action.NOTHING, 7),new ActionWrapper(Action.FORCE_CLOSE_REQUEST, 1)],
+        [new ActionWrapper(Action.CANCEL_CLOSE_REQUEST, 1), new ActionWrapper(Action.NOTHING, 1),new ActionWrapper(Action.FORCE_CLOSE_REQUEST, 7)],
     ],
     [QuoteStatus.CANCEL_CLOSE_PENDING, [new ActionWrapper(Action.NOTHING)]],
     [QuoteStatus.CLOSED, [new ActionWrapper(Action.NOTHING)]],
@@ -77,7 +77,7 @@ export const hedgerActionsMap: Map<QuoteStatus, ActionWrapper[]> = new Map([
     ],
     [QuoteStatus.CANCELED, [new ActionWrapper(Action.NOTHING)]],
     [QuoteStatus.OPENED, [new ActionWrapper(Action.NOTHING)]],
-    [QuoteStatus.CLOSE_PENDING, [new ActionWrapper(Action.FILL_POSITION,4),new ActionWrapper(Action.NOTHING,1)]], //TODO : Review
+    [QuoteStatus.CLOSE_PENDING, [new ActionWrapper(Action.FILL_POSITION)]], //TODO : Review
     [
         QuoteStatus.CANCEL_CLOSE_PENDING,
         [
