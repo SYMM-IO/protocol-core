@@ -7,20 +7,22 @@ pragma solidity >=0.8.18;
 import "../../storages/GlobalAppStorage.sol";
 import "../../storages/AccountStorage.sol";
 import "../../storages/BridgeStorage.sol";
+import "../../storages/MAStorage.sol";
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 library BridgeFacetImpl {
     using SafeERC20 for IERC20;
 
-    function transferToBridge(address user, uint256 amount, address bridgeAddress) internal {
+    function transferToBridge(address partyA, uint256 amount, address bridge) internal {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 
         require(
-            bridgeLayout.bridges[bridgeAddress] == BridgeStatus.WHITELISTED ||
-            bridgeLayout.bridges[bridgeAddress] == BridgeStatus.SUSPEND,
-            "bridgeFacet: Bridge address is not whitelisted!"
+            bridgeLayout.bridges[bridge] == BridgeStatus.WHITELIST ||
+            bridgeLayout.bridges[bridge] == BridgeStatus.SUSPEND,
+            "BridgeFacet: Bridge address is not whitelist"
         );
 
         uint256 decimal = (1e18 - (10 ** IERC20Metadata(appLayout.collateral).decimals()));
@@ -28,39 +30,46 @@ library BridgeFacetImpl {
 
         uint256 currentId = ++bridgeLayout.lastId;
 
-        BridgeTransaction memory bt = BridgeTransaction({
+        BridgeTransaction memory bridgeTransaction = BridgeTransaction({
             id: currentId,
             amount: amountWith18Decimals,
-            partyA: user,
-            bridge: bridgeAddress,
+            partyA: partyA,
+            bridge: bridge,
             timestamp: block.timestamp,
             status: BridgeTransactionStatus.LOCKED
         });
 
-        AccountStorage.layout().balances[user] -= amountWith18Decimals;
-        AccountStorage.layout().balances[user] += amountWith18Decimals;
+        AccountStorage.layout().balances[partyA] -= amountWith18Decimals;
+        AccountStorage.layout().balances[bridge] += amountWith18Decimals;
 
-        bridgeLayout.transactions[currentId] = bt;
+        bridgeLayout.BridgeTransactions[currentId] = bridgeTransaction;
     }
 
     function withdrawLockedTransaction(uint256 id) internal {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
-        BridgeTransaction memory lockedTransactions = bridgeLayout.transactions[id];
-        address bridgeAddress = lockedTransactions.bridge;
+        BridgeTransaction memory bridgeTransaction = bridgeLayout.BridgeTransactions[id];
+        address bridgeAddress = bridgeTransaction.bridge;
 
         require(
-            lockedTransactions.status == BridgeTransactionStatus.LOCKED,
-            "bridgeFacet: Locked amount withdrawed"
+            bridgeTransaction.status == BridgeTransactionStatus.LOCKED,
+            "BridgeFacet: Locked amount withdrawn"
         );
-        require(bridgeLayout.bridges[bridgeAddress] == BridgeStatus.WHITELISTED, "");
 
-        AccountStorage.layout().balances[bridgeAddress] -= lockedTransactions.amount;
+        require(
+            block.timestamp >=
+            MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp,
+            "BridgeFacet: Cooldown hasn't reached"
+        );
+
+        require(bridgeLayout.bridges[bridgeAddress] == BridgeStatus.WHITELIST, "BridgeFacet: Bridge address is not whitelist");
+
+        AccountStorage.layout().balances[bridgeAddress] -= bridgeTransaction.amount;
 
         IERC20(appLayout.collateral).safeTransfer(
-            lockedTransactions.bridge,
-            lockedTransactions.amount
+            bridgeTransaction.bridge,
+            bridgeTransaction.amount
         );
-        lockedTransactions.status = BridgeTransactionStatus.WITHDRAW;
+        bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
     }
 }

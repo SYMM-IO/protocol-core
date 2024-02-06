@@ -10,9 +10,9 @@ import "./BridgeFacetImpl.sol";
 import "./IBridgeEvents.sol";
 
 contract BridgeFacet is Accessibility, Pausable, IBridgeEvents{
-    function transferToBridge(address user, uint256 amount, address bridgeAddress) external whenNotPartyAActionsPaused {
-        BridgeFacetImpl.transferToBridge(user,amount,bridgeAddress);
-        emit TransferToBridge(user, amount, bridgeAddress);
+    function transferToBridge(address partyA, uint256 amount, address bridgeAddress) external whenNotPartyAActionsPaused {
+        BridgeFacetImpl.transferToBridge(partyA,amount,bridgeAddress);
+        emit TransferToBridge(partyA, amount, bridgeAddress);
     }
 
     function withdrawLockedTransaction(uint256 id) external {

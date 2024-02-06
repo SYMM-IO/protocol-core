@@ -15,13 +15,13 @@ struct BridgeTransaction {
 
 enum BridgeTransactionStatus{
     LOCKED,
-    WITHDRAW
+    WITHDRAWN
 }
 
 enum BridgeStatus{
-    WHITELISTED,
+    WHITELIST,
     SUSPEND,
-    REMOVED
+    REMOVE
 }
 
 library BridgeStorage {
@@ -29,7 +29,7 @@ library BridgeStorage {
 
     struct Layout {
         mapping(address =>  BridgeStatus) bridges;
-        mapping(uint256 =>  BridgeTransaction) transactions;
+        mapping(uint256 =>  BridgeTransaction) BridgeTransactions;
         uint256 lastId;
     }
 
