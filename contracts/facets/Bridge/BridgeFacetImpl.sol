@@ -18,13 +18,11 @@ library BridgeFacetImpl {
     function transferToBridge(address partyA, uint256 amount, address bridge) internal {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
-
         require(
             bridgeLayout.bridges[bridge] == BridgeStatus.WHITELIST ||
             bridgeLayout.bridges[bridge] == BridgeStatus.SUSPEND,
             "BridgeFacet: Bridge address is not whitelist"
         );
-
         uint256 decimal = (1e18 - (10 ** IERC20Metadata(appLayout.collateral).decimals()));
         uint256 amountWith18Decimals = (decimal == 0 ? 1 : decimal) * amount;
 

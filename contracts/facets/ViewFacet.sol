@@ -471,4 +471,8 @@ contract ViewFacet {
     function getBridgeTransaction(uint256 transactionId) external view returns (BridgeTransaction memory) {
         return BridgeStorage.layout().BridgeTransactions[transactionId];
     }
+
+    function getNextBridgeTransactionId() external view returns (uint256){
+        return QuoteStorage.layout().lastId;
+    }
 }
