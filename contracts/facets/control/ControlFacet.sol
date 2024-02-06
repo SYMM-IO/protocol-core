@@ -425,23 +425,23 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     }
 
     function whiteListBridge(
-        address bridgeAddress
+        address bridge
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
-        emit WhiteListBridge(bridgeAddress);
-        BridgeStorage.layout().bridges[bridgeAddress] = BridgeStatus.WHITELISTED;
+        emit WhiteListBridge(bridge);
+        BridgeStorage.layout().bridges[bridge] = BridgeStatus.WHITELIST;
     }
 
     function suspendBridge(
-        address bridgeAddress
+        address bridge
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
-        emit SuspendBridge(bridgeAddress);
-        BridgeStorage.layout().bridges[bridgeAddress] = BridgeStatus.SUSPEND;
+        emit SuspendBridge(bridge);
+        BridgeStorage.layout().bridges[bridge] = BridgeStatus.SUSPEND;
     }
 
     function removeBridge(
-        address bridgeAddress
+        address bridge
     ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
-        emit RemoveBridge(bridgeAddress);
-        BridgeStorage.layout().bridges[bridgeAddress] = BridgeStatus.REMOVED;
+        emit RemoveBridge(bridge);
+        BridgeStorage.layout().bridges[bridge] = BridgeStatus.REMOVE;
     }
 }
