@@ -19,6 +19,7 @@ enum BridgeTransactionStatus{
 }
 
 enum BridgeStatus{
+    NOT_WHITELIST,
     WHITELIST,
     SUSPEND,
     REMOVE

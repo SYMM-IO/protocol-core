@@ -3,6 +3,7 @@ import { ethers } from "hardhat"
 
 import {
 	AccountFacet,
+	BridgeFacet,
 	ControlFacet,
 	DiamondCutFacet,
 	DiamondLoupeFacet,
@@ -20,6 +21,7 @@ export class RunContext {
 	diamondLoupeFacet!: DiamondLoupeFacet
 	partyAFacet!: PartyAFacet
 	partyBFacet!: PartyBFacet
+	bridgeFacet!:BridgeFacet
 	viewFacet!: ViewFacet
 	liquidationFacet!: LiquidationFacet
 	controlFacet!: ControlFacet
@@ -31,6 +33,8 @@ export class RunContext {
 		liquidator: SignerWithAddress;
 		hedger: SignerWithAddress;
 		hedger2: SignerWithAddress;
+		bridge: SignerWithAddress;
+		bridge2: SignerWithAddress;
 		others: SignerWithAddress[];
 	}
 	diamond!: string
@@ -53,6 +57,8 @@ export async function createRunContext(
 		liquidator: signers[3],
 		hedger: signers[4],
 		hedger2: signers[5],
+		bridge:signers[6],
+		bridge2:signers[7],
 		others: [],
 	}
 
@@ -63,6 +69,7 @@ export async function createRunContext(
 	context.diamondLoupeFacet = await ethers.getContractAt("DiamondLoupeFacet", diamond)
 	context.partyAFacet = await ethers.getContractAt("PartyAFacet", diamond)
 	context.partyBFacet = await ethers.getContractAt("PartyBFacet", diamond)
+	context.bridgeFacet = await ethers.getContractAt("BridgeFacet", diamond)
 	context.viewFacet = await ethers.getContractAt("ViewFacet", diamond)
 	context.liquidationFacet = await ethers.getContractAt("LiquidationFacet", diamond)
 	context.controlFacet = await ethers.getContractAt("ControlFacet", diamond)
