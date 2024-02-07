@@ -31,51 +31,51 @@ export async function getQuoteQuantity(context: RunContext, quoteId: PromiseOrVa
 }
 
 export async function getQuoteMinLeftQuantityForClose(
-	context: RunContext,
-	quoteId: PromiseOrValue<BigNumberish>,
+  context: RunContext,
+  quoteId: PromiseOrValue<BigNumberish>,
 ) {
 	const openAmount = await getQuoteOpenAmount(context, quoteId)
-	const totalLocked = await getTotalLockedValuesForQuoteIds(context, [ quoteId ])
-	
+	const totalLocked = await getTotalLockedValuesForQuoteIds(context, [quoteId])
+
 	const q = await context.viewFacet.getQuote(quoteId)
 	const symbol: SymbolStructOutput = await context.viewFacet.getSymbol(q.symbolId)
-	
+
 	return safeDiv(symbol.minAcceptableQuoteValue.mul(openAmount), totalLocked)
 }
 
 export async function getQuoteMinLeftQuantityForFill(
-	context: RunContext,
-	quoteId: PromiseOrValue<BigNumberish>,
+  context: RunContext,
+  quoteId: PromiseOrValue<BigNumberish>,
 ) {
 	const openAmount = await getQuoteOpenAmount(context, quoteId)
-	const totalLocked = await getTotalLockedValuesForQuoteIds(context, [ quoteId ])
-	
+	const totalLocked = await getTotalLockedValuesForQuoteIds(context, [quoteId])
+
 	const q = await context.viewFacet.getQuote(quoteId)
 	const symbol: SymbolStructOutput = await context.viewFacet.getSymbol(q.symbolId)
-	
+
 	return safeDiv(symbol.minAcceptableQuoteValue.mul(openAmount), totalLocked)
 }
 
 export async function getQuoteOpenAmount(
-	context: RunContext,
-	quoteId: PromiseOrValue<BigNumberish>,
+  context: RunContext,
+  quoteId: PromiseOrValue<BigNumberish>,
 ) {
 	const q = await context.viewFacet.getQuote(quoteId)
 	return q.quantity.sub(q.closedAmount)
 }
 
 export async function getQuoteNotFilledAmount(
-	context: RunContext,
-	quoteId: PromiseOrValue<BigNumberish>,
+  context: RunContext,
+  quoteId: PromiseOrValue<BigNumberish>,
 ) {
 	const q = await context.viewFacet.getQuote(quoteId)
 	return q.quantityToClose.sub(q.closedAmount)
 }
 
 export async function getTotalPartyALockedValuesForQuotes(
-	quotes: QuoteStructOutput[],
-	includeMM: boolean = true,
-	returnAfterOpened: boolean = true,
+  quotes: QuoteStructOutput[],
+  includeMM: boolean = true,
+  returnAfterOpened: boolean = true,
 ): Promise<BigNumber> {
 	let out = BigNumber.from(0)
 	for (const q of quotes) {
@@ -92,9 +92,9 @@ export async function getTotalPartyALockedValuesForQuotes(
 }
 
 export async function getTotalPartyBLockedValuesForQuotes(
-	quotes: QuoteStructOutput[],
-	includeMM: boolean = true,
-	returnAfterOpened: boolean = true,
+  quotes: QuoteStructOutput[],
+  includeMM: boolean = true,
+  returnAfterOpened: boolean = true,
 ): Promise<BigNumber> {
 	let out = BigNumber.from(0)
 	for (const q of quotes) {
@@ -111,10 +111,10 @@ export async function getTotalPartyBLockedValuesForQuotes(
 }
 
 export async function getTotalLockedValuesForQuoteIds(
-	context: RunContext,
-	quoteIds: PromiseOrValue<BigNumberish>[],
-	includeMM: boolean = true,
-	returnAfterOpened: boolean = true,
+  context: RunContext,
+  quoteIds: PromiseOrValue<BigNumberish>[],
+  includeMM: boolean = true,
+  returnAfterOpened: boolean = true,
 ): Promise<BigNumber> {
 	let quotes = []
 	for (const quoteId of quoteIds) quotes.push(await context.viewFacet.getQuote(quoteId))
@@ -122,8 +122,8 @@ export async function getTotalLockedValuesForQuoteIds(
 }
 
 export async function getTradingFeeForQuotes(
-	context: RunContext,
-	quoteIds: PromiseOrValue<BigNumberish>[],
+  context: RunContext,
+  quoteIds: PromiseOrValue<BigNumberish>[],
 ): Promise<BigNumber> {
 	let out = BigNumber.from(0)
 	for (const quoteId of quoteIds) {
@@ -175,16 +175,16 @@ export function serializeToJson(object: any) {
 }
 
 export async function checkStatus(
-	context: RunContext,
-	quoteId: BigNumberish,
-	quoteStatus: QuoteStatus,
+  context: RunContext,
+  quoteId: BigNumberish,
+  quoteStatus: QuoteStatus,
 ) {
 	return (await context.viewFacet.getQuote(quoteId)).quoteStatus == quoteStatus
 }
 
 export function getPriceFetcher(symbolIds: BigNumberish[], prices: BigNumber[]) {
 	return async (symbolId: BigNumber) => {
-		for (let i = 0 ; i < symbolIds.length ; i++) {
+		for (let i = 0; i < symbolIds.length; i++) {
 			if (symbolIds[i] == symbolId)
 				return prices[i]
 		}

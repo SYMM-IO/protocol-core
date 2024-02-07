@@ -1,10 +1,10 @@
 export const FacetNames = [
-  "AccountFacet",
-  "ControlFacet",
-  "DiamondLoupeFacet",
-  "LiquidationFacet",
-  "PartyAFacet",
-  "PartyBFacet",
-  "ViewFacet",
-  "FundingRateFacet",
-];
+	"AccountFacet",
+	"ControlFacet",
+	"DiamondLoupeFacet",
+	"LiquidationFacet",
+	"PartyAFacet",
+	"PartyBFacet",
+	"ViewFacet",
+	"FundingRateFacet",
+]
