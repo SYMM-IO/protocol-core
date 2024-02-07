@@ -127,8 +127,8 @@ contract ViewFacet {
         uint256[] memory allocatedBalances = new uint256[](partyBs.length);
         for (uint256 i = 0; i < partyBs.length; i++) {
             allocatedBalances[i] = AccountStorage.layout().partyBAllocatedBalances[partyBs[i]][
-                partyA
-            ];
+                        partyA
+                ];
         }
         return allocatedBalances;
     }
@@ -188,9 +188,7 @@ contract ViewFacet {
     function symbolsByQuoteId(uint256[] memory quoteIds) external view returns (Symbol[] memory) {
         Symbol[] memory symbols = new Symbol[](quoteIds.length);
         for (uint256 i = 0; i < quoteIds.length; i++) {
-            symbols[i] = SymbolStorage.layout().symbols[
-                QuoteStorage.layout().quotes[quoteIds[i]].symbolId
-            ];
+            symbols[i] = SymbolStorage.layout().symbols[QuoteStorage.layout().quotes[quoteIds[i]].symbolId];
         }
         return symbols;
     }
@@ -309,9 +307,7 @@ contract ViewFacet {
         }
         Quote[] memory quotes = new Quote[](size);
         for (uint256 i = start; i < start + size; i++) {
-            quotes[i - start] = quoteLayout.quotes[
-                quoteLayout.partyBOpenPositions[partyB][partyA][i]
-            ];
+            quotes[i - start] = quoteLayout.quotes[quoteLayout.partyBOpenPositions[partyB][partyA][i]];
         }
         return quotes;
     }
@@ -373,6 +369,14 @@ contract ViewFacet {
         return MAStorage.layout().forceCloseGapRatio;
     }
 
+    function forceClosePricePenalty() external view returns (uint256) {
+        return MAStorage.layout().forceClosePricePenalty;
+    }
+
+    function forceCloseMinSigPeriod() external view returns (uint256) {
+        return MAStorage.layout().forceCloseMinSigPeriod;
+    }
+
     function liquidatorShare() external view returns (uint256) {
         return MAStorage.layout().liquidatorShare;
     }
@@ -388,12 +392,13 @@ contract ViewFacet {
         return MAStorage.layout().partyBLiquidationTimestamp[partyB][partyA];
     }
 
-    function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256) {
+    function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256, uint256) {
         return (
             MAStorage.layout().deallocateCooldown,
             MAStorage.layout().forceCancelCooldown,
             MAStorage.layout().forceCancelCloseCooldown,
-            MAStorage.layout().forceCloseCooldown
+            MAStorage.layout().forceCloseFirstCooldown,
+            MAStorage.layout().forceCloseSecondCooldown
         );
     }
 
