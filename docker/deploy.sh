@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 time npx hardhat run scripts/Initialize.ts --network docker
 time npx hardhat run scripts/deployPartyB.ts --network docker
