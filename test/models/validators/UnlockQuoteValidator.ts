@@ -23,26 +23,26 @@ export type UnlockQuoteValidatorAfterArg = {
 
 export class UnlockQuoteValidator implements TransactionValidator {
 	async before(
-		context: RunContext,
-		arg: UnlockQuoteValidatorBeforeArg,
+	  context: RunContext,
+	  arg: UnlockQuoteValidatorBeforeArg,
 	): Promise<UnlockQuoteValidatorBeforeOutput> {
 		logger.debug("Before UnlockQuoteValidator...")
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
 		}
 	}
-	
+
 	async after(context: RunContext, arg: UnlockQuoteValidatorAfterArg) {
 		logger.debug("After UnlockQuoteValidator...")
 		const newBalanceInfo = await arg.user.getBalanceInfo()
 		const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA
 		expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
-			oldBalanceInfo.totalPendingLockedPartyA.toString(),
+		  oldBalanceInfo.totalPendingLockedPartyA.toString(),
 		)
 		expect(newBalanceInfo.allocatedBalances).to.be.equal(
-			oldBalanceInfo.allocatedBalances.toString(),
+		  oldBalanceInfo.allocatedBalances.toString(),
 		)
-		
+
 		const quote = await context.viewFacet.getQuote(arg.quoteId)
 		expect(quote.quoteStatus).to.be.equal(QuoteStatus.PENDING)
 		expect(quote.partyB).to.be.equal("0x0000000000000000000000000000000000000000")

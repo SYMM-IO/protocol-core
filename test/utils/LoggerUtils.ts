@@ -49,11 +49,11 @@ switch (logLevel) {
 		conf = {
 			level: "debug",
 			format: format.combine(
-				format.colorize(),
-				format.timestamp(),
-				format.printf(({level, message, timestamp}) => {
-					return `${ timestamp } ${ level }: ${ message }`
-				}),
+			  format.colorize(),
+			  format.timestamp(),
+			  format.printf(({ level, message, timestamp }) => {
+				  return `${timestamp} ${level}: ${message}`
+			  }),
 			),
 		}
 		break
@@ -61,11 +61,11 @@ switch (logLevel) {
 		conf = {
 			level: "contractLogs",
 			format: format.combine(
-				format.colorize(),
-				format.timestamp(),
-				format.printf(({level, message, timestamp}) => {
-					return `${ timestamp } ${ level }: ${ message }`
-				}),
+			  format.colorize(),
+			  format.timestamp(),
+			  format.printf(({ level, message, timestamp }) => {
+				  return `${timestamp} ${level}: ${message}`
+			  }),
 			),
 		}
 		break
@@ -73,11 +73,11 @@ switch (logLevel) {
 		conf = {
 			level: "info",
 			format: format.combine(
-				format.colorize(),
-				format.timestamp(),
-				format.printf(({level, message, timestamp}) => {
-					return `${ timestamp } ${ level }: ${ message }`
-				}),
+			  format.colorize(),
+			  format.timestamp(),
+			  format.printf(({ level, message, timestamp }) => {
+				  return `${timestamp} ${level}: ${message}`
+			  }),
 			),
 		}
 		break
@@ -85,11 +85,11 @@ switch (logLevel) {
 		conf = {
 			level: "error",
 			format: format.combine(
-				format.colorize(),
-				format.timestamp(),
-				format.printf(({level, message, timestamp}) => {
-					return `${ timestamp } ${ level }: ${ message }`
-				}),
+			  format.colorize(),
+			  format.timestamp(),
+			  format.printf(({ level, message, timestamp }) => {
+				  return `${timestamp} ${level}: ${message}`
+			  }),
 			),
 		}
 		break
@@ -97,11 +97,11 @@ switch (logLevel) {
 		conf = {
 			level: "warning",
 			format: format.combine(
-				format.colorize(),
-				format.timestamp(),
-				format.printf(({level, message, timestamp}) => {
-					return `${ timestamp } ${ level }: ${ message }`
-				}),
+			  format.colorize(),
+			  format.timestamp(),
+			  format.printf(({ level, message, timestamp }) => {
+				  return `${timestamp} ${level}: ${message}`
+			  }),
 			),
 		}
 		break
@@ -109,6 +109,6 @@ switch (logLevel) {
 
 export const logger: any = winston.createLogger({
 	levels: customLevels.levels,
-	transports: [ new winston.transports.Console(conf), detailedDebugTransport ],
+	transports: [new winston.transports.Console(conf), detailedDebugTransport],
 })
 winston.addColors(customLevels.colors)

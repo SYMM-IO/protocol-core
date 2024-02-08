@@ -63,4 +63,12 @@ interface IPartyAEvents {
         uint256 closedPrice,
         QuoteStatus quoteStatus
     );
+
+    event LiquidatePartyB(
+        address liquidator,
+        address partyB,
+        address partyA,
+        uint256 partyBAllocatedBalance,
+        int256 upnl
+    );
 }

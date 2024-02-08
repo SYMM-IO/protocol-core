@@ -39,7 +39,10 @@ interface IControlEvents {
     event SetSymbolMaxLeverage(uint256 symbolId, uint256 oldMaxLeverage, uint256 maxLeverage);
     event SetDeallocateCooldown(uint256 oldDeallocateCooldown, uint256 newDeallocateCooldown);
     event SetForceCancelCooldown(uint256 oldForceCancelCooldown, uint256 newForceCancelCooldown);
-    event SetForceCloseCooldown(uint256 oldForceCloseCooldown, uint256 newForceCloseCooldown);
+    event SetForceCloseCooldowns(uint256 oldForceCloseFirstCooldown, uint256 newForceCloseFirstCooldown,
+        uint256 oldForceCloseSecondCooldown, uint256 newForceCloseSecondCooldown);
+    event SetForceClosePricePenalty(uint256 oldPricePenalty, uint256 newPricePenalty);
+    event SetForceCloseMinSigPeriod(uint256 oldCloseMinSigPeriod, uint256 newCloseMinSigPeriod);
     event SetForceCancelCloseCooldown(
         uint256 oldForceCancelCloseCooldown,
         uint256 newForceCancelCloseCooldown

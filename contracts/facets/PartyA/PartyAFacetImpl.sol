@@ -9,6 +9,7 @@ import "../../libraries/LibMuon.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
+import "../../libraries/LibLiquidation.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -230,49 +231,109 @@ library PartyAFacetImpl {
         quote.quantityToClose = 0;
     }
 
-    function forceClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+    function forceClosePosition(
+        uint256 quoteId,
+        HighLowPriceSig memory sig
+    )
+    internal
+    returns (
+        uint256 closePrice,
+        bool isPartyBLiquidated,
+        int256 upnlPartyB,
+        uint256 partyBAllocatedBalance
+    )
+    {
         MAStorage.Layout storage maLayout = MAStorage.layout();
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-
-        uint256 filledAmount = quote.quantityToClose;
         require(quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyAFacet: Invalid state");
-        require(
-            block.timestamp > quote.statusModifyTimestamp + maLayout.forceCloseCooldown,
-            "PartyAFacet: Cooldown not reached"
-        );
-        require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
+        require(sig.endTime + maLayout.forceCloseSecondCooldown <= quote.deadline, "PartyBFacet: Close request is expired");
         require(
             quote.orderType == OrderType.LIMIT,
             "PartyBFacet: Quote's order type should be LIMIT"
         );
+        require(
+            sig.startTime >= quote.statusModifyTimestamp + maLayout.forceCloseFirstCooldown,
+            "PartyAFacet: Cooldown not reached"
+        );
+        require(
+            sig.endTime <= block.timestamp - maLayout.forceCloseSecondCooldown,
+            "PartyAFacet: Cooldown not reached"
+        );
+        require(
+            sig.averagePrice <= sig.highest && sig.averagePrice >= sig.lowest,
+            "PartyAFacet: Invalid average price"
+        );
         if (quote.positionType == PositionType.LONG) {
             require(
-                upnlSig.price >=
-                    quote.requestedClosePrice +
-                        (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
-                        1e18,
+                sig.highest >=
+                quote.requestedClosePrice +
+                (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
+                1e18,
                 "PartyAFacet: Requested close price not reached"
             );
+            closePrice =
+                quote.requestedClosePrice +
+                (quote.requestedClosePrice * maLayout.forceClosePricePenalty) /
+                1e18;
+            closePrice = closePrice > sig.averagePrice ? closePrice : sig.averagePrice; // max
         } else {
             require(
-                upnlSig.price <=
-                    quote.requestedClosePrice -
-                        (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
-                        1e18,
+                sig.lowest <=
+                quote.requestedClosePrice -
+                (quote.requestedClosePrice * maLayout.forceCloseGapRatio) /
+                1e18,
                 "PartyAFacet: Requested close price not reached"
             );
+            closePrice =
+                quote.requestedClosePrice -
+                (quote.requestedClosePrice * maLayout.forceClosePricePenalty) /
+                1e18;
+            closePrice = closePrice > sig.averagePrice ? sig.averagePrice : closePrice; // min
         }
 
-        LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
-        LibSolvency.isSolventAfterClosePosition(
+        if (closePrice == sig.averagePrice)
+            require(
+                sig.endTime - sig.startTime >= maLayout.forceCloseMinSigPeriod,
+                "PartyAFacet: Invalid signature period"
+            );
+
+        LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
+        AccountStorage.layout().partyANonces[quote.partyA] += 1;
+        AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
+
+        (int256 partyBAvailableBalance, int256 partyAAvailableBalance) = LibSolvency
+            .getAvailableBalanceAfterClosePosition(
             quoteId,
-            filledAmount,
-            upnlSig.price,
-            upnlSig
+            quote.quantityToClose,
+            closePrice,
+            PairUpnlAndPriceSig({
+                reqId: sig.reqId,
+                timestamp: sig.timestamp,
+                upnlPartyA: sig.upnlPartyA,
+                upnlPartyB: sig.upnlPartyB,
+                price: sig.currentPrice,
+                gatewaySignature: sig.gatewaySignature,
+                sigs: sig.sigs
+            })
         );
-        accountLayout.partyANonces[quote.partyA] += 1;
-        accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
+        require(partyAAvailableBalance >= 0, "PartyAFacet: PartyA will be insolvent");
+        if (partyBAvailableBalance < 0) {
+            int256 diff = (int256(quote.quantityToClose) *
+                (int256(closePrice) - int256(sig.currentPrice))) / 1e18;
+            if (quote.positionType == PositionType.LONG) {
+                diff = diff * - 1;
+            }
+            partyBAllocatedBalance = AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA];
+            isPartyBLiquidated = true;
+            upnlPartyB = sig.upnlPartyB + diff;
+            LibLiquidation.liquidatePartyB(
+                quote.partyB,
+                quote.partyA,
+                upnlPartyB,
+                block.timestamp
+            );
+        } else {
+            LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
+        }
     }
 }

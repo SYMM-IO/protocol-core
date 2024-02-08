@@ -155,8 +155,8 @@ library LibQuote {
         if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {
             require(
                 quote.lockedValues.totalForPartyA() == 0 ||
-                    quote.lockedValues.totalForPartyA() >=
-                    symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
+                quote.lockedValues.totalForPartyA() >=
+                symbolLayout.symbols[quote.symbolId].minAcceptableQuoteValue,
                 "LibQuote: Remaining quote value is low"
             );
         }
@@ -166,10 +166,15 @@ library LibQuote {
             filledAmount,
             quote
         );
+
         if (hasMadeProfit) {
+            require(accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] >= pnl,
+                "LibQuote: PartyA should first exit its positions that are incurring losses");
             accountLayout.allocatedBalances[quote.partyA] += pnl;
             accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] -= pnl;
         } else {
+            require(accountLayout.allocatedBalances[quote.partyA] >= pnl,
+                "LibQuote: PartyA should first exit its positions that are currently in profit.");
             accountLayout.allocatedBalances[quote.partyA] -= pnl;
             accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += pnl;
         }

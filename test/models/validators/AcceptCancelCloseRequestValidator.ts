@@ -30,8 +30,8 @@ export type AcceptCancelCloseRequestValidatorAfterArg = {
 
 export class AcceptCancelCloseRequestValidator implements TransactionValidator {
 	async before(
-		context: RunContext,
-		arg: AcceptCancelCloseRequestValidatorBeforeArg,
+	  context: RunContext,
+	  arg: AcceptCancelCloseRequestValidatorBeforeArg,
 	): Promise<AcceptCancelCloseRequestValidatorBeforeOutput> {
 		logger.debug("Before AcceptCancelCloseRequestValidator...")
 		return {
@@ -40,7 +40,7 @@ export class AcceptCancelCloseRequestValidator implements TransactionValidator {
 			quote: await context.viewFacet.getQuote(arg.quoteId),
 		}
 	}
-	
+
 	async after(context: RunContext, arg: AcceptCancelCloseRequestValidatorAfterArg) {
 		logger.debug("After AcceptCancelCloseRequestValidator...")
 		// Check Quote
@@ -48,33 +48,33 @@ export class AcceptCancelCloseRequestValidator implements TransactionValidator {
 		const oldQuote = arg.beforeOutput.quote
 		expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.OPENED)
 		expect(newQuote.quantityToClose).to.be.equal(BigNumber.from(0).toString())
-		
+
 		// Check Balances partyA
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
-		
+
 		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
-			oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
+		  oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
 		)
 		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
-			oldBalanceInfoPartyA.totalLockedPartyA.toString(),
+		  oldBalanceInfoPartyA.totalLockedPartyA.toString(),
 		)
 		expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(
-			oldBalanceInfoPartyA.allocatedBalances.toString(),
+		  oldBalanceInfoPartyA.allocatedBalances.toString(),
 		)
-		
+
 		// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())
 		const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB
-		
+
 		expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(
-			oldBalanceInfoPartyB.totalPendingLockedPartyB.toString(),
+		  oldBalanceInfoPartyB.totalPendingLockedPartyB.toString(),
 		)
 		expect(newBalanceInfoPartyB.totalLockedPartyB).to.be.equal(
-			oldBalanceInfoPartyB.totalLockedPartyB.toString(),
+		  oldBalanceInfoPartyB.totalLockedPartyB.toString(),
 		)
 		expect(newBalanceInfoPartyB.allocatedBalances).to.be.equal(
-			oldBalanceInfoPartyB.allocatedBalances.toString(),
+		  oldBalanceInfoPartyB.allocatedBalances.toString(),
 		)
 	}
 }

@@ -24,30 +24,30 @@ export type SendQuoteValidatorAfterArg = {
 
 export class SendQuoteValidator implements TransactionValidator {
 	async before(
-		context: RunContext,
-		arg: SendQuoteValidatorBeforeArg,
+	  context: RunContext,
+	  arg: SendQuoteValidatorBeforeArg,
 	): Promise<SendQuoteValidatorBeforeOutput> {
 		logger.debug("Before SendQuoteValidator...")
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
 		}
 	}
-	
+
 	async after(context: RunContext, arg: SendQuoteValidatorAfterArg) {
 		logger.debug("After SendQuoteValidator...")
 		const newBalanceInfo = await arg.user.getBalanceInfo()
 		const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA
-		
+
 		expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
-			oldBalanceInfo.totalPendingLockedPartyA
-				.add(await getTotalLockedValuesForQuoteIds(context, [ arg.quoteId ]))
-				.toString(),
+		  oldBalanceInfo.totalPendingLockedPartyA
+			.add(await getTotalLockedValuesForQuoteIds(context, [arg.quoteId]))
+			.toString(),
 		)
 		expect(newBalanceInfo.allocatedBalances).to.be.equal(
-			oldBalanceInfo.allocatedBalances.sub(await getTradingFeeForQuotes(context, [ arg.quoteId ])),
+		  oldBalanceInfo.allocatedBalances.sub(await getTradingFeeForQuotes(context, [arg.quoteId])),
 		)
 		expect((await context.viewFacet.getQuote(arg.quoteId)).quoteStatus).to.be.equal(
-			QuoteStatus.PENDING,
+		  QuoteStatus.PENDING,
 		)
 	}
 }

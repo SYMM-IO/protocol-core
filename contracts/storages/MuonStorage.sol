@@ -58,7 +58,7 @@ struct LiquidationSig {
     uint256 timestamp;
     bytes liquidationId;
     int256 upnl;
-    int256 totalUnrealizedLoss; 
+    int256 totalUnrealizedLoss;
     uint256[] symbolIds;
     uint256[] prices;
     bytes gatewaySignature;
@@ -70,6 +70,22 @@ struct QuotePriceSig {
     uint256 timestamp;
     uint256[] quoteIds;
     uint256[] prices;
+    bytes gatewaySignature;
+    SchnorrSign sigs;
+}
+
+struct HighLowPriceSig {
+    bytes reqId;
+    uint256 timestamp;
+    uint256 symbolId;
+    uint256 highest;
+    uint256 lowest;
+    uint256 averagePrice;
+    uint256 startTime;
+    uint256 endTime;
+    int256 upnlPartyB;
+    int256 upnlPartyA;
+    uint256 currentPrice;
     bytes gatewaySignature;
     SchnorrSign sigs;
 }
