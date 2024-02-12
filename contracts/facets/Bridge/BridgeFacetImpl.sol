@@ -18,14 +18,15 @@ library BridgeFacetImpl {
     function transferToBridge(address partyA, uint256 amount, address bridge) internal {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+        
         require(
             bridgeLayout.bridges[bridge] == BridgeStatus.WHITELIST ||
-            bridgeLayout.bridges[bridge] == BridgeStatus.SUSPEND,
+                bridgeLayout.bridges[bridge] == BridgeStatus.SUSPEND,
             "BridgeFacet: Bridge address is not whitelist"
         );
+
         uint256 decimal = (1e18 - (10 ** IERC20Metadata(appLayout.collateral).decimals()));
         uint256 amountWith18Decimals = (decimal == 0 ? 1 : decimal) * amount;
-
         uint256 currentId = ++bridgeLayout.lastId;
 
         BridgeTransaction memory bridgeTransaction = BridgeTransaction({
@@ -46,7 +47,7 @@ library BridgeFacetImpl {
     function withdrawLockedTransaction(uint256 id) internal {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
-        BridgeTransaction memory bridgeTransaction = bridgeLayout.BridgeTransactions[id];
+        BridgeTransaction storage bridgeTransaction = bridgeLayout.BridgeTransactions[id];
         address bridgeAddress = bridgeTransaction.bridge;
 
         require(
@@ -55,12 +56,14 @@ library BridgeFacetImpl {
         );
 
         require(
-            block.timestamp >=
-            MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp,
+            block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp,
             "BridgeFacet: Cooldown hasn't reached"
         );
 
-        require(bridgeLayout.bridges[bridgeAddress] == BridgeStatus.WHITELIST, "BridgeFacet: Bridge address is not whitelist");
+        require(
+            bridgeLayout.bridges[bridgeAddress] == BridgeStatus.WHITELIST,
+            "BridgeFacet: Bridge address is not whitelist"
+        );
 
         AccountStorage.layout().balances[bridgeAddress] -= bridgeTransaction.amount;
 
@@ -68,6 +71,8 @@ library BridgeFacetImpl {
             bridgeTransaction.bridge,
             bridgeTransaction.amount
         );
+
         bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
+        bridgeLayout.BridgeTransactions[id] = bridgeTransaction;
     }
 }
