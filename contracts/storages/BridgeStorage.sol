@@ -18,18 +18,11 @@ enum BridgeTransactionStatus{
     WITHDRAWN
 }
 
-enum BridgeStatus{
-    NOT_WHITELIST,
-    WHITELIST,
-    SUSPEND,
-    REMOVE
-}
-
 library BridgeStorage {
     bytes32 internal constant BRIDGE_STORAGE_SLOT = keccak256("diamond.standard.storage.bridge");
 
     struct Layout {
-        mapping(address =>  BridgeStatus) bridges;
+        mapping(address =>  bool) bridges;
         mapping(uint256 =>  BridgeTransaction) BridgeTransactions;
         uint256 lastId;
     }
