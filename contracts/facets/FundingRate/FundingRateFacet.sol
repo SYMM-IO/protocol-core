@@ -3,12 +3,12 @@
 // Copyright (c) 2023 Symmetry Labs AG
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
+
 import "./FundingRateFacetImpl.sol";
 import "../../utils/Pausable.sol";
-import "./IFundingRateEvents.sol";
+import "./IFundingRateFacet.sol";
 
-contract FundingRateFacet is Pausable, IFundingRateEvents {
-    
+contract FundingRateFacet is Pausable, IFundingRateFacet {
     function chargeFundingRate(
         address partyA,
         uint256[] memory quoteIds,
