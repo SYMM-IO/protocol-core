@@ -8,6 +8,7 @@ import "../../libraries/LibLockedValues.sol";
 import "../../libraries/LibMuon.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibQuote.sol";
+import "../../libraries/LibLiquidation.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -258,7 +259,7 @@ library LiquidationFacetImpl {
         }
     }
 
-    function settlePartyALiquidation(address partyA, address[] memory partyBs) internal {
+    function settlePartyALiquidation(address partyA, address[] memory partyBs) internal returns (int256[] memory settleAmounts){
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         require(
@@ -274,6 +275,7 @@ library LiquidationFacetImpl {
             !accountLayout.liquidationDetails[partyA].disputed,
             "LiquidationFacet: PartyA liquidation process get disputed"
         );
+        settleAmounts = new int256[](partyBs.length);
         for (uint256 i = 0; i < partyBs.length; i++) {
             address partyB = partyBs[i];
             require(
@@ -288,12 +290,15 @@ library LiquidationFacetImpl {
                 .settlementStates[partyA][partyB].cva;
             if (settleAmount < 0) {
                 accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(- settleAmount);
+                settleAmounts[i] = settleAmount;
             } else {
                 if (
                     accountLayout.partyBAllocatedBalances[partyB][partyA] >= uint256(settleAmount)
                 ) {
                     accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(settleAmount);
+                    settleAmounts[i] = settleAmount;
                 } else {
+                    settleAmounts[i] = int256(accountLayout.partyBAllocatedBalances[partyB][partyA]);
                     accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
                 }
             }
@@ -321,68 +326,8 @@ library LiquidationFacetImpl {
         address partyA,
         SingleUpnlSig memory upnlSig
     ) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        MAStorage.Layout storage maLayout = MAStorage.layout();
-        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-
         LibMuon.verifyPartyBUpnl(upnlSig, partyB, partyA);
-        int256 availableBalance = LibAccount.partyBAvailableBalanceForLiquidation(
-            upnlSig.upnl,
-            partyB,
-            partyA
-        );
-
-        require(availableBalance < 0, "LiquidationFacet: partyB is solvent");
-        uint256 liquidatorShare;
-        uint256 remainingLf;
-        if (uint256(- availableBalance) < accountLayout.partyBLockedBalances[partyB][partyA].lf) {
-            remainingLf =
-                accountLayout.partyBLockedBalances[partyB][partyA].lf -
-                uint256(- availableBalance);
-            liquidatorShare = (remainingLf * maLayout.liquidatorShare) / 1e18;
-
-            maLayout.partyBPositionLiquidatorsShare[partyB][partyA] =
-                (remainingLf - liquidatorShare) /
-                quoteLayout.partyBPositionsCount[partyB][partyA];
-        } else {
-            maLayout.partyBPositionLiquidatorsShare[partyB][partyA] = 0;
-        }
-
-        maLayout.partyBLiquidationStatus[partyB][partyA] = true;
-        maLayout.partyBLiquidationTimestamp[partyB][partyA] = upnlSig.timestamp;
-
-        uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
-
-        for (uint256 index = 0; index < pendingQuotes.length;) {
-            Quote storage quote = quoteLayout.quotes[pendingQuotes[index]];
-            if (
-                quote.partyB == partyB &&
-                (quote.quoteStatus == QuoteStatus.LOCKED ||
-                    quote.quoteStatus == QuoteStatus.CANCEL_PENDING)
-            ) {
-                accountLayout.pendingLockedBalances[partyA].subQuote(quote);
-                accountLayout.allocatedBalances[partyA] += LibQuote.getTradingFee(quote.id);
-                pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
-                pendingQuotes.pop();
-                quote.quoteStatus = QuoteStatus.CANCELED;
-                quote.statusModifyTimestamp = block.timestamp;
-            } else {
-                index++;
-            }
-        }
-        accountLayout.allocatedBalances[partyA] +=
-            accountLayout.partyBAllocatedBalances[partyB][partyA] -
-            remainingLf;
-
-        delete quoteLayout.partyBPendingQuotes[partyB][partyA];
-        accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
-        accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
-        accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
-        accountLayout.partyANonces[partyA] += 1;
-
-        if (liquidatorShare > 0) {
-            accountLayout.allocatedBalances[msg.sender] += liquidatorShare;
-        }
+        LibLiquidation.liquidatePartyB(partyB, partyA, upnlSig.upnl, upnlSig.timestamp);
     }
 
     function liquidatePositionsPartyB(

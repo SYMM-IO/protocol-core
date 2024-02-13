@@ -55,7 +55,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
             quote.lockedValues.lf,
             quote.lockedValues.partyAmm,
             quote.lockedValues.partyBmm,
-            maxFundingRate,
+            quote.tradingFee,
             deadline
         );
     }
@@ -149,22 +149,35 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAEvents {
         emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED);
     }
 
-    function forceClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig)
-        external
-        notLiquidated(quoteId)
-        whenNotPartyAActionsPaused
-    {
+    function forceClosePosition(
+        uint256 quoteId,
+        HighLowPriceSig memory sig
+    ) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         uint256 filledAmount = quote.quantityToClose;
-        uint256 requestedClosePrice = quote.requestedClosePrice;
-        PartyAFacetImpl.forceClosePosition(quoteId, upnlSig);
-        emit ForceClosePosition(
-            quoteId,
-            quote.partyA,
-            quote.partyB,
-            filledAmount,
-            requestedClosePrice,
-            quote.quoteStatus
-        );
+        (
+            uint256 closePrice,
+            bool isPartyBLiquidated,
+            int256 upnlPartyB,
+            uint256 partyBAllocatedBalance
+        ) = PartyAFacetImpl.forceClosePosition(quoteId, sig);
+        if (isPartyBLiquidated) {
+            emit LiquidatePartyB(
+                msg.sender,
+                quote.partyB,
+                quote.partyA,
+                partyBAllocatedBalance,
+                upnlPartyB
+            );
+        } else {
+            emit ForceClosePosition(
+                quoteId,
+                quote.partyA,
+                quote.partyB,
+                filledAmount,
+                closePrice,
+                quote.quoteStatus
+            );
+        }
     }
 }

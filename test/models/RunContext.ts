@@ -39,12 +39,12 @@ export class RunContext {
 }
 
 export async function createRunContext(
-	diamond: string,
-	collateral: string,
-	onlyInitialize: boolean = false,
+  diamond: string,
+  collateral: string,
+  onlyInitialize: boolean = false,
 ): Promise<RunContext> {
 	let context = new RunContext()
-	
+
 	const signers: SignerWithAddress[] = await ethers.getSigners()
 	context.signers = {
 		admin: signers[0],
@@ -55,7 +55,7 @@ export async function createRunContext(
 		hedger2: signers[5],
 		others: [],
 	}
-	
+
 	context.diamond = diamond
 	context.collateral = await ethers.getContractAt("FakeStablecoin", collateral)
 	context.accountFacet = await ethers.getContractAt("AccountFacet", diamond)
@@ -67,10 +67,10 @@ export async function createRunContext(
 	context.liquidationFacet = await ethers.getContractAt("LiquidationFacet", diamond)
 	context.controlFacet = await ethers.getContractAt("ControlFacet", diamond)
 	context.fundingRateFacet = await ethers.getContractAt("FundingRateFacet", diamond)
-	
+
 	context.manager = new TestManager(context, onlyInitialize)
 	if (!onlyInitialize)
 		await context.manager.start()
-	
+
 	return context
 }

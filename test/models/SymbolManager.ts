@@ -77,10 +77,10 @@ export let symbolsMock ={"symbols":[
 
 export class SymbolManager {
 	symbols: Map<number, Symbol> = new Map<number, Symbol>()
-	
+
 	constructor() {
 	}
-	
+
 	public async loadSymbols() {
 		if (process.env.TEST_MODE != "fuzz") return
 		try {
@@ -93,12 +93,12 @@ export class SymbolManager {
 			throw new Error(`Failed to fetch symbols. Is server up and running?`)
 		}
 	}
-	
+
 	public getSymbolPricePrecision(symbolId: number): number {
 		if (!this.symbols.has(symbolId)) return 100
 		return this.symbols.get(symbolId)!.price_precision
 	}
-	
+
 	public getSymbolQuantityPrecision(symbolId: number): number {
 		if (!this.symbols.has(symbolId)) return 100
 		return this.symbols.get(symbolId)!.quantity_precision
