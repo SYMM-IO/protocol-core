@@ -11,13 +11,11 @@ import "../../storages/MAStorage.sol";
 import "../../storages/MuonStorage.sol";
 import "../../storages/GlobalAppStorage.sol";
 import "../../storages/SymbolStorage.sol";
-import "./IControlEvents.sol";
+import "./IControlFacet.sol";
 import "../../libraries/LibDiamond.sol";
 import "../../storages/BridgeStorage.sol";
 
-
-contract ControlFacet is Accessibility, Ownable, IControlEvents {
-
+contract ControlFacet is Accessibility, Ownable, IControlFacet {
     function transferOwnership(address owner) external onlyOwner {
         require(owner != address(0), "ControlFacet: Zero address");
         LibDiamond.setContractOwner(owner);
@@ -29,40 +27,26 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         emit RoleGranted(LibAccessibility.DEFAULT_ADMIN_ROLE, user);
     }
 
-    function grantRole(
-        address user,
-        bytes32 role
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function grantRole(address user, bytes32 role) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         require(user != address(0), "ControlFacet: Zero address");
         GlobalAppStorage.layout().hasRole[user][role] = true;
         emit RoleGranted(role, user);
     }
 
-    function revokeRole(
-        address user,
-        bytes32 role
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function revokeRole(address user, bytes32 role) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         GlobalAppStorage.layout().hasRole[user][role] = false;
         emit RoleRevoked(role, user);
     }
 
-    function registerPartyB(
-        address partyB
-    ) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
+    function registerPartyB(address partyB) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
         require(partyB != address(0), "ControlFacet: Zero address");
-        require(
-            !MAStorage.layout().partyBStatus[partyB],
-            "ControlFacet: Address is already registered"
-        );
+        require(!MAStorage.layout().partyBStatus[partyB], "ControlFacet: Address is already registered");
         MAStorage.layout().partyBStatus[partyB] = true;
         MAStorage.layout().partyBList.push(partyB);
         emit RegisterPartyB(partyB);
     }
 
-    function deregisterPartyB(
-        address partyB,
-        uint256 index
-    ) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
+    function deregisterPartyB(address partyB, uint256 index) external onlyRole(LibAccessibility.PARTY_B_MANAGER_ROLE) {
         require(partyB != address(0), "ControlFacet: Zero address");
         require(MAStorage.layout().partyBStatus[partyB], "ControlFacet: Address is not registered");
         require(MAStorage.layout().partyBList[index] == partyB, "ControlFacet: Invalid index");
@@ -86,11 +70,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         muonLayout.priceQuantityValidTime = priceQuantityValidTime;
     }
 
-    function setMuonIds(
-        uint256 muonAppId,
-        address validGateway,
-        PublicKey memory publicKey
-    ) external onlyRole(LibAccessibility.MUON_SETTER_ROLE) {
+    function setMuonIds(uint256 muonAppId, address validGateway, PublicKey memory publicKey) external onlyRole(LibAccessibility.MUON_SETTER_ROLE) {
         MuonStorage.Layout storage muonLayout = MuonStorage.layout();
         muonLayout.muonAppId = muonAppId;
         muonLayout.validGateway = validGateway;
@@ -98,14 +78,9 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         emit SetMuonIds(muonAppId, validGateway, publicKey.x, publicKey.parity);
     }
 
-    function setCollateral(
-        address collateral
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function setCollateral(address collateral) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         require(collateral != address(0), "ControlFacet: Zero address");
-        require(
-            IERC20Metadata(collateral).decimals() <= 18,
-            "ControlFacet: Token with more than 18 decimals not allowed"
-        );
+        require(IERC20Metadata(collateral).decimals() <= 18, "ControlFacet: Token with more than 18 decimals not allowed");
         if (GlobalAppStorage.layout().collateral != address(0)) {
             require(
                 IERC20Metadata(GlobalAppStorage.layout().collateral).balanceOf(address(this)) == 0,
@@ -127,10 +102,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         uint256 fundingRateEpochDuration,
         uint256 fundingRateWindowTime
     ) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
-        require(
-            fundingRateWindowTime < fundingRateEpochDuration / 2,
-            "ControlFacet: High window time"
-        );
+        require(fundingRateWindowTime < fundingRateEpochDuration / 2, "ControlFacet: High window time");
         require(tradingFee <= 1e18, "ControlFacet: High trading fee");
         uint256 lastId = ++SymbolStorage.layout().lastId;
         Symbol memory symbol = Symbol(
@@ -157,9 +129,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         );
     }
 
-    function addSymbols(
-        Symbol[] memory symbols
-    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+    function addSymbols(Symbol[] memory symbols) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
         for (uint8 i; i < symbols.length; i++) {
             addSymbol(
                 symbols[i].name,
@@ -180,29 +150,20 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
     ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
         require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
-        require(
-            fundingRateWindowTime < fundingRateEpochDuration / 2,
-            "ControlFacet: High window time"
-        );
+        require(fundingRateWindowTime < fundingRateEpochDuration / 2, "ControlFacet: High window time");
         symbolLayout.symbols[symbolId].fundingRateEpochDuration = fundingRateEpochDuration;
         symbolLayout.symbols[symbolId].fundingRateWindowTime = fundingRateWindowTime;
         emit SetSymbolFundingState(symbolId, fundingRateEpochDuration, fundingRateWindowTime);
     }
 
-    function setSymbolValidationState(
-        uint256 symbolId,
-        bool isValid
-    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+    function setSymbolValidationState(uint256 symbolId, bool isValid) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
         require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
         emit SetSymbolValidationState(symbolId, symbolLayout.symbols[symbolId].isValid, isValid);
         symbolLayout.symbols[symbolId].isValid = isValid;
     }
 
-    function setSymbolMaxLeverage(
-        uint256 symbolId,
-        uint256 maxLeverage
-    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+    function setSymbolMaxLeverage(uint256 symbolId, uint256 maxLeverage) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
         require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
         emit SetSymbolMaxLeverage(symbolId, symbolLayout.symbols[symbolId].maxLeverage, maxLeverage);
@@ -227,10 +188,7 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         symbolLayout.symbols[symbolId].minAcceptablePortionLF = minAcceptablePortionLF;
     }
 
-    function setSymbolTradingFee(
-        uint256 symbolId,
-        uint256 tradingFee
-    ) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+    function setSymbolTradingFee(uint256 symbolId, uint256 tradingFee) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
         require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
         emit SetSymbolTradingFee(symbolId, symbolLayout.symbols[symbolId].tradingFee, tradingFee);
@@ -241,16 +199,12 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
 
     // CoolDowns
 
-    function setDeallocateCooldown(
-        uint256 deallocateCooldown
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+    function setDeallocateCooldown(uint256 deallocateCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
         emit SetDeallocateCooldown(MAStorage.layout().deallocateCooldown, deallocateCooldown);
         MAStorage.layout().deallocateCooldown = deallocateCooldown;
     }
 
-    function setForceCancelCooldown(
-        uint256 forceCancelCooldown
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+    function setForceCancelCooldown(uint256 forceCancelCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
         emit SetForceCancelCooldown(MAStorage.layout().forceCancelCooldown, forceCancelCooldown);
         MAStorage.layout().forceCancelCooldown = forceCancelCooldown;
     }
@@ -259,65 +213,49 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         uint256 forceCloseFirstCooldown,
         uint256 forceCloseSecondCooldown
     ) external onlyRole(LibAccessibility.SETTER_ROLE) {
-        emit SetForceCloseCooldowns(MAStorage.layout().forceCloseFirstCooldown, forceCloseFirstCooldown,
-            MAStorage.layout().forceCloseSecondCooldown, forceCloseSecondCooldown);
+        emit SetForceCloseCooldowns(
+            MAStorage.layout().forceCloseFirstCooldown,
+            forceCloseFirstCooldown,
+            MAStorage.layout().forceCloseSecondCooldown,
+            forceCloseSecondCooldown
+        );
         MAStorage.layout().forceCloseFirstCooldown = forceCloseFirstCooldown;
         MAStorage.layout().forceCloseSecondCooldown = forceCloseSecondCooldown;
     }
 
-    function setForceClosePricePenalty(
-        uint256 forceClosePricePenalty
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+    function setForceClosePricePenalty(uint256 forceClosePricePenalty) external onlyRole(LibAccessibility.SETTER_ROLE) {
         emit SetForceClosePricePenalty(MAStorage.layout().forceClosePricePenalty, forceClosePricePenalty);
         MAStorage.layout().forceClosePricePenalty = forceClosePricePenalty;
     }
 
-    function setForceCloseMinSigPeriod(
-        uint256 forceCloseMinSigPeriod
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+    function setForceCloseMinSigPeriod(uint256 forceCloseMinSigPeriod) external onlyRole(LibAccessibility.SETTER_ROLE) {
         emit SetForceCloseMinSigPeriod(MAStorage.layout().forceCloseMinSigPeriod, forceCloseMinSigPeriod);
         MAStorage.layout().forceCloseMinSigPeriod = forceCloseMinSigPeriod;
     }
 
-    function setForceCancelCloseCooldown(
-        uint256 forceCancelCloseCooldown
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
-        emit SetForceCancelCloseCooldown(
-            MAStorage.layout().forceCancelCloseCooldown,
-            forceCancelCloseCooldown
-        );
+    function setForceCancelCloseCooldown(uint256 forceCancelCloseCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
+        emit SetForceCancelCloseCooldown(MAStorage.layout().forceCancelCloseCooldown, forceCancelCloseCooldown);
         MAStorage.layout().forceCancelCloseCooldown = forceCancelCloseCooldown;
     }
 
-    function setLiquidatorShare(
-        uint256 liquidatorShare
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+    function setLiquidatorShare(uint256 liquidatorShare) external onlyRole(LibAccessibility.SETTER_ROLE) {
         emit SetLiquidatorShare(MAStorage.layout().liquidatorShare, liquidatorShare);
         MAStorage.layout().liquidatorShare = liquidatorShare;
     }
 
-    function setForceCloseGapRatio(
-        uint256 forceCloseGapRatio
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+    function setForceCloseGapRatio(uint256 forceCloseGapRatio) external onlyRole(LibAccessibility.SETTER_ROLE) {
         emit SetForceCloseGapRatio(MAStorage.layout().forceCloseGapRatio, forceCloseGapRatio);
         MAStorage.layout().forceCloseGapRatio = forceCloseGapRatio;
     }
 
-    function setPendingQuotesValidLength(
-        uint256 pendingQuotesValidLength
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
-        emit SetPendingQuotesValidLength(
-            MAStorage.layout().pendingQuotesValidLength,
-            pendingQuotesValidLength
-        );
+    function setPendingQuotesValidLength(uint256 pendingQuotesValidLength) external onlyRole(LibAccessibility.SETTER_ROLE) {
+        emit SetPendingQuotesValidLength(MAStorage.layout().pendingQuotesValidLength, pendingQuotesValidLength);
         MAStorage.layout().pendingQuotesValidLength = pendingQuotesValidLength;
     }
 
     // Pause State
 
-    function setFeeCollector(
-        address feeCollector
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function setFeeCollector(address feeCollector) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         require(feeCollector != address(0), "ControlFacet: Zero address");
         emit SetFeeCollector(GlobalAppStorage.layout().feeCollector, feeCollector);
         GlobalAppStorage.layout().feeCollector = feeCollector;
@@ -378,24 +316,18 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         emit UnpausePartyBActions();
     }
 
-    function setLiquidationTimeout(
-        uint256 liquidationTimeout
-    ) external onlyRole(LibAccessibility.SETTER_ROLE) {
+    function setLiquidationTimeout(uint256 liquidationTimeout) external onlyRole(LibAccessibility.SETTER_ROLE) {
         emit SetLiquidationTimeout(MAStorage.layout().liquidationTimeout, liquidationTimeout);
         MAStorage.layout().liquidationTimeout = liquidationTimeout;
     }
 
-    function suspendedAddress(
-        address user
-    ) external onlyRole(LibAccessibility.SUSPENDER_ROLE) {
+    function suspendedAddress(address user) external onlyRole(LibAccessibility.SUSPENDER_ROLE) {
         require(user != address(0), "ControlFacet: Zero address");
         emit SetSuspendedAddress(user, true);
         AccountStorage.layout().suspendedAddresses[user] = true;
     }
 
-    function unsuspendedAddress(
-        address user
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function unsuspendedAddress(address user) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         require(user != address(0), "ControlFacet: Zero address");
         emit SetSuspendedAddress(user, false);
         AccountStorage.layout().suspendedAddresses[user] = false;
@@ -406,17 +338,12 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         emit DeactiveEmergencyMode();
     }
 
-    function setBalanceLimitPerUser(
-        uint256 balanceLimitPerUser
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function setBalanceLimitPerUser(uint256 balanceLimitPerUser) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         emit SetBalanceLimitPerUser(balanceLimitPerUser);
         GlobalAppStorage.layout().balanceLimitPerUser = balanceLimitPerUser;
     }
 
-    function setPartyBEmergencyStatus(
-        address[] memory partyBs,
-        bool status
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function setPartyBEmergencyStatus(address[] memory partyBs, bool status) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         for (uint8 i; i < partyBs.length; i++) {
             require(partyBs[i] != address(0), "ControlFacet: Zero address");
             GlobalAppStorage.layout().partyBEmergencyStatus[partyBs[i]] = status;
@@ -424,23 +351,17 @@ contract ControlFacet is Accessibility, Ownable, IControlEvents {
         }
     }
 
-    function whiteListBridge(
-        address bridge
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function whiteListBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         emit WhiteListBridge(bridge);
         BridgeStorage.layout().bridges[bridge] = BridgeStatus.WHITELIST;
     }
 
-    function suspendBridge(
-        address bridge
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function suspendBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         emit SuspendBridge(bridge);
         BridgeStorage.layout().bridges[bridge] = BridgeStatus.SUSPEND;
     }
 
-    function removeBridge(
-        address bridge
-    ) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+    function removeBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         emit RemoveBridge(bridge);
         BridgeStorage.layout().bridges[bridge] = BridgeStatus.REMOVE;
     }

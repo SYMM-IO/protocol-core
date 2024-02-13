@@ -4,19 +4,20 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../libraries/LibLockedValues.sol";
-import "../libraries/LibQuote.sol";
-import "../libraries/LibMuon.sol";
-import "../storages/AccountStorage.sol";
-import "../storages/MAStorage.sol";
-import "../storages/QuoteStorage.sol";
-import "../storages/GlobalAppStorage.sol";
-import "../storages/SymbolStorage.sol";
-import "../storages/MuonStorage.sol";
-import "../libraries/LibLockedValues.sol";
-import "../storages/BridgeStorage.sol";
+import "../../libraries/LibLockedValues.sol";
+import "../../libraries/LibQuote.sol";
+import "../../libraries/LibMuon.sol";
+import "../../storages/AccountStorage.sol";
+import "../../storages/MAStorage.sol";
+import "../../storages/QuoteStorage.sol";
+import "../../storages/GlobalAppStorage.sol";
+import "../../storages/SymbolStorage.sol";
+import "../../storages/MuonStorage.sol";
+import "../../libraries/LibLockedValues.sol";
+import "../../storages/BridgeStorage.sol";
+import "./IViewFacet.sol";
 
-contract ViewFacet {
+contract ViewFacet is IViewFacet {
     using LockedValuesOps for LockedValues;
 
     // Account
@@ -29,22 +30,7 @@ contract ViewFacet {
     )
         external
         view
-        returns (
-            bool,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
+        returns (bool, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256)
     {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         MAStorage.Layout storage maLayout = MAStorage.layout();
@@ -69,11 +55,7 @@ contract ViewFacet {
 
     function balanceInfoOfPartyA(
         address partyA
-    )
-        external
-        view
-        returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256)
-    {
+    ) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         return (
             accountLayout.allocatedBalances[partyA],
@@ -91,11 +73,7 @@ contract ViewFacet {
     function balanceInfoOfPartyB(
         address partyB,
         address partyA
-    )
-        external
-        view
-        returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256)
-    {
+    ) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         return (
             accountLayout.partyBAllocatedBalances[partyB][partyA],
@@ -114,22 +92,14 @@ contract ViewFacet {
         return AccountStorage.layout().allocatedBalances[partyA];
     }
 
-    function allocatedBalanceOfPartyB(
-        address partyB,
-        address partyA
-    ) external view returns (uint256) {
+    function allocatedBalanceOfPartyB(address partyB, address partyA) external view returns (uint256) {
         return AccountStorage.layout().partyBAllocatedBalances[partyB][partyA];
     }
 
-    function allocatedBalanceOfPartyBs(
-        address partyA,
-        address[] memory partyBs
-    ) external view returns (uint256[] memory) {
+    function allocatedBalanceOfPartyBs(address partyA, address[] memory partyBs) external view returns (uint256[] memory) {
         uint256[] memory allocatedBalances = new uint256[](partyBs.length);
         for (uint256 i = 0; i < partyBs.length; i++) {
-            allocatedBalances[i] = AccountStorage.layout().partyBAllocatedBalances[partyBs[i]][
-                        partyA
-                ];
+            allocatedBalances[i] = AccountStorage.layout().partyBAllocatedBalances[partyBs[i]][partyA];
         }
         return allocatedBalances;
     }
@@ -150,16 +120,11 @@ contract ViewFacet {
         return AccountStorage.layout().suspendedAddresses[user];
     }
 
-    function getLiquidatedStateOfPartyA(
-        address partyA
-    ) external view returns (LiquidationDetail memory) {
+    function getLiquidatedStateOfPartyA(address partyA) external view returns (LiquidationDetail memory) {
         return AccountStorage.layout().liquidationDetails[partyA];
     }
 
-    function getSettlementStates(
-        address partyA,
-        address[] memory partyBs
-    ) external view returns (SettlementState[] memory) {
+    function getSettlementStates(address partyA, address[] memory partyBs) external view returns (SettlementState[] memory) {
         SettlementState[] memory states = new SettlementState[](partyBs.length);
         for (uint256 i = 0; i < partyBs.length; i++) {
             states[i] = AccountStorage.layout().settlementStates[partyA][partyBs[i]];
@@ -194,15 +159,10 @@ contract ViewFacet {
         return symbols;
     }
 
-    function symbolNameByQuoteId(
-        uint256[] memory quoteIds
-    ) external view returns (string[] memory) {
+    function symbolNameByQuoteId(uint256[] memory quoteIds) external view returns (string[] memory) {
         string[] memory symbols = new string[](quoteIds.length);
         for (uint256 i = 0; i < quoteIds.length; i++) {
-            symbols[i] = SymbolStorage
-                .layout()
-                .symbols[QuoteStorage.layout().quotes[quoteIds[i]].symbolId]
-                .name;
+            symbols[i] = SymbolStorage.layout().symbols[QuoteStorage.layout().quotes[quoteIds[i]].symbolId].name;
         }
         return symbols;
     }
@@ -222,10 +182,7 @@ contract ViewFacet {
         return QuoteStorage.layout().quotes[quoteId];
     }
 
-    function getQuotesByParent(
-        uint256 quoteId,
-        uint256 size
-    ) external view returns (Quote[] memory) {
+    function getQuotesByParent(uint256 quoteId, uint256 size) external view returns (Quote[] memory) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         Quote[] memory quotes = new Quote[](size);
         Quote memory quote = quoteLayout.quotes[quoteId];
@@ -240,11 +197,7 @@ contract ViewFacet {
         return quotes;
     }
 
-    function quoteIdsOf(
-        address partyA,
-        uint256 start,
-        uint256 size
-    ) external view returns (uint256[] memory) {
+    function quoteIdsOf(address partyA, uint256 start, uint256 size) external view returns (uint256[] memory) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         if (quoteLayout.quoteIdsOf[partyA].length < start + size) {
             size = quoteLayout.quoteIdsOf[partyA].length - start;
@@ -256,11 +209,7 @@ contract ViewFacet {
         return quoteIds;
     }
 
-    function getQuotes(
-        address partyA,
-        uint256 start,
-        uint256 size
-    ) external view returns (Quote[] memory) {
+    function getQuotes(address partyA, uint256 start, uint256 size) external view returns (Quote[] memory) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         if (quoteLayout.quoteIdsOf[partyA].length < start + size) {
             size = quoteLayout.quoteIdsOf[partyA].length - start;
@@ -280,11 +229,7 @@ contract ViewFacet {
         return QuoteStorage.layout().partyAPositionsCount[partyA];
     }
 
-    function getPartyAOpenPositions(
-        address partyA,
-        uint256 start,
-        uint256 size
-    ) external view returns (Quote[] memory) {
+    function getPartyAOpenPositions(address partyA, uint256 start, uint256 size) external view returns (Quote[] memory) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         if (quoteLayout.partyAOpenPositions[partyA].length < start + size) {
             size = quoteLayout.partyAOpenPositions[partyA].length - start;
@@ -296,12 +241,7 @@ contract ViewFacet {
         return quotes;
     }
 
-    function getPartyBOpenPositions(
-        address partyB,
-        address partyA,
-        uint256 start,
-        uint256 size
-    ) external view returns (Quote[] memory) {
+    function getPartyBOpenPositions(address partyB, address partyA, uint256 start, uint256 size) external view returns (Quote[] memory) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
         if (quoteLayout.partyBOpenPositions[partyB][partyA].length < start + size) {
             size = quoteLayout.partyBOpenPositions[partyB][partyA].length - start;
@@ -309,6 +249,20 @@ contract ViewFacet {
         Quote[] memory quotes = new Quote[](size);
         for (uint256 i = start; i < start + size; i++) {
             quotes[i - start] = quoteLayout.quotes[quoteLayout.partyBOpenPositions[partyB][partyA][i]];
+        }
+        return quotes;
+    }
+
+    function getPositionsFilteredByPartyB(address partyB, uint256 start, uint256 size) external view returns (Quote[] memory) {
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote[] memory quotes = new Quote[](size);
+        uint j = 0;
+        for (uint256 i = start; i < start + size; i++) {
+            Quote memory quote = quoteLayout.quotes[i];
+            if (quote.partyB == partyB) {
+                quotes[j] = quote;
+                j += 1;
+            }
         }
         return quotes;
     }
@@ -321,10 +275,7 @@ contract ViewFacet {
         return QuoteStorage.layout().partyAPendingQuotes[partyA];
     }
 
-    function getPartyBPendingQuotes(
-        address partyB,
-        address partyA
-    ) external view returns (uint256[] memory) {
+    function getPartyBPendingQuotes(address partyB, address partyA) external view returns (uint256[] memory) {
         return QuoteStorage.layout().partyBPendingQuotes[partyB][partyA];
     }
 
@@ -386,10 +337,7 @@ contract ViewFacet {
         return MAStorage.layout().liquidationTimeout;
     }
 
-    function partyBLiquidationTimestamp(
-        address partyB,
-        address partyA
-    ) external view returns (uint256) {
+    function partyBLiquidationTimestamp(address partyB, address partyA) external view returns (uint256) {
         return MAStorage.layout().partyBLiquidationTimestamp[partyB][partyA];
     }
 
@@ -405,21 +353,13 @@ contract ViewFacet {
 
     ///////////////////////////////////////////
 
-    function getMuonConfig()
-        external
-        view
-        returns (uint256 upnlValidTime, uint256 priceValidTime, uint256 priceQuantityValidTime)
-    {
+    function getMuonConfig() external view returns (uint256 upnlValidTime, uint256 priceValidTime, uint256 priceQuantityValidTime) {
         upnlValidTime = MuonStorage.layout().upnlValidTime;
         priceValidTime = MuonStorage.layout().priceValidTime;
         priceQuantityValidTime = MuonStorage.layout().priceQuantityValidTime;
     }
 
-    function getMuonIds()
-        external
-        view
-        returns (uint256 muonAppId, PublicKey memory muonPublicKey, address validGateway)
-    {
+    function getMuonIds() external view returns (uint256 muonAppId, PublicKey memory muonPublicKey, address validGateway) {
         muonAppId = MuonStorage.layout().muonAppId;
         muonPublicKey = MuonStorage.layout().muonPublicKey;
         validGateway = MuonStorage.layout().validGateway;
@@ -456,15 +396,11 @@ contract ViewFacet {
         return GlobalAppStorage.layout().balanceLimitPerUser;
     }
 
-    function verifyMuonTSSAndGateway(
-        bytes32 hash,
-        SchnorrSign memory sign,
-        bytes memory gatewaySignature
-    ) external view {
+    function verifyMuonTSSAndGateway(bytes32 hash, SchnorrSign memory sign, bytes memory gatewaySignature) external view {
         LibMuon.verifyTSSAndGateway(hash, sign, gatewaySignature);
     }
 
-    function getNextQuoteId() external view returns (uint256){
+    function getNextQuoteId() external view returns (uint256) {
         return QuoteStorage.layout().lastId;
     }
 
@@ -472,7 +408,7 @@ contract ViewFacet {
         return BridgeStorage.layout().BridgeTransactions[transactionId];
     }
 
-    function getNextBridgeTransactionId() external view returns (uint256){
+    function getNextBridgeTransactionId() external view returns (uint256) {
         return QuoteStorage.layout().lastId;
     }
 }
