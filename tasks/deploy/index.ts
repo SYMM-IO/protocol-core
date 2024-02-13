@@ -1,3 +1,3 @@
-import "./diamond";
-import "./multicall";
-import "./stablecoin";
+import "./diamond"
+import "./multicall"
+import "./stablecoin"
