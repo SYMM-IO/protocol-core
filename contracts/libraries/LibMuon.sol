@@ -219,4 +219,40 @@ library LibMuon {
         );
         verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
     }
+
+    function verifyHighLowPrice(
+        HighLowPriceSig memory sig,
+        address partyB,
+        address partyA,
+        uint256 symbolId
+    ) internal view {
+        MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+        require(
+            block.timestamp <= sig.timestamp + muonLayout.upnlValidTime,
+            "LibMuon: Expired signature"
+        );
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                muonLayout.muonAppId,
+                sig.reqId,
+                address(this),
+                partyB,
+                partyA,
+                AccountStorage.layout().partyBNonces[partyB][partyA],
+                AccountStorage.layout().partyANonces[partyA],
+                sig.upnlPartyB,
+                sig.upnlPartyA,
+                symbolId,
+                sig.currentPrice,
+                sig.startTime,
+                sig.endTime,
+                sig.lowest,
+                sig.highest,
+                sig.averagePrice,
+                sig.timestamp,
+                getChainId()
+            )
+        );
+        verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
+    }
 }
