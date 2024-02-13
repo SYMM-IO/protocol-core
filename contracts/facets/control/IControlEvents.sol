@@ -7,11 +7,7 @@ pragma solidity >=0.8.18;
 interface IControlEvents {
     event RoleGranted(bytes32 role, address user);
     event RoleRevoked(bytes32 role, address user);
-    event SetMuonConfig(
-        uint256 upnlValidTime,
-        uint256 priceValidTime,
-        uint256 priceQuantityValidTime
-    );
+    event SetMuonConfig(uint256 upnlValidTime, uint256 priceValidTime, uint256 priceQuantityValidTime);
     event SetMuonIds(uint256 muonAppId, address gateway, uint256 x, uint8 parity);
     event SetCollateral(address collateral);
     event AddSymbol(
@@ -39,20 +35,18 @@ interface IControlEvents {
     event SetSymbolMaxLeverage(uint256 symbolId, uint256 oldMaxLeverage, uint256 maxLeverage);
     event SetDeallocateCooldown(uint256 oldDeallocateCooldown, uint256 newDeallocateCooldown);
     event SetForceCancelCooldown(uint256 oldForceCancelCooldown, uint256 newForceCancelCooldown);
-    event SetForceCloseCooldowns(uint256 oldForceCloseFirstCooldown, uint256 newForceCloseFirstCooldown,
-        uint256 oldForceCloseSecondCooldown, uint256 newForceCloseSecondCooldown);
+    event SetForceCloseCooldowns(
+        uint256 oldForceCloseFirstCooldown,
+        uint256 newForceCloseFirstCooldown,
+        uint256 oldForceCloseSecondCooldown,
+        uint256 newForceCloseSecondCooldown
+    );
     event SetForceClosePricePenalty(uint256 oldPricePenalty, uint256 newPricePenalty);
     event SetForceCloseMinSigPeriod(uint256 oldCloseMinSigPeriod, uint256 newCloseMinSigPeriod);
-    event SetForceCancelCloseCooldown(
-        uint256 oldForceCancelCloseCooldown,
-        uint256 newForceCancelCloseCooldown
-    );
+    event SetForceCancelCloseCooldown(uint256 oldForceCancelCloseCooldown, uint256 newForceCancelCloseCooldown);
     event SetLiquidatorShare(uint256 oldLiquidatorShare, uint256 newLiquidatorShare);
     event SetForceCloseGapRatio(uint256 oldForceCloseGapRatio, uint256 newForceCloseGapRatio);
-    event SetPendingQuotesValidLength(
-        uint256 oldPendingQuotesValidLength,
-        uint256 newPendingQuotesValidLength
-    );
+    event SetPendingQuotesValidLength(uint256 oldPendingQuotesValidLength, uint256 newPendingQuotesValidLength);
     event PauseGlobal();
     event PauseLiquidation();
     event PauseAccounting();

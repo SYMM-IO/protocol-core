@@ -7,11 +7,11 @@ pragma solidity >=0.8.18;
 import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
 import "./BridgeFacetImpl.sol";
-import "./IBridgeEvents.sol";
+import "./IBridgeFacet.sol";
 
-contract BridgeFacet is Accessibility, Pausable, IBridgeEvents{
+contract BridgeFacet is Accessibility, Pausable, IBridgeFacet {
     function transferToBridge(uint256 amount, address bridgeAddress) external whenNotAccountingPaused notSuspended(msg.sender) {
-        BridgeFacetImpl.transferToBridge(msg.sender,amount,bridgeAddress);
+        BridgeFacetImpl.transferToBridge(msg.sender, amount, bridgeAddress);
         emit TransferToBridge(msg.sender, amount, bridgeAddress);
     }
 
