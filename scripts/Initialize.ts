@@ -22,56 +22,33 @@ export async function initialize(): Promise<RunContext> {
 
   let context = await createRunContext(diamond.address, collateral.address, true);
 
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .setAdmin(context.signers.admin.getAddress()),
-  );
-  await runTx(
-    context.controlFacet.connect(context.signers.admin).setCollateral(context.collateral.address),
-  );
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("SYMBOL_MANAGER_ROLE"))),
-  );
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("SETTER_ROLE"))),
-  );
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("PAUSER_ROLE"))),
-  );
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .grantRole(
-        context.signers.admin.getAddress(),
-        keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE")),
-      ),
-  );
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
-  );
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .grantRole(context.signers.user.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
-  );
-  await runTx(
-    context.controlFacet
-      .connect(context.signers.admin)
-      .grantRole(context.signers.user2.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
-  );
-
-  // await runTx(context.controlFacet
-  //   .connect(context.signers.admin)
-  //   .addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .setAdmin(context.signers.admin.getAddress()));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .setCollateral(context.collateral.address));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("SYMBOL_MANAGER_ROLE"))));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("SETTER_ROLE"))));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("PAUSER_ROLE"))));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE"))));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .grantRole(context.signers.user.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))));
+  await runTx(context.controlFacet
+    .connect(context.signers.admin)
+    .grantRole(context.signers.user2.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))));
 
   const addSymbolAsync = async (
     controlFacet: ControlFacet,
@@ -98,9 +75,7 @@ export async function initialize(): Promise<RunContext> {
   await Promise.all(promises);
 
   await runTx(context.controlFacet.connect(context.signers.admin).setPendingQuotesValidLength(100));
-  await runTx(
-    context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1, 17)),
-  );
+  await runTx(context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1, 17)));
   await runTx(context.controlFacet.connect(context.signers.admin).setLiquidationTimeout(100));
   await runTx(context.controlFacet.connect(context.signers.admin).setDeallocateCooldown(120));
   await runTx(
@@ -113,7 +88,8 @@ export async function initialize(): Promise<RunContext> {
     output.collateralAddress = collateral.address;
     output.v3Address = diamond.address;
   } else {
-    if (!fs.existsSync("./output")) fs.mkdirSync("./output");
+    if (!fs.existsSync("./output"))
+      fs.mkdirSync("./output");
     output = { v3Address: diamond.address, collateralAddress: collateral.address };
   }
   fs.writeFileSync("./output/addresses.json", JSON.stringify(output));
