@@ -1,58 +1,58 @@
-import { shouldBehaveLikeAccountFacet } from "./AccountFacet.behavior"
-import { shouldBehaveLikeCancelQuote } from "./CancelQuote.behavior"
 import { shouldBehaveLikeClosePosition } from "./ClosePosition.behavior"
-import { shouldBehaveLikeDiamond } from "./Diamond.behavior"
 import { shouldBehaveLikeFuzzTest } from "./FuzzTest.behavior"
-import { shouldBehaveLikeLiquidationFacet } from "./LiquidationFacet.behavior"
+import { shouldBehaveLikeDiamond } from "./Diamond.behavior"
+import { shouldBehaveLikeAccountFacet } from "./AccountFacet.behavior"
+import { shouldBehaveLikeSendQuote } from "./SendQuote.behavior"
 import { shouldBehaveLikeLockQuote } from "./LockQuote.behavior"
 import { shouldBehaveLikeOpenPosition } from "./OpenPosition.behavior"
-import { shouldBehaveLikeSendQuote } from "./SendQuote.behavior"
-import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
+import { shouldBehaveLikeCancelQuote } from "./CancelQuote.behavior"
+import { shouldBehaveLikeLiquidationFacet } from "./LiquidationFacet.behavior"
 import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior"
+import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
 
-describe("UnitTests", function () {
+describe("UnitTests", function() {
 	if (process.env.TEST_MODE == "static") {
-		describe("Diamond", async function () {
+		describe("Diamond", async function() {
 			shouldBehaveLikeDiamond()
 		})
-		
-		describe("AccountFacet", async function () {
+
+		describe("AccountFacet", async function() {
 			shouldBehaveLikeAccountFacet()
 		})
-		
-		describe("SendQuote", async function () {
+
+		describe("SendQuote", async function() {
 			shouldBehaveLikeSendQuote()
 		})
-		
-		describe("LockQuote", async function () {
+
+		describe("LockQuote", async function() {
 			shouldBehaveLikeLockQuote()
 		})
-		
-		describe("OpenPosition", async function () {
+
+		describe("OpenPosition", async function() {
 			shouldBehaveLikeOpenPosition()
 		})
-		
-		describe("CancelQuote", async function () {
+
+		describe("CancelQuote", async function() {
 			shouldBehaveLikeCancelQuote()
 		})
-		
-		describe("ClosePosition", async function () {
+
+		describe("ClosePosition", async function() {
 			shouldBehaveLikeClosePosition()
 		})
-		
-		describe("Liquidation", async function () {
+
+		describe("Liquidation", async function() {
 			shouldBehaveLikeLiquidationFacet()
 		})
-		
-		describe("FundingRate", async function () {
+
+		describe("FundingRate", async function() {
 			shouldBehaveLikeFundingRate()
 		})
-		
-		describe("SpecificScenario", async function () {
+
+		describe("SpecificScenario", async function() {
 			shouldBehaveLikeSpecificScenario()
 		})
 	} else if (process.env.TEST_MODE == "fuzz") {
-		describe("FuzzTest", async function () {
+		describe("FuzzTest", async function() {
 			shouldBehaveLikeFuzzTest()
 		})
 	} else {

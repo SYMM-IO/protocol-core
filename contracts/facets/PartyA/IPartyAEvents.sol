@@ -21,7 +21,7 @@ interface IPartyAEvents {
         uint256 lf,
         uint256 partyAmm,
         uint256 partyBmm,
-        uint256 maxFundingRate,
+        uint256 tradingFee,
         uint256 deadline
     );
 
@@ -62,5 +62,13 @@ interface IPartyAEvents {
         uint256 filledAmount,
         uint256 closedPrice,
         QuoteStatus quoteStatus
+    );
+
+    event LiquidatePartyB(
+        address liquidator,
+        address partyB,
+        address partyA,
+        uint256 partyBAllocatedBalance,
+        int256 upnl
     );
 }

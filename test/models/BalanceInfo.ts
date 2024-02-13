@@ -5,7 +5,7 @@ export class BalanceInfo {
 	public allocated: BigNumber
 	public pendingLocked: BigNumber
 	public locked: BigNumber
-	
+
 	constructor() {
 		this.balance = BigNumber.from(0)
 		this.allocated = BigNumber.from(0)
