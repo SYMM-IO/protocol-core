@@ -13,7 +13,7 @@ struct BridgeTransaction {
     BridgeTransactionStatus status;
 }
 
-enum BridgeTransactionStatus{
+enum BridgeTransactionStatus {
     LOCKED,
     WITHDRAWN
 }
@@ -22,8 +22,8 @@ library BridgeStorage {
     bytes32 internal constant BRIDGE_STORAGE_SLOT = keccak256("diamond.standard.storage.bridge");
 
     struct Layout {
-        mapping(address =>  bool) bridges;
-        mapping(uint256 =>  BridgeTransaction) BridgeTransactions;
+        mapping(address => bool) bridges;
+        mapping(uint256 => BridgeTransaction) BridgeTransactions;
         uint256 lastId;
     }
 

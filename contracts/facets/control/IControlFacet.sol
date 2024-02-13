@@ -113,7 +113,5 @@ interface IControlFacet is IControlEvents {
 
     function whiteListBridge(address bridge) external;
 
-    function suspendBridge(address bridge) external;
-
-    function removeBridge(address bridge) external;
+     function removeBridge(address bridge) external;
 }

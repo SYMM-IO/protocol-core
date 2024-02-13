@@ -46,29 +46,13 @@ library BridgeFacetImpl {
         BridgeTransaction storage bridgeTransaction = bridgeLayout.BridgeTransactions[id];
         address bridgeAddress = bridgeTransaction.bridge;
 
-        require(msg.sender == bridgeAddress,"BridgeFacet: msg.sender is not bridge");
-        
-        require(
-            bridgeLayout.bridges[bridgeAddress],
-            "BridgeFacet: Bridge address is not whitelist"
-        );
-
-        require(
-            bridgeTransaction.status == BridgeTransactionStatus.LOCKED,
-            "BridgeFacet: Locked amount withdrawn"
-        );
-
-        require(
-            block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp,
-            "BridgeFacet: Cooldown hasn't reached"
-        );
-
+        require(msg.sender == bridgeAddress, "BridgeFacet: msg.sender is not bridge");
+        require(bridgeLayout.bridges[bridgeAddress], "BridgeFacet: Bridge address is not whitelist");
+        require(bridgeTransaction.status == BridgeTransactionStatus.LOCKED, "BridgeFacet: Locked amount withdrawn");
+        require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
         AccountStorage.layout().balances[bridgeAddress] -= bridgeTransaction.amount;
 
-        IERC20(appLayout.collateral).safeTransfer(
-            bridgeTransaction.bridge,
-            bridgeTransaction.amount
-        );
+        IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
 
         bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
         bridgeLayout.BridgeTransactions[id] = bridgeTransaction;

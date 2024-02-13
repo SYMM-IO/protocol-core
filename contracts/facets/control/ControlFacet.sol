@@ -353,16 +353,11 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 
     function whiteListBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         emit WhiteListBridge(bridge);
-        BridgeStorage.layout().bridges[bridge] = BridgeStatus.WHITELIST;
-    }
-
-    function suspendBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
-        emit SuspendBridge(bridge);
-        BridgeStorage.layout().bridges[bridge] = BridgeStatus.SUSPEND;
+        BridgeStorage.layout().bridges[bridge] = true;
     }
 
     function removeBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         emit RemoveBridge(bridge);
-        BridgeStorage.layout().bridges[bridge] = BridgeStatus.REMOVE;
+        BridgeStorage.layout().bridges[bridge] = false;
     }
 }

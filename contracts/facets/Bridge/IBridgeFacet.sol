@@ -8,6 +8,6 @@ import "./IBridgeEvents.sol";
 
 interface IBridgeFacet is IBridgeEvents {
     function transferToBridge(uint256 amount, address bridgeAddress) external;
-
     function withdrawLockedTransaction(uint256 id) external;
+    function withdrawLockedTransactions(uint256[] memory ids) external;
 }
