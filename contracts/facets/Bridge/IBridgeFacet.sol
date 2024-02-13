@@ -4,10 +4,10 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-interface IBridgeEvents {
-    event TransferToBridge(address user, uint256 amount, address bridgeAddress);
+import "./IBridgeEvents.sol";
 
-    event WithdrawLockedTransaction(uint256 id);
+interface IBridgeFacet is IBridgeEvents {
+    function transferToBridge(uint256 amount, address bridgeAddress) external;
 
-    event WithdrawLockedTransactions(uint256[] id);
+    function withdrawLockedTransaction(uint256 id) external;
 }

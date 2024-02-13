@@ -6,8 +6,8 @@ pragma solidity >=0.8.18;
 * EIP-2535 Diamonds: https://eips.ethereum.org/EIPS/eip-2535
 /******************************************************************************/
 
-import { IDiamondCut } from "../interfaces/IDiamondCut.sol";
-import { IDiamondLoupe } from "../interfaces/IDiamondLoupe.sol";
+import { IDiamondCut } from "../facets/DiamondCut/IDiamondCut.sol";
+import { IDiamondLoupe } from "../facets/DiamondLoup/IDiamondLoupe.sol";
 import { IERC165 } from "../interfaces/IERC165.sol";
 
 library LibDiamond {
