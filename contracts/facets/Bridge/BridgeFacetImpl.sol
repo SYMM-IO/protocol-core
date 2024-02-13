@@ -18,12 +18,8 @@ library BridgeFacetImpl {
     function transferToBridge(address partyA, uint256 amount, address bridge) internal {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
-        
-        require(
-            bridgeLayout.bridges[bridge] == BridgeStatus.WHITELIST ||
-                bridgeLayout.bridges[bridge] == BridgeStatus.SUSPEND,
-            "BridgeFacet: Bridge address is not whitelist"
-        );
+
+        require(bridgeLayout.bridges[bridge], "BridgeFacet: Bridge address is not whitelist");
 
         uint256 decimal = (1e18 - (10 ** IERC20Metadata(appLayout.collateral).decimals()));
         uint256 amountWith18Decimals = (decimal == 0 ? 1 : decimal) * amount;
@@ -50,6 +46,13 @@ library BridgeFacetImpl {
         BridgeTransaction storage bridgeTransaction = bridgeLayout.BridgeTransactions[id];
         address bridgeAddress = bridgeTransaction.bridge;
 
+        require(msg.sender == bridgeAddress,"BridgeFacet: msg.sender is not bridge");
+        
+        require(
+            bridgeLayout.bridges[bridgeAddress],
+            "BridgeFacet: Bridge address is not whitelist"
+        );
+
         require(
             bridgeTransaction.status == BridgeTransactionStatus.LOCKED,
             "BridgeFacet: Locked amount withdrawn"
@@ -58,11 +61,6 @@ library BridgeFacetImpl {
         require(
             block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp,
             "BridgeFacet: Cooldown hasn't reached"
-        );
-
-        require(
-            bridgeLayout.bridges[bridgeAddress] == BridgeStatus.WHITELIST,
-            "BridgeFacet: Bridge address is not whitelist"
         );
 
         AccountStorage.layout().balances[bridgeAddress] -= bridgeTransaction.amount;
