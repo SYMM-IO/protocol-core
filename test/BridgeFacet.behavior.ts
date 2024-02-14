@@ -1,4 +1,4 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { RunContext } from "./models/RunContext";
 import { User } from "./models/User";
 import { initializeFixture } from "./Initialize.fixture";
@@ -6,6 +6,8 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TransferToBridgeValidator } from "./models/validators/TransferToBridgeValidator";
+import { decimal } from "./utils/Common";
+import { WithdrawLockedTransactionValidator } from "./models/validators/WithdrawLockedTransactionValidator";
 
 export function shouldBehaveLikeBridgeFacet(): void {
   let context: RunContext, user: User;
@@ -13,55 +15,91 @@ export function shouldBehaveLikeBridgeFacet(): void {
 
   beforeEach(async function () {
     context = await loadFixture(initializeFixture);
-    bridge = context.signers.bridge;
-    bridge2 = context.signers.bridge2;
+    bridge = context.signers.bridge; // whitelisted
+    bridge2 = context.signers.bridge2; // not whitelist
     user = new User(context, context.signers.user);
     await user.setup();
-    await user.setBalances("500");
+    await user.setBalances(decimal(500), decimal(500), decimal(100));
 
     await context.controlFacet.whiteListBridge(await bridge.getAddress());
   });
 
-  describe("Transfer to bridge", async function () {
-    it("Should fail when bridge status is wrong", async function () {
-      await expect(
-        context.bridgeFacet
-          .connect(context.signers.user)
-          .transferToBridge(
-            await user.getAddress(),
-            BigNumber.from(100),
-            await bridge2.getAddress(),
-          ),
-      ).to.be.revertedWith("BridgeFacet: Bridge address is not whitelist");
+  it("Should fail when bridge status is wrong", async function () {
+    await expect(context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge2.getAddress())).to.be.revertedWith(
+      "BridgeFacet: Bridge address is not whitelist",
+    );
+  });
+
+  it("Should fail when amount is more than user balance", async function () {
+    await expect(context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(700), await bridge.getAddress())).to.be.reverted;
+  });
+
+  it("Should transfer to bridge successfully", async function () {
+    const id = await context.viewFacet.getNextBridgeTransactionId();
+
+    const validator = new TransferToBridgeValidator();
+    const beforeOut = await validator.before(context, {
+      user: user,
+      transactionId: id.add(1),
+      bridge: await bridge.getAddress(),
+    });
+    await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge.getAddress());
+
+    await validator.after(context, {
+      user: user,
+      amount: decimal(100),
+      transactionId: id.add(1),
+      beforeOutput: beforeOut,
+    });
+  });
+
+  describe("withdraw locked amount", () => {
+    beforeEach(async function () {
+      await context.controlFacet.whiteListBridge(await bridge2.getAddress());
+      await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge.getAddress());
+      await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge2.getAddress());
+      await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge.getAddress());
     });
 
-    it("Should fail when amount is more than user balance", async function () {
-      await expect(
-        context.bridgeFacet
-          .connect(context.signers.user)
-          .transferToBridge(
-            await user.getAddress(),
-            BigNumber.from(600),
-            await bridge.getAddress(),
-          ),
-      ).to.be.reverted;
+    it("Should fail when msg.sender is not bridge", async function () {
+      await expect(context.bridgeFacet.connect(context.signers.user2).withdrawLockedTransaction(1)).to.be.revertedWith(
+        "BridgeFacet: msg.sender is not bridge",
+      );
     });
 
-    it("Should transfer to bridge successfully", async function () {
-      const id = await context.viewFacet.getNextBridgeTransactionId();
+    it("Should fail when bridge is not whitelisted", async function () {
+      await context.controlFacet.removeBridge(await bridge2.getAddress());
+      await expect(context.bridgeFacet.connect(context.signers.bridge2).withdrawLockedTransaction(2)).to.be.revertedWith(
+        "BridgeFacet: Bridge address is not whitelist",
+      );
+    });
 
-      const validator = new TransferToBridgeValidator();
+    it("Should fail when bridgeTransaction status in not valid", async function () {
+      await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(1)).to.be.revertedWith(
+        "BridgeFacet: Cooldown hasn't reached",
+      );
+    });
+
+    it("Should fail when bridgeTransaction status in not valid", async function () {
+      await time.increase(43250) //12h
+      await context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(1)
+      await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(1)).to.be.revertedWith(
+        "BridgeFacet: Locked amount withdrawn",
+      );
+    });
+
+    it("Should withdraw successfully", async function () {
+      await time.increase(43250) //12h
+      const validator = new WithdrawLockedTransactionValidator();
       const beforeOut = await validator.before(context, {
-        user: user,
-        transactionId: id.add(1),
+        transactionId: BigNumber.from(3),
+        bridge: await bridge.getAddress(),
       });
-      context.bridgeFacet
-        .connect(context.signers.user)
-        .transferToBridge(await user.getAddress(), BigNumber.from(100), await bridge.getAddress());
 
+      await context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(3);
+  
       await validator.after(context, {
-        user: user,
-        transactionId: id.add(1),
+        transactionId:BigNumber.from(3),
         beforeOutput: beforeOut,
       });
     });
