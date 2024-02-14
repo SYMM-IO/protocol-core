@@ -9,8 +9,6 @@ import "../../storages/AccountStorage.sol";
 import "../../storages/BridgeStorage.sol";
 import "../../storages/MAStorage.sol";
 
-import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
