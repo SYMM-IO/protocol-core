@@ -9,6 +9,8 @@ import "../../storages/AccountStorage.sol";
 import "../../storages/BridgeStorage.sol";
 import "../../storages/MAStorage.sol";
 
+import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -50,8 +52,8 @@ library BridgeFacetImpl {
         require(bridgeLayout.bridges[bridgeAddress], "BridgeFacet: Bridge address is not whitelist");
         require(bridgeTransaction.status == BridgeTransactionStatus.LOCKED, "BridgeFacet: Locked amount withdrawn");
         require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
-        AccountStorage.layout().balances[bridgeAddress] -= bridgeTransaction.amount;
 
+        AccountStorage.layout().balances[bridgeAddress] -= bridgeTransaction.amount;
         IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
 
         bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;

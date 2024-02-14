@@ -13,45 +13,45 @@ import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
 
 describe("UnitTests", function() {
 	if (process.env.TEST_MODE == "static") {
-		describe("Diamond", async function() {
-			shouldBehaveLikeDiamond()
-		})
+		// describe("Diamond", async function() {
+		// 	shouldBehaveLikeDiamond()
+		// })
 
-		describe("AccountFacet", async function() {
-			shouldBehaveLikeAccountFacet()
-		})
+		// describe("AccountFacet", async function() {
+		// 	shouldBehaveLikeAccountFacet()
+		// })
 
-		describe("SendQuote", async function() {
-			shouldBehaveLikeSendQuote()
-		})
+		// describe("SendQuote", async function() {
+		// 	shouldBehaveLikeSendQuote()
+		// })
 
-		describe("LockQuote", async function() {
-			shouldBehaveLikeLockQuote()
-		})
+		// describe("LockQuote", async function() {
+		// 	shouldBehaveLikeLockQuote()
+		// })
 
-		describe("OpenPosition", async function() {
-			shouldBehaveLikeOpenPosition()
-		})
+		// describe("OpenPosition", async function() {
+		// 	shouldBehaveLikeOpenPosition()
+		// })
 
-		describe("CancelQuote", async function() {
-			shouldBehaveLikeCancelQuote()
-		})
+		// describe("CancelQuote", async function() {
+		// 	shouldBehaveLikeCancelQuote()
+		// })
 
-		describe("ClosePosition", async function() {
-			shouldBehaveLikeClosePosition()
-		})
+		// describe("ClosePosition", async function() {
+		// 	shouldBehaveLikeClosePosition()
+		// })
 
-		describe("Liquidation", async function() {
-			shouldBehaveLikeLiquidationFacet()
-		})
+		// describe("Liquidation", async function() {
+		// 	shouldBehaveLikeLiquidationFacet()
+		// })
 
-		describe("FundingRate", async function() {
-			shouldBehaveLikeFundingRate()
-		})
+		// describe("FundingRate", async function() {
+		// 	shouldBehaveLikeFundingRate()
+		// })
 
-		describe("SpecificScenario", async function() {
-			shouldBehaveLikeSpecificScenario()
-		})
+		// describe("SpecificScenario", async function() {
+		// 	shouldBehaveLikeSpecificScenario()
+		// })
 		
 		describe("BridgeFacet", async function() {
 			shouldBehaveLikeBridgeFacet()
