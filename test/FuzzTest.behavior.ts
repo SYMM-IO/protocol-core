@@ -9,8 +9,6 @@ import { UserController } from "./models/UserController"
 import { decimal } from "./utils/Common"
 import fsPromise from "fs/promises"
 import { BigNumber } from "ethers"
-import { join } from "path"
-import { QuoteCheckpoint } from "./models/quoteCheckpoint"
 
 export function shouldBehaveLikeFuzzTest(): void {
 	beforeEach(async function() {
@@ -33,14 +31,14 @@ export function shouldBehaveLikeFuzzTest(): void {
 		const hedger = new Hedger(context, hSigner)
 		await hedger.setup()
 		await hedger.setNativeBalance(100n ** 18n)
-		await hedger.setBalances(BigNumber.from("10").pow(`50`), BigNumber.from("10").pow(`50`))
+		await hedger.setBalances(BigNumber.from('10').pow(`50`), BigNumber.from('10').pow(`50`))
 		await hedger.register()
 		const hedgerController = new HedgerController(manager, hedger, checkpoint)
 
 		await userController.start()
 		await hedgerController.start()
 		await user.setBalances(decimal(100000), decimal(100000), decimal(100000))
-
+		
 		const subscription = interval(1000).subscribe(() => {
 			manager.actionsLoop.next({
 				title: "SendQuote",
