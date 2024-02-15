@@ -34,7 +34,6 @@ import {
 import { CancelQuoteValidator, CancelQuoteValidatorBeforeOutput } from "./validators/CancelQuoteValidator"
 import { CloseRequestValidator, CloseRequestValidatorBeforeOutput } from "./validators/CloseRequestValidator"
 import { BigNumber } from "ethers"
-import { QuoteCheckpoint } from "./quoteCheckpoint"
 
 export class UserController {
 	private context: RunContext
@@ -335,12 +334,12 @@ export class UserController {
 			  randomBigNumberRatio(price, 0.1).mul(positionType == PositionType.SHORT ? 1 : -1),
 			)
 		notionalPrice = roundToPrecision(notionalPrice, symbolPP)
-
-		const leverage = safeDiv(symbol.maxLeverage.mul(9), BigNumber.from(10)) //10% safe margin
+		
+		const leverage = safeDiv(symbol.maxLeverage.mul(9),BigNumber.from(10)) //10% safe margin
 		let quantity
 		try {
 			quantity = roundToPrecision(safeDiv(lockedAmount.mul(leverage), price), symbolQP)
-
+			
 		} catch (ex) {
 			throw new ManagedError("Random data lead to invalid quote... This request will be rejected")
 		}
