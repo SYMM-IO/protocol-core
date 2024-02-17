@@ -7,14 +7,14 @@ pragma solidity >=0.8.18;
 struct BridgeTransaction {
     uint256 id;
     uint256 amount;
-    address partyA;
+    address user;
     address bridge;
     uint256 timestamp;
     BridgeTransactionStatus status;
 }
 
 enum BridgeTransactionStatus {
-    LOCKED,
+    RECEIVED,
     WITHDRAWN
 }
 
@@ -23,7 +23,7 @@ library BridgeStorage {
 
     struct Layout {
         mapping(address => bool) bridges;
-        mapping(uint256 => BridgeTransaction) BridgeTransactions;
+        mapping(uint256 => BridgeTransaction) bridgeTransactions;
         uint256 lastId;
     }
 
