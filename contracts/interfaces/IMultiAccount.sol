@@ -26,4 +26,5 @@ interface IMultiAccount {
         bytes _resultData
     );
     event DelegateAccess(address account, address target, bytes4 selector, bool state);
+    event DelegateAccesses(address account, address target, bytes4[] selector, bool[] state);
 }

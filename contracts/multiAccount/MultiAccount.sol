@@ -75,6 +75,15 @@ AccessControlUpgradeable
         delegatedAccesses[account][target][selector] = state;
     }
 
+    function delegateAccesses(address account, address target, bytes4[] memory selector, bool[] memory state) external onlyOwner(account, msg.sender) {
+        require(target != msg.sender && target != account, "MultiAccount: invalid target");
+        uint256 len = selector.length;
+        for (uint256 i = len; i > 0; i--) {            
+            delegatedAccesses[account][target][selector[i - 1]] = state[i - 1];
+        }
+        emit DelegateAccesses(account, target, selector, state);
+    }
+
     function setAccountImplementation(
         bytes memory accountImplementation_
     ) external onlyRole(SETTER_ROLE) {
