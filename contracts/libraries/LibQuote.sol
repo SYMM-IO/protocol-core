@@ -253,7 +253,6 @@ library LibQuote {
             quote.statusModifyTimestamp = block.timestamp;
             quote.requestedClosePrice = 0;
             quote.quantityToClose = 0;
-            quoteLayout.closeIds[quoteId] = 0;
             quote.quoteStatus = QuoteStatus.OPENED;
             result = QuoteStatus.OPENED;
         }

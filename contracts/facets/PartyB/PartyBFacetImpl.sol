@@ -297,7 +297,6 @@ library PartyBFacetImpl {
         quote.quoteStatus = QuoteStatus.OPENED;
         quote.requestedClosePrice = 0;
         quote.quantityToClose = 0;
-        quoteLayout.closeIds[quoteId] = 0;
     }
 
     function emergencyClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) internal {
