@@ -106,6 +106,7 @@ library PartyAFacetImpl {
             createTimestamp: block.timestamp,
             statusModifyTimestamp: block.timestamp,
             quantityToClose: 0,
+            closeId: 0,
             lastFundingPaymentTimestamp: 0,
             deadline: deadline,
             tradingFee: symbolLayout.symbols[symbolId].tradingFee
@@ -150,7 +151,8 @@ library PartyAFacetImpl {
         uint256 deadline
     ) internal {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
 
         require(quote.quoteStatus == QuoteStatus.OPENED, "PartyAFacet: Invalid state");
         require(deadline >= block.timestamp, "PartyAFacet: Low deadline");
@@ -168,7 +170,7 @@ library PartyAFacetImpl {
                 "PartyAFacet: Remaining quote value is low"
             );
         }
-
+        quote.closeId = ++quoteLayout.lastCloseId;
         quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CLOSE_PENDING;
         quote.requestedClosePrice = closePrice;

@@ -64,7 +64,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
         QuoteStatus result;
         for (uint8 i; i < expiredQuoteIds.length; i++) {
             result = LibQuote.expireQuote(expiredQuoteIds[i]);
-            emit ExpireQuote(result, expiredQuoteIds[i]);
+            emit ExpireQuote(result, expiredQuoteIds[i], 0);
         }
     }
 
@@ -73,7 +73,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
         if (result == QuoteStatus.EXPIRED) {
-            emit ExpireQuote(result, quoteId);
+            emit ExpireQuote(result, quoteId, 0);
         } else if (result == QuoteStatus.CANCELED || result == QuoteStatus.CANCEL_PENDING) {
             emit RequestToCancelQuote(quote.partyA, quote.partyB, result, quoteId);
         }
@@ -88,16 +88,16 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
     ) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
         PartyAFacetImpl.requestToClosePosition(quoteId, closePrice, quantityToClose, orderType, deadline);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING);
+        emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING, quote.closeId);
     }
 
     function requestToCancelCloseRequest(uint256 quoteId) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
-        QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
         if (result == QuoteStatus.OPENED) {
-            emit ExpireQuote(QuoteStatus.OPENED, quoteId);
+            emit ExpireQuote(QuoteStatus.OPENED, quoteId, quote.closeId);
         } else if (result == QuoteStatus.CANCEL_CLOSE_PENDING) {
-            emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING);
+            emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING, quote.closeId);
         }
     }
 

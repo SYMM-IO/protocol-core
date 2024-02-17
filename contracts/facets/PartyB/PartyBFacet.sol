@@ -61,7 +61,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
         QuoteStatus res = PartyBFacetImpl.unlockQuote(quoteId);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         if (res == QuoteStatus.EXPIRED) {
-            emit ExpireQuote(res, quoteId);
+            emit ExpireQuote(res, quoteId, 0);
         } else if (res == QuoteStatus.PENDING) {
             emit UnlockQuote(quote.partyB, quoteId, QuoteStatus.PENDING);
         }
@@ -119,8 +119,9 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
     }
 
     function acceptCancelCloseRequest(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
+        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         PartyBFacetImpl.acceptCancelCloseRequest(quoteId);
-        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED);
+        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED, quote.closeId);
     }
 
     function emergencyClosePosition(
