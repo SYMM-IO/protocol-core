@@ -21,8 +21,9 @@ contract BridgeFacet is Accessibility, Pausable, IBridgeFacet {
     }
 
     function withdrawReceivedBridgeValues(uint256[] memory transactionIds) external whenNotAccountingPaused notSuspended(msg.sender) {
-        for (uint256 i = 0; i < transactionIds.length; i++)
+        for (uint256 i = transactionIds.length -1 ; i > 0; i--) {
             BridgeFacetImpl.withdrawReceivedBridgeValue(transactionIds[i]);
+        }
         emit WithdrawReceivedBridgeValues(transactionIds);
     }
 }

@@ -21,17 +21,21 @@ export function shouldBehaveLikeBridgeFacet(): void {
     await user.setup();
     await user.setBalances(decimal(500), decimal(500), decimal(100));
 
-    await context.controlFacet.whiteListBridge(await bridge.getAddress());
+    await context.controlFacet.addBridge(await bridge.getAddress());
   });
 
   it("Should fail when bridge status is wrong", async function () {
     await expect(context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge2.getAddress())).to.be.revertedWith(
-      "BridgeFacet: Bridge address is not whitelist",
+      "BridgeFacet: Invalid bridge",
     );
   });
 
   it("Should fail when amount is more than user balance", async function () {
     await expect(context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(700), await bridge.getAddress())).to.be.reverted;
+  });
+
+  it("Should fail when bridge and user are same", async function () {
+    await expect(context.bridgeFacet.connect(context.signers.bridge).transferToBridge(decimal(100), await bridge.getAddress())).to.be.revertedWith("BridgeFacet: Bridge and user can't be the same")
   });
 
   it("Should transfer to bridge successfully", async function () {
@@ -55,51 +59,45 @@ export function shouldBehaveLikeBridgeFacet(): void {
 
   describe("withdraw locked amount", () => {
     beforeEach(async function () {
-      await context.controlFacet.whiteListBridge(await bridge2.getAddress());
+      await context.controlFacet.addBridge(await bridge2.getAddress());
       await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge.getAddress());
       await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge2.getAddress());
       await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100), await bridge.getAddress());
     });
 
-    it("Should fail when msg.sender is not bridge", async function () {
-      await expect(context.bridgeFacet.connect(context.signers.user2).withdrawLockedTransaction(1)).to.be.revertedWith(
-        "BridgeFacet: msg.sender is not bridge",
+    it("Should fail when sender is not the transaction's bridge", async function () {
+      await time.increase(43250); //12h
+      await expect(context.bridgeFacet.connect(context.signers.bridge2).withdrawReceivedBridgeValue(1)).to.be.revertedWith(
+        "BridgeFacet: Sender is not the transaction's bridge",
       );
     });
 
-    it("Should fail when bridge is not whitelisted", async function () {
-      await context.controlFacet.removeBridge(await bridge2.getAddress());
-      await expect(context.bridgeFacet.connect(context.signers.bridge2).withdrawLockedTransaction(2)).to.be.revertedWith(
-        "BridgeFacet: Bridge address is not whitelist",
-      );
-    });
-
-    it("Should fail when bridgeTransaction status in not valid", async function () {
-      await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(1)).to.be.revertedWith(
+    it("Should fail when Cooldown hasn't reached", async function () {
+      await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(1)).to.be.revertedWith(
         "BridgeFacet: Cooldown hasn't reached",
       );
     });
 
     it("Should fail when bridgeTransaction status in not valid", async function () {
-      await time.increase(43250) //12h
-      await context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(1)
-      await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(1)).to.be.revertedWith(
-        "BridgeFacet: Locked amount withdrawn",
+      await time.increase(43250); //12h
+      await context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(1);
+      await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(1)).to.be.revertedWith(
+        "BridgeFacet: Already withdrawn",
       );
     });
 
     it("Should withdraw successfully", async function () {
-      await time.increase(43250) //12h
+      await time.increase(43250); //12h
       const validator = new WithdrawLockedTransactionValidator();
       const beforeOut = await validator.before(context, {
         transactionId: BigNumber.from(3),
         bridge: await bridge.getAddress(),
       });
 
-      await context.bridgeFacet.connect(context.signers.bridge).withdrawLockedTransaction(3);
-  
+      await context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(3);
+
       await validator.after(context, {
-        transactionId:BigNumber.from(3),
+        transactionId: BigNumber.from(3),
         beforeOutput: beforeOut,
       });
     });

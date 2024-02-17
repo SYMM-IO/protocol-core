@@ -53,7 +53,7 @@ export enum LiquidationType {
 }
 
 export enum BridgeTransactionStatus{
-    LOCKED,
+    RECEIVED,
     WITHDRAWN
 }
 
