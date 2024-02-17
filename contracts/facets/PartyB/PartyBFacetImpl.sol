@@ -203,6 +203,7 @@ library PartyBFacetImpl {
                 createTimestamp: quote.createTimestamp,
                 statusModifyTimestamp: block.timestamp,
                 quantityToClose: 0,
+                closeId: 0,
                 lastFundingPaymentTimestamp: 0,
                 deadline: quote.deadline,
                 tradingFee: quote.tradingFee
@@ -296,6 +297,7 @@ library PartyBFacetImpl {
         quote.quoteStatus = QuoteStatus.OPENED;
         quote.requestedClosePrice = 0;
         quote.quantityToClose = 0;
+        quote.closeId = 0;
     }
 
     function emergencyClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) internal {

@@ -61,6 +61,7 @@ struct Quote {
     uint256 lastFundingPaymentTimestamp;
     uint256 deadline;
     uint256 tradingFee;
+    uint256 closeId;
 }
 
 library QuoteStorage {
@@ -78,6 +79,7 @@ library QuoteStorage {
         mapping(address => mapping(address => uint256[])) partyBOpenPositions;
         mapping(uint256 => uint256) partyBPositionsIndex;
         uint256 lastId;
+        uint256 lastCloseId;
     }
 
     function layout() internal pure returns (Layout storage l) {

@@ -25,7 +25,7 @@ interface IPartiesEvents {
         uint256 deadline
     );
 
-    event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId);
+    event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId, uint256 closeId);
 
     event LiquidatePartyB(address liquidator, address partyB, address partyA, uint256 partyBAllocatedBalance, int256 upnl);
 }
