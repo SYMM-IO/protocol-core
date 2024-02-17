@@ -351,8 +351,8 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
         }
     }
 
-    function whiteListBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
-        emit WhiteListBridge(bridge);
+    function addBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        emit AddBridge(bridge);
         BridgeStorage.layout().bridges[bridge] = true;
     }
 
