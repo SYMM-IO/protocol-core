@@ -119,9 +119,9 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
     }
 
     function acceptCancelCloseRequest(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        uint256 closeId = QuoteStorage.layout().closeIds[quoteId];
         PartyBFacetImpl.acceptCancelCloseRequest(quoteId);
-        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED, quote.closeId);
+        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED, closeId);
     }
 
     function emergencyClosePosition(

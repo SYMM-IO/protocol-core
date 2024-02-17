@@ -87,17 +87,19 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
         uint256 deadline
     ) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
         PartyAFacetImpl.requestToClosePosition(quoteId, closePrice, quantityToClose, orderType, deadline);
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING, quote.closeId);
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
+        emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING, quoteLayout.closeIds[quoteId]);
     }
 
     function requestToCancelCloseRequest(uint256 quoteId) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
         QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
         if (result == QuoteStatus.OPENED) {
-            emit ExpireQuote(QuoteStatus.OPENED, quoteId, quote.closeId);
+            emit ExpireQuote(QuoteStatus.OPENED, quoteId, quoteLayout.closeIds[quoteId]);
         } else if (result == QuoteStatus.CANCEL_CLOSE_PENDING) {
-            emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING, quote.closeId);
+            emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING, quoteLayout.closeIds[quoteId]);
         }
     }
 
