@@ -106,7 +106,6 @@ library PartyAFacetImpl {
             createTimestamp: block.timestamp,
             statusModifyTimestamp: block.timestamp,
             quantityToClose: 0,
-            closeId: 0,
             lastFundingPaymentTimestamp: 0,
             deadline: deadline,
             tradingFee: symbolLayout.symbols[symbolId].tradingFee
@@ -170,7 +169,7 @@ library PartyAFacetImpl {
                 "PartyAFacet: Remaining quote value is low"
             );
         }
-        quote.closeId = ++quoteLayout.lastCloseId;
+        quoteLayout.closeIds[quoteId] = ++quoteLayout.lastCloseId;
         quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CLOSE_PENDING;
         quote.requestedClosePrice = closePrice;

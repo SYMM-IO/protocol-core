@@ -203,7 +203,6 @@ library PartyBFacetImpl {
                 createTimestamp: quote.createTimestamp,
                 statusModifyTimestamp: block.timestamp,
                 quantityToClose: 0,
-                closeId: 0,
                 lastFundingPaymentTimestamp: 0,
                 deadline: quote.deadline,
                 tradingFee: quote.tradingFee
@@ -287,7 +286,8 @@ library PartyBFacetImpl {
     }
 
     function acceptCancelCloseRequest(uint256 quoteId) internal {
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
 
         require(
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
@@ -297,7 +297,7 @@ library PartyBFacetImpl {
         quote.quoteStatus = QuoteStatus.OPENED;
         quote.requestedClosePrice = 0;
         quote.quantityToClose = 0;
-        quote.closeId = 0;
+        quoteLayout.closeIds[quoteId] = 0;
     }
 
     function emergencyClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) internal {
