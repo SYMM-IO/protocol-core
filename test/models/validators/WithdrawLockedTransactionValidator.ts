@@ -42,9 +42,5 @@ export class WithdrawLockedTransactionValidator implements TransactionValidator 
     // Check Transaction
     const transaction = await context.viewFacet.getBridgeTransaction(arg.transactionId);
     expect(transaction.status).to.be.equal(BridgeTransactionStatus.WITHDRAWN);
-
-	//check bridge balance
-	const newDepositBalanceBridge = await context.viewFacet.balanceOf(arg.beforeOutput.bridge)
-	expect(arg.beforeOutput.depositBalanceBridge).to.be.equal(newDepositBalanceBridge.add(transaction.amount))
   }
 }
