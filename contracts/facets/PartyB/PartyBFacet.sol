@@ -113,15 +113,15 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
         uint256 closedPrice,
         PairUpnlAndPriceSig memory upnlSig
     ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
         PartyBFacetImpl.fillCloseRequest(quoteId, filledAmount, closedPrice, upnlSig);
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit FillCloseRequest(quoteId, quote.partyA, quote.partyB, filledAmount, closedPrice, quote.quoteStatus);
+        emit FillCloseRequest(quoteId, quote.partyA, quote.partyB, filledAmount, closedPrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
     }
 
     function acceptCancelCloseRequest(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
-        uint256 closeId = QuoteStorage.layout().closeIds[quoteId];
         PartyBFacetImpl.acceptCancelCloseRequest(quoteId);
-        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED, closeId);
+        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
     }
 
     function emergencyClosePosition(
