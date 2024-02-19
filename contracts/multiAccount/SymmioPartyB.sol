@@ -16,6 +16,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
     mapping(bytes4 => bool) public restrictedSelectors;
+    mapping(address => bool) public multicastWhitelist;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -36,6 +37,8 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 
     event SetRestrictedSelector(bytes4 selector, bool state);
 
+    event SetMulticastWhitelist(address addr, bool state);
+
     function setSymmioAddress(address addr) external onlyRole(DEFAULT_ADMIN_ROLE) {
         emit SetSymmioAddress(symmioAddress, addr);
         symmioAddress = addr;
@@ -47,6 +50,14 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         restrictedSelectors[selector] = state;
         emit SetRestrictedSelector(selector, state);
+    }
+
+    function setMulticastWhitelist(
+        address addr,
+        bool state
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        multicastWhitelist[addr] = state;
+        emit SetMulticastWhitelist(addr, state);
     }
 
     function _approve(address token, uint256 amount) external onlyRole(TRUSTED_ROLE) whenNotPaused {
@@ -71,6 +82,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
                 require(hasRole(MANAGER_ROLE, msg.sender) || hasRole(TRUSTED_ROLE, msg.sender), "SymmioPartyB: Invalid access");
             }
         } else {
+            require(multicastWhitelist[destAddress], "SymmioPartyB: Destination address is not whitelisted");
             _checkRole(TRUSTED_ROLE, msg.sender);
         }
 
