@@ -64,7 +64,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
         QuoteStatus result;
         for (uint8 i; i < expiredQuoteIds.length; i++) {
             result = LibQuote.expireQuote(expiredQuoteIds[i]);
-            emit ExpireQuote(result, expiredQuoteIds[i]);
+            emit ExpireQuote(result, expiredQuoteIds[i], 0);
         }
     }
 
@@ -73,7 +73,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
         if (result == QuoteStatus.EXPIRED) {
-            emit ExpireQuote(result, quoteId);
+            emit ExpireQuote(result, quoteId, 0);
         } else if (result == QuoteStatus.CANCELED || result == QuoteStatus.CANCEL_PENDING) {
             emit RequestToCancelQuote(quote.partyA, quote.partyB, result, quoteId);
         }
@@ -87,17 +87,19 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
         uint256 deadline
     ) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
         PartyAFacetImpl.requestToClosePosition(quoteId, closePrice, quantityToClose, orderType, deadline);
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING);
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
+        emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING, quoteLayout.closeIds[quoteId]);
     }
 
     function requestToCancelCloseRequest(uint256 quoteId) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
         QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         if (result == QuoteStatus.OPENED) {
-            emit ExpireQuote(QuoteStatus.OPENED, quoteId);
+            emit ExpireQuote(QuoteStatus.OPENED, quoteId, quoteLayout.closeIds[quoteId]);
         } else if (result == QuoteStatus.CANCEL_CLOSE_PENDING) {
-            emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING);
+            emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING, quoteLayout.closeIds[quoteId]);
         }
     }
 
@@ -112,7 +114,8 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
     }
 
     function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
         uint256 filledAmount = quote.quantityToClose;
         (uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) = PartyAFacetImpl.forceClosePosition(
             quoteId,
@@ -121,7 +124,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
         if (isPartyBLiquidated) {
             emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);
         } else {
-            emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus);
+            emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
         }
     }
 }
