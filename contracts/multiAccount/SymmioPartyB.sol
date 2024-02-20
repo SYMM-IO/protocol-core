@@ -55,7 +55,8 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
     function setMulticastWhitelist(
         address addr,
         bool state
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(MANAGER_ROLE) {
+        require(addr != address(this), "SymmioPartyB: Invalid address");
         multicastWhitelist[addr] = state;
         emit SetMulticastWhitelist(addr, state);
     }
