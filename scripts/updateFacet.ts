@@ -56,15 +56,15 @@ async function main() {
 	console.log(selectors)
 	// const selectors = ["0xf09a4016"];
 	await diamondCutFacet.diamondCut(
-	  [
-		  {
-			  facetAddress: facetAddr,
-			  action: FacetCutAction.Replace,
-			  functionSelectors: selectors,
-		  },
-	  ],
-	  ethers.constants.AddressZero,
-	  "0x",
+		[
+			{
+				facetAddress: facetAddr,
+				action: FacetCutAction.Replace,
+				functionSelectors: selectors,
+			},
+		],
+		ethers.constants.AddressZero,
+		"0x",
 	)
 }
 

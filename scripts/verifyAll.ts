@@ -12,8 +12,7 @@ async function main() {
 		FundingRateFacet: "",
 	}
 	for (const facet in facets) {
-		if (!facets.hasOwnProperty(facet))
-			continue
+		if (!facets.hasOwnProperty(facet)) continue
 		const facetAddr = (facets as any)[facet]
 		console.log(`Verifying ${facet} with impl in ${facetAddr}`)
 		await run("verify:verify", {

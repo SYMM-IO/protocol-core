@@ -1,6 +1,5 @@
 import { ethers } from "hardhat"
 
-
 async function main() {
 	let symmioAddress = ""
 	let ViewFacet = await ethers.getContractAt("ViewFacet", symmioAddress)

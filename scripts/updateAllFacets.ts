@@ -63,8 +63,7 @@ async function main() {
 	}
 	let cutList = []
 	for (const facet in facets) {
-		if (!facets.hasOwnProperty(facet))
-			continue
+		if (!facets.hasOwnProperty(facet)) continue
 		const facetAddr = (facets as any)[facet]
 		console.log(`Updating ${facet} with impl in ${facetAddr}`)
 		const NewFacet = await ethers.getContractFactory(facet)
@@ -75,11 +74,7 @@ async function main() {
 			functionSelectors: selectors,
 		})
 	}
-	await diamondCutFacet.diamondCut(
-	  cutList,
-	  ethers.constants.AddressZero,
-	  "0x",
-	)
+	await diamondCutFacet.diamondCut(cutList, ethers.constants.AddressZero, "0x")
 }
 
 // We recommend this pattern to be able to use async/await everywhere
