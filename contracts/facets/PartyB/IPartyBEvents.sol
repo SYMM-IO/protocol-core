@@ -13,7 +13,7 @@ interface IPartyBEvents is IPartiesEvents {
     event UnlockQuote(address partyB, uint256 quoteId, QuoteStatus quoteStatus);
     event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
     event OpenPosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 openedPrice);
-    event FillCloseRequest(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus);
-    event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus);
+    event FillCloseRequest(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus, uint256 closeId);
+    event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
     event EmergencyClosePosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus);
 }

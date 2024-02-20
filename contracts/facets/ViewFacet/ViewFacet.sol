@@ -411,4 +411,8 @@ contract ViewFacet is IViewFacet {
     function getNextBridgeTransactionId() external view returns (uint256) {
         return QuoteStorage.layout().lastId;
     }
+
+    function getQuoteCloseId(uint256 quoteId) external view returns (uint256) {
+        return QuoteStorage.layout().closeIds[quoteId];
+    }
 }
