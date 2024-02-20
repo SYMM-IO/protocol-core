@@ -57,8 +57,8 @@ library BridgeFacetImpl {
 
 		uint256 totalAmount = 0;
 
-		for (uint256 i = transactionIds.length - 1; i > 0; i--) {
-			BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i]];
+		for (uint256 i = transactionIds.length; i != 0; i--) {
+			BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i-1]];
 
 			require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
 			require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
