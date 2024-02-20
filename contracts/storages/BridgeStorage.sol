@@ -5,32 +5,32 @@
 pragma solidity >=0.8.18;
 
 struct BridgeTransaction {
-    uint256 id;
-    uint256 amount;
-    address user;
-    address bridge;
-    uint256 timestamp;
-    BridgeTransactionStatus status;
+	uint256 id;
+	uint256 amount;
+	address user;
+	address bridge;
+	uint256 timestamp;
+	BridgeTransactionStatus status;
 }
 
 enum BridgeTransactionStatus {
-    RECEIVED,
-    WITHDRAWN
+	RECEIVED,
+	WITHDRAWN
 }
 
 library BridgeStorage {
-    bytes32 internal constant BRIDGE_STORAGE_SLOT = keccak256("diamond.standard.storage.bridge");
+	bytes32 internal constant BRIDGE_STORAGE_SLOT = keccak256("diamond.standard.storage.bridge");
 
-    struct Layout {
-        mapping(address => bool) bridges;
-        mapping(uint256 => BridgeTransaction) bridgeTransactions;
-        uint256 lastId;
-    }
+	struct Layout {
+		mapping(address => bool) bridges;
+		mapping(uint256 => BridgeTransaction) bridgeTransactions;
+		uint256 lastId;
+	}
 
-    function layout() internal pure returns (Layout storage l) {
-        bytes32 slot = BRIDGE_STORAGE_SLOT;
-        assembly {
-            l.slot := slot
-        }
-    }
+	function layout() internal pure returns (Layout storage l) {
+		bytes32 slot = BRIDGE_STORAGE_SLOT;
+		assembly {
+			l.slot := slot
+		}
+	}
 }

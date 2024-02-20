@@ -7,5 +7,5 @@ import "./IFundingRateEvents.sol";
 import "../../storages/MuonStorage.sol";
 
 interface IFundingRateFacet is IFundingRateEvents {
-    function chargeFundingRate(address partyA, uint256[] memory quoteIds, int256[] memory rates, PairUpnlSig memory upnlSig) external;
+	function chargeFundingRate(address partyA, uint256[] memory quoteIds, int256[] memory rates, PairUpnlSig memory upnlSig) external;
 }

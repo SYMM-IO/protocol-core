@@ -5,7 +5,7 @@
 pragma solidity >=0.8.18;
 
 interface IBridgeEvents {
-    event TransferToBridge(address user, uint256 amount, address bridgeAddress);
-    event WithdrawReceivedBridgeValue(uint256 transactionId);
-    event WithdrawReceivedBridgeValues(uint256[] transactionIds);
+	event TransferToBridge(address user, uint256 amount, address bridgeAddress);
+	event WithdrawReceivedBridgeValue(uint256 transactionId);
+	event WithdrawReceivedBridgeValues(uint256[] transactionIds);
 }

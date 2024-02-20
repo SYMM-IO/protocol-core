@@ -16,14 +16,14 @@ import "../facets/DiamondCut/IDiamondCut.sol";
 import "../facets/DiamondLoup/IDiamondLoupe.sol";
 
 interface ISymmio is
-    IAccountFacet,
-    IControlFacet,
-    IFundingRateFacet,
-    IBridgeFacet,
-    IPartyBFacet,
-    IPartyAFacet,
-    ILiquidationFacet,
-    IViewFacet,
-    IDiamondCut,
-    IDiamondLoupe
+	IAccountFacet,
+	IControlFacet,
+	IFundingRateFacet,
+	IBridgeFacet,
+	IPartyBFacet,
+	IPartyAFacet,
+	ILiquidationFacet,
+	IViewFacet,
+	IDiamondCut,
+	IDiamondLoupe
 {}

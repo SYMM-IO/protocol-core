@@ -10,18 +10,18 @@ import "./BridgeFacetImpl.sol";
 import "./IBridgeFacet.sol";
 
 contract BridgeFacet is Accessibility, Pausable, IBridgeFacet {
-    function transferToBridge(uint256 amount, address bridgeAddress) external whenNotAccountingPaused notSuspended(msg.sender) {
-        BridgeFacetImpl.transferToBridge(msg.sender, amount, bridgeAddress);
-        emit TransferToBridge(msg.sender, amount, bridgeAddress);
-    }
+	function transferToBridge(uint256 amount, address bridgeAddress) external whenNotAccountingPaused notSuspended(msg.sender) {
+		BridgeFacetImpl.transferToBridge(msg.sender, amount, bridgeAddress);
+		emit TransferToBridge(msg.sender, amount, bridgeAddress);
+	}
 
-    function withdrawReceivedBridgeValue(uint256 transactionId) external whenNotAccountingPaused notSuspended(msg.sender) {
-        BridgeFacetImpl.withdrawReceivedBridgeValue(transactionId);
-        emit WithdrawReceivedBridgeValue(transactionId);
-    }
+	function withdrawReceivedBridgeValue(uint256 transactionId) external whenNotAccountingPaused notSuspended(msg.sender) {
+		BridgeFacetImpl.withdrawReceivedBridgeValue(transactionId);
+		emit WithdrawReceivedBridgeValue(transactionId);
+	}
 
-    function withdrawReceivedBridgeValues(uint256[] memory transactionIds) external whenNotAccountingPaused notSuspended(msg.sender) {
-        BridgeFacetImpl.withdrawReceivedBridgeValues(transactionIds);
-        emit WithdrawReceivedBridgeValues(transactionIds);
-    }
+	function withdrawReceivedBridgeValues(uint256[] memory transactionIds) external whenNotAccountingPaused notSuspended(msg.sender) {
+		BridgeFacetImpl.withdrawReceivedBridgeValues(transactionIds);
+		emit WithdrawReceivedBridgeValues(transactionIds);
+	}
 }

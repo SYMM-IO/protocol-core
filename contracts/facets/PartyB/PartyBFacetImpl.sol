@@ -18,298 +18,255 @@ import "../../storages/AccountStorage.sol";
 import "../../storages/SymbolStorage.sol";
 
 library PartyBFacetImpl {
-    using LockedValuesOps for LockedValues;
+	using LockedValuesOps for LockedValues;
 
-    function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig, bool increaseNonce) internal {
-        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig, bool increaseNonce) internal {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-        Quote storage quote = quoteLayout.quotes[quoteId];
-        LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
-        LibPartyB.checkPartyBValidationToLockQuote(quoteId, upnlSig.upnl);
-        if (increaseNonce) {
-            accountLayout.partyBNonces[msg.sender][quote.partyA] += 1;
-        }
-        quote.statusModifyTimestamp = block.timestamp;
-        quote.quoteStatus = QuoteStatus.LOCKED;
-        quote.partyB = msg.sender;
-        // lock funds for partyB
-        accountLayout.partyBPendingLockedBalances[msg.sender][quote.partyA].addQuote(quote);
-        quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].push(quote.id);
-    }
+		Quote storage quote = quoteLayout.quotes[quoteId];
+		LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
+		LibPartyB.checkPartyBValidationToLockQuote(quoteId, upnlSig.upnl);
+		if (increaseNonce) {
+			accountLayout.partyBNonces[msg.sender][quote.partyA] += 1;
+		}
+		quote.statusModifyTimestamp = block.timestamp;
+		quote.quoteStatus = QuoteStatus.LOCKED;
+		quote.partyB = msg.sender;
+		// lock funds for partyB
+		accountLayout.partyBPendingLockedBalances[msg.sender][quote.partyA].addQuote(quote);
+		quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].push(quote.id);
+	}
 
-    function unlockQuote(uint256 quoteId) internal returns (QuoteStatus) {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+	function unlockQuote(uint256 quoteId) internal returns (QuoteStatus) {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        require(quote.quoteStatus == QuoteStatus.LOCKED, "PartyBFacet: Invalid state");
-        if (block.timestamp > quote.deadline) {
-            QuoteStatus result = LibQuote.expireQuote(quoteId);
-            return result;
-        } else {
-            quote.statusModifyTimestamp = block.timestamp;
-            quote.quoteStatus = QuoteStatus.PENDING;
-            accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
-            LibQuote.removeFromPartyBPendingQuotes(quote);
-            quote.partyB = address(0);
-            return QuoteStatus.PENDING;
-        }
-    }
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		require(quote.quoteStatus == QuoteStatus.LOCKED, "PartyBFacet: Invalid state");
+		if (block.timestamp > quote.deadline) {
+			QuoteStatus result = LibQuote.expireQuote(quoteId);
+			return result;
+		} else {
+			quote.statusModifyTimestamp = block.timestamp;
+			quote.quoteStatus = QuoteStatus.PENDING;
+			accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
+			LibQuote.removeFromPartyBPendingQuotes(quote);
+			quote.partyB = address(0);
+			return QuoteStatus.PENDING;
+		}
+	}
 
-    function acceptCancelRequest(uint256 quoteId) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+	function acceptCancelRequest(uint256 quoteId) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        require(quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyBFacet: Invalid state");
-        quote.statusModifyTimestamp = block.timestamp;
-        quote.quoteStatus = QuoteStatus.CANCELED;
-        accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
-        accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
-        // send trading Fee back to partyA
-        accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quoteId);
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		require(quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyBFacet: Invalid state");
+		quote.statusModifyTimestamp = block.timestamp;
+		quote.quoteStatus = QuoteStatus.CANCELED;
+		accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
+		accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
+		// send trading Fee back to partyA
+		accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quoteId);
 
-        LibQuote.removeFromPendingQuotes(quote);
-    }
+		LibQuote.removeFromPendingQuotes(quote);
+	}
 
-    function openPosition(
-        uint256 quoteId,
-        uint256 filledAmount,
-        uint256 openedPrice,
-        PairUpnlAndPriceSig memory upnlSig
-    ) internal returns (uint256 currentId) {
-        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+	function openPosition(
+		uint256 quoteId,
+		uint256 filledAmount,
+		uint256 openedPrice,
+		PairUpnlAndPriceSig memory upnlSig
+	) internal returns (uint256 currentId) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-        Quote storage quote = quoteLayout.quotes[quoteId];
-        require(accountLayout.suspendedAddresses[quote.partyA] == false, "PartyBFacet: PartyA is suspended");
-        require(
-            SymbolStorage.layout().symbols[quote.symbolId].isValid,
-            "PartyBFacet: Symbol is not valid"
-        );
-        require(
-            !AccountStorage.layout().suspendedAddresses[msg.sender],
-            "PartyBFacet: Sender is Suspended"
-        );
+		Quote storage quote = quoteLayout.quotes[quoteId];
+		require(accountLayout.suspendedAddresses[quote.partyA] == false, "PartyBFacet: PartyA is suspended");
+		require(SymbolStorage.layout().symbols[quote.symbolId].isValid, "PartyBFacet: Symbol is not valid");
+		require(!AccountStorage.layout().suspendedAddresses[msg.sender], "PartyBFacet: Sender is Suspended");
 
-        require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
-        require(!GlobalAppStorage.layout().emergencyMode, "PartyBFacet: System is in emergency mode");
+		require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
+		require(!GlobalAppStorage.layout().emergencyMode, "PartyBFacet: System is in emergency mode");
 
-        require(
-            quote.quoteStatus == QuoteStatus.LOCKED ||
-                quote.quoteStatus == QuoteStatus.CANCEL_PENDING,
-            "PartyBFacet: Invalid state"
-        );
-        require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
-        if (quote.orderType == OrderType.LIMIT) {
-            require(
-                quote.quantity >= filledAmount && filledAmount > 0,
-                "PartyBFacet: Invalid filledAmount"
-            );
-            accountLayout.balances[GlobalAppStorage.layout().feeCollector] +=
-                (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
-        } else {
-            require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
-            accountLayout.balances[GlobalAppStorage.layout().feeCollector] +=
-                (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
-        }
-        if (quote.positionType == PositionType.LONG) {
-            require(
-                openedPrice <= quote.requestedOpenPrice,
-                "PartyBFacet: Opened price isn't valid"
-            );
-        } else {
-            require(
-                openedPrice >= quote.requestedOpenPrice,
-                "PartyBFacet: Opened price isn't valid"
-            );
-        }
-        LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+		require(quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyBFacet: Invalid state");
+		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
+		if (quote.orderType == OrderType.LIMIT) {
+			require(quote.quantity >= filledAmount && filledAmount > 0, "PartyBFacet: Invalid filledAmount");
+			accountLayout.balances[GlobalAppStorage.layout().feeCollector] += (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
+		} else {
+			require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
+			accountLayout.balances[GlobalAppStorage.layout().feeCollector] += (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
+		}
+		if (quote.positionType == PositionType.LONG) {
+			require(openedPrice <= quote.requestedOpenPrice, "PartyBFacet: Opened price isn't valid");
+		} else {
+			require(openedPrice >= quote.requestedOpenPrice, "PartyBFacet: Opened price isn't valid");
+		}
+		LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 
-        quote.openedPrice = openedPrice;
-        quote.initialOpenedPrice = openedPrice;
+		quote.openedPrice = openedPrice;
+		quote.initialOpenedPrice = openedPrice;
 
+		accountLayout.partyANonces[quote.partyA] += 1;
+		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+		quote.statusModifyTimestamp = block.timestamp;
 
-        accountLayout.partyANonces[quote.partyA] += 1;
-        accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        quote.statusModifyTimestamp = block.timestamp;
+		LibQuote.removeFromPendingQuotes(quote);
 
-        LibQuote.removeFromPendingQuotes(quote);
+		if (quote.quantity == filledAmount) {
+			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
+			accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
+			quote.lockedValues.mul(openedPrice).div(quote.requestedOpenPrice);
 
-        if (quote.quantity == filledAmount) {
-            accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
-            accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
-            quote.lockedValues.mul(openedPrice).div(quote.requestedOpenPrice);
+			// check locked values
+			require(
+				quote.lockedValues.totalForPartyA() >= SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
+				"PartyBFacet: Quote value is low"
+			);
+		}
+		// partially fill
+		else {
+			currentId = ++quoteLayout.lastId;
+			QuoteStatus newStatus;
+			if (quote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
+				newStatus = QuoteStatus.CANCELED;
+			} else {
+				newStatus = QuoteStatus.PENDING;
+				quoteLayout.partyAPendingQuotes[quote.partyA].push(currentId);
+			}
+			LockedValues memory filledLockedValues = LockedValues(
+				(quote.lockedValues.cva * filledAmount) / quote.quantity,
+				(quote.lockedValues.lf * filledAmount) / quote.quantity,
+				(quote.lockedValues.partyAmm * filledAmount) / quote.quantity,
+				(quote.lockedValues.partyBmm * filledAmount) / quote.quantity
+			);
+			LockedValues memory appliedFilledLockedValues = filledLockedValues;
+			appliedFilledLockedValues = appliedFilledLockedValues.mulMem(openedPrice);
+			appliedFilledLockedValues = appliedFilledLockedValues.divMem(quote.requestedOpenPrice);
+			// check that opened position is not minor position
+			require(
+				appliedFilledLockedValues.totalForPartyA() >= SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
+				"PartyBFacet: Quote value is low"
+			);
+			// check that new pending position is not minor position
+			require(
+				(quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
+					SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
+				"PartyBFacet: Quote value is low"
+			);
 
-            // check locked values
-            require(
-                quote.lockedValues.totalForPartyA() >=
-                SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
-                "PartyBFacet: Quote value is low"
-            );
-        }
-            // partially fill
-        else {
-            currentId = ++quoteLayout.lastId;
-            QuoteStatus newStatus;
-            if (quote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
-                newStatus = QuoteStatus.CANCELED;
-            } else {
-                newStatus = QuoteStatus.PENDING;
-                quoteLayout.partyAPendingQuotes[quote.partyA].push(currentId);
-            }
-            LockedValues memory filledLockedValues = LockedValues(
-                (quote.lockedValues.cva * filledAmount) / quote.quantity,
-                (quote.lockedValues.lf * filledAmount) / quote.quantity,
-                (quote.lockedValues.partyAmm * filledAmount) / quote.quantity,
-                (quote.lockedValues.partyBmm * filledAmount) / quote.quantity
-            );
-            LockedValues memory appliedFilledLockedValues = filledLockedValues;
-            appliedFilledLockedValues = appliedFilledLockedValues.mulMem(openedPrice);
-            appliedFilledLockedValues = appliedFilledLockedValues.divMem(quote.requestedOpenPrice);
-            // check that opened position is not minor position
-            require(
-                appliedFilledLockedValues.totalForPartyA() >=
-                    SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
-                "PartyBFacet: Quote value is low"
-            );
-            // check that new pending position is not minor position
-            require(
-                (quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
-                    SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
-                "PartyBFacet: Quote value is low"
-            );
+			Quote memory q = Quote({
+				id: currentId,
+				partyBsWhiteList: quote.partyBsWhiteList,
+				symbolId: quote.symbolId,
+				positionType: quote.positionType,
+				orderType: quote.orderType,
+				openedPrice: 0,
+				initialOpenedPrice: 0,
+				requestedOpenPrice: quote.requestedOpenPrice,
+				marketPrice: quote.marketPrice,
+				quantity: quote.quantity - filledAmount,
+				closedAmount: 0,
+				lockedValues: LockedValues(0, 0, 0, 0),
+				initialLockedValues: LockedValues(0, 0, 0, 0),
+				maxFundingRate: quote.maxFundingRate,
+				partyA: quote.partyA,
+				partyB: address(0),
+				quoteStatus: newStatus,
+				avgClosedPrice: 0,
+				requestedClosePrice: 0,
+				parentId: quote.id,
+				createTimestamp: quote.createTimestamp,
+				statusModifyTimestamp: block.timestamp,
+				quantityToClose: 0,
+				lastFundingPaymentTimestamp: 0,
+				deadline: quote.deadline,
+				tradingFee: quote.tradingFee
+			});
 
-            Quote memory q = Quote({
-                id: currentId,
-                partyBsWhiteList: quote.partyBsWhiteList,
-                symbolId: quote.symbolId,
-                positionType: quote.positionType,
-                orderType: quote.orderType,
-                openedPrice: 0,
-                initialOpenedPrice: 0,
-                requestedOpenPrice: quote.requestedOpenPrice,
-                marketPrice: quote.marketPrice,
-                quantity: quote.quantity - filledAmount,
-                closedAmount: 0,
-                lockedValues: LockedValues(0, 0, 0, 0),
-                initialLockedValues: LockedValues(0, 0, 0, 0),
-                maxFundingRate: quote.maxFundingRate,
-                partyA: quote.partyA,
-                partyB: address(0),
-                quoteStatus: newStatus,
-                avgClosedPrice: 0,
-                requestedClosePrice: 0,
-                parentId: quote.id,
-                createTimestamp: quote.createTimestamp,
-                statusModifyTimestamp: block.timestamp,
-                quantityToClose: 0,
-                lastFundingPaymentTimestamp: 0,
-                deadline: quote.deadline,
-                tradingFee: quote.tradingFee
-            });
+			quoteLayout.quoteIdsOf[quote.partyA].push(currentId);
+			quoteLayout.quotes[currentId] = q;
+			Quote storage newQuote = quoteLayout.quotes[currentId];
 
-            quoteLayout.quoteIdsOf[quote.partyA].push(currentId);
-            quoteLayout.quotes[currentId] = q;
-            Quote storage newQuote = quoteLayout.quotes[currentId];
+			if (newStatus == QuoteStatus.CANCELED) {
+				// send trading Fee back to partyA
+				accountLayout.allocatedBalances[newQuote.partyA] += LibQuote.getTradingFee(newQuote.id);
+				// part of quote has been filled and part of it has been canceled
+				accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
+				accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
+			} else {
+				accountLayout.pendingLockedBalances[quote.partyA].sub(filledLockedValues);
+				accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
+			}
+			newQuote.lockedValues = quote.lockedValues.sub(filledLockedValues);
+			newQuote.initialLockedValues = newQuote.lockedValues;
+			quote.quantity = filledAmount;
+			quote.lockedValues = appliedFilledLockedValues;
+		}
+		// lock with amount of filledAmount
+		accountLayout.lockedBalances[quote.partyA].addQuote(quote);
+		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
 
-            if (newStatus == QuoteStatus.CANCELED) {
-                // send trading Fee back to partyA
-                accountLayout.allocatedBalances[newQuote.partyA] += LibQuote.getTradingFee(newQuote.id);
-                // part of quote has been filled and part of it has been canceled
-                accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
-                accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(
-                    quote
-                );
-            } else {
-                accountLayout.pendingLockedBalances[quote.partyA].sub(filledLockedValues);
-                accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(
-                    quote
-                );
-            }
-            newQuote.lockedValues = quote.lockedValues.sub(filledLockedValues);
-            newQuote.initialLockedValues = newQuote.lockedValues;
-            quote.quantity = filledAmount;
-            quote.lockedValues = appliedFilledLockedValues;
-        }
-        // lock with amount of filledAmount
-        accountLayout.lockedBalances[quote.partyA].addQuote(quote);
-        accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
+		LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
+		// check leverage (is in 18 decimals)
+		require(
+			(quote.quantity * quote.openedPrice) / quote.lockedValues.totalForPartyA() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
+			"PartyBFacet: Leverage is high"
+		);
 
-        LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
-        // check leverage (is in 18 decimals)
-        require(
-            quote.quantity * quote.openedPrice / quote.lockedValues.totalForPartyA() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
-            "PartyBFacet: Leverage is high"
-        );
+		quote.quoteStatus = QuoteStatus.OPENED;
+		LibQuote.addToOpenPositions(quoteId);
+	}
 
-        quote.quoteStatus = QuoteStatus.OPENED;
-        LibQuote.addToOpenPositions(quoteId);
-    }
+	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		require(
+			quote.quoteStatus == QuoteStatus.CLOSE_PENDING || quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
+			"PartyBFacet: Invalid state"
+		);
+		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
+		if (quote.positionType == PositionType.LONG) {
+			require(closedPrice >= quote.requestedClosePrice, "PartyBFacet: Closed price isn't valid");
+		} else {
+			require(closedPrice <= quote.requestedClosePrice, "PartyBFacet: Closed price isn't valid");
+		}
+		if (quote.orderType == OrderType.LIMIT) {
+			require(quote.quantityToClose >= filledAmount, "PartyBFacet: Invalid filledAmount");
+		} else {
+			require(quote.quantityToClose == filledAmount, "PartyBFacet: Invalid filledAmount");
+		}
 
-    function fillCloseRequest(
-        uint256 quoteId,
-        uint256 filledAmount,
-        uint256 closedPrice,
-        PairUpnlAndPriceSig memory upnlSig
-    ) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        require(
-            quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
-                quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
-            "PartyBFacet: Invalid state"
-        );
-        require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
-        if (quote.positionType == PositionType.LONG) {
-            require(
-                closedPrice >= quote.requestedClosePrice,
-                "PartyBFacet: Closed price isn't valid"
-            );
-        } else {
-            require(
-                closedPrice <= quote.requestedClosePrice,
-                "PartyBFacet: Closed price isn't valid"
-            );
-        }
-        if (quote.orderType == OrderType.LIMIT) {
-            require(quote.quantityToClose >= filledAmount, "PartyBFacet: Invalid filledAmount");
-        } else {
-            require(quote.quantityToClose == filledAmount, "PartyBFacet: Invalid filledAmount");
-        }
+		LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+		LibSolvency.isSolventAfterClosePosition(quoteId, filledAmount, closedPrice, upnlSig);
 
-        LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
-        LibSolvency.isSolventAfterClosePosition(quoteId, filledAmount, closedPrice, upnlSig);
+		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+		accountLayout.partyANonces[quote.partyA] += 1;
+		LibQuote.closeQuote(quote, filledAmount, closedPrice);
+	}
 
-        accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        accountLayout.partyANonces[quote.partyA] += 1;
-        LibQuote.closeQuote(quote, filledAmount, closedPrice);
-    }
+	function acceptCancelCloseRequest(uint256 quoteId) internal {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		Quote storage quote = quoteLayout.quotes[quoteId];
 
-    function acceptCancelCloseRequest(uint256 quoteId) internal {
-        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-        Quote storage quote = quoteLayout.quotes[quoteId];
+		require(quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING, "PartyBFacet: Invalid state");
+		quote.statusModifyTimestamp = block.timestamp;
+		quote.quoteStatus = QuoteStatus.OPENED;
+		quote.requestedClosePrice = 0;
+		quote.quantityToClose = 0;
+	}
 
-        require(
-            quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
-            "PartyBFacet: Invalid state"
-        );
-        quote.statusModifyTimestamp = block.timestamp;
-        quote.quoteStatus = QuoteStatus.OPENED;
-        quote.requestedClosePrice = 0;
-        quote.quantityToClose = 0;
-    }
-
-    function emergencyClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) internal {
-        AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        require(quote.quoteStatus == QuoteStatus.OPENED || quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyBFacet: Invalid state");
-        LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
-        uint256 filledAmount = LibQuote.quoteOpenAmount(quote);
-        quote.quantityToClose = filledAmount;
-        quote.requestedClosePrice = upnlSig.price;
-        LibSolvency.isSolventAfterClosePosition(quoteId, filledAmount, upnlSig.price, upnlSig);
-        accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-        accountLayout.partyANonces[quote.partyA] += 1;
-        LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
-    }
+	function emergencyClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		require(quote.quoteStatus == QuoteStatus.OPENED || quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyBFacet: Invalid state");
+		LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+		uint256 filledAmount = LibQuote.quoteOpenAmount(quote);
+		quote.quantityToClose = filledAmount;
+		quote.requestedClosePrice = upnlSig.price;
+		LibSolvency.isSolventAfterClosePosition(quoteId, filledAmount, upnlSig.price, upnlSig);
+		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+		accountLayout.partyANonces[quote.partyA] += 1;
+		LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
+	}
 }

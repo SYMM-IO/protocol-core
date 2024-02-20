@@ -7,25 +7,25 @@ pragma solidity >=0.8.18;
 import "../storages/QuoteStorage.sol";
 
 interface IPartiesEvents {
-    event SendQuote(
-        address partyA,
-        uint256 quoteId,
-        address[] partyBsWhiteList,
-        uint256 symbolId,
-        PositionType positionType,
-        OrderType orderType,
-        uint256 price,
-        uint256 marketPrice,
-        uint256 quantity,
-        uint256 cva,
-        uint256 lf,
-        uint256 partyAmm,
-        uint256 partyBmm,
-        uint256 tradingFee,
-        uint256 deadline
-    );
+	event SendQuote(
+		address partyA,
+		uint256 quoteId,
+		address[] partyBsWhiteList,
+		uint256 symbolId,
+		PositionType positionType,
+		OrderType orderType,
+		uint256 price,
+		uint256 marketPrice,
+		uint256 quantity,
+		uint256 cva,
+		uint256 lf,
+		uint256 partyAmm,
+		uint256 partyBmm,
+		uint256 tradingFee,
+		uint256 deadline
+	);
 
-    event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId, uint256 closeId);
+	event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId, uint256 closeId);
 
-    event LiquidatePartyB(address liquidator, address partyB, address partyA, uint256 partyBAllocatedBalance, int256 upnl);
+	event LiquidatePartyB(address liquidator, address partyB, address partyA, uint256 partyBAllocatedBalance, int256 upnl);
 }
