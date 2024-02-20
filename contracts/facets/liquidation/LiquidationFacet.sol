@@ -42,8 +42,11 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		address partyA,
 		uint256[] memory quoteIds
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
-		bool disputed = LiquidationFacetImpl.liquidatePositionsPartyA(partyA, quoteIds);
-		emit LiquidatePositionsPartyA(msg.sender, partyA, quoteIds);
+		(bool disputed, uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = LiquidationFacetImpl.liquidatePositionsPartyA(
+			partyA,
+			quoteIds
+		);
+		emit LiquidatePositionsPartyA(msg.sender, partyA, quoteIds, liquidatedAmounts, closeIds);
 		if (disputed) {
 			emit LiquidationDisputed(partyA);
 		}
@@ -81,8 +84,8 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		address partyA,
 		QuotePriceSig memory priceSig
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
-		LiquidationFacetImpl.liquidatePositionsPartyB(partyB, partyA, priceSig);
-		emit LiquidatePositionsPartyB(msg.sender, partyB, partyA, priceSig.quoteIds);
+		(uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = LiquidationFacetImpl.liquidatePositionsPartyB(partyB, partyA, priceSig);
+		emit LiquidatePositionsPartyB(msg.sender, partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
 		if (QuoteStorage.layout().partyBPositionsCount[partyB][partyA] == 0) {
 			emit FullyLiquidatedPartyB(partyB, partyA);
 		}
