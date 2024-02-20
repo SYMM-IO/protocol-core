@@ -6,12 +6,12 @@ import { decimal, getBlockTimestamp } from "../../utils/Common"
 import { OrderType } from "../Enums"
 
 export interface CloseRequest {
-	quantityToClose: BigNumberish;
-	closePrice: BigNumberish;
-	price: BigNumberish;
-	upnl: BigNumberish;
-	orderType: OrderType;
-	deadline: PromiseOrValue<BigNumberish>;
+	quantityToClose: BigNumberish
+	closePrice: BigNumberish
+	price: BigNumberish
+	upnl: BigNumberish
+	orderType: OrderType
+	deadline: PromiseOrValue<BigNumberish>
 }
 
 const limitDefaultCloseRequest: CloseRequest = {

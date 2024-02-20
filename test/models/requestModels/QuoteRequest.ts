@@ -8,19 +8,19 @@ import { getDummySingleUpnlAndPriceSig } from "../../utils/SignatureUtils"
 import { OrderType, PositionType } from "../Enums"
 
 export interface QuoteRequest {
-	partyBWhiteList: string[];
-	symbolId: BigNumberish;
-	positionType: PositionType;
-	orderType: OrderType;
-	price: BigNumberish;
-	quantity: BigNumberish;
-	cva: BigNumberish;
-	partyAmm: BigNumberish;
-	partyBmm: BigNumberish;
-	lf: BigNumberish;
-	maxFundingRate: BigNumberish;
-	deadline: PromiseOrValue<BigNumberish>;
-	upnlSig: Promise<SingleUpnlAndPriceSigStruct>;
+	partyBWhiteList: string[]
+	symbolId: BigNumberish
+	positionType: PositionType
+	orderType: OrderType
+	price: BigNumberish
+	quantity: BigNumberish
+	cva: BigNumberish
+	partyAmm: BigNumberish
+	partyBmm: BigNumberish
+	lf: BigNumberish
+	maxFundingRate: BigNumberish
+	deadline: PromiseOrValue<BigNumberish>
+	upnlSig: Promise<SingleUpnlAndPriceSigStruct>
 }
 
 const limitDefaultQuoteRequest: QuoteRequest = {

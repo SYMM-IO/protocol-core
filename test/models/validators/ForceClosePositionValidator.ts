@@ -11,37 +11,34 @@ import { decimal, getBlockTimestamp, unDecimal } from "../../utils/Common"
 import { expectToBeApproximately } from "../../utils/SafeMath"
 
 export type ForceClosePositionValidatorBeforeArg = {
-	user: User;
-	quoteId: BigNumber;
-	hedger: Hedger;
-};
+	user: User
+	quoteId: BigNumber
+	hedger: Hedger
+}
 
 export type ForceClosePositionValidatorBeforeOutput = {
-	balanceInfoPartyA: BalanceInfo;
-	balanceInfoPartyB: BalanceInfo;
-	quote: QuoteStructOutput;
-};
+	balanceInfoPartyA: BalanceInfo
+	balanceInfoPartyB: BalanceInfo
+	quote: QuoteStructOutput
+}
 
 export type ForceClosePositionValidatorAfterArg = {
-	user: User;
-	hedger: Hedger;
-	quoteId: BigNumber;
+	user: User
+	hedger: Hedger
+	quoteId: BigNumber
 	sig: {
-		lowestPrice: BigNumber;
-		highestPrice: BigNumber;
-		averagePrice: BigNumber;
-		currentPrice: BigNumber;
-		endTime: BigNumber;
-		startTime: BigNumber;
-	};
-	beforeOutput: ForceClosePositionValidatorBeforeOutput;
-};
+		lowestPrice: BigNumber
+		highestPrice: BigNumber
+		averagePrice: BigNumber
+		currentPrice: BigNumber
+		endTime: BigNumber
+		startTime: BigNumber
+	}
+	beforeOutput: ForceClosePositionValidatorBeforeOutput
+}
 
 export class ForceClosePositionValidator implements TransactionValidator {
-	async before(
-	  context: RunContext,
-	  arg: ForceClosePositionValidatorBeforeArg,
-	): Promise<ForceClosePositionValidatorBeforeOutput> {
+	async before(context: RunContext, arg: ForceClosePositionValidatorBeforeArg): Promise<ForceClosePositionValidatorBeforeOutput> {
 		logger.debug("Before ForceClosePositionValidator...")
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
@@ -61,77 +58,55 @@ export class ForceClosePositionValidator implements TransactionValidator {
 		const forceCloseSecondCooldown = coolDownsOfMA[4]
 		const forceCloseMinSigPeriod = await context.viewFacet.forceCloseMinSigPeriod()
 		const partyBBalanceInfo = arg.hedger.getBalanceInfo(await arg.user.getAddress())
-		const isPartyBLiquidated =
-		  (await partyBBalanceInfo).allocatedBalances == BigNumber.from(0)
+		const isPartyBLiquidated = (await partyBBalanceInfo).allocatedBalances == BigNumber.from(0)
 
 		let closePrice: BigNumber
 
-		expect(newQuote.quoteStatus).to.be.equal(
-		  isPartyBLiquidated ? QuoteStatus.CLOSE_PENDING : QuoteStatus.CLOSED,
-		)
+		expect(newQuote.quoteStatus).to.be.equal(isPartyBLiquidated ? QuoteStatus.CLOSE_PENDING : QuoteStatus.CLOSED)
 		expect(newQuote.orderType).to.be.equal(OrderType.LIMIT)
 		// check the Final ClosePrice (Long and Short)
 		if (newQuote.positionType == PositionType.LONG) {
-			const expectClosePrice = oldQuote.requestedClosePrice.add(
-			  oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */),
-			)
+			const expectClosePrice = oldQuote.requestedClosePrice.add(oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */))
 
-			closePrice =
-			  expectClosePrice > arg.sig.averagePrice ? expectClosePrice : arg.sig.averagePrice
+			closePrice = expectClosePrice > arg.sig.averagePrice ? expectClosePrice : arg.sig.averagePrice
 
 			const expectedAvgClosedPrice = oldQuote.avgClosedPrice
-			  .mul(oldQuote.closedAmount)
-			  .add(oldQuote.quantityToClose.mul(closePrice))
-			  .div(oldQuote.closedAmount.add(oldQuote.quantityToClose))
+				.mul(oldQuote.closedAmount)
+				.add(oldQuote.quantityToClose.mul(closePrice))
+				.div(oldQuote.closedAmount.add(oldQuote.quantityToClose))
 
 			expectToBeApproximately(newQuote.avgClosedPrice, expectedAvgClosedPrice)
 		} else {
 			//SHORT
-			const expectClosePrice = oldQuote.requestedClosePrice.sub(
-			  oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */),
-			)
+			const expectClosePrice = oldQuote.requestedClosePrice.sub(oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */))
 
-			closePrice =
-			  expectClosePrice > arg.sig.averagePrice ? arg.sig.averagePrice : expectClosePrice
+			closePrice = expectClosePrice > arg.sig.averagePrice ? arg.sig.averagePrice : expectClosePrice
 
 			const expectedAvgClosedPrice = oldQuote.avgClosedPrice
-			  .mul(oldQuote.closedAmount)
-			  .add(oldQuote.quantityToClose.mul(closePrice))
-			  .div(oldQuote.closedAmount.add(oldQuote.quantityToClose))
+				.mul(oldQuote.closedAmount)
+				.add(oldQuote.quantityToClose.mul(closePrice))
+				.div(oldQuote.closedAmount.add(oldQuote.quantityToClose))
 
 			expectToBeApproximately(newQuote.avgClosedPrice, expectedAvgClosedPrice)
 		}
 		//check CoolDown(start and End Time)
-		expect(arg.sig.startTime).to.be.least(
-		  oldQuote.statusModifyTimestamp.add(forceCloseFirstCooldown),
-		)
-		expect(arg.sig.endTime).to.be.most(
-		  BigNumber.from(await getBlockTimestamp()).sub(forceCloseSecondCooldown),
-		)
+		expect(arg.sig.startTime).to.be.least(oldQuote.statusModifyTimestamp.add(forceCloseFirstCooldown))
+		expect(arg.sig.endTime).to.be.most(BigNumber.from(await getBlockTimestamp()).sub(forceCloseSecondCooldown))
 
 		let profit
 		if (newQuote.positionType == PositionType.LONG) {
-			profit = unDecimal(
-			  newQuote.avgClosedPrice.sub(newQuote.openedPrice).mul(newQuote.closedAmount),
-			)
+			profit = unDecimal(newQuote.avgClosedPrice.sub(newQuote.openedPrice).mul(newQuote.closedAmount))
 		} else {
-			profit = unDecimal(
-			  newQuote.openedPrice.sub(newQuote.avgClosedPrice).mul(newQuote.closedAmount),
-			)
+			profit = unDecimal(newQuote.openedPrice.sub(newQuote.avgClosedPrice).mul(newQuote.closedAmount))
 		}
 
 		//check partyA balance
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
-		  oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
-		)
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
 
-		expectToBeApproximately(
-		  newBalanceInfoPartyA.allocatedBalances,
-		  oldBalanceInfoPartyA.allocatedBalances.add(profit),
-		)
+		expectToBeApproximately(newBalanceInfoPartyA.allocatedBalances, oldBalanceInfoPartyA.allocatedBalances.add(profit))
 
 		// check partyB liquidation
 		if (isPartyBLiquidated) {

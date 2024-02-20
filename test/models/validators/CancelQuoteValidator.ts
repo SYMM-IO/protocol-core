@@ -11,27 +11,24 @@ import { TransactionValidator } from "./TransactionValidator"
 import { expectToBeApproximately } from "../../utils/SafeMath"
 
 export type CancelQuoteValidatorBeforeArg = {
-	user: User;
-	quoteId: BigNumber;
-};
+	user: User
+	quoteId: BigNumber
+}
 
 export type CancelQuoteValidatorBeforeOutput = {
-	balanceInfoPartyA: BalanceInfo;
-	quote: QuoteStructOutput;
-};
+	balanceInfoPartyA: BalanceInfo
+	quote: QuoteStructOutput
+}
 
 export type CancelQuoteValidatorAfterArg = {
-	user: User;
-	quoteId: BigNumber;
-	targetStatus?: QuoteStatus.CANCELED | QuoteStatus.EXPIRED;
-	beforeOutput: CancelQuoteValidatorBeforeOutput;
-};
+	user: User
+	quoteId: BigNumber
+	targetStatus?: QuoteStatus.CANCELED | QuoteStatus.EXPIRED
+	beforeOutput: CancelQuoteValidatorBeforeOutput
+}
 
 export class CancelQuoteValidator implements TransactionValidator {
-	async before(
-	  context: RunContext,
-	  arg: CancelQuoteValidatorBeforeArg,
-	): Promise<CancelQuoteValidatorBeforeOutput> {
+	async before(context: RunContext, arg: CancelQuoteValidatorBeforeArg): Promise<CancelQuoteValidatorBeforeOutput> {
 		logger.debug("Before CancelQuoteValidator...")
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
@@ -50,31 +47,18 @@ export class CancelQuoteValidator implements TransactionValidator {
 
 		if (oldQuote.quoteStatus == QuoteStatus.LOCKED) {
 			expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CANCEL_PENDING)
-			expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
-			  oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
-			)
-			expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
-			  oldBalanceInfoPartyA.totalLockedPartyA.toString(),
-			)
-			expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(
-			  oldBalanceInfoPartyA.allocatedBalances.toString(),
-			)
+			expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
+			expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
+			expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances.toString())
 			return
 		}
 		if (arg.targetStatus != null) expect(newQuote.quoteStatus).to.be.equal(arg.targetStatus)
 
 		const lockedValues = await getTotalPartyALockedValuesForQuotes([oldQuote])
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
-		  oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString(),
-		)
-		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
-		  oldBalanceInfoPartyA.totalLockedPartyA.toString(),
-		)
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString())
+		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
 		let tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
-		expectToBeApproximately(
-		  newBalanceInfoPartyA.allocatedBalances,
-		  oldBalanceInfoPartyA.allocatedBalances.add(tradingFee),
-		)
+		expectToBeApproximately(newBalanceInfoPartyA.allocatedBalances, oldBalanceInfoPartyA.allocatedBalances.add(tradingFee))
 	}
 }

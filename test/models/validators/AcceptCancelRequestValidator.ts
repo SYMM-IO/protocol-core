@@ -11,26 +11,23 @@ import { TransactionValidator } from "./TransactionValidator"
 import { expectToBeApproximately } from "../../utils/SafeMath"
 
 export type AcceptCancelRequestValidatorBeforeArg = {
-	user: User;
-	quoteId: BigNumber;
-};
+	user: User
+	quoteId: BigNumber
+}
 
 export type AcceptCancelRequestValidatorBeforeOutput = {
-	balanceInfoPartyA: BalanceInfo;
-	quote: QuoteStructOutput;
-};
+	balanceInfoPartyA: BalanceInfo
+	quote: QuoteStructOutput
+}
 
 export type AcceptCancelRequestValidatorAfterArg = {
-	user: User;
-	quoteId: BigNumber;
-	beforeOutput: AcceptCancelRequestValidatorBeforeOutput;
-};
+	user: User
+	quoteId: BigNumber
+	beforeOutput: AcceptCancelRequestValidatorBeforeOutput
+}
 
 export class AcceptCancelRequestValidator implements TransactionValidator {
-	async before(
-	  context: RunContext,
-	  arg: AcceptCancelRequestValidatorBeforeArg,
-	): Promise<AcceptCancelRequestValidatorBeforeOutput> {
+	async before(context: RunContext, arg: AcceptCancelRequestValidatorBeforeArg): Promise<AcceptCancelRequestValidatorBeforeOutput> {
 		logger.debug("Before AcceptCancelRequestValidator...")
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
@@ -51,16 +48,9 @@ export class AcceptCancelRequestValidator implements TransactionValidator {
 
 		const lockedValues = await getTotalPartyALockedValuesForQuotes([oldQuote])
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
-		  oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString(),
-		)
-		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
-		  oldBalanceInfoPartyA.totalLockedPartyA.toString(),
-		)
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString())
+		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
 		let tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
-		expectToBeApproximately(
-		  newBalanceInfoPartyA.allocatedBalances,
-		  oldBalanceInfoPartyA.allocatedBalances.add(tradingFee),
-		)
+		expectToBeApproximately(newBalanceInfoPartyA.allocatedBalances, oldBalanceInfoPartyA.allocatedBalances.add(tradingFee))
 	}
 }

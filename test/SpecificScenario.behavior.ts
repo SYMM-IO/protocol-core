@@ -13,11 +13,11 @@ import { decimal } from "./utils/Common"
 import { getDummySingleUpnlAndPriceSig } from "./utils/SignatureUtils"
 
 export function shouldBehaveLikeSpecificScenario(): void {
-	beforeEach(async function() {
+	beforeEach(async function () {
 		this.context = await loadFixture(initializeFixture)
 	})
 
-	it("Closing position with allocated less than quote value and with positive upnl", async function() {
+	it("Closing position with allocated less than quote value and with positive upnl", async function () {
 		const context: RunContext = this.context
 
 		const uSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address)
@@ -36,32 +36,32 @@ export function shouldBehaveLikeSpecificScenario(): void {
 
 		console.log("going to send code")
 		await user.sendQuote(
-		  Builder<QuoteRequest>()
-			.partyBWhiteList([])
-			.quantity("32000000000000000")
-			.partyAmm("69706470325210735106")
-			.partyBmm("69706470325210735106")
-			.cva("14394116573201404621")
-			.lf("8104916153486468905")
-			.price("22207600000000000000000")
-			.upnlSig(getDummySingleUpnlAndPriceSig("20817400000000000000000"))
-			.maxFundingRate(0)
-			.symbolId(1)
-			.orderType(OrderType.MARKET)
-			.positionType(PositionType.SHORT)
-			.deadline("100000000000000000")
-			.build(),
+			Builder<QuoteRequest>()
+				.partyBWhiteList([])
+				.quantity("32000000000000000")
+				.partyAmm("69706470325210735106")
+				.partyBmm("69706470325210735106")
+				.cva("14394116573201404621")
+				.lf("8104916153486468905")
+				.price("22207600000000000000000")
+				.upnlSig(getDummySingleUpnlAndPriceSig("20817400000000000000000"))
+				.maxFundingRate(0)
+				.symbolId(1)
+				.orderType(OrderType.MARKET)
+				.positionType(PositionType.SHORT)
+				.deadline("100000000000000000")
+				.build(),
 		)
 		await hedger.lockQuote(1)
 		await hedger.openPosition(
-		  1,
-		  Builder<OpenRequest>()
-			.filledAmount("32000000000000000")
-			.openPrice("22207600000000000000000")
-			.price("20817400000000000000000")
-			.upnlPartyA(0)
-			.upnlPartyB(0)
-			.build(),
+			1,
+			Builder<OpenRequest>()
+				.filledAmount("32000000000000000")
+				.openPrice("22207600000000000000000")
+				.price("20817400000000000000000")
+				.upnlPartyA(0)
+				.upnlPartyB(0)
+				.build(),
 		)
 		// await user.requestToClosePosition(
 		//   1,

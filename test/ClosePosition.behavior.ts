@@ -34,7 +34,7 @@ export function shouldBehaveLikeClosePosition(): void {
 	let user: User, hedger: Hedger, hedger2: Hedger
 	let context: RunContext
 
-	beforeEach(async function() {
+	beforeEach(async function () {
 		context = await loadFixture(initializeFixture)
 		this.user_allocated = decimal(500)
 		this.hedger_allocated = decimal(4000)
@@ -70,56 +70,52 @@ export function shouldBehaveLikeClosePosition(): void {
 		await hedger.openPosition(4)
 	})
 
-	it("Should fail on invalid partyA", async function() {
+	it("Should fail on invalid partyA", async function () {
 		await expect(
-		  context.partyAFacet.requestToClosePosition(
-			2, //quoteId
-			decimal(1), //closePrice
-			decimal(1), //quantityToClose
-			OrderType.LIMIT,
-			getBlockTimestamp(100),
-		  ),
+			context.partyAFacet.requestToClosePosition(
+				2, //quoteId
+				decimal(1), //closePrice
+				decimal(1), //quantityToClose
+				OrderType.LIMIT,
+				getBlockTimestamp(100),
+			),
 		).to.be.revertedWith("Accessibility: Should be partyA of quote")
 	})
 
-	it("Should fail on paused partyA", async function() {
+	it("Should fail on paused partyA", async function () {
 		await pausePartyA(context)
-		await expect(user.requestToClosePosition(2)).to.be.revertedWith(
-		  "Pausable: PartyA actions paused",
-		)
+		await expect(user.requestToClosePosition(2)).to.be.revertedWith("Pausable: PartyA actions paused")
 	})
 
-	it("Should fail on invalid quoteId", async function() {
+	it("Should fail on invalid quoteId", async function () {
 		await expect(user.requestToClosePosition(50)).to.be.reverted
 	})
 
-	it("Should fail on invalid quote state", async function() {
-		await expect(user.requestToClosePosition(3)).to.be.revertedWith(
-		  "PartyAFacet: Invalid state",
-		)
+	it("Should fail on invalid quote state", async function () {
+		await expect(user.requestToClosePosition(3)).to.be.revertedWith("PartyAFacet: Invalid state")
 	})
 
-	it("Should fail on invalid quantityToClose", async function() {
+	it("Should fail on invalid quantityToClose", async function () {
 		const quantity = await getQuoteQuantity(context, 1)
 		await expect(
-		  user.requestToClosePosition(
-			1,
-			limitCloseRequestBuilder()
-			  .quantityToClose(quantity.add(decimal(1)))
-			  .build(),
-		  ),
+			user.requestToClosePosition(
+				1,
+				limitCloseRequestBuilder()
+					.quantityToClose(quantity.add(decimal(1)))
+					.build(),
+			),
 		).to.be.revertedWith("PartyAFacet: Invalid quantityToClose")
 		await expect(
-		  user.requestToClosePosition(
-			1,
-			limitCloseRequestBuilder()
-			  .quantityToClose(quantity.sub(decimal(1)))
-			  .build(),
-		  ),
+			user.requestToClosePosition(
+				1,
+				limitCloseRequestBuilder()
+					.quantityToClose(quantity.sub(decimal(1)))
+					.build(),
+			),
 		).to.be.revertedWith("PartyAFacet: Remaining quote value is low")
 	})
 
-	it("Should request limit successfully", async function() {
+	it("Should request limit successfully", async function () {
 		const validator = new CloseRequestValidator()
 		const beforeOut = await validator.before(context, {
 			user: user,
@@ -128,10 +124,7 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 		const closePrice = decimal(1, 17)
 		const quantityToClose = await getQuoteQuantity(context, 1)
-		await user.requestToClosePosition(
-		  1,
-		  limitCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build(),
-		)
+		await user.requestToClosePosition(1, limitCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build())
 		await validator.after(context, {
 			user: user,
 			hedger: hedger,
@@ -142,7 +135,7 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 	})
 
-	it("Should request limit successfully partially", async function() {
+	it("Should request limit successfully partially", async function () {
 		const quantity = await getQuoteQuantity(context, 1)
 		const validator = new CloseRequestValidator()
 		const beforeOut = await validator.before(context, {
@@ -152,10 +145,7 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 		const closePrice = decimal(1, 17)
 		const quantityToClose = quantity.div(2)
-		await user.requestToClosePosition(
-		  1,
-		  limitCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build(),
-		)
+		await user.requestToClosePosition(1, limitCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build())
 		await validator.after(context, {
 			user: user,
 			hedger: hedger,
@@ -166,7 +156,7 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 	})
 
-	it("Should request market successfully", async function() {
+	it("Should request market successfully", async function () {
 		const validator = new CloseRequestValidator()
 		const beforeOut = await validator.before(context, {
 			user: user,
@@ -175,10 +165,7 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 		const closePrice = decimal(1, 17)
 		const quantityToClose = await getQuoteQuantity(context, 1)
-		await user.requestToClosePosition(
-		  1,
-		  marketCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build(),
-		)
+		await user.requestToClosePosition(1, marketCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build())
 		await validator.after(context, {
 			user: user,
 			hedger: hedger,
@@ -189,7 +176,7 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 	})
 
-	it("Should request market successfully partially", async function() {
+	it("Should request market successfully partially", async function () {
 		const quantity = await getQuoteQuantity(context, 1)
 		const validator = new CloseRequestValidator()
 		const beforeOut = await validator.before(context, {
@@ -199,10 +186,7 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 		const closePrice = decimal(1, 17)
 		const quantityToClose = quantity.div(2)
-		await user.requestToClosePosition(
-		  1,
-		  marketCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build(),
-		)
+		await user.requestToClosePosition(1, marketCloseRequestBuilder().quantityToClose(quantityToClose).closePrice(closePrice).build())
 		await validator.after(context, {
 			user: user,
 			hedger: hedger,
@@ -213,13 +197,13 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 	})
 
-	it("Should expire close request", async function() {
+	it("Should expire close request", async function () {
 		await user.requestToClosePosition(
-		  1,
-		  limitCloseRequestBuilder()
-			.quantityToClose(await getQuoteQuantity(context, 1))
-			.closePrice(decimal(1, 17))
-			.build(),
+			1,
+			limitCloseRequestBuilder()
+				.quantityToClose(await getQuoteQuantity(context, 1))
+				.closePrice(decimal(1, 17))
+				.build(),
 		)
 		await time.increase(1000)
 		await context.partyAFacet.expireQuote([1])
@@ -227,203 +211,202 @@ export function shouldBehaveLikeClosePosition(): void {
 		expect(q.quoteStatus).to.be.equal(QuoteStatus.OPENED)
 	})
 
-	describe("Fill Close Request", async function() {
-		beforeEach(async function() {
+	describe("Fill Close Request", async function () {
+		beforeEach(async function () {
 			await user.requestToClosePosition(
-			  1,
-			  limitCloseRequestBuilder()
-				.quantityToClose(await getQuoteQuantity(context, 1))
-				.closePrice(decimal(1))
-				.build(),
+				1,
+				limitCloseRequestBuilder()
+					.quantityToClose(await getQuoteQuantity(context, 1))
+					.closePrice(decimal(1))
+					.build(),
 			)
 			await user.requestToClosePosition(
-			  2,
-			  limitCloseRequestBuilder()
-				.quantityToClose(await getQuoteQuantity(context, 2))
-				.closePrice(decimal(1))
-				.build(),
+				2,
+				limitCloseRequestBuilder()
+					.quantityToClose(await getQuoteQuantity(context, 2))
+					.closePrice(decimal(1))
+					.build(),
 			)
 			await user.requestToClosePosition(
-			  4,
-			  marketCloseRequestBuilder()
-				.quantityToClose(await getQuoteQuantity(context, 4))
-				.closePrice(decimal(1))
-				.build(),
+				4,
+				marketCloseRequestBuilder()
+					.quantityToClose(await getQuoteQuantity(context, 4))
+					.closePrice(decimal(1))
+					.build(),
 			)
 		})
 
-		it("Should fail on invalid partyB", async function() {
+		it("Should fail on invalid partyB", async function () {
 			await expect(
-			  hedger2.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 1))
-				  .closedPrice(decimal(1))
-				  .build(),
-			  ),
+				hedger2.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1))
+						.closedPrice(decimal(1))
+						.build(),
+				),
 			).to.be.revertedWith("Accessibility: Should be partyB of quote")
 		})
 
-		it("Should fail on paused partyB", async function() {
+		it("Should fail on paused partyB", async function () {
 			await pausePartyB(context)
 			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 1))
-				  .closedPrice(decimal(1))
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1))
+						.closedPrice(decimal(1))
+						.build(),
+				),
 			).to.be.revertedWith("Pausable: PartyB actions paused")
 		})
 
-		it("Should fail on fill amount", async function() {
+		it("Should fail on fill amount", async function () {
 			const quantity = await getQuoteQuantity(context, 1)
 			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(quantity.add(decimal(1)))
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(quantity.add(decimal(1)))
+						.build(),
+				),
 			).to.be.revertedWith("PartyBFacet: Invalid filledAmount")
 			await expect(
-			  hedger.fillCloseRequest(
-				4,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(quantity.sub(decimal(1)))
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					4,
+					limitFillCloseRequestBuilder()
+						.filledAmount(quantity.sub(decimal(1)))
+						.build(),
+				),
 			).to.be.revertedWith("PartyBFacet: Invalid filledAmount")
 		})
 
-		it("Should fail on invalid close price", async function() {
+		it("Should fail on invalid close price", async function () {
 			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 1))
-				  .closedPrice(decimal(1, 17))
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1))
+						.closedPrice(decimal(1, 17))
+						.build(),
+				),
 			).to.be.revertedWith("PartyBFacet: Closed price isn't valid")
 
 			await expect(
-			  hedger.fillCloseRequest(
-				2,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 2))
-				  .closedPrice(decimal(2))
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					2,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 2))
+						.closedPrice(decimal(2))
+						.build(),
+				),
 			).to.be.revertedWith("PartyBFacet: Closed price isn't valid")
 		})
 
-		it("Should fail on negative balance of partyA/partyB", async function() {
+		it("Should fail on negative balance of partyA/partyB", async function () {
 			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 1))
-				  .closedPrice(decimal(1))
-				  .upnlPartyA(decimal(-575))
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1))
+						.closedPrice(decimal(1))
+						.upnlPartyA(decimal(-575))
+						.build(),
+				),
 			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
 			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 1))
-				  .closedPrice(decimal(1))
-				  .upnlPartyB(decimal(-410))
-				  .build(),
-			  ),
-			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
-		})
-
-		it("Should fail on partyB becoming liquidatable", async function() {
-			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 1))
-				  .closedPrice(decimal(1))
-				  .upnlPartyB(decimal(-300))
-				  .price(decimal(1, 17))
-				  .build(),
-			  ),
-			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
-			await expect(
-			  hedger.fillCloseRequest(
-				2,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 2))
-				  .closedPrice(decimal(1, 17))
-				  .upnlPartyB(decimal(-300))
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1))
+						.closedPrice(decimal(1))
+						.upnlPartyB(decimal(-410))
+						.build(),
+				),
 			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
 		})
 
-		it("Should fail on partyA becoming liquidatable", async function() {
+		it("Should fail on partyB becoming liquidatable", async function () {
+			await expect(
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1))
+						.closedPrice(decimal(1))
+						.upnlPartyB(decimal(-300))
+						.price(decimal(1, 17))
+						.build(),
+				),
+			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
+			await expect(
+				hedger.fillCloseRequest(
+					2,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 2))
+						.closedPrice(decimal(1, 17))
+						.upnlPartyB(decimal(-300))
+						.build(),
+				),
+			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
+		})
+
+		it("Should fail on partyA becoming liquidatable", async function () {
 			let quantity = await getQuoteQuantity(context, 1)
 			let price = decimal(11, 17)
 			let closePrice = decimal(1)
 			let userAvailable = this.user_allocated
-			  .sub(await getTotalLockedValuesForQuoteIds(context, [2, 4], false))
-			  .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
-			  .sub(unDecimal(quantity.mul(price.sub(closePrice))))
+				.sub(await getTotalLockedValuesForQuoteIds(context, [2, 4], false))
+				.sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
+				.sub(unDecimal(quantity.mul(price.sub(closePrice))))
 
 			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(quantity)
-				  .closedPrice(closePrice)
-				  .upnlPartyA(userAvailable.add(decimal(1)).mul(-1))
-				  .price(price)
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(quantity)
+						.closedPrice(closePrice)
+						.upnlPartyA(userAvailable.add(decimal(1)).mul(-1))
+						.price(price)
+						.build(),
+				),
 			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
 
 			quantity = await getQuoteQuantity(context, 1)
 			price = decimal(1, 17)
 			closePrice = decimal(1)
 			userAvailable = this.user_allocated
-			  .sub(await getTotalLockedValuesForQuoteIds(context, [1, 4], false))
-			  .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
-			  .sub(unDecimal(quantity.mul(closePrice.sub(price))))
+				.sub(await getTotalLockedValuesForQuoteIds(context, [1, 4], false))
+				.sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
+				.sub(unDecimal(quantity.mul(closePrice.sub(price))))
 
 			await expect(
-			  hedger.fillCloseRequest(
-				2,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(quantity)
-				  .closedPrice(closePrice)
-				  .upnlPartyA(userAvailable.add(decimal(1)).mul(-1))
-				  .price(price)
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					2,
+					limitFillCloseRequestBuilder()
+						.filledAmount(quantity)
+						.closedPrice(closePrice)
+						.upnlPartyA(userAvailable.add(decimal(1)).mul(-1))
+						.price(price)
+						.build(),
+				),
 			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
 		})
 
-		it("Should fail due to expired request", async function() {
+		it("Should fail due to expired request", async function () {
 			await time.increase(1000)
 			let closePrice = decimal(11, 17)
 			await expect(
-			  hedger.fillCloseRequest(
-				1,
-				limitFillCloseRequestBuilder()
-				  .filledAmount(await getQuoteQuantity(context, 1))
-				  .closedPrice(closePrice)
-				  .build(),
-			  ),
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1))
+						.closedPrice(closePrice)
+						.build(),
+				),
 			).to.be.revertedWith("PartyBFacet: Quote is expired")
 		})
 
-		it("Should run successfully for limit", async function() {
-
+		it("Should run successfully for limit", async function () {
 			const validator = new FillCloseRequestValidator()
 			const beforeOut = await validator.before(context, {
 				user: user,
@@ -432,10 +415,7 @@ export function shouldBehaveLikeClosePosition(): void {
 			})
 			let closePrice = decimal(11, 17)
 			const filledAmount = await getQuoteQuantity(context, 1)
-			await hedger.fillCloseRequest(
-			  1,
-			  limitFillCloseRequestBuilder().filledAmount(filledAmount).closedPrice(closePrice).build(),
-			)
+			await hedger.fillCloseRequest(1, limitFillCloseRequestBuilder().filledAmount(filledAmount).closedPrice(closePrice).build())
 			await validator.after(context, {
 				user: user,
 				hedger: hedger,
@@ -446,7 +426,7 @@ export function shouldBehaveLikeClosePosition(): void {
 			})
 		})
 
-		it("Should run successfully partially for limit", async function() {
+		it("Should run successfully partially for limit", async function () {
 			const closePrice = decimal(11, 17)
 			const quantity = await getQuoteQuantity(context, 1)
 			const filledAmount = quantity.div(2)
@@ -456,10 +436,7 @@ export function shouldBehaveLikeClosePosition(): void {
 				hedger: hedger,
 				quoteId: BigNumber.from(1),
 			})
-			await hedger.fillCloseRequest(
-			  1,
-			  limitFillCloseRequestBuilder().filledAmount(filledAmount).closedPrice(closePrice).build(),
-			)
+			await hedger.fillCloseRequest(1, limitFillCloseRequestBuilder().filledAmount(filledAmount).closedPrice(closePrice).build())
 			await validator.after(context, {
 				user: user,
 				hedger: hedger,
@@ -470,7 +447,7 @@ export function shouldBehaveLikeClosePosition(): void {
 			})
 		})
 
-		it("Should run successfully for market", async function() {
+		it("Should run successfully for market", async function () {
 			let closePrice = decimal(11, 17)
 			const validator = new FillCloseRequestValidator()
 			const beforeOut = await validator.before(context, {
@@ -479,10 +456,7 @@ export function shouldBehaveLikeClosePosition(): void {
 				quoteId: BigNumber.from(4),
 			})
 			const filledAmount = await getQuoteQuantity(context, 4)
-			await hedger.fillCloseRequest(
-			  4,
-			  marketFillCloseRequestBuilder().filledAmount(filledAmount).closedPrice(closePrice).build(),
-			)
+			await hedger.fillCloseRequest(4, marketFillCloseRequestBuilder().filledAmount(filledAmount).closedPrice(closePrice).build())
 			await validator.after(context, {
 				user: user,
 				hedger: hedger,
@@ -494,42 +468,36 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 	})
 
-	describe("Cancel Close Request", async function() {
-		beforeEach(async function() {
+	describe("Cancel Close Request", async function () {
+		beforeEach(async function () {
 			await user.requestToClosePosition(
-			  1,
-			  limitCloseRequestBuilder()
-				.quantityToClose(await getQuoteQuantity(context, 4))
-				.build(),
+				1,
+				limitCloseRequestBuilder()
+					.quantityToClose(await getQuoteQuantity(context, 4))
+					.build(),
 			)
 		})
 
-		it("Should fail on invalid quoteId", async function() {
+		it("Should fail on invalid quoteId", async function () {
 			await expect(user.requestToCancelCloseRequest(3)).to.be.reverted
 		})
 
-		it("Should fail on invalid partyA", async function() {
-
-			await expect(
-			  context.partyAFacet.connect(context.signers.user2).requestToCancelCloseRequest(1),
-			).to.be.revertedWith("Accessibility: Should be partyA of quote")
+		it("Should fail on invalid partyA", async function () {
+			await expect(context.partyAFacet.connect(context.signers.user2).requestToCancelCloseRequest(1)).to.be.revertedWith(
+				"Accessibility: Should be partyA of quote",
+			)
 		})
 
-		it("Should fail on paused partyA", async function() {
-
+		it("Should fail on paused partyA", async function () {
 			await pausePartyA(context)
-			await expect(user.requestToCancelCloseRequest(1)).to.be.revertedWith(
-			  "Pausable: PartyA actions paused",
-			)
+			await expect(user.requestToCancelCloseRequest(1)).to.be.revertedWith("Pausable: PartyA actions paused")
 		})
 
-		it("Should fail on invalid state", async function() {
-			await expect(user.requestToCancelCloseRequest(2)).to.be.revertedWith(
-			  "PartyAFacet: Invalid state",
-			)
+		it("Should fail on invalid state", async function () {
+			await expect(user.requestToCancelCloseRequest(2)).to.be.revertedWith("PartyAFacet: Invalid state")
 		})
 
-		it("Should send cancel request successfully", async function() {
+		it("Should send cancel request successfully", async function () {
 			const validator = new CancelCloseRequestValidator()
 			const beforeOut = await validator.before(context, {
 				user: user,
@@ -545,42 +513,35 @@ export function shouldBehaveLikeClosePosition(): void {
 			})
 		})
 
-		it("Should expire request", async function() {
+		it("Should expire request", async function () {
 			await time.increase(1000)
 			await user.requestToCancelCloseRequest(1)
 			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
 		})
 
-		describe("Accepting cancel request", async function() {
-			this.beforeEach(async function() {
+		describe("Accepting cancel request", async function () {
+			this.beforeEach(async function () {
 				await user.requestToCancelCloseRequest(1)
 			})
 
-			it("Should fail on invalid quoteId", async function() {
+			it("Should fail on invalid quoteId", async function () {
 				await expect(hedger.acceptCancelCloseRequest(3)).to.be.reverted
 			})
 
-			it("Should fail on invalid partyB", async function() {
-				await expect(hedger2.acceptCancelCloseRequest(1)).to.be.revertedWith(
-				  "Accessibility: Should be partyB of quote",
-				)
+			it("Should fail on invalid partyB", async function () {
+				await expect(hedger2.acceptCancelCloseRequest(1)).to.be.revertedWith("Accessibility: Should be partyB of quote")
 			})
 
-			it("Should fail on paused partyB", async function() {
-
+			it("Should fail on paused partyB", async function () {
 				await pausePartyB(context)
-				await expect(hedger.acceptCancelCloseRequest(1)).to.be.revertedWith(
-				  "Pausable: PartyB actions paused",
-				)
+				await expect(hedger.acceptCancelCloseRequest(1)).to.be.revertedWith("Pausable: PartyB actions paused")
 			})
 
-			it("Should fail on invalid state", async function() {
-				await expect(hedger.acceptCancelCloseRequest(2)).to.be.revertedWith(
-				  "PartyBFacet: Invalid state",
-				)
+			it("Should fail on invalid state", async function () {
+				await expect(hedger.acceptCancelCloseRequest(2)).to.be.revertedWith("PartyBFacet: Invalid state")
 			})
 
-			it("Should run successfully", async function() {
+			it("Should run successfully", async function () {
 				const validator = new AcceptCancelCloseRequestValidator()
 				const beforeOut = await validator.before(context, {
 					user: user,
@@ -598,55 +559,40 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 	})
 
-	describe("Emergency Close", async function() {
-		beforeEach(async function() {
+	describe("Emergency Close", async function () {
+		beforeEach(async function () {})
 
+		it("Should fail when not emergency mode", async function () {
+			await expect(hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build())).to.be.revertedWith("Pausable: It isn't emergency mode")
 		})
 
-		it("Should fail when not emergency mode", async function() {
-			await expect(
-			  hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build()),
-			).to.be.revertedWith("Pausable: It isn't emergency mode")
-		})
-
-		describe("Emergency mode activated", async function() {
-			beforeEach(async function() {
-				await context.controlFacet.setPartyBEmergencyStatus(
-				  [await hedger2.getAddress()],
-				  true,
-				)
+		describe("Emergency mode activated", async function () {
+			beforeEach(async function () {
+				await context.controlFacet.setPartyBEmergencyStatus([await hedger2.getAddress()], true)
 				await context.controlFacet.setPartyBEmergencyStatus([await hedger.getAddress()], true)
 			})
 
-			it("Should fail on invalid partyB", async function() {
-				await expect(
-				  hedger2.emergencyClosePosition(1, emergencyCloseRequestBuilder().build()),
-				).to.be.revertedWith("Accessibility: Should be partyB of quote")
+			it("Should fail on invalid partyB", async function () {
+				await expect(hedger2.emergencyClosePosition(1, emergencyCloseRequestBuilder().build())).to.be.revertedWith(
+					"Accessibility: Should be partyB of quote",
+				)
 			})
 
-			it("Should fail on paused partyB", async function() {
+			it("Should fail on paused partyB", async function () {
 				await pausePartyB(context)
-				await expect(
-				  hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build()),
-				).to.be.revertedWith("Pausable: PartyB actions paused")
+				await expect(hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build())).to.be.revertedWith("Pausable: PartyB actions paused")
 			})
 
-			it("Should fail on negative balance of partyA/partyB", async function() {
-				await expect(
-				  hedger.emergencyClosePosition(
-					1,
-					emergencyCloseRequestBuilder().upnlPartyA(decimal(-575)).build(),
-				  ),
-				).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
-				await expect(
-				  hedger.emergencyClosePosition(
-					1,
-					emergencyCloseRequestBuilder().upnlPartyB(decimal(-410)).build(),
-				  ),
-				).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
+			it("Should fail on negative balance of partyA/partyB", async function () {
+				await expect(hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().upnlPartyA(decimal(-575)).build())).to.be.revertedWith(
+					"LibSolvency: Available balance is lower than zero",
+				)
+				await expect(hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().upnlPartyB(decimal(-410)).build())).to.be.revertedWith(
+					"LibSolvency: Available balance is lower than zero",
+				)
 			})
 
-			it("Should run successfully", async function() {
+			it("Should run successfully", async function () {
 				const validator = new EmergencyCloseRequestValidator()
 				const beforeOut = await validator.before(context, {
 					user: user,
@@ -665,32 +611,31 @@ export function shouldBehaveLikeClosePosition(): void {
 		})
 	})
 
-	describe("Force Close Request", async function() {
-
-		beforeEach(async function() {
+	describe("Force Close Request", async function () {
+		beforeEach(async function () {
 			await user.requestToClosePosition(
-			  1,
-			  limitCloseRequestBuilder()
-				.quantityToClose(await getQuoteQuantity(context, 1))
-				.closePrice(decimal(1))
-				.deadline((await getBlockTimestamp()) + 1000)
-				.build(),
+				1,
+				limitCloseRequestBuilder()
+					.quantityToClose(await getQuoteQuantity(context, 1))
+					.closePrice(decimal(1))
+					.deadline((await getBlockTimestamp()) + 1000)
+					.build(),
 			)
 			await user.requestToClosePosition(
-			  2,
-			  limitCloseRequestBuilder()
-				.quantityToClose(await getQuoteQuantity(context, 2))
-				.closePrice(decimal(1))
-				.deadline((await getBlockTimestamp()) + 1000)
-				.build(),
+				2,
+				limitCloseRequestBuilder()
+					.quantityToClose(await getQuoteQuantity(context, 2))
+					.closePrice(decimal(1))
+					.deadline((await getBlockTimestamp()) + 1000)
+					.build(),
 			)
 			await user.requestToClosePosition(
-			  4,
-			  marketCloseRequestBuilder()
-				.quantityToClose(await getQuoteQuantity(context, 4))
-				.closePrice(decimal(1))
-				.deadline((await getBlockTimestamp()) + 1000)
-				.build(),
+				4,
+				marketCloseRequestBuilder()
+					.quantityToClose(await getQuoteQuantity(context, 4))
+					.closePrice(decimal(1))
+					.deadline((await getBlockTimestamp()) + 1000)
+					.build(),
 			)
 
 			await context.controlFacet.setForceCloseMinSigPeriod(10)
@@ -707,47 +652,42 @@ export function shouldBehaveLikeClosePosition(): void {
 			return [startTime, endTime]
 		}
 
-		it("Should fail on invalid quote status", async function() {
-			await expect(user.forceClosePosition(3, await getDummyHighLowPriceSig()))
-			  .to.be.revertedWith("PartyAFacet: Invalid state")
+		it("Should fail on invalid quote status", async function () {
+			await expect(user.forceClosePosition(3, await getDummyHighLowPriceSig())).to.be.revertedWith("PartyAFacet: Invalid state")
 		})
 
-		it("Should fail on invalid order type", async function() {
-			await expect(user.forceClosePosition(4, await getDummyHighLowPriceSig()))
-			  .to.be.revertedWith("PartyBFacet: Quote's order type should be LIMIT")
+		it("Should fail on invalid order type", async function () {
+			await expect(user.forceClosePosition(4, await getDummyHighLowPriceSig())).to.be.revertedWith("PartyBFacet: Quote's order type should be LIMIT")
 		})
 
-		it("Should fail on expired quote", async function() {
+		it("Should fail on expired quote", async function () {
 			const sigTimes = await prepareSigTimes()
 			const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1].add(800))
-			await expect(user.forceClosePosition(1, dummySig))
-			  .to.be.revertedWith("PartyBFacet: Close request is expired")
+			await expect(user.forceClosePosition(1, dummySig)).to.be.revertedWith("PartyBFacet: Close request is expired")
 		})
 
-		it("Should fail when cooldowns not reached", async function() {
+		it("Should fail when cooldowns not reached", async function () {
 			const sigTimes = await prepareSigTimes()
 
 			let dummySig = await getDummyHighLowPriceSig(sigTimes[0].sub(50), sigTimes[1])
-			await expect(user.forceClosePosition(1, dummySig))
-			  .to.be.revertedWith("PartyAFacet: Cooldown not reached")
+			await expect(user.forceClosePosition(1, dummySig)).to.be.revertedWith("PartyAFacet: Cooldown not reached")
 
 			dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1].add(200))
-			await expect(user.forceClosePosition(1, dummySig))
-			  .to.be.revertedWith("PartyAFacet: Cooldown not reached")
+			await expect(user.forceClosePosition(1, dummySig)).to.be.revertedWith("PartyAFacet: Cooldown not reached")
 		})
 
-		it("Should fail on invalid averagePrice", async function() {
+		it("Should fail on invalid averagePrice", async function () {
 			const sigTimes = await prepareSigTimes()
-			await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(
-			  sigTimes[0], sigTimes[1], 100, 200, 210, 220)))
-			  .to.be.revertedWith("PartyAFacet: Invalid average price")
+			await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], 100, 200, 210, 220))).to.be.revertedWith(
+				"PartyAFacet: Invalid average price",
+			)
 
-			await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(
-			  sigTimes[0], sigTimes[1], 100, 200, 210, 80)))
-			  .to.be.revertedWith("PartyAFacet: Invalid average price")
+			await expect(user.forceClosePosition(2, await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], 100, 200, 210, 80))).to.be.revertedWith(
+				"PartyAFacet: Invalid average price",
+			)
 		})
 
-		it("Should fail when price not reached to requested close price", async function() {
+		it("Should fail when price not reached to requested close price", async function () {
 			const sigTimes = await prepareSigTimes()
 
 			let dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(0), decimal(0), decimal(0))
@@ -757,27 +697,29 @@ export function shouldBehaveLikeClosePosition(): void {
 			await expect(user.forceClosePosition(2, dummySig)).to.be.revertedWith("PartyAFacet: Requested close price not reached")
 		})
 
-		it("Should fail when the sig time is lower than forceCloseMinSigPeriod", async function() {
+		it("Should fail when the sig time is lower than forceCloseMinSigPeriod", async function () {
 			const sigTimes = await prepareSigTimes(5)
 			const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1))
 			await expect(user.forceClosePosition(2, dummySig)).to.be.revertedWith("PartyAFacet: Invalid signature period")
 		})
 
-		it("Should fail when partyA will be insolvent", async function() {
+		it("Should fail when partyA will be insolvent", async function () {
 			const sigTimes = await prepareSigTimes()
 
 			const quantity = decimal(100)
 
 			let userAvailable = this.user_allocated
-			  .sub(await getTotalLockedValuesForQuoteIds(context, [1, 4], false))
-			  .sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
-			  .sub(unDecimal(quantity.mul(decimal(1).sub(decimal(1))))).add(decimal(1)).mul(-1)
+				.sub(await getTotalLockedValuesForQuoteIds(context, [1, 4], false))
+				.sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4]))
+				.sub(unDecimal(quantity.mul(decimal(1).sub(decimal(1)))))
+				.add(decimal(1))
+				.mul(-1)
 
 			const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1), 0, 0, userAvailable)
 			await expect(user.forceClosePosition(2, dummySig)).to.be.revertedWith("PartyAFacet: PartyA will be insolvent")
 		})
 
-		it("Should liquidate partyB when partyB will be insolvent", async function() {
+		it("Should liquidate partyB when partyB will be insolvent", async function () {
 			const sigTimes = await prepareSigTimes()
 			const userAddress = await context.signers.user.getAddress()
 			const hedgerAddress = await context.signers.hedger.getAddress()
@@ -796,10 +738,9 @@ export function shouldBehaveLikeClosePosition(): void {
 			expect((await context.viewFacet.getQuote(4)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
 			expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
 			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
-
 		})
 
-		it("Should forceClose Quote correctly", async function() {
+		it("Should forceClose Quote correctly", async function () {
 			const validator = new ForceClosePositionValidator()
 			const beforeOut = await validator.before(context, {
 				user: user,
@@ -825,8 +766,8 @@ export function shouldBehaveLikeClosePosition(): void {
 			})
 		})
 
-		describe("should calculate closePrice correctly when position is LONG", async function() {
-			it("closePrice is higher than avg price", async function() {
+		describe("should calculate closePrice correctly when position is LONG", async function () {
+			it("closePrice is higher than avg price", async function () {
 				const sigTimes = await prepareSigTimes()
 
 				await context.controlFacet.setForceClosePricePenalty(decimal(1))
@@ -843,11 +784,9 @@ export function shouldBehaveLikeClosePosition(): void {
 				const avgClosePrice = (await context.viewFacet.getQuote(1)).avgClosedPrice
 
 				expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
-
 			})
 
-			it("closePrice is lower than or equal to avg price", async function() {
-
+			it("closePrice is lower than or equal to avg price", async function () {
 				const sigTimes = await prepareSigTimes()
 
 				await context.controlFacet.setForceClosePricePenalty(decimal(1))
@@ -861,26 +800,23 @@ export function shouldBehaveLikeClosePosition(): void {
 
 				const avgClosePrice = (await context.viewFacet.getQuote(1)).avgClosedPrice
 				expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
-
-
 			})
-
 		})
 
-		describe("should calculate closePrice correctly when position is SHORT", async function() {
-			it("closePrice is higher than avg price", async function() {
+		describe("should calculate closePrice correctly when position is SHORT", async function () {
+			it("closePrice is higher than avg price", async function () {
 				const sigTimes = await prepareSigTimes()
 
 				await context.controlFacet.setForceClosePricePenalty(decimal(1).div(2))
 
-				const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(0), decimal(1).div(6), decimal(1), (decimal(1).div(6)).div(2))
+				const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(0), decimal(1).div(6), decimal(1), decimal(1).div(6).div(2))
 				await user.forceClosePosition(2, dummySig)
 
 				const avgClosePrice = (await context.viewFacet.getQuote(2)).avgClosedPrice
 
-				expect(avgClosePrice).to.be.equal((decimal(1).div(6)).div(2)) //sig.averagePrice
+				expect(avgClosePrice).to.be.equal(decimal(1).div(6).div(2)) //sig.averagePrice
 			})
-			it("closePrice is lower than or equal to avg price", async function() {
+			it("closePrice is lower than or equal to avg price", async function () {
 				const sigTimes = await prepareSigTimes()
 
 				await context.controlFacet.setForceClosePricePenalty(decimal(1).div(2))
@@ -891,7 +827,7 @@ export function shouldBehaveLikeClosePosition(): void {
 				const expectClosePrice = calculateExpectedClosePriceForForceClose(quote, penalty, false)
 				const expectedAvgClosedPrice = calculateExpectedAvgPriceForForceClose(quote, expectClosePrice)
 
-				const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), (decimal(1)))
+				const dummySig = await getDummyHighLowPriceSig(sigTimes[0], sigTimes[1], decimal(1), decimal(1), decimal(1), decimal(1))
 				await user.forceClosePosition(2, dummySig)
 
 				const avgClosePrice = (await context.viewFacet.getQuote(2)).avgClosedPrice
@@ -899,6 +835,5 @@ export function shouldBehaveLikeClosePosition(): void {
 				expect(avgClosePrice).to.be.equal(expectedAvgClosedPrice)
 			})
 		})
-
 	})
 }

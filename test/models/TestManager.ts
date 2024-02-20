@@ -22,20 +22,15 @@ import { UnlockQuoteValidator } from "./validators/UnlockQuoteValidator"
 import { ForceClosePositionValidator } from "./validators/ForceClosePositionValidator"
 
 type LoopAction = {
-	title: string;
-	action: () => Promise<void>;
-};
+	title: string
+	action: () => Promise<void>
+}
 
 export class TestManager {
 	users: Map<string, User> = new Map<string, User>()
 	hedgers: Map<string, Hedger> = new Map<string, Hedger>()
 	symbolManager: SymbolManager
-	private pause = new BehaviorSubject<boolean>(false)
-
-	private eventListener?: EventListener
-
 	actionsLoop = new Subject<LoopAction>()
-
 	validators: Map<Action, TransactionValidator> = new Map([
 		[Action.CANCEL_REQUEST, new CancelQuoteValidator()],
 		[Action.ACCEPT_CANCEL_REQUEST, new AcceptCancelRequestValidator()],
@@ -48,28 +43,30 @@ export class TestManager {
 		[Action.FILL_POSITION, new FillCloseRequestValidator()],
 		[Action.FORCE_CLOSE_REQUEST, new ForceClosePositionValidator()],
 	])
+	private pause = new BehaviorSubject<boolean>(false)
+	private eventListener?: EventListener
 
 	constructor(public context: RunContext, onlyInitialize: boolean) {
 		this.symbolManager = new SymbolManager()
 		if (!onlyInitialize) this.eventListener = new EventListener(context)
 		this.actionsLoop
-		  .pipe(
-			pause(this.pause),
-			concatMap(action => {
-				// console.log(action.title + "{");
-				return from(action.action())
-			}),
-		  )
-		  .subscribe({
-			  next: () => {
-				  // console.log("}");
-			  },
-			  error: error => {
-				  // console.log("}");
-				  logger.error("Error happened in the action loop")
-				  console.error(error)
-			  },
-		  })
+			.pipe(
+				pause(this.pause),
+				concatMap(action => {
+					// console.log(action.title + "{");
+					return from(action.action())
+				}),
+			)
+			.subscribe({
+				next: () => {
+					// console.log("}");
+				},
+				error: error => {
+					// console.log("}");
+					logger.error("Error happened in the action loop")
+					console.error(error)
+				},
+			})
 	}
 
 	public async start() {

@@ -30,10 +30,7 @@ export async function getQuoteQuantity(context: RunContext, quoteId: PromiseOrVa
 	return (await context.viewFacet.getQuote(quoteId)).quantity
 }
 
-export async function getQuoteMinLeftQuantityForClose(
-  context: RunContext,
-  quoteId: PromiseOrValue<BigNumberish>,
-) {
+export async function getQuoteMinLeftQuantityForClose(context: RunContext, quoteId: PromiseOrValue<BigNumberish>) {
 	const openAmount = await getQuoteOpenAmount(context, quoteId)
 	const totalLocked = await getTotalLockedValuesForQuoteIds(context, [quoteId])
 
@@ -43,10 +40,7 @@ export async function getQuoteMinLeftQuantityForClose(
 	return safeDiv(symbol.minAcceptableQuoteValue.mul(openAmount), totalLocked)
 }
 
-export async function getQuoteMinLeftQuantityForFill(
-  context: RunContext,
-  quoteId: PromiseOrValue<BigNumberish>,
-) {
+export async function getQuoteMinLeftQuantityForFill(context: RunContext, quoteId: PromiseOrValue<BigNumberish>) {
 	const openAmount = await getQuoteOpenAmount(context, quoteId)
 	const totalLocked = await getTotalLockedValuesForQuoteIds(context, [quoteId])
 
@@ -56,26 +50,20 @@ export async function getQuoteMinLeftQuantityForFill(
 	return safeDiv(symbol.minAcceptableQuoteValue.mul(openAmount), totalLocked)
 }
 
-export async function getQuoteOpenAmount(
-  context: RunContext,
-  quoteId: PromiseOrValue<BigNumberish>,
-) {
+export async function getQuoteOpenAmount(context: RunContext, quoteId: PromiseOrValue<BigNumberish>) {
 	const q = await context.viewFacet.getQuote(quoteId)
 	return q.quantity.sub(q.closedAmount)
 }
 
-export async function getQuoteNotFilledAmount(
-  context: RunContext,
-  quoteId: PromiseOrValue<BigNumberish>,
-) {
+export async function getQuoteNotFilledAmount(context: RunContext, quoteId: PromiseOrValue<BigNumberish>) {
 	const q = await context.viewFacet.getQuote(quoteId)
 	return q.quantityToClose.sub(q.closedAmount)
 }
 
 export async function getTotalPartyALockedValuesForQuotes(
-  quotes: QuoteStructOutput[],
-  includeMM: boolean = true,
-  returnAfterOpened: boolean = true,
+	quotes: QuoteStructOutput[],
+	includeMM: boolean = true,
+	returnAfterOpened: boolean = true,
 ): Promise<BigNumber> {
 	let out = BigNumber.from(0)
 	for (const q of quotes) {
@@ -83,8 +71,7 @@ export async function getTotalPartyALockedValuesForQuotes(
 		addition = q.lockedValues.cva.add(q.lockedValues.lf)
 		if (includeMM) addition = addition.add(q.lockedValues.partyAmm)
 		if (returnAfterOpened && q.orderType == OrderType.LIMIT) {
-			if (q.requestedOpenPrice.lt(q.openedPrice))
-				addition = addition.mul(q.openedPrice.div(q.requestedOpenPrice))
+			if (q.requestedOpenPrice.lt(q.openedPrice)) addition = addition.mul(q.openedPrice.div(q.requestedOpenPrice))
 		}
 		out = out.add(addition)
 	}
@@ -92,9 +79,9 @@ export async function getTotalPartyALockedValuesForQuotes(
 }
 
 export async function getTotalPartyBLockedValuesForQuotes(
-  quotes: QuoteStructOutput[],
-  includeMM: boolean = true,
-  returnAfterOpened: boolean = true,
+	quotes: QuoteStructOutput[],
+	includeMM: boolean = true,
+	returnAfterOpened: boolean = true,
 ): Promise<BigNumber> {
 	let out = BigNumber.from(0)
 	for (const q of quotes) {
@@ -102,8 +89,7 @@ export async function getTotalPartyBLockedValuesForQuotes(
 		addition = q.lockedValues.cva.add(q.lockedValues.lf)
 		if (includeMM) addition = addition.add(q.lockedValues.partyBmm)
 		if (returnAfterOpened && q.orderType == OrderType.LIMIT) {
-			if (q.requestedOpenPrice.lt(q.openedPrice))
-				addition = addition.mul(q.openedPrice.div(q.requestedOpenPrice))
+			if (q.requestedOpenPrice.lt(q.openedPrice)) addition = addition.mul(q.openedPrice.div(q.requestedOpenPrice))
 		}
 		out = out.add(addition)
 	}
@@ -111,26 +97,22 @@ export async function getTotalPartyBLockedValuesForQuotes(
 }
 
 export async function getTotalLockedValuesForQuoteIds(
-  context: RunContext,
-  quoteIds: PromiseOrValue<BigNumberish>[],
-  includeMM: boolean = true,
-  returnAfterOpened: boolean = true,
+	context: RunContext,
+	quoteIds: PromiseOrValue<BigNumberish>[],
+	includeMM: boolean = true,
+	returnAfterOpened: boolean = true,
 ): Promise<BigNumber> {
 	let quotes = []
 	for (const quoteId of quoteIds) quotes.push(await context.viewFacet.getQuote(quoteId))
 	return getTotalPartyALockedValuesForQuotes(quotes, includeMM, returnAfterOpened)
 }
 
-export async function getTradingFeeForQuotes(
-  context: RunContext,
-  quoteIds: PromiseOrValue<BigNumberish>[],
-): Promise<BigNumber> {
+export async function getTradingFeeForQuotes(context: RunContext, quoteIds: PromiseOrValue<BigNumberish>[]): Promise<BigNumber> {
 	let out = BigNumber.from(0)
 	for (const quoteId of quoteIds) {
 		let q = await context.viewFacet.getQuote(quoteId)
 		let tf = (await context.viewFacet.getSymbol(q.symbolId)).tradingFee
-		if (q.orderType == OrderType.LIMIT)
-			out = out.add(unDecimal(q.quantity.mul(q.requestedOpenPrice).mul(tf), 36))
+		if (q.orderType == OrderType.LIMIT) out = out.add(unDecimal(q.quantity.mul(q.requestedOpenPrice).mul(tf), 36))
 		else out = out.add(unDecimal(q.quantity.mul(q.marketPrice).mul(tf), 36))
 	}
 	return out
@@ -174,19 +156,14 @@ export function serializeToJson(object: any) {
 	return defaultSerializer.serialize(object)
 }
 
-export async function checkStatus(
-  context: RunContext,
-  quoteId: BigNumberish,
-  quoteStatus: QuoteStatus,
-) {
+export async function checkStatus(context: RunContext, quoteId: BigNumberish, quoteStatus: QuoteStatus) {
 	return (await context.viewFacet.getQuote(quoteId)).quoteStatus == quoteStatus
 }
 
 export function getPriceFetcher(symbolIds: BigNumberish[], prices: BigNumber[]) {
 	return async (symbolId: BigNumber) => {
 		for (let i = 0; i < symbolIds.length; i++) {
-			if (symbolIds[i] == symbolId)
-				return prices[i]
+			if (symbolIds[i] == symbolId) return prices[i]
 		}
 		throw new Error("Invalid price requested")
 	}

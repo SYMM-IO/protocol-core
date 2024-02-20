@@ -17,8 +17,7 @@ import { runTx } from "../utils/TxUtils"
 import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
 
 export class Hedger {
-	constructor(private context: RunContext, private signer: SignerWithAddress) {
-	}
+	constructor(private context: RunContext, private signer: SignerWithAddress) {}
 
 	public async setup() {
 		await this.context.manager.registerHedger(this)
@@ -27,12 +26,9 @@ export class Hedger {
 	public async setBalances(collateralAmount?: BigNumberish, depositAmount?: BigNumberish) {
 		const userAddress = this.signer.getAddress()
 
-		await runTx(this.context.collateral
-		  .connect(this.signer)
-		  .approve(this.context.diamond, ethers.constants.MaxUint256))
+		await runTx(this.context.collateral.connect(this.signer).approve(this.context.diamond, ethers.constants.MaxUint256))
 
-		if (collateralAmount)
-			await runTx(this.context.collateral.connect(this.signer).mint(userAddress, collateralAmount))
+		if (collateralAmount) await runTx(this.context.collateral.connect(this.signer).mint(userAddress, collateralAmount))
 		if (depositAmount) await runTx(this.context.accountFacet.connect(this.signer).deposit(depositAmount))
 	}
 
@@ -41,29 +37,18 @@ export class Hedger {
 	}
 
 	public async register() {
-		await runTx(this.context.controlFacet
-		  .connect(this.context.signers.admin)
-		  .registerPartyB(this.signer.getAddress()))
+		await runTx(this.context.controlFacet.connect(this.context.signers.admin).registerPartyB(this.signer.getAddress()))
 	}
 
-	public async lockQuote(
-	  id: PromiseOrValue<BigNumberish>,
-	  upnl: BigNumberish = 0,
-	  allocateCoefficient: BigNumber | null = decimal(12, 17),
-	) {
+	public async lockQuote(id: PromiseOrValue<BigNumberish>, upnl: BigNumberish = 0, allocateCoefficient: BigNumber | null = decimal(12, 17)) {
 		if (allocateCoefficient != null) {
 			const quote = await this.context.viewFacet.getQuote(id)
 			const notional = unDecimal(quote.quantity.mul(quote.requestedOpenPrice))
-			await runTx(this.context.accountFacet
-			  .connect(this.signer)
-			  .allocateForPartyB(
-				unDecimal(notional.mul(BigNumber.from(allocateCoefficient))),
-				quote.partyA,
-			  ))
+			await runTx(
+				this.context.accountFacet.connect(this.signer).allocateForPartyB(unDecimal(notional.mul(BigNumber.from(allocateCoefficient))), quote.partyA),
+			)
 		}
-		await runTx(this.context.partyBFacet
-		  .connect(this.signer)
-		  .lockQuote(id, await getDummySingleUpnlSig(upnl)))
+		await runTx(this.context.partyBFacet.connect(this.signer).lockQuote(id, await getDummySingleUpnlSig(upnl)))
 
 		logger.info(`Hedger::LockQuote: ${id}`)
 	}
@@ -73,29 +58,28 @@ export class Hedger {
 		logger.info(`Hedger::UnLockQuote: ${id}`)
 	}
 
-	public async openPosition(
-	  id: PromiseOrValue<BigNumberish>,
-	  request: OpenRequest = limitOpenRequestBuilder().build(),
-	) {
+	public async openPosition(id: PromiseOrValue<BigNumberish>, request: OpenRequest = limitOpenRequestBuilder().build()) {
 		const quote = await this.context.viewFacet.getQuote(id)
 		const user = this.context.manager.getUser(quote.partyA)
 		logger.detailedDebug(
-		  serializeToJson({
-			  request: request,
-			  hedgerBalanceInfo: await this.getBalanceInfo(quote.partyA),
-			  hedgerUpnl: await this.getUpnl(quote.partyA),
-			  userBalanceInfo: await user.getBalanceInfo(),
-			  userUpnl: await user.getUpnl(),
-		  }),
+			serializeToJson({
+				request: request,
+				hedgerBalanceInfo: await this.getBalanceInfo(quote.partyA),
+				hedgerUpnl: await this.getUpnl(quote.partyA),
+				userBalanceInfo: await user.getBalanceInfo(),
+				userUpnl: await user.getUpnl(),
+			}),
 		)
-		await runTx(this.context.partyBFacet
-		  .connect(this.signer)
-		  .openPosition(
-			id,
-			request.filledAmount,
-			request.openPrice,
-			await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
-		  ))
+		await runTx(
+			this.context.partyBFacet
+				.connect(this.signer)
+				.openPosition(
+					id,
+					request.filledAmount,
+					request.openPrice,
+					await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
+				),
+		)
 		logger.info(`Hedger::OpenPosition: ${id}`)
 	}
 
@@ -123,29 +107,28 @@ export class Hedger {
 		logger.info(`Hedger::AcceptCancelRequest: ${id}`)
 	}
 
-	public async fillCloseRequest(
-	  id: PromiseOrValue<BigNumberish>,
-	  request: FillCloseRequest = limitFillCloseRequestBuilder().build(),
-	) {
+	public async fillCloseRequest(id: PromiseOrValue<BigNumberish>, request: FillCloseRequest = limitFillCloseRequestBuilder().build()) {
 		const quote = await this.context.viewFacet.getQuote(id)
 		const user = this.context.manager.getUser(quote.partyA)
 		logger.detailedDebug(
-		  serializeToJson({
-			  request: request,
-			  hedgerBalanceInfo: await this.getBalanceInfo(quote.partyA),
-			  hedgerUpnl: await this.getUpnl(quote.partyA),
-			  userBalanceInfo: await user.getBalanceInfo(),
-			  userUpnl: await user.getUpnl(),
-		  }),
+			serializeToJson({
+				request: request,
+				hedgerBalanceInfo: await this.getBalanceInfo(quote.partyA),
+				hedgerUpnl: await this.getUpnl(quote.partyA),
+				userBalanceInfo: await user.getBalanceInfo(),
+				userUpnl: await user.getUpnl(),
+			}),
 		)
-		await runTx(this.context.partyBFacet
-		  .connect(this.signer)
-		  .fillCloseRequest(
-			id,
-			request.filledAmount,
-			request.closedPrice,
-			await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
-		  ))
+		await runTx(
+			this.context.partyBFacet
+				.connect(this.signer)
+				.fillCloseRequest(
+					id,
+					request.filledAmount,
+					request.closedPrice,
+					await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
+				),
+		)
 		logger.info(`Hedger::FillCloseRequest: ${id}`)
 	}
 
@@ -159,27 +142,23 @@ export class Hedger {
 		logger.info(`Hedger::AcceptCancelCloseRequest: ${id}`)
 	}
 
-	public async emergencyClosePosition(
-	  id: PromiseOrValue<BigNumberish>,
-	  request: EmergencyCloseRequest = emergencyCloseRequestBuilder().build(),
-	) {
+	public async emergencyClosePosition(id: PromiseOrValue<BigNumberish>, request: EmergencyCloseRequest = emergencyCloseRequestBuilder().build()) {
 		const quote = await this.context.viewFacet.getQuote(id)
 		const user = this.context.manager.getUser(quote.partyA)
 		logger.detailedDebug(
-		  serializeToJson({
-			  request: request,
-			  hedgerBalanceInfo: await this.getBalanceInfo(quote.partyA),
-			  hedgerUpnl: await this.getUpnl(quote.partyA),
-			  userBalanceInfo: await user.getBalanceInfo(),
-			  userUpnl: await user.getUpnl(),
-		  }),
+			serializeToJson({
+				request: request,
+				hedgerBalanceInfo: await this.getBalanceInfo(quote.partyA),
+				hedgerUpnl: await this.getUpnl(quote.partyA),
+				userBalanceInfo: await user.getBalanceInfo(),
+				userUpnl: await user.getUpnl(),
+			}),
 		)
-		await runTx(this.context.partyBFacet
-		  .connect(this.signer)
-		  .emergencyClosePosition(
-			id,
-			await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB),
-		  ))
+		await runTx(
+			this.context.partyBFacet
+				.connect(this.signer)
+				.emergencyClosePosition(id, await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB)),
+		)
 		logger.info(`Hedger::EmergencyClosePosition: ${id}`)
 	}
 
@@ -192,43 +171,33 @@ export class Hedger {
 		const pageSize = 30
 		let last = 0
 		while (true) {
-			let page = await this.context.viewFacet.getPartyBOpenPositions(
-			  this.getAddress(),
-			  partyA,
-			  last,
-			  pageSize,
-			)
+			let page = await this.context.viewFacet.getPartyBOpenPositions(this.getAddress(), partyA, last, pageSize)
 			openPositions.push(...page)
 			if (page.length < pageSize) break
 		}
 
 		let upnl = BigNumber.from(0)
 		for (const pos of openPositions) {
-			const priceDiff = pos.openedPrice.sub(
-			  await getPrice((await this.context.viewFacet.getSymbol(pos.symbolId)).name),
-			)
+			const priceDiff = pos.openedPrice.sub(await getPrice((await this.context.viewFacet.getSymbol(pos.symbolId)).name))
 			const amount = pos.quantity.sub(pos.closedAmount)
-			upnl.add(
-			  unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? -1 : 1),
-			)
+			upnl.add(unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? -1 : 1))
 		}
 		return upnl
 	}
 }
 
 export interface BalanceInfo {
-	allocatedBalances: BigNumber;
-	lockedCva: BigNumber;
-	lockedMmPartyA: BigNumber;
-	lockedMmPartyB: BigNumber;
-	lockedLf: BigNumber;
-	totalLockedPartyA: BigNumber;
-	totalLockedPartyB: BigNumber;
-	pendingLockedCva: BigNumber;
-	pendingLockedMmPartyA: BigNumber;
-	pendingLockedMmPartyB: BigNumber;
-	pendingLockedLf: BigNumber;
-	totalPendingLockedPartyA: BigNumber;
-	totalPendingLockedPartyB: BigNumber;
+	allocatedBalances: BigNumber
+	lockedCva: BigNumber
+	lockedMmPartyA: BigNumber
+	lockedMmPartyB: BigNumber
+	lockedLf: BigNumber
+	totalLockedPartyA: BigNumber
+	totalLockedPartyB: BigNumber
+	pendingLockedCva: BigNumber
+	pendingLockedMmPartyA: BigNumber
+	pendingLockedMmPartyB: BigNumber
+	pendingLockedLf: BigNumber
+	totalPendingLockedPartyA: BigNumber
+	totalPendingLockedPartyB: BigNumber
 }
-

@@ -1,14 +1,8 @@
 import { BigNumber, BigNumberish } from "ethers"
 
-import {
-	HighLowPriceSigStruct,
-	SingleUpnlAndPriceSigStruct,
-} from "../../src/types/contracts/facets/PartyA/PartyAFacet"
+import { HighLowPriceSigStruct, SingleUpnlAndPriceSigStruct } from "../../src/types/contracts/facets/PartyA/PartyAFacet"
 import { PairUpnlAndPriceSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/facets/PartyB/PartyBFacet"
-import {
-	LiquidationSigStruct,
-	QuotePriceSigStruct,
-} from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
+import { LiquidationSigStruct, QuotePriceSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
 import { getBlockTimestamp } from "./Common"
 import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
 
@@ -27,11 +21,12 @@ export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<Sin
 }
 
 export async function getDummyLiquidationSig(
-  liquidationId: string,
-  upnl: BigNumberish = 0,
-  symbolIds: BigNumberish[],
-  prices: BigNumberish[],
-  totalUnrealizedLoss: BigNumberish): Promise<LiquidationSigStruct> {
+	liquidationId: string,
+	upnl: BigNumberish = 0,
+	symbolIds: BigNumberish[],
+	prices: BigNumberish[],
+	totalUnrealizedLoss: BigNumberish,
+): Promise<LiquidationSigStruct> {
 	return {
 		reqId: "0x",
 		timestamp: getBlockTimestamp(),
@@ -49,10 +44,7 @@ export async function getDummyLiquidationSig(
 	}
 }
 
-export async function getDummySingleUpnlAndPriceSig(
-  price: BigNumberish = 1,
-  upnl: BigNumberish = 0,
-): Promise<SingleUpnlAndPriceSigStruct> {
+export async function getDummySingleUpnlAndPriceSig(price: BigNumberish = 1, upnl: BigNumberish = 0): Promise<SingleUpnlAndPriceSigStruct> {
 	return {
 		reqId: "0x",
 		timestamp: await getBlockTimestamp(),
@@ -68,9 +60,9 @@ export async function getDummySingleUpnlAndPriceSig(
 }
 
 export async function getDummyPairUpnlAndPriceSig(
-  price: BigNumberish = 1,
-  upnlPartyA: BigNumberish = 0,
-  upnlPartyB: BigNumberish = 0,
+	price: BigNumberish = 1,
+	upnlPartyA: BigNumberish = 0,
+	upnlPartyB: BigNumberish = 0,
 ): Promise<PairUpnlAndPriceSigStruct> {
 	return {
 		reqId: "0x",
@@ -88,8 +80,8 @@ export async function getDummyPairUpnlAndPriceSig(
 }
 
 export async function getDummyPairUpnlSig(
-  upnlPartyA: BigNumber = BigNumber.from(0),
-  upnlPartyB: BigNumber = BigNumber.from(0),
+	upnlPartyA: BigNumber = BigNumber.from(0),
+	upnlPartyB: BigNumber = BigNumber.from(0),
 ): Promise<PairUpnlSigStructOutput> {
 	return {
 		reqId: "0x",
@@ -106,15 +98,15 @@ export async function getDummyPairUpnlSig(
 }
 
 export async function getDummyHighLowPriceSig(
-  startTime: BigNumberish = 0,
-  endTime: BigNumberish = 0,
-  lowest: BigNumberish = 0,
-  highest: BigNumberish = 0,
-  currentPrice: BigNumberish = 0,
-  averagePrice: BigNumberish = 0,
-  symbolId: BigNumberish = 0,
-  upnlPartyB: BigNumberish = 0,
-  upnlPartyA: BigNumberish = 0,
+	startTime: BigNumberish = 0,
+	endTime: BigNumberish = 0,
+	lowest: BigNumberish = 0,
+	highest: BigNumberish = 0,
+	currentPrice: BigNumberish = 0,
+	averagePrice: BigNumberish = 0,
+	symbolId: BigNumberish = 0,
+	upnlPartyB: BigNumberish = 0,
+	upnlPartyA: BigNumberish = 0,
 ): Promise<HighLowPriceSigStruct> {
 	return {
 		reqId: "0x",
@@ -137,10 +129,7 @@ export async function getDummyHighLowPriceSig(
 	}
 }
 
-export async function getDummyPriceSig(
-  quoteIds: BigNumberish[] = [],
-  prices: BigNumberish[] = [],
-): Promise<QuotePriceSigStruct> {
+export async function getDummyPriceSig(quoteIds: BigNumberish[] = [], prices: BigNumberish[] = []): Promise<QuotePriceSigStruct> {
 	return {
 		reqId: "0x",
 		timestamp: await getBlockTimestamp(),

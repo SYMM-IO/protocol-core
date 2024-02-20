@@ -14,11 +14,6 @@ export function randomBigNumber(max: BigNumber, min?: BigNumber): BigNumber {
 
 export function randomBigNumberRatio(value: BigNumber, max: number, min?: number): BigNumber {
 	return unDecimal(
-	  value.mul(
-		randomBigNumber(
-		  decimal(Number(max.toFixed(4)) * 10000, 14),
-		  min != null ? decimal(Number(min.toFixed(4)) * 10000, 14) : undefined,
-		),
-	  ),
+		value.mul(randomBigNumber(decimal(Number(max.toFixed(4)) * 10000, 14), min != null ? decimal(Number(min.toFixed(4)) * 10000, 14) : undefined)),
 	)
 }
