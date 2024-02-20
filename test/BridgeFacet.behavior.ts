@@ -8,6 +8,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { TransferToBridgeValidator } from "./models/validators/TransferToBridgeValidator"
 import { decimal } from "./utils/Common"
 import { WithdrawLockedTransactionValidator } from "./models/validators/WithdrawLockedTransactionValidator"
+import { BridgeTransactionStatus } from "./models/Enums"
 
 export function shouldBehaveLikeBridgeFacet(): void {
 	let context: RunContext, user: User
@@ -19,7 +20,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 		bridge2 = context.signers.bridge2 // not whitelist
 		user = new User(context, context.signers.user)
 		await user.setup()
-		await user.setBalances(decimal(500), decimal(500), decimal(100))
+		await user.setBalances(decimal(5000), decimal(5000), decimal(1000))
 
 		await context.controlFacet.addBridge(await bridge.getAddress())
 	})
@@ -31,7 +32,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 	})
 
 	it("Should fail when amount is more than user balance", async function () {
-		await expect(context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(700), await bridge.getAddress())).to.be.reverted
+		await expect(context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(7000), await bridge.getAddress())).to.be.reverted
 	})
 
 	it("Should fail when bridge and user are same", async function () {
@@ -88,7 +89,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 			)
 		})
 
-		it("Should withdraw successfully", async function () {
+		it("Should single withdraw successfully", async function () {
 			await time.increase(43250) //12h
 			const validator = new WithdrawLockedTransactionValidator()
 			const beforeOut = await validator.before(context, {
@@ -102,6 +103,16 @@ export function shouldBehaveLikeBridgeFacet(): void {
 				transactionId: BigNumber.from(3),
 				beforeOutput: beforeOut,
 			})
+		})
+
+		it("Should withdraw Received Bridge Values successfully", async function () {
+			await context.controlFacet.addBridge(await bridge.getAddress())
+			await time.increase(43250) //12h
+			await context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValues([1,3])
+
+			expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.equal(BridgeTransactionStatus.WITHDRAWN)
+			expect((await context.viewFacet.getBridgeTransaction(3)).status).to.equal(BridgeTransactionStatus.WITHDRAWN)
+
 		})
 	})
 }
