@@ -22,20 +22,18 @@ library BridgeFacetImpl {
         require(bridgeLayout.bridges[bridge], "BridgeFacet: Invalid bridge");
         require(bridge != user, "BridgeFacet: Bridge and user can't be the same");
 
-        uint256 decimal = (1e18 - (10 ** IERC20Metadata(appLayout.collateral).decimals()));
-        uint256 amountWith18Decimals = (decimal == 0 ? 1 : decimal) * amount;
+        uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
         uint256 currentId = ++bridgeLayout.lastId;
 
         BridgeTransaction memory bridgeTransaction = BridgeTransaction({
             id: currentId,
-            amount: amountWith18Decimals,
+            amount: amount,
             user: user,
             bridge: bridge,
             timestamp: block.timestamp,
             status: BridgeTransactionStatus.RECEIVED
         });
         AccountStorage.layout().balances[user] -= amountWith18Decimals;
-
         bridgeLayout.bridgeTransactions[currentId] = bridgeTransaction;
     }
 
@@ -51,5 +49,25 @@ library BridgeFacetImpl {
 
         bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
         IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
+    }
+
+    function withdrawReceivedBridgeValues(uint256[] memory transactionIds) internal {
+        GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+        BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+
+        uint256 totalAmount = 0;
+
+        for (uint256 i = transactionIds.length -1 ; i > 0; i--) {
+            BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i]];
+
+            require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
+            require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
+            require(bridgeTransaction.bridge == msg.sender, "BridgeFacet: Sender is not the transaction's bridge");
+
+            totalAmount += bridgeTransaction.amount;
+            bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
+        }
+
+        IERC20(appLayout.collateral).safeTransfer(msg.sender, totalAmount);
     }
 }
