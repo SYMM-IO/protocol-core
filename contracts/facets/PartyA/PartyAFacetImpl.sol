@@ -150,7 +150,8 @@ library PartyAFacetImpl {
         uint256 deadline
     ) internal {
         SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
 
         require(quote.quoteStatus == QuoteStatus.OPENED, "PartyAFacet: Invalid state");
         require(deadline >= block.timestamp, "PartyAFacet: Low deadline");
@@ -168,7 +169,7 @@ library PartyAFacetImpl {
                 "PartyAFacet: Remaining quote value is low"
             );
         }
-
+        quoteLayout.closeIds[quoteId] = ++quoteLayout.lastCloseId;
         quote.statusModifyTimestamp = block.timestamp;
         quote.quoteStatus = QuoteStatus.CLOSE_PENDING;
         quote.requestedClosePrice = closePrice;
