@@ -128,9 +128,10 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
         uint256 quoteId,
         PairUpnlAndPriceSig memory upnlSig
     ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) whenEmergencyMode(msg.sender) notLiquidated(quoteId) {
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
         uint256 filledAmount = LibQuote.quoteOpenAmount(quote);
         PartyBFacetImpl.emergencyClosePosition(quoteId, upnlSig);
-        emit EmergencyClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, upnlSig.price, quote.quoteStatus);
+        emit EmergencyClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, upnlSig.price, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
     }
 }
