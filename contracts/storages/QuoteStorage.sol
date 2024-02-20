@@ -78,6 +78,8 @@ library QuoteStorage {
         mapping(address => mapping(address => uint256[])) partyBOpenPositions;
         mapping(uint256 => uint256) partyBPositionsIndex;
         uint256 lastId;
+        uint256 lastCloseId;
+        mapping(uint256 => uint256) closeIds;
     }
 
     function layout() internal pure returns (Layout storage l) {

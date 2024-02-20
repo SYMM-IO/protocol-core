@@ -6,17 +6,14 @@ pragma solidity >=0.8.18;
 import "./PartyBFacetImpl.sol";
 import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
-import "./IPartyBEvents.sol";
+import "./IPartyBFacet.sol";
 import "../../storages/MuonStorage.sol";
 import "../Account/AccountFacetImpl.sol";
 
-contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
+contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
     using LockedValuesOps for LockedValues;
 
-    function lockQuote(
-        uint256 quoteId,
-        SingleUpnlSig memory upnlSig
-    ) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
+    function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, true);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         emit LockQuote(quote.partyB, quoteId);
@@ -32,19 +29,8 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         PartyBFacetImpl.lockQuote(quoteId, upnlSig, false);
         emit LockQuote(quote.partyB, quoteId);
-        uint256 newId = PartyBFacetImpl.openPosition(
-            quoteId,
-            filledAmount,
-            openedPrice,
-            pairUpnlSig
-        );
-        emit OpenPosition(
-            quoteId,
-            quote.partyA,
-            quote.partyB,
-            filledAmount,
-            openedPrice
-        );
+        uint256 newId = PartyBFacetImpl.openPosition(quoteId, filledAmount, openedPrice, pairUpnlSig);
+        emit OpenPosition(quoteId, quote.partyA, quote.partyB, filledAmount, openedPrice);
         if (newId != 0) {
             Quote storage newQuote = QuoteStorage.layout().quotes[newId];
             if (newQuote.quoteStatus == QuoteStatus.PENDING) {
@@ -71,21 +57,17 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
         }
     }
 
-    function unlockQuote(
-        uint256 quoteId
-    ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
+    function unlockQuote(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
         QuoteStatus res = PartyBFacetImpl.unlockQuote(quoteId);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
         if (res == QuoteStatus.EXPIRED) {
-            emit ExpireQuote(res, quoteId);
+            emit ExpireQuote(res, quoteId, 0);
         } else if (res == QuoteStatus.PENDING) {
             emit UnlockQuote(quote.partyB, quoteId, QuoteStatus.PENDING);
         }
     }
 
-    function acceptCancelRequest(
-        uint256 quoteId
-    ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
+    function acceptCancelRequest(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
         PartyBFacetImpl.acceptCancelRequest(quoteId);
         emit AcceptCancelRequest(quoteId, QuoteStatus.CANCELED);
     }
@@ -98,13 +80,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
     ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
         uint256 newId = PartyBFacetImpl.openPosition(quoteId, filledAmount, openedPrice, upnlSig);
         Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit OpenPosition(
-            quoteId,
-            quote.partyA,
-            quote.partyB,
-            filledAmount,
-            openedPrice
-        );
+        emit OpenPosition(quoteId, quote.partyA, quote.partyB, filledAmount, openedPrice);
         if (newId != 0) {
             Quote storage newQuote = QuoteStorage.layout().quotes[newId];
             if (newQuote.quoteStatus == QuoteStatus.PENDING) {
@@ -137,45 +113,25 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBEvents {
         uint256 closedPrice,
         PairUpnlAndPriceSig memory upnlSig
     ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
         PartyBFacetImpl.fillCloseRequest(quoteId, filledAmount, closedPrice, upnlSig);
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-        emit FillCloseRequest(
-            quoteId,
-            quote.partyA,
-            quote.partyB,
-            filledAmount,
-            closedPrice,
-            quote.quoteStatus
-        );
+        emit FillCloseRequest(quoteId, quote.partyA, quote.partyB, filledAmount, closedPrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
     }
 
-    function acceptCancelCloseRequest(
-        uint256 quoteId
-    ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
+    function acceptCancelCloseRequest(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
         PartyBFacetImpl.acceptCancelCloseRequest(quoteId);
-        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED);
+        emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
     }
 
     function emergencyClosePosition(
         uint256 quoteId,
         PairUpnlAndPriceSig memory upnlSig
-    )
-        external
-        whenNotPartyBActionsPaused
-        onlyPartyBOfQuote(quoteId)
-        whenEmergencyMode(msg.sender)
-        notLiquidated(quoteId)
-    {
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+    ) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) whenEmergencyMode(msg.sender) notLiquidated(quoteId) {
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
         uint256 filledAmount = LibQuote.quoteOpenAmount(quote);
         PartyBFacetImpl.emergencyClosePosition(quoteId, upnlSig);
-        emit EmergencyClosePosition(
-            quoteId,
-            quote.partyA,
-            quote.partyB,
-            filledAmount,
-            upnlSig.price,
-            quote.quoteStatus
-        );
+        emit EmergencyClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, upnlSig.price, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
     }
 }

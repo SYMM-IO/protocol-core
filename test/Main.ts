@@ -9,6 +9,7 @@ import { shouldBehaveLikeCancelQuote } from "./CancelQuote.behavior"
 import { shouldBehaveLikeLiquidationFacet } from "./LiquidationFacet.behavior"
 import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior"
 import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
+import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
 
 describe("UnitTests", function() {
 	if (process.env.TEST_MODE == "static") {
@@ -50,6 +51,10 @@ describe("UnitTests", function() {
 
 		describe("SpecificScenario", async function() {
 			shouldBehaveLikeSpecificScenario()
+		})
+		
+		describe("BridgeFacet", async function() {
+			shouldBehaveLikeBridgeFacet()
 		})
 	} else if (process.env.TEST_MODE == "fuzz") {
 		describe("FuzzTest", async function() {

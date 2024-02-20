@@ -286,7 +286,8 @@ library PartyBFacetImpl {
     }
 
     function acceptCancelCloseRequest(uint256 quoteId) internal {
-        Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote storage quote = quoteLayout.quotes[quoteId];
 
         require(
             quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
