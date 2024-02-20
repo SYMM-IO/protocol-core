@@ -1,6 +1,4 @@
 import { Builder } from "builder-pattern"
-// @ts-ignore
-import { time } from "@nomicfoundation/hardhat-network-helpers"
 import { concatMap, filter, from } from "rxjs"
 
 import { checkStatus, decimal, getBlockTimestamp, getQuoteMinLeftQuantityForClose, getSymbols, min, unDecimal } from "../utils/Common"
@@ -23,6 +21,7 @@ import { CancelCloseRequestValidator, CancelCloseRequestValidatorBeforeOutput } 
 import { CancelQuoteValidator, CancelQuoteValidatorBeforeOutput } from "./validators/CancelQuoteValidator"
 import { CloseRequestValidator, CloseRequestValidatorBeforeOutput } from "./validators/CloseRequestValidator"
 import { BigNumber } from "ethers"
+import { QuoteCheckpoint } from "./quoteCheckpoint"
 
 export class UserController {
 	private context: RunContext

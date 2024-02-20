@@ -10,26 +10,22 @@ async function main() {
 	// Deploy SymmioPartyB as upgradeable
 	const SymmioPartyBFactory = await ethers.getContractFactory("SymmioPartyB")
 	const admin = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-	const symmioPartyB = await upgrades.deployProxy(SymmioPartyBFactory, [
-		admin, deployedAddresses.symmioAddress,
-	], { initializer: "initialize" })
+	const symmioPartyB = await upgrades.deployProxy(SymmioPartyBFactory, [admin, deployedAddresses.symmioAddress], { initializer: "initialize" })
 	await symmioPartyB.deployed()
 
 	const addresses = {
 		proxy: symmioPartyB.address,
 		admin: await upgrades.erc1967.getAdminAddress(symmioPartyB.address),
-		implementation: await upgrades.erc1967.getImplementationAddress(
-		  symmioPartyB.address,
-		),
+		implementation: await upgrades.erc1967.getImplementationAddress(symmioPartyB.address),
 	}
 	console.log(addresses)
 
-	deployedAddresses.hedgerProxyAddress = symmioPartyB.address
+	deployedAddresses.partyBAddress = symmioPartyB.address
 	saveAddresses(deployedAddresses)
 
 	try {
 		console.log("Verifying contract...")
-		await new Promise((r) => setTimeout(r, 15000))
+		await new Promise(r => setTimeout(r, 15000))
 		await run("verify:verify", { address: addresses.implementation })
 		console.log("Contract verified!")
 	} catch (e) {
@@ -38,8 +34,8 @@ async function main() {
 }
 
 main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-	  console.error(error)
-	  process.exit(1)
-  })
+	.then(() => process.exit(0))
+	.catch(error => {
+		console.error(error)
+		process.exit(1)
+	})
