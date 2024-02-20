@@ -5,34 +5,10 @@
 pragma solidity >=0.8.18;
 
 import "../../storages/QuoteStorage.sol";
+import "../../interfaces/IPartiesEvents.sol";
 
-interface IPartyAEvents {
-    event SendQuote(
-        address partyA,
-        uint256 quoteId,
-        address[] partyBsWhiteList,
-        uint256 symbolId,
-        PositionType positionType,
-        OrderType orderType,
-        uint256 price,
-        uint256 marketPrice,
-        uint256 quantity,
-        uint256 cva,
-        uint256 lf,
-        uint256 partyAmm,
-        uint256 partyBmm,
-        uint256 tradingFee,
-        uint256 deadline
-    );
-
-    event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId);
-    event RequestToCancelQuote(
-        address partyA,
-        address partyB,
-        QuoteStatus quoteStatus,
-        uint256 quoteId
-    );
-
+interface IPartyAEvents is IPartiesEvents{
+    event RequestToCancelQuote(address partyA, address partyB, QuoteStatus quoteStatus, uint256 quoteId);
     event RequestToClosePosition(
         address partyA,
         address partyB,
@@ -41,34 +17,11 @@ interface IPartyAEvents {
         uint256 quantityToClose,
         OrderType orderType,
         uint256 deadline,
-        QuoteStatus quoteStatus
+        QuoteStatus quoteStatus,
+        uint256 closeId
     );
-
-    event RequestToCancelCloseRequest(
-        address partyA,
-        address partyB,
-        uint256 quoteId,
-        QuoteStatus quoteStatus
-    );
-
+    event RequestToCancelCloseRequest(address partyA, address partyB, uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
     event ForceCancelQuote(uint256 quoteId, QuoteStatus quoteStatus);
-
     event ForceCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus);
-
-    event ForceClosePosition(
-        uint256 quoteId,
-        address partyA,
-        address partyB,
-        uint256 filledAmount,
-        uint256 closedPrice,
-        QuoteStatus quoteStatus
-    );
-
-    event LiquidatePartyB(
-        address liquidator,
-        address partyB,
-        address partyA,
-        uint256 partyBAllocatedBalance,
-        int256 upnl
-    );
+    event ForceClosePosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus, uint256 closeId);
 }

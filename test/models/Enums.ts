@@ -51,3 +51,15 @@ export enum LiquidationType {
 	LATE,
 	OVERDUE
 }
+
+export enum BridgeTransactionStatus{
+    RECEIVED,
+    WITHDRAWN
+}
+
+export enum BridgeStatus{
+    NOT_WHITELIST,
+    WHITELIST,
+    SUSPEND,
+    REMOVE
+}

@@ -7,7 +7,7 @@ pragma solidity >=0.8.18;
 /******************************************************************************/
 
 import { LibDiamond } from "./libraries/LibDiamond.sol";
-import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
+import { IDiamondCut } from "./facets/DiamondCut/IDiamondCut.sol";
 
 contract Diamond {
     receive() external payable {}
