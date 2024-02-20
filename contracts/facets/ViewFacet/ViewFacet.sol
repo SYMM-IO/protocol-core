@@ -28,9 +28,9 @@ contract ViewFacet is IViewFacet {
     function partyAStats(
         address partyA
     )
-        external
-        view
-        returns (bool, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256)
+    external
+    view
+    returns (bool, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256)
     {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
         MAStorage.Layout storage maLayout = MAStorage.layout();
@@ -267,6 +267,34 @@ contract ViewFacet is IViewFacet {
         return quotes;
     }
 
+    function getOpenPositionsFilteredByPartyB(address partyB, uint256 start, uint256 size) external view returns (Quote[] memory) {
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote[] memory quotes = new Quote[](size);
+        uint j = 0;
+        for (uint256 i = start; i < start + size; i++) {
+            Quote memory quote = quoteLayout.quotes[i];
+            if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.OPENED || quote.quoteStatus == QuoteStatus.CLOSE_PENDING || quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING)) {
+                quotes[j] = quote;
+                j += 1;
+            }
+        }
+        return quotes;
+    }
+
+    function getActivePositionsFilteredByPartyB(address partyB, uint256 start, uint256 size) external view returns (Quote[] memory) {
+        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+        Quote[] memory quotes = new Quote[](size);
+        uint j = 0;
+        for (uint256 i = start; i < start + size; i++) {
+            Quote memory quote = quoteLayout.quotes[i];
+            if (quote.partyB == partyB && quote.quoteStatus != QuoteStatus.CANCELED && quote.quoteStatus != QuoteStatus.CLOSED && quote.quoteStatus != QuoteStatus.EXPIRED && quote.quoteStatus != QuoteStatus.LIQUIDATED) {
+                quotes[j] = quote;
+                j += 1;
+            }
+        }
+        return quotes;
+    }
+
     function partyBPositionsCount(address partyB, address partyA) external view returns (uint256) {
         return QuoteStorage.layout().partyBPositionsCount[partyB][partyA];
     }
@@ -366,16 +394,16 @@ contract ViewFacet is IViewFacet {
     }
 
     function pauseState()
-        external
-        view
-        returns (
-            bool globalPaused,
-            bool liquidationPaused,
-            bool accountingPaused,
-            bool partyBActionsPaused,
-            bool partyAActionsPaused,
-            bool emergencyMode
-        )
+    external
+    view
+    returns (
+        bool globalPaused,
+        bool liquidationPaused,
+        bool accountingPaused,
+        bool partyBActionsPaused,
+        bool partyAActionsPaused,
+        bool emergencyMode
+    )
     {
         GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
         return (
