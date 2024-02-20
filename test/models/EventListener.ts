@@ -71,8 +71,8 @@ export class EventListener {
 	])
 
 	constructor(public context: RunContext) {
-		(context.partyAFacet.provider as any).pollingInterval = 500;
-		(context.partyBFacet.provider as any).pollingInterval = 500
+		;(context.partyAFacet.provider as any).pollingInterval = 500
+		;(context.partyBFacet.provider as any).pollingInterval = 500
 
 		context.accountFacet.on(Event.DEPOSIT, async (...args) => {
 			let value: DepositEventObject = args[args.length - 1].args
@@ -173,7 +173,6 @@ export class EventListener {
 			context.partyBFacet.on("LogInt", async (...args) => {
 				logger.contractLogs("Contract:: " + args[0])
 			})
-		} catch (ex) {
-		}
+		} catch (ex) {}
 	}
 }

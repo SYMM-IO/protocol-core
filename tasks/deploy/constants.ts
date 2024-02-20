@@ -8,4 +8,4 @@ export const FacetNames = [
 	"BridgeFacet",
 	"ViewFacet",
 	"FundingRateFacet",
-]
+];

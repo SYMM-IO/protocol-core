@@ -4,9 +4,9 @@ import { BigNumberish } from "ethers"
 import { decimal } from "../../utils/Common"
 
 export interface EmergencyCloseRequest {
-	upnlPartyA: BigNumberish;
-	upnlPartyB: BigNumberish;
-	price: BigNumberish;
+	upnlPartyA: BigNumberish
+	upnlPartyB: BigNumberish
+	price: BigNumberish
 }
 
 const defaultEmergencyCloseRequest: EmergencyCloseRequest = {

@@ -21,32 +21,28 @@ export class RunContext {
 	diamondLoupeFacet!: DiamondLoupeFacet
 	partyAFacet!: PartyAFacet
 	partyBFacet!: PartyBFacet
-	bridgeFacet!:BridgeFacet
+	bridgeFacet!: BridgeFacet
 	viewFacet!: ViewFacet
 	liquidationFacet!: LiquidationFacet
 	controlFacet!: ControlFacet
 	fundingRateFacet!: FundingRateFacet
 	signers!: {
-		admin: SignerWithAddress;
-		user: SignerWithAddress;
-		user2: SignerWithAddress;
-		liquidator: SignerWithAddress;
-		hedger: SignerWithAddress;
-		hedger2: SignerWithAddress;
-		bridge: SignerWithAddress;
-		bridge2: SignerWithAddress;
-		others: SignerWithAddress[];
+		admin: SignerWithAddress
+		user: SignerWithAddress
+		user2: SignerWithAddress
+		liquidator: SignerWithAddress
+		hedger: SignerWithAddress
+		hedger2: SignerWithAddress
+		bridge: SignerWithAddress
+		bridge2: SignerWithAddress
+		others: SignerWithAddress[]
 	}
 	diamond!: string
 	collateral: any
 	manager!: TestManager
 }
 
-export async function createRunContext(
-  diamond: string,
-  collateral: string,
-  onlyInitialize: boolean = false,
-): Promise<RunContext> {
+export async function createRunContext(diamond: string, collateral: string, onlyInitialize: boolean = false): Promise<RunContext> {
 	let context = new RunContext()
 
 	const signers: SignerWithAddress[] = await ethers.getSigners()
@@ -57,8 +53,8 @@ export async function createRunContext(
 		liquidator: signers[3],
 		hedger: signers[4],
 		hedger2: signers[5],
-		bridge:signers[6],
-		bridge2:signers[7],
+		bridge: signers[6],
+		bridge2: signers[7],
 		others: [],
 	}
 
@@ -76,8 +72,7 @@ export async function createRunContext(
 	context.fundingRateFacet = await ethers.getContractAt("FundingRateFacet", diamond)
 
 	context.manager = new TestManager(context, onlyInitialize)
-	if (!onlyInitialize)
-		await context.manager.start()
+	if (!onlyInitialize) await context.manager.start()
 
 	return context
 }

@@ -10,29 +10,26 @@ import { logger } from "../../utils/LoggerUtils"
 import { TransactionValidator } from "./TransactionValidator"
 
 export type CancelCloseRequestValidatorBeforeArg = {
-	user: User;
-	hedger: Hedger;
-	quoteId: BigNumber;
-};
+	user: User
+	hedger: Hedger
+	quoteId: BigNumber
+}
 
 export type CancelCloseRequestValidatorBeforeOutput = {
-	balanceInfoPartyA: BalanceInfo;
-	balanceInfoPartyB: BalanceInfo;
-	quote: QuoteStructOutput;
-};
+	balanceInfoPartyA: BalanceInfo
+	balanceInfoPartyB: BalanceInfo
+	quote: QuoteStructOutput
+}
 
 export type CancelCloseRequestValidatorAfterArg = {
-	user: User;
-	hedger: Hedger;
-	quoteId: BigNumber;
-	beforeOutput: CancelCloseRequestValidatorBeforeOutput;
-};
+	user: User
+	hedger: Hedger
+	quoteId: BigNumber
+	beforeOutput: CancelCloseRequestValidatorBeforeOutput
+}
 
 export class CancelCloseRequestValidator implements TransactionValidator {
-	async before(
-	  context: RunContext,
-	  arg: CancelCloseRequestValidatorBeforeArg,
-	): Promise<CancelCloseRequestValidatorBeforeOutput> {
+	async before(context: RunContext, arg: CancelCloseRequestValidatorBeforeArg): Promise<CancelCloseRequestValidatorBeforeOutput> {
 		logger.debug("Before CancelCloseRequestValidator...")
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
@@ -53,28 +50,16 @@ export class CancelCloseRequestValidator implements TransactionValidator {
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(
-		  oldBalanceInfoPartyA.totalPendingLockedPartyA.toString(),
-		)
-		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(
-		  oldBalanceInfoPartyA.totalLockedPartyA.toString(),
-		)
-		expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(
-		  oldBalanceInfoPartyA.allocatedBalances.toString(),
-		)
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
+		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
+		expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances.toString())
 
 		// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())
 		const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB
 
-		expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(
-		  oldBalanceInfoPartyB.totalPendingLockedPartyB.toString(),
-		)
-		expect(newBalanceInfoPartyB.totalLockedPartyB).to.be.equal(
-		  oldBalanceInfoPartyB.totalLockedPartyB.toString(),
-		)
-		expect(newBalanceInfoPartyB.allocatedBalances).to.be.equal(
-		  oldBalanceInfoPartyB.allocatedBalances.toString(),
-		)
+		expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(oldBalanceInfoPartyB.totalPendingLockedPartyB.toString())
+		expect(newBalanceInfoPartyB.totalLockedPartyB).to.be.equal(oldBalanceInfoPartyB.totalLockedPartyB.toString())
+		expect(newBalanceInfoPartyB.allocatedBalances).to.be.equal(oldBalanceInfoPartyB.allocatedBalances.toString())
 	}
 }

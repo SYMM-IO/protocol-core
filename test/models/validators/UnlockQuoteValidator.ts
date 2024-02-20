@@ -8,24 +8,21 @@ import { TransactionValidator } from "./TransactionValidator"
 import { logger } from "../../utils/LoggerUtils"
 
 export type UnlockQuoteValidatorBeforeArg = {
-	user: User;
-};
+	user: User
+}
 
 export type UnlockQuoteValidatorBeforeOutput = {
-	balanceInfoPartyA: BalanceInfo;
-};
+	balanceInfoPartyA: BalanceInfo
+}
 
 export type UnlockQuoteValidatorAfterArg = {
-	user: User;
-	quoteId: BigNumber;
-	beforeOutput: UnlockQuoteValidatorBeforeOutput;
-};
+	user: User
+	quoteId: BigNumber
+	beforeOutput: UnlockQuoteValidatorBeforeOutput
+}
 
 export class UnlockQuoteValidator implements TransactionValidator {
-	async before(
-	  context: RunContext,
-	  arg: UnlockQuoteValidatorBeforeArg,
-	): Promise<UnlockQuoteValidatorBeforeOutput> {
+	async before(context: RunContext, arg: UnlockQuoteValidatorBeforeArg): Promise<UnlockQuoteValidatorBeforeOutput> {
 		logger.debug("Before UnlockQuoteValidator...")
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
@@ -36,12 +33,8 @@ export class UnlockQuoteValidator implements TransactionValidator {
 		logger.debug("After UnlockQuoteValidator...")
 		const newBalanceInfo = await arg.user.getBalanceInfo()
 		const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA
-		expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
-		  oldBalanceInfo.totalPendingLockedPartyA.toString(),
-		)
-		expect(newBalanceInfo.allocatedBalances).to.be.equal(
-		  oldBalanceInfo.allocatedBalances.toString(),
-		)
+		expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(oldBalanceInfo.totalPendingLockedPartyA.toString())
+		expect(newBalanceInfo.allocatedBalances).to.be.equal(oldBalanceInfo.allocatedBalances.toString())
 
 		const quote = await context.viewFacet.getQuote(arg.quoteId)
 		expect(quote.quoteStatus).to.be.equal(QuoteStatus.PENDING)

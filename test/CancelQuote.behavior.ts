@@ -17,7 +17,7 @@ import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
 export function shouldBehaveLikeCancelQuote(): void {
 	let context: RunContext, user: User, hedger: Hedger, hedger2: Hedger
 
-	beforeEach(async function() {
+	beforeEach(async function () {
 		context = await loadFixture(initializeFixture)
 		this.user_allocated = decimal(500)
 		this.hedger_allocated = decimal(4000)
@@ -37,43 +37,35 @@ export function shouldBehaveLikeCancelQuote(): void {
 		await user.sendQuote()
 	})
 
-	it("Should fail due to invalid quoteId", async function() {
+	it("Should fail due to invalid quoteId", async function () {
 		await expect(user.requestToCancelQuote(3)).to.be.reverted
 	})
 
-	it("Should fail on invalid partyA", async function() {
-		await expect(context.partyAFacet.requestToCancelQuote(1)).to.be.revertedWith(
-		  "Accessibility: Should be partyA of quote",
-		)
+	it("Should fail on invalid partyA", async function () {
+		await expect(context.partyAFacet.requestToCancelQuote(1)).to.be.revertedWith("Accessibility: Should be partyA of quote")
 	})
 
-	it("Should fail on paused partyA", async function() {
+	it("Should fail on paused partyA", async function () {
 		await pausePartyA(context)
-		await expect(user.requestToCancelQuote(1)).to.be.revertedWith(
-		  "Pausable: PartyA actions paused",
-		)
+		await expect(user.requestToCancelQuote(1)).to.be.revertedWith("Pausable: PartyA actions paused")
 	})
 
-	it("Should fail on liquidated partyA", async function() {
+	it("Should fail on liquidated partyA", async function () {
 		await user.sendQuote(limitQuoteRequestBuilder().positionType(PositionType.SHORT).build())
 		await hedger.lockQuote(2)
 		await hedger.openPosition(2)
 		await user.liquidateAndSetSymbolPrices([1], [decimal(2000)])
-		await expect(user.requestToCancelQuote(1)).to.be.revertedWith(
-		  "Accessibility: PartyA isn't solvent",
-		)
+		await expect(user.requestToCancelQuote(1)).to.be.revertedWith("Accessibility: PartyA isn't solvent")
 	})
 
-	it("Should fail on invalid state", async function() {
+	it("Should fail on invalid state", async function () {
 		await user.sendQuote()
 		await hedger.lockQuote(2)
 		await hedger.openPosition(2)
-		await expect(user.requestToCancelQuote(2)).to.be.revertedWith(
-		  "PartyAFacet: Invalid state",
-		)
+		await expect(user.requestToCancelQuote(2)).to.be.revertedWith("PartyAFacet: Invalid state")
 	})
 
-	it("Should cancel a pending quote", async function() {
+	it("Should cancel a pending quote", async function () {
 		const validator = new CancelQuoteValidator()
 		const beforeOut = await validator.before(context, {
 			user: user,
@@ -88,7 +80,7 @@ export function shouldBehaveLikeCancelQuote(): void {
 		})
 	})
 
-	it("Should cancel a expired pending quote", async function() {
+	it("Should cancel a expired pending quote", async function () {
 		const validator = new CancelQuoteValidator()
 		const beforeOut = await validator.before(context, {
 			user: user,
@@ -104,32 +96,28 @@ export function shouldBehaveLikeCancelQuote(): void {
 		})
 	})
 
-	describe("Should cancel a locked quote", async function() {
-		beforeEach(async function() {
+	describe("Should cancel a locked quote", async function () {
+		beforeEach(async function () {
 			await hedger.lockQuote(1)
 		})
 
-		it("Should fail to accept cancel request on invalid quoteId", async function() {
+		it("Should fail to accept cancel request on invalid quoteId", async function () {
 			await expect(hedger.acceptCancelRequest(2)).to.be.reverted
 		})
 
-		it("Should fail to accept cancel request on invalid partyB", async function() {
+		it("Should fail to accept cancel request on invalid partyB", async function () {
 			await user.requestToCancelQuote(1)
-			await expect(hedger2.acceptCancelRequest(1)).to.be.revertedWith(
-			  "Accessibility: Should be partyB of quote",
-			)
+			await expect(hedger2.acceptCancelRequest(1)).to.be.revertedWith("Accessibility: Should be partyB of quote")
 		})
 
-		it("Should fail to accept cancel request on paused partyB", async function() {
+		it("Should fail to accept cancel request on paused partyB", async function () {
 			await user.requestToCancelQuote(1)
 			await pausePartyB(context)
-			await expect(hedger.acceptCancelRequest(1)).to.be.revertedWith(
-			  "Pausable: PartyB actions paused",
-			)
+			await expect(hedger.acceptCancelRequest(1)).to.be.revertedWith("Pausable: PartyB actions paused")
 		})
 
-		describe("Should cancel successfully", async function() {
-			it("Accept cancel request", async function() {
+		describe("Should cancel successfully", async function () {
+			it("Accept cancel request", async function () {
 				const cqValidator = new CancelQuoteValidator()
 				const cqBeforeOut = await cqValidator.before(context, {
 					user: user,
@@ -155,7 +143,7 @@ export function shouldBehaveLikeCancelQuote(): void {
 				})
 			})
 
-			it("Open position partially", async function() {
+			it("Open position partially", async function () {
 				const quantity = await getQuoteQuantity(context, 1)
 				await user.requestToCancelQuote(1)
 				const validator = new OpenPositionValidator()
@@ -166,14 +154,7 @@ export function shouldBehaveLikeCancelQuote(): void {
 				})
 				const openedPrice = decimal(1)
 				const filledAmount = quantity.div(2)
-				await hedger.openPosition(
-				  1,
-				  limitOpenRequestBuilder()
-					.filledAmount(filledAmount)
-					.openPrice(openedPrice)
-					.price(decimal(1, 17))
-					.build(),
-				)
+				await hedger.openPosition(1, limitOpenRequestBuilder().filledAmount(filledAmount).openPrice(openedPrice).price(decimal(1, 17)).build())
 				await validator.after(context, {
 					user: user,
 					hedger: hedger,
@@ -186,7 +167,7 @@ export function shouldBehaveLikeCancelQuote(): void {
 				})
 			})
 
-			it("Open position fully", async function() {
+			it("Open position fully", async function () {
 				const quantity = await getQuoteQuantity(context, 1)
 				await user.requestToCancelQuote(1)
 				const validator = new OpenPositionValidator()
@@ -197,14 +178,7 @@ export function shouldBehaveLikeCancelQuote(): void {
 				})
 				const openedPrice = decimal(1)
 				const filledAmount = quantity
-				await hedger.openPosition(
-				  1,
-				  limitOpenRequestBuilder()
-					.filledAmount(quantity)
-					.openPrice(openedPrice)
-					.price(decimal(1, 17))
-					.build(),
-				)
+				await hedger.openPosition(1, limitOpenRequestBuilder().filledAmount(quantity).openPrice(openedPrice).price(decimal(1, 17)).build())
 				await validator.after(context, {
 					user: user,
 					hedger: hedger,

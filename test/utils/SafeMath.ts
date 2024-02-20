@@ -14,13 +14,13 @@ BN.set({ ROUNDING_MODE: BN.ROUND_CEIL })
 
 export function roundToPrecision(a: BigNumber, precision: number): BigNumber {
 	return BigNumber.from(
-	  BN(BN(a.toString()).dividedBy(BN(10).pow(18)).toFixed(precision))
-		.multipliedBy(BN(10).pow(18))
-		.toFixed()
-		.toString(),
+		BN(BN(a.toString()).dividedBy(BN(10).pow(18)).toFixed(precision))
+			.multipliedBy(BN(10).pow(18))
+			.toFixed()
+			.toString(),
 	)
 }
 
 export function expectToBeApproximately(a: BigNumber, b: BigNumber) {
-	expect((b.sub(a)).abs()).to.be.lte(10)
+	expect(b.sub(a).abs()).to.be.lte(10)
 }

@@ -10,9 +10,10 @@
 **/dist
 **/node_modules
 **/types
+.typechain
 
 # files
-*.env
+**/.env
 *.log
 .pnp.*
 coverage.json

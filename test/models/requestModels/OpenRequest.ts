@@ -4,11 +4,11 @@ import { BigNumberish } from "ethers"
 import { decimal } from "../../utils/Common"
 
 export interface OpenRequest {
-	filledAmount: BigNumberish;
-	openPrice: BigNumberish;
-	upnlPartyA: BigNumberish;
-	upnlPartyB: BigNumberish;
-	price: BigNumberish;
+	filledAmount: BigNumberish
+	openPrice: BigNumberish
+	upnlPartyA: BigNumberish
+	upnlPartyB: BigNumberish
+	price: BigNumberish
 }
 
 const limitDefaultOpenRequest: OpenRequest = {
