@@ -9,13 +9,13 @@ import "../../utils/Pausable.sol";
 import "./IFundingRateFacet.sol";
 
 contract FundingRateFacet is Pausable, IFundingRateFacet {
-    function chargeFundingRate(
-        address partyA,
-        uint256[] memory quoteIds,
-        int256[] memory rates,
-        PairUpnlSig memory upnlSig
-    ) external whenNotPartyBActionsPaused {
-        FundingRateFacetImpl.chargeFundingRate(partyA, quoteIds, rates, upnlSig);
-        emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
-    }
+	function chargeFundingRate(
+		address partyA,
+		uint256[] memory quoteIds,
+		int256[] memory rates,
+		PairUpnlSig memory upnlSig
+	) external whenNotPartyBActionsPaused {
+		FundingRateFacetImpl.chargeFundingRate(partyA, quoteIds, rates, upnlSig);
+		emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
+	}
 }

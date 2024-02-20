@@ -8,34 +8,25 @@ import "./IAccountEvents.sol";
 import "../../storages/MuonStorage.sol";
 
 interface IAccountFacet is IAccountEvents {
-    //Party A
-    function deposit(uint256 amount) external;
+	//Party A
+	function deposit(uint256 amount) external;
 
-    function depositFor(address user, uint256 amount) external;
+	function depositFor(address user, uint256 amount) external;
 
-    function withdraw(uint256 amount) external;
+	function withdraw(uint256 amount) external;
 
-    function withdrawTo(address user, uint256 amount) external;
+	function withdrawTo(address user, uint256 amount) external;
 
-    function allocate(uint256 amount) external;
+	function allocate(uint256 amount) external;
 
-    function depositAndAllocate(uint256 amount) external;
+	function depositAndAllocate(uint256 amount) external;
 
-    function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external;
+	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external;
 
-    // PartyB
-    function allocateForPartyB(uint256 amount, address partyA) external;
+	// PartyB
+	function allocateForPartyB(uint256 amount, address partyA) external;
 
-    function deallocateForPartyB(
-        uint256 amount,
-        address partyA,
-        SingleUpnlSig memory upnlSig
-    ) external;
+	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) external;
 
-    function transferAllocation(
-        uint256 amount,
-        address origin,
-        address recipient,
-        SingleUpnlSig memory upnlSig
-    ) external;
+	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external;
 }

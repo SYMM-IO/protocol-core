@@ -13,61 +13,61 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 library BridgeFacetImpl {
-    using SafeERC20 for IERC20;
+	using SafeERC20 for IERC20;
 
-    function transferToBridge(address user, uint256 amount, address bridge) internal {
-        GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
-        BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+	function transferToBridge(address user, uint256 amount, address bridge) internal {
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 
-        require(bridgeLayout.bridges[bridge], "BridgeFacet: Invalid bridge");
-        require(bridge != user, "BridgeFacet: Bridge and user can't be the same");
+		require(bridgeLayout.bridges[bridge], "BridgeFacet: Invalid bridge");
+		require(bridge != user, "BridgeFacet: Bridge and user can't be the same");
 
-        uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
-        uint256 currentId = ++bridgeLayout.lastId;
+		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
+		uint256 currentId = ++bridgeLayout.lastId;
 
-        BridgeTransaction memory bridgeTransaction = BridgeTransaction({
-            id: currentId,
-            amount: amount,
-            user: user,
-            bridge: bridge,
-            timestamp: block.timestamp,
-            status: BridgeTransactionStatus.RECEIVED
-        });
-        AccountStorage.layout().balances[user] -= amountWith18Decimals;
-        bridgeLayout.bridgeTransactions[currentId] = bridgeTransaction;
-    }
+		BridgeTransaction memory bridgeTransaction = BridgeTransaction({
+			id: currentId,
+			amount: amount,
+			user: user,
+			bridge: bridge,
+			timestamp: block.timestamp,
+			status: BridgeTransactionStatus.RECEIVED
+		});
+		AccountStorage.layout().balances[user] -= amountWith18Decimals;
+		bridgeLayout.bridgeTransactions[currentId] = bridgeTransaction;
+	}
 
-    function withdrawReceivedBridgeValue(uint256 transactionId) internal {
-        GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
-        BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+	function withdrawReceivedBridgeValue(uint256 transactionId) internal {
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 
-        BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
-        require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
-        require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
-        require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
+		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
+		require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
+		require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
 
-        bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
-        IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
-    }
+		bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
+		IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
+	}
 
-    function withdrawReceivedBridgeValues(uint256[] memory transactionIds) internal {
-        GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
-        BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+	function withdrawReceivedBridgeValues(uint256[] memory transactionIds) internal {
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 
-        uint256 totalAmount = 0;
+		uint256 totalAmount = 0;
 
-        for (uint256 i = transactionIds.length -1 ; i > 0; i--) {
-            BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i]];
+		for (uint256 i = transactionIds.length - 1; i > 0; i--) {
+			BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i]];
 
-            require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
-            require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
-            require(bridgeTransaction.bridge == msg.sender, "BridgeFacet: Sender is not the transaction's bridge");
+			require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
+			require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
+			require(bridgeTransaction.bridge == msg.sender, "BridgeFacet: Sender is not the transaction's bridge");
 
-            totalAmount += bridgeTransaction.amount;
-            bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
-        }
+			totalAmount += bridgeTransaction.amount;
+			bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
+		}
 
-        IERC20(appLayout.collateral).safeTransfer(msg.sender, totalAmount);
-    }
+		IERC20(appLayout.collateral).safeTransfer(msg.sender, totalAmount);
+	}
 }

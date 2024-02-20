@@ -11,42 +11,32 @@ import "./LibAccount.sol";
 import "./LibLockedValues.sol";
 
 library LibPartyB {
-    using LockedValuesOps for LockedValues;
+	using LockedValuesOps for LockedValues;
 
-    function checkPartyBValidationToLockQuote(uint256 quoteId, int256 upnl) internal view {
-        QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-        MAStorage.Layout storage maLayout = MAStorage.layout();
+	function checkPartyBValidationToLockQuote(uint256 quoteId, int256 upnl) internal view {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		MAStorage.Layout storage maLayout = MAStorage.layout();
 
-        Quote storage quote = quoteLayout.quotes[quoteId];
-        require(quote.quoteStatus == QuoteStatus.PENDING, "PartyBFacet: Invalid state");
-        require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
-        require(quoteId <= quoteLayout.lastId, "PartyBFacet: Invalid quoteId");
-        int256 availableBalance = LibAccount.partyBAvailableForQuote(
-            upnl,
-            msg.sender,
-            quote.partyA
-        );
-        require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
-        require(
-            uint256(availableBalance) >= quote.lockedValues.totalForPartyB(),
-            "PartyBFacet: insufficient available balance"
-        );
-        require(
-            !maLayout.partyBLiquidationStatus[msg.sender][quote.partyA],
-            "PartyBFacet: PartyB isn't solvent"
-        );
-        bool isValidPartyB;
-        if (quote.partyBsWhiteList.length == 0) {
-            require(msg.sender != quote.partyA, "PartyBFacet: PartyA can't be partyB too");
-            isValidPartyB = true;
-        } else {
-            for (uint8 index = 0; index < quote.partyBsWhiteList.length; index++) {
-                if (msg.sender == quote.partyBsWhiteList[index]) {
-                    isValidPartyB = true;
-                    break;
-                }
-            }
-        }
-        require(isValidPartyB, "PartyBFacet: Sender isn't whitelisted");
-    }
+		Quote storage quote = quoteLayout.quotes[quoteId];
+		require(quote.quoteStatus == QuoteStatus.PENDING, "PartyBFacet: Invalid state");
+		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
+		require(quoteId <= quoteLayout.lastId, "PartyBFacet: Invalid quoteId");
+		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnl, msg.sender, quote.partyA);
+		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
+		require(uint256(availableBalance) >= quote.lockedValues.totalForPartyB(), "PartyBFacet: insufficient available balance");
+		require(!maLayout.partyBLiquidationStatus[msg.sender][quote.partyA], "PartyBFacet: PartyB isn't solvent");
+		bool isValidPartyB;
+		if (quote.partyBsWhiteList.length == 0) {
+			require(msg.sender != quote.partyA, "PartyBFacet: PartyA can't be partyB too");
+			isValidPartyB = true;
+		} else {
+			for (uint8 index = 0; index < quote.partyBsWhiteList.length; index++) {
+				if (msg.sender == quote.partyBsWhiteList[index]) {
+					isValidPartyB = true;
+					break;
+				}
+			}
+		}
+		require(isValidPartyB, "PartyBFacet: Sender isn't whitelisted");
+	}
 }
