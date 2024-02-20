@@ -81,6 +81,10 @@ interface IViewFacet {
 
     function getPositionsFilteredByPartyB(address partyB, uint256 start, uint256 size) external view returns (Quote[] memory);
 
+    function getOpenPositionsFilteredByPartyB(address partyB, uint256 start, uint256 size) external view returns (Quote[] memory);
+
+    function getActivePositionsFilteredByPartyB(address partyB, uint256 start, uint256 size) external view returns (Quote[] memory);
+
     function partyBPositionsCount(address partyB, address partyA) external view returns (uint256);
 
     function getPartyAPendingQuotes(address partyA) external view returns (uint256[] memory);
