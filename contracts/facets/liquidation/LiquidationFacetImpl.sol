@@ -97,10 +97,16 @@ library LiquidationFacetImpl {
 		delete quoteLayout.partyAPendingQuotes[partyA];
 	}
 
-	function liquidatePositionsPartyA(address partyA, uint256[] memory quoteIds) internal returns (bool) {
+	function liquidatePositionsPartyA(
+		address partyA,
+		uint256[] memory quoteIds
+	) internal returns (bool, uint256[] memory liquidatedAmounts, uint256[] memory closeIds) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+
+		liquidatedAmounts = new uint256[](quoteIds.length);
+		closeIds = new uint256[](quoteIds.length);
 
 		require(maLayout.liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
 		for (uint256 index = 0; index < quoteIds.length; index++) {
@@ -117,6 +123,8 @@ library LiquidationFacetImpl {
 				accountLayout.symbolsPrices[partyA][quote.symbolId].timestamp == accountLayout.liquidationDetails[partyA].timestamp,
 				"LiquidationFacet: Price should be set"
 			);
+			liquidatedAmounts[index] = quote.quantity - quote.closedAmount;
+			closeIds[index] = quoteLayout.closeIds[quote.id];
 			quote.quoteStatus = QuoteStatus.LIQUIDATED;
 			quote.statusModifyTimestamp = block.timestamp;
 
@@ -199,9 +207,9 @@ library LiquidationFacetImpl {
 			accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl != accountLayout.liquidationDetails[partyA].upnl
 		) {
 			accountLayout.liquidationDetails[partyA].disputed = true;
-			return true;
+			return (true, liquidatedAmounts, closeIds);
 		}
-		return false;
+		return (false, liquidatedAmounts, closeIds);
 	}
 
 	function resolveLiquidationDispute(address partyA, address[] memory partyBs, int256[] memory amounts, bool disputed) internal {
@@ -266,7 +274,11 @@ library LiquidationFacetImpl {
 		LibLiquidation.liquidatePartyB(partyB, partyA, upnlSig.upnl, upnlSig.timestamp);
 	}
 
-	function liquidatePositionsPartyB(address partyB, address partyA, QuotePriceSig memory priceSig) internal {
+	function liquidatePositionsPartyB(
+		address partyB,
+		address partyA,
+		QuotePriceSig memory priceSig
+	) internal returns (uint256[] memory liquidatedAmounts, uint256[] memory closeIds) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
@@ -278,6 +290,10 @@ library LiquidationFacetImpl {
 		);
 		require(maLayout.partyBLiquidationStatus[partyB][partyA], "LiquidationFacet: PartyB is solvent");
 		require(maLayout.partyBLiquidationTimestamp[partyB][partyA] <= priceSig.timestamp, "LiquidationFacet: Expired signature");
+
+		liquidatedAmounts = new uint256[](priceSig.quoteIds.length);
+		closeIds = new uint256[](priceSig.quoteIds.length);
+
 		for (uint256 index = 0; index < priceSig.quoteIds.length; index++) {
 			Quote storage quote = quoteLayout.quotes[priceSig.quoteIds[index]];
 			require(
@@ -288,6 +304,8 @@ library LiquidationFacetImpl {
 			);
 			require(quote.partyA == partyA && quote.partyB == partyB, "LiquidationFacet: Invalid party");
 
+			liquidatedAmounts[index] = quote.quantity - quote.closedAmount;
+			closeIds[index] = quoteLayout.closeIds[quote.id];
 			quote.quoteStatus = QuoteStatus.LIQUIDATED;
 			quote.statusModifyTimestamp = block.timestamp;
 
@@ -311,5 +329,6 @@ library LiquidationFacetImpl {
 			maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
 			accountLayout.partyBNonces[partyB][partyA] += 1;
 		}
+		return (liquidatedAmounts, closeIds);
 	}
 }
