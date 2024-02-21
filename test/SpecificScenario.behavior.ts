@@ -34,7 +34,6 @@ export function shouldBehaveLikeSpecificScenario(): void {
 		let b = decimal(5000)
 		await user.setBalances(b, b, b)
 
-		console.log("going to send code")
 		await user.sendQuote(
 			Builder<QuoteRequest>()
 				.partyBWhiteList([])

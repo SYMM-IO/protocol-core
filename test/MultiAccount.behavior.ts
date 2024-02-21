@@ -52,7 +52,7 @@ async function getListFormatOfFillCloseRequest(
 	return [request.filledAmount, request.closedPrice, await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB)]
 }
 
-export function shouldBehaveLikMultiAccount() {
+export function shouldBehaveLikeMultiAccount() {
 	let multiAccount: any
 	let context: RunContext
 	let user: User
