@@ -186,7 +186,7 @@ export class HedgerController {
 				} else {
 					fillAmount = quantity
 				}
-				const price = await getPrice(symbol.name)
+				const price = await getPrice()
 				const partyAUpnl = await this.manager.getUser(quote.partyA).getUpnl()
 				const partyBUpnl = await this.hedger.getUpnl(quote.partyA)
 				const openPrice = quote.orderType == OrderType.LIMIT ? quote.requestedOpenPrice : quote.marketPrice //FIXME: Can we do anything else?
@@ -237,7 +237,7 @@ export class HedgerController {
 				} else {
 					fillAmount = quote.quantityToClose
 				}
-				const price = await getPrice(symbol.name)
+				const price = await getPrice()
 				const partyAUpnl = await this.manager.getUser(quote.partyA).getUpnl()
 				const partyBUpnl = await this.hedger.getUpnl(quote.partyA)
 
