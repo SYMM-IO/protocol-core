@@ -46,9 +46,11 @@ export async function initialize(): Promise<RunContext> {
 	)
 
 	const addSymbolAsync = async (controlFacet: ControlFacet, adminSigner: SignerWithAddress, sym: any) => {
-		await controlFacet
-			.connect(adminSigner)
-			.addSymbol(sym.name, sym.min_acceptable_quote_value, sym.min_acceptable_portion_lf, sym.trading_fee, decimal(100, 18), 28800, 900)
+		await runTx(
+			controlFacet
+				.connect(adminSigner)
+				.addSymbol(sym.name, sym.min_acceptable_quote_value, sym.min_acceptable_portion_lf, sym.trading_fee, decimal(100, 18), 28800, 900),
+		)
 	}
 
 	const promises = symbolsMock.symbols.map(sym => addSymbolAsync(context.controlFacet, context.signers.admin, sym))
