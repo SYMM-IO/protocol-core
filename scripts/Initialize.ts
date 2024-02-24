@@ -53,9 +53,8 @@ export async function initialize(): Promise<RunContext> {
 		)
 	}
 
-	const promises = symbolsMock.symbols.map(sym => addSymbolAsync(context.controlFacet, context.signers.admin, sym))
-
-	await Promise.all(promises)
+	for (const sym of symbolsMock.symbols)
+		await addSymbolAsync(context.controlFacet, context.signers.admin, sym);
 
 	await runTx(context.controlFacet.connect(context.signers.admin).setPendingQuotesValidLength(100))
 	await runTx(context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1, 17)))
