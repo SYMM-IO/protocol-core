@@ -4,7 +4,7 @@ export type Addresses = {
 	symmioAddress?: string
 	collateralAddress?: string
 	multiAccountAddress?: string
-	partyBAddress?: string
+	hedgerProxyAddress?: string
 	MulticallAddress?: string
 }
 
