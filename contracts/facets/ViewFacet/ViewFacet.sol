@@ -454,4 +454,148 @@ contract ViewFacet is IViewFacet {
 	function getQuoteCloseId(uint256 quoteId) external view returns (uint256) {
 		return QuoteStorage.layout().closeIds[quoteId];
 	}
+
+	function countPartyBOpenPositionsWithPartyA(address partyB, address partyA) external view returns (uint256 count) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		
+		count = quoteLayout.partyBOpenPositions[partyB][partyA].length;
+	}
+
+	function getPartyBOpenPositionsWithPartyA(address partyB, address partyA, uint256 start, uint256 size) external view returns (Quote[] memory quotes) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		if (quoteLayout.partyBOpenPositions[partyB][partyA].length < start + size) {
+			size = quoteLayout.partyBOpenPositions[partyB][partyA].length - start;
+		}
+		quotes = new Quote[](size);
+		for (uint256 i = start; i < start + size; i++) {
+			quotes[i - start] = quoteLayout.quotes[quoteLayout.partyBOpenPositions[partyB][partyA][i]];
+		}
+	}
+	
+	function countPartyBPendingQuotesWithPartyA(address partyB, address partyA) external view returns (uint256 count) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		
+		count = quoteLayout.partyBPendingQuotes[partyB][partyA].length;
+	}
+
+	function getPartyBPendingQuotesWithPartyA(address partyB, address partyA, uint256 start, uint256 size) external view returns (Quote[] memory quotes) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		if (quoteLayout.partyBPendingQuotes[partyB][partyA].length < start + size) {
+			size = quoteLayout.partyBPendingQuotes[partyB][partyA].length - start;
+		}
+		quotes = new Quote[](size);
+		for (uint256 i = start; i < start + size; i++) {
+			quotes[i - start] = quoteLayout.quotes[quoteLayout.partyBPendingQuotes[partyB][partyA][i]];
+		}
+	}
+
+	function getPositionsFilteredByPartyB(
+		address partyB, 
+		uint256 cursor, 
+		uint256 maxPageSize, 
+		uint256 gasNeededForReturn, 
+		uint256 gasCostForQuoteMemLoad
+	) external view returns (Quote[] memory quotes, uint256 retCursor) {
+		QuoteStorage.Layout storage qL = QuoteStorage.layout();
+		uint256 end = qL.lastId;
+		retCursor = cursor;
+
+		uint256[] memory cache = new uint256[](maxPageSize);
+		uint256 cacheSize = 0;
+		do {
+			// Filter by partyB
+			if (qL.quotes[retCursor].partyB == partyB) {
+				cache[cacheSize] = retCursor;
+				++cacheSize;
+				if (cacheSize == maxPageSize) {
+					++retCursor;
+					break;
+				}
+			}
+			++retCursor;
+		} while (retCursor < end && gasleft() > gasNeededForReturn + gasCostForQuoteMemLoad * cacheSize);
+
+		if (retCursor == end) {
+			retCursor = type(uint256).max;
+		}
+
+		quotes = new Quote[](cacheSize);
+		for (uint256 i = 0; i < cacheSize; ++i) {
+			quotes[i] = qL.quotes[cache[i]];
+		}
+	}
+
+	function getPositionsFilteredByStatus(
+		uint256 statusMask, 
+		uint256 cursor, 
+		uint256 maxPageSize, 
+		uint256 gasNeededForReturn, 
+		uint256 gasCostForQuoteMemLoad
+	) external view returns (Quote[] memory quotes, uint256 retCursor) {
+		QuoteStorage.Layout storage qL = QuoteStorage.layout();
+		uint256 end = qL.lastId;
+		retCursor = cursor;
+
+		uint256[] memory cache = new uint256[](maxPageSize);
+		uint256 cacheSize = 0;
+		do {
+			// Filter by statusMask
+			if (((1 << uint256(qL.quotes[retCursor].quoteStatus)) & statusMask) > 0) {
+				cache[cacheSize] = retCursor;
+				++cacheSize;
+				if (cacheSize == maxPageSize) {
+					++retCursor;
+					break;
+				}
+			}
+			++retCursor;
+		} while (retCursor < end && gasleft() > gasNeededForReturn + gasCostForQuoteMemLoad * cacheSize);
+
+		if (retCursor == end) {
+			retCursor = type(uint256).max;
+		}
+
+		quotes = new Quote[](cacheSize);
+		for (uint256 i = 0; i < cacheSize; ++i) {
+			quotes[i] = qL.quotes[cache[i]];
+		}
+	}
+
+	function getPositionsFilteredByPartyBAndStatus(
+		address partyB,
+		uint256 statusMask, 
+		uint256 cursor, 
+		uint256 maxPageSize, 
+		uint256 gasNeededForReturn, 
+		uint256 gasCostForQuoteMemLoad
+	) external view returns (Quote[] memory quotes, uint256 retCursor) {
+		QuoteStorage.Layout storage qL = QuoteStorage.layout();
+		uint256 end = qL.lastId;
+		retCursor = cursor;
+
+		uint256[] memory cache = new uint256[](maxPageSize);
+		uint256 cacheSize = 0;
+		do {
+			Quote storage q = qL.quotes[retCursor];
+			// Filter by partyB and statusMask
+			if (q.partyB == partyB && ((1 << uint256(q.quoteStatus)) & statusMask) > 0) {
+				cache[cacheSize] = retCursor;
+				++cacheSize;
+				if (cacheSize == maxPageSize) {
+					++retCursor;
+					break;
+				}
+			}
+			++retCursor;
+		} while (retCursor < end && gasleft() > gasNeededForReturn + gasCostForQuoteMemLoad * cacheSize);
+
+		if (retCursor == end) {
+			retCursor = type(uint256).max;
+		}
+
+		quotes = new Quote[](cacheSize);
+		for (uint256 i = 0; i < cacheSize; ++i) {
+			quotes[i] = qL.quotes[cache[i]];
+		}
+	}
 }
