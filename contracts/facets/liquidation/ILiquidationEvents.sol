@@ -8,7 +8,7 @@ import "../../interfaces/IPartiesEvents.sol";
 interface ILiquidationEvents is IPartiesEvents {
 	event LiquidatePartyA(address liquidator, address partyA, uint256 allocatedBalance, int256 upnl, int256 totalUnrealizedLoss);
 	event LiquidatePositionsPartyA(address liquidator, address partyA, uint256[] quoteIds, uint256[] liquidatedAmounts, uint256[] closeIds);
-	event LiquidatePendingPositionsPartyA(address liquidator, address partyA);
+	event LiquidatePendingPositionsPartyA(address liquidator, address partyA, uint256[] quoteIds);
 	event SettlePartyALiquidation(address partyA, address[] partyBs, int256[] amounts);
 	event LiquidationDisputed(address partyA);
 	event ResolveLiquidationDispute(address partyA, address[] partyBs, int256[] amounts, bool disputed);

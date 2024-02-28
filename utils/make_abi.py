@@ -11,13 +11,14 @@ def scandir(directory_name):
     return sub_folders
 
 
-contract_address = "contracts/facets"
+contract_address = "artifacts/contracts/facets"
 facets_dirs = scandir(contract_address)
 
 
 def main():
     abi_data = []
     for address in facets_dirs:
+        print(f"Checking {address}")
         file = [f"{address}/{f}" for f in os.listdir(address) if re.fullmatch(".*\.json", f) and
                 not re.fullmatch('.*\.dbg\.json', f)]
         if len(file) == 0:
