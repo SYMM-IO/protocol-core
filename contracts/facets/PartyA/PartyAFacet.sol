@@ -120,7 +120,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 
 	function forceCancelCloseRequest(uint256 quoteId) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
 		PartyAFacetImpl.forceCancelCloseRequest(quoteId);
-		emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED);
+		emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
 	}
 
 	function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig) external notLiquidated(quoteId) whenNotPartyAActionsPaused {

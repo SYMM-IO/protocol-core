@@ -22,7 +22,7 @@ interface IPartyAEvents is IPartiesEvents {
 	);
 	event RequestToCancelCloseRequest(address partyA, address partyB, uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
 	event ForceCancelQuote(uint256 quoteId, QuoteStatus quoteStatus);
-	event ForceCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus);
+	event ForceCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
 	event ForceClosePosition(
 		uint256 quoteId,
 		address partyA,
