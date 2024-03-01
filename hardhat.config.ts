@@ -20,6 +20,7 @@ const privateKeyList: string[] = privateKeysStr?.split(",") || []
 
 const ftmAPIKey: string = process.env.FTM_API_KEY || ""
 const bnbApiKey: string = process.env.BNB_API_KEY || ""
+const blastApiKey: string = process.env.BLAST_API_KEY || ""
 const baseApiKey: string = process.env.BASE_API_KEY || ""
 const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
 const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || ""
@@ -63,6 +64,10 @@ const config: HardhatUserConfig = {
 			url: "https://1rpc.io/base",
 			accounts: [ privateKey ],
 		},
+		blast: {
+			url: "https://rpc.blast.io",
+			accounts: [ privateKey ],
+		},
 		polygon: {
 			url: "https://polygon-rpc.com",
 			accounts: [ privateKey ],
@@ -74,12 +79,13 @@ const config: HardhatUserConfig = {
 	},
 	etherscan: {
 		apiKey: {
-			fantom: ftmAPIKey,
-			bnb: bnbApiKey,
-			base: baseApiKey,
-			polygon: polygonApiKey,
-			zkEvm: zkEvmApiKey,
-			opbnb: opBnbApiKey,
+			// fantom: ftmAPIKey,
+			blast: blastApiKey,
+			// bnb: bnbApiKey,
+			// base: baseApiKey,
+			// polygon: polygonApiKey,
+			// zkEvm: zkEvmApiKey,
+			// opbnb: opBnbApiKey,
 		},
 		customChains: [
 			{
@@ -88,6 +94,14 @@ const config: HardhatUserConfig = {
 				urls: {
 					apiURL: `https://api.basescan.org/api?apiKey=${ baseApiKey }`,
 					browserURL: "https://basescan.org",
+				},
+			},
+			{
+				network: "blast",
+				chainId: 81457,
+				urls: {
+					apiURL: `https://api.blastscan.io/api?apiKey=${ blastApiKey }`,
+					browserURL: "https://blastscan.io",
 				},
 			},
 			{

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
+import "../facets/BlastConfig/IBlast.sol";
 
 contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumerableUpgradeable {
     bytes32 public constant TRUSTED_ROLE = keccak256("TRUSTED_ROLE");
@@ -17,6 +18,8 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
     mapping(bytes4 => bool) public restrictedSelectors;
     mapping(address => bool) public multicastWhitelist;
+
+    IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -31,6 +34,8 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
         _grantRole(TRUSTED_ROLE, admin);
         _grantRole(MANAGER_ROLE, admin);
         symmioAddress = symmioAddress_;
+        BLAST.configureClaimableYield();
+        BLAST.configureClaimableGas();
     }
 
     event SetSymmioAddress(address oldSymmioAddress, address newSymmioAddress);
@@ -102,5 +107,20 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 
     function unpause() external onlyRole(UNPAUSER_ROLE) {
         _unpause();
+    }
+
+    function claimAllGas(address recipient) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        BLAST.claimAllGas(address(this), recipient);
+    }
+
+    function claimMaxGas(address recipient) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        BLAST.claimMaxGas(address(this), recipient);
+    }
+
+    function claimGasAtMinClaimRate(address recipient, uint256 minRate) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        BLAST.claimGasAtMinClaimRate(address(this), recipient, minRate);
     }
 }

@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/ISymmio.sol";
 import "../interfaces/ISymmioPartyA.sol";
 import "../interfaces/IMultiAccount.sol";
+import "../facets/BlastConfig/IBlast.sol";
 
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -33,6 +34,8 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
     bytes public accountImplementation;
 
     mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses; // account -> target -> selector -> state
+
+    IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
 
     modifier onlyOwner(address account, address sender) {
         require(owners[account] == sender, "MultiAccount: Sender isn't owner of account");
@@ -55,6 +58,8 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
         accountsAdmin = admin;
         symmioAddress = symmioAddress_;
         accountImplementation = accountImplementation_;
+        BLAST.configureClaimableYield();
+        BLAST.configureClaimableGas();
     }
 
     function delegateAccess(address account, address target, bytes4 selector, bool state) external onlyOwner(account, msg.sender) {
@@ -105,6 +110,21 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
     function unpause() external onlyRole(UNPAUSER_ROLE) {
         _unpause();
+    }
+
+    function claimAllGas(address recipient) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        BLAST.claimAllGas(address(this), recipient);
+    }
+
+    function claimMaxGas(address recipient) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        BLAST.claimMaxGas(address(this), recipient);
+    }
+
+    function claimGasAtMinClaimRate(address recipient, uint256 minRate) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        BLAST.claimGasAtMinClaimRate(address(this), recipient, minRate);
     }
 
     //////////////////////////////// Account Management ////////////////////////////////////
