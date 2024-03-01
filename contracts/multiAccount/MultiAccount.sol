@@ -14,12 +14,7 @@ import "../interfaces/ISymmio.sol";
 import "../interfaces/ISymmioPartyA.sol";
 import "../interfaces/IMultiAccount.sol";
 
-contract MultiAccount is
-IMultiAccount,
-Initializable,
-PausableUpgradeable,
-AccessControlUpgradeable
-{
+contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // Defining roles for access control
@@ -40,10 +35,7 @@ AccessControlUpgradeable
     mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses; // account -> target -> selector -> state
 
     modifier onlyOwner(address account, address sender) {
-        require(
-            owners[account] == sender,
-            "MultiAccount: Sender isn't owner of account"
-        );
+        require(owners[account] == sender, "MultiAccount: Sender isn't owner of account");
         _;
     }
 
@@ -52,11 +44,7 @@ AccessControlUpgradeable
         _disableInitializers();
     }
 
-    function initialize(
-        address admin,
-        address symmioAddress_,
-        bytes memory accountImplementation_
-    ) public initializer {
+    function initialize(address admin, address symmioAddress_, bytes memory accountImplementation_) public initializer {
         __Pausable_init();
         __AccessControl_init();
 
@@ -75,13 +63,16 @@ AccessControlUpgradeable
         delegatedAccesses[account][target][selector] = state;
     }
 
-    function setAccountImplementation(
-        bytes memory accountImplementation_
-    ) external onlyRole(SETTER_ROLE) {
-        emit SetAccountImplementation(
-            accountImplementation,
-            accountImplementation_
-        );
+    function delegateAccesses(address account, address target, bytes4[] memory selector, bool state) external onlyOwner(account, msg.sender) {
+        require(target != msg.sender && target != account, "MultiAccount: invalid target");
+        for (uint256 i = selector.length; i != 0; i--) {
+            delegatedAccesses[account][target][selector[i - 1]] = state;
+        }
+        emit DelegateAccesses(account, target, selector, state);
+    }
+
+    function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
+        emit SetAccountImplementation(accountImplementation, accountImplementation_);
         accountImplementation = accountImplementation_;
     }
 
@@ -91,30 +82,17 @@ AccessControlUpgradeable
     }
 
     function _deployPartyA() internal returns (address account) {
-        bytes32 salt = keccak256(
-            abi.encodePacked("MultiAccount_", saltCounter)
-        );
+        bytes32 salt = keccak256(abi.encodePacked("MultiAccount_", saltCounter));
         saltCounter += 1;
 
-        bytes memory bytecode = abi.encodePacked(
-            accountImplementation,
-            abi.encode(accountsAdmin, address(this), symmioAddress)
-        );
+        bytes memory bytecode = abi.encodePacked(accountImplementation, abi.encode(accountsAdmin, address(this), symmioAddress));
         account = _deployContract(bytecode, salt);
         return account;
     }
 
-    function _deployContract(
-        bytes memory bytecode,
-        bytes32 salt
-    ) internal returns (address contractAddress) {
+    function _deployContract(bytes memory bytecode, bytes32 salt) internal returns (address contractAddress) {
         assembly {
-            contractAddress := create2(
-                0,
-                add(bytecode, 32),
-                mload(bytecode),
-                salt
-            )
+            contractAddress := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
         require(contractAddress != address(0), "MultiAccount: create2 failed");
         emit DeployContract(msg.sender, contractAddress);
@@ -139,77 +117,45 @@ AccessControlUpgradeable
         emit AddAccount(msg.sender, account, name);
     }
 
-    function editAccountName(
-        address accountAddress,
-        string memory name
-    ) external whenNotPaused {
+    function editAccountName(address accountAddress, string memory name) external whenNotPaused {
         uint256 index = indexOfAccount[accountAddress];
         accounts[msg.sender][index].name = name;
         emit EditAccountName(msg.sender, accountAddress, name);
     }
 
-    function depositForAccount(
-        address account,
-        uint256 amount
-    ) external onlyOwner(account, msg.sender) whenNotPaused {
+    function depositForAccount(address account, uint256 amount) external onlyOwner(account, msg.sender) whenNotPaused {
         address collateral = ISymmio(symmioAddress).getCollateral();
-        IERC20Upgradeable(collateral).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        IERC20Upgradeable(collateral).safeTransferFrom(msg.sender, address(this), amount);
         IERC20Upgradeable(collateral).safeApprove(symmioAddress, amount);
         ISymmio(symmioAddress).depositFor(account, amount);
         emit DepositForAccount(msg.sender, account, amount);
     }
 
-    function depositAndAllocateForAccount(
-        address account,
-        uint256 amount
-    ) external onlyOwner(account, msg.sender) whenNotPaused {
+    function depositAndAllocateForAccount(address account, uint256 amount) external onlyOwner(account, msg.sender) whenNotPaused {
         address collateral = ISymmio(symmioAddress).getCollateral();
-        IERC20Upgradeable(collateral).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        IERC20Upgradeable(collateral).safeTransferFrom(msg.sender, address(this), amount);
         IERC20Upgradeable(collateral).safeApprove(symmioAddress, amount);
         ISymmio(symmioAddress).depositFor(account, amount);
-        uint256 amountWith18Decimals = (amount * 1e18) /
-            (10 ** IERC20Metadata(collateral).decimals());
-        bytes memory _callData = abi.encodeWithSignature(
-            "allocate(uint256)",
-            amountWith18Decimals
-        );
+        uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(collateral).decimals());
+        bytes memory _callData = abi.encodeWithSignature("allocate(uint256)", amountWith18Decimals);
         innerCall(account, _callData);
         emit DepositForAccount(msg.sender, account, amount);
         emit AllocateForAccount(msg.sender, account, amountWith18Decimals);
     }
 
-    function withdrawFromAccount(
-        address account,
-        uint256 amount
-    ) external onlyOwner(account, msg.sender) whenNotPaused {
-        bytes memory _callData = abi.encodeWithSignature(
-            "withdrawTo(address,uint256)",
-            owners[account],
-            amount
-        );
+    function withdrawFromAccount(address account, uint256 amount) external onlyOwner(account, msg.sender) whenNotPaused {
+        bytes memory _callData = abi.encodeWithSignature("withdrawTo(address,uint256)", owners[account], amount);
         emit WithdrawFromAccount(msg.sender, account, amount);
         innerCall(account, _callData);
     }
 
     function innerCall(address account, bytes memory _callData) internal {
-        (bool _success, bytes memory _resultData) = ISymmioPartyA(account)
-            ._call(_callData);
+        (bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
         emit Call(msg.sender, account, _callData, _success, _resultData);
         require(_success, "MultiAccount: Error occurred");
     }
 
-    function _call(
-        address account,
-        bytes[] memory _callDatas
-    ) public whenNotPaused {
+    function _call(address account, bytes[] memory _callDatas) public whenNotPaused {
         bool isOwner = owners[account] == msg.sender;
         for (uint8 i; i < _callDatas.length; i++) {
             bytes memory _callData = _callDatas[i];
@@ -231,14 +177,8 @@ AccessControlUpgradeable
         return accounts[user].length;
     }
 
-    function getAccounts(
-        address user,
-        uint256 start,
-        uint256 size
-    ) external view returns (Account[] memory) {
-        uint256 len = size > accounts[user].length - start
-            ? accounts[user].length - start
-            : size;
+    function getAccounts(address user, uint256 start, uint256 size) external view returns (Account[] memory) {
+        uint256 len = size > accounts[user].length - start ? accounts[user].length - start : size;
         Account[] memory userAccounts = new Account[](len);
         for (uint256 i = start; i < start + len; i++) {
             userAccounts[i - start] = accounts[user][i];

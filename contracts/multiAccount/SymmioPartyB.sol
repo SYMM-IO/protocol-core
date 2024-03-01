@@ -16,6 +16,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
     mapping(bytes4 => bool) public restrictedSelectors;
+    mapping(address => bool) public multicastWhitelist;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -36,49 +37,63 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 
     event SetRestrictedSelector(bytes4 selector, bool state);
 
+    event SetMulticastWhitelist(address addr, bool state);
+
     function setSymmioAddress(address addr) external onlyRole(DEFAULT_ADMIN_ROLE) {
         emit SetSymmioAddress(symmioAddress, addr);
         symmioAddress = addr;
     }
 
-    function setRestrictedSelector(
-        bytes4 selector,
-        bool state
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setRestrictedSelector(bytes4 selector, bool state) external onlyRole(DEFAULT_ADMIN_ROLE) {
         restrictedSelectors[selector] = state;
         emit SetRestrictedSelector(selector, state);
     }
 
-    function _approve(address token, uint256 amount) external onlyRole(TRUSTED_ROLE) whenNotPaused {
-        require(
-            IERC20Upgradeable(token).approve(symmioAddress, amount),
-            "SymmioPartyB: Not approved"
-        );
+    function setMulticastWhitelist(address addr, bool state) external onlyRole(MANAGER_ROLE) {
+        require(addr != address(this), "SymmioPartyB: Invalid address");
+        multicastWhitelist[addr] = state;
+        emit SetMulticastWhitelist(addr, state);
     }
 
-    function _call(bytes[] calldata _callDatas) external whenNotPaused {
-        for (uint8 i; i < _callDatas.length; i++) {
-            bytes memory _callData = _callDatas[i];
-            require(_callData.length >= 4, "SymmioPartyB: Invalid call data");
+    function _approve(address token, uint256 amount) external onlyRole(TRUSTED_ROLE) whenNotPaused {
+        require(IERC20Upgradeable(token).approve(symmioAddress, amount), "SymmioPartyB: Not approved");
+    }
+
+    function _executeCall(address destAddress, bytes memory callData) internal {
+        require(destAddress != address(0), "SymmioPartyB: Invalid address");
+        require(callData.length >= 4, "SymmioPartyB: Invalid call data");
+
+        if (destAddress == symmioAddress) {
             bytes4 functionSelector;
             assembly {
-                functionSelector := mload(add(_callData, 0x20))
+                functionSelector := mload(add(callData, 0x20))
             }
             if (restrictedSelectors[functionSelector]) {
                 _checkRole(MANAGER_ROLE, msg.sender);
             } else {
                 require(hasRole(MANAGER_ROLE, msg.sender) || hasRole(TRUSTED_ROLE, msg.sender), "SymmioPartyB: Invalid access");
             }
-            (bool _success,) = symmioAddress.call{value: 0}(_callDatas[i]);
-            require(_success, "SymmioPartyB: execution reverted");
+        } else {
+            require(multicastWhitelist[destAddress], "SymmioPartyB: Destination address is not whitelisted");
+            _checkRole(TRUSTED_ROLE, msg.sender);
         }
+
+        (bool success, ) = destAddress.call{ value: 0 }(callData);
+        require(success, "SymmioPartyB: Execution reverted");
+    }
+
+    function _call(bytes[] calldata _callDatas) external whenNotPaused {
+        for (uint8 i; i < _callDatas.length; i++) _executeCall(symmioAddress, _callDatas[i]);
+    }
+
+    function _multicastCall(address[] calldata destAddresses, bytes[] calldata _callDatas) external whenNotPaused {
+        require(destAddresses.length == _callDatas.length, "SymmioPartyB: Array length mismatch");
+
+        for (uint8 i; i < _callDatas.length; i++) _executeCall(destAddresses[i], _callDatas[i]);
     }
 
     function withdrawERC20(address token, uint256 amount) external onlyRole(MANAGER_ROLE) {
-        require(
-            IERC20Upgradeable(token).transfer(msg.sender, amount),
-            "SymmioPartyB: Not transferred"
-        );
+        require(IERC20Upgradeable(token).transfer(msg.sender, amount), "SymmioPartyB: Not transferred");
     }
 
     function pause() external onlyRole(PAUSER_ROLE) {
