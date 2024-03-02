@@ -4,6 +4,7 @@ import "@openzeppelin/hardhat-upgrades"
 import { config as dotenvConfig } from "dotenv"
 import type { HardhatUserConfig } from "hardhat/config"
 import { resolve } from "path"
+import 'solidity-docgen';
 
 import "./tasks/deploy"
 
@@ -138,6 +139,9 @@ const config: HardhatUserConfig = {
 	mocha: {
 		timeout: 100000000,
 	},
+	docgen:{
+		pages:'files',
+	}
 }
 
 export default config

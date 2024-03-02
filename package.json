@@ -74,5 +74,8 @@
     "postinstall": "DOTENV_CONFIG_PATH=./.env yarn typechain",
     "test": "hardhat test",
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
+  },
+  "dependencies": {
+    "solidity-docgen": "^0.6.0-beta.36"
   }
 }
