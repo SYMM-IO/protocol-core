@@ -9,6 +9,10 @@ import { keccak256 } from "js-sha3"
 const DISPUTE_ROLE = `0x${keccak256("DISPUTE_ROLE")}`
 const PARTY_B_MANAGER_ROLE = `0x${keccak256("PARTY_B_MANAGER_ROLE")}`
 const SYMBOL_MANAGER_ROLE = `0x${keccak256("SYMBOL_MANAGER_ROLE")}`
+const SETTER_ROLE = `0x${keccak256("SETTER_ROLE")}`
+const SUSPENDER_ROLE = `0x${keccak256("SUSPENDER_ROLE")}`
+const PAUSER_ROLE = `0x${keccak256("PAUSER_ROLE")}`
+const UNPAUSER_ROLE = `0x${keccak256("UNPAUSER_ROLE")}`
 
 export function shouldBehaveLikeControlFacet(): void {
 	let context: RunContext
@@ -30,6 +34,10 @@ export function shouldBehaveLikeControlFacet(): void {
 		await context.controlFacet.connect(owner).setAdmin(owner.address)
 		await context.controlFacet.connect(owner).grantRole(owner.address, PARTY_B_MANAGER_ROLE)
 		await context.controlFacet.connect(owner).grantRole(owner.address, SYMBOL_MANAGER_ROLE)
+		await context.controlFacet.connect(owner).grantRole(owner.address, SETTER_ROLE)
+		await context.controlFacet.connect(owner).grantRole(owner.address, PAUSER_ROLE)
+		await context.controlFacet.connect(owner).grantRole(owner.address, SUSPENDER_ROLE)
+		await context.controlFacet.connect(owner).grantRole(owner.address, UNPAUSER_ROLE)
 	})
 
 	describe("transferOwnership", () => {
@@ -231,6 +239,138 @@ export function shouldBehaveLikeControlFacet(): void {
 			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(6, BigNumber.from("200000000000000000000"))).to.revertedWith(
 				"ControlFacet: Invalid id",
 			)
+		})
+	})
+
+	describe("setForceCancelCooldown", () => {
+		it("Should setSymbolTradingFee successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setForceCancelCooldown(BigNumber.from("1708784117"))).to.not.reverted
+			expect((await context.viewFacet.coolDownsOfMA())[1]).to.be.equal(BigNumber.from("1708784117"))
+		})
+	})
+
+	describe("setDeallocateCooldown", () => {
+		it("Should setDeallocateCooldown successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setDeallocateCooldown(BigNumber.from("1708784117"))).to.not.reverted
+			expect((await context.viewFacet.coolDownsOfMA())[0]).to.be.equal(BigNumber.from("1708784117"))
+		})
+	})
+
+	describe("setForceCloseCooldowns", () => {
+		it("Should setForceCloseCooldowns successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setForceCloseCooldowns(BigNumber.from("1708784117"),BigNumber.from("1708794117"))).to.not.reverted
+			expect((await context.viewFacet.coolDownsOfMA())[3]).to.be.equal(BigNumber.from("1708784117"))
+			expect((await context.viewFacet.coolDownsOfMA())[4]).to.be.equal(BigNumber.from("1708794117"))
+		})
+	})
+
+	describe("setForceClosePricePenalty", () => {
+		it("Should setForceClosePricePenalty successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setForceClosePricePenalty(BigNumber.from("200"))).to.not.reverted
+			expect(await context.viewFacet.forceClosePricePenalty()).to.be.equal(BigNumber.from("200"))
+		})
+	})
+
+	describe("setForceCancelCloseCooldown", () => {
+		it("Should setForceCancelCloseCooldown successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setForceCancelCloseCooldown(BigNumber.from("1708784117"))).to.not.reverted
+			expect((await context.viewFacet.coolDownsOfMA())[2]).to.be.equal(BigNumber.from("1708784117"))
+		})
+	})
+
+	describe("setForceCloseGapRatio", () => {
+		it("Should setForceCloseGapRatio successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setForceCloseGapRatio(BigNumber.from("200"))).to.not.reverted
+			expect((await context.viewFacet.forceCloseGapRatio())).to.be.equal(BigNumber.from("200"))
+		})
+	})
+
+	describe("setFeeCollector", () => {
+		it("Should setFeeCollector successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setFeeCollector(user2.address)).to.not.reverted
+			expect((await context.viewFacet.getFeeCollector())).to.be.equal(user2.address)
+		})
+
+		it("Should not setFeeCollector when address is zero", async function () {
+			await expect(context.controlFacet.connect(owner).setFeeCollector(constants.AddressZero)).to.be.revertedWith('ControlFacet: Zero address')
+		})
+	})
+
+	describe("pauseGlobal", () => {
+		it("Should pauseGlobal successfully", async function () {
+			await expect(context.controlFacet.connect(owner).pauseGlobal()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).globalPaused)).to.be.equal(true)
+		})
+	})
+
+	describe("pauseLiquidation", () => {
+		it("Should pauseLiquidation successfully", async function () {
+			await expect(context.controlFacet.connect(owner).pauseLiquidation()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).liquidationPaused)).to.be.equal(true)
+		})
+	})
+
+	describe("activeEmergencyMode", () => {
+		it("Should activeEmergencyMode successfully", async function () {
+			await expect(context.controlFacet.connect(owner).activeEmergencyMode()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).emergencyMode)).to.be.equal(true)
+		})
+	})
+
+	describe("unpauseGlobal", () => {
+		it("Should unpauseGlobal successfully", async function () {
+			await expect(context.controlFacet.connect(owner).unpauseGlobal()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).globalPaused)).to.be.equal(false)
+		})
+	})
+	
+	describe("unpauseLiquidation", () => {
+		it("Should unpauseLiquidation successfully", async function () {
+			await expect(context.controlFacet.connect(owner).unpauseLiquidation()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).liquidationPaused)).to.be.equal(false)
+		})
+	})
+
+	describe("unpauseAccounting", () => {
+		it("Should unpauseAccounting successfully", async function () {
+			await expect(context.controlFacet.connect(owner).unpauseAccounting()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).accountingPaused)).to.be.equal(false)
+		})
+	})
+
+	describe("unpausePartyAActions", () => {
+		it("Should unpausePartyAActions successfully", async function () {
+			await expect(context.controlFacet.connect(owner).unpausePartyAActions()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).partyAActionsPaused)).to.be.equal(false)
+		})
+	})
+
+	describe("unpausePartyBActions", () => {
+		it("Should unpausePartyBActions successfully", async function () {
+			await expect(context.controlFacet.connect(owner).unpausePartyBActions()).to.not.reverted
+			expect(((await context.viewFacet.pauseState()).partyBActionsPaused)).to.be.equal(false)
+		})
+	})
+
+	describe("suspendedAddress", () => {
+		it("Should suspendedAddress successfully", async function () {
+			await expect(context.controlFacet.connect(owner).suspendedAddress(user2.address)).to.not.reverted
+			expect(((await context.viewFacet.isSuspended(user2.address)))).to.be.equal(true)
+		})
+	})
+
+	describe("unsuspendedAddress", () => {
+		it("Should unsuspendedAddress successfully", async function () {
+			await expect(context.controlFacet.connect(owner).suspendedAddress(user2.address)).to.not.reverted
+			await expect(context.controlFacet.connect(owner).unsuspendedAddress(user2.address)).to.not.reverted
+			expect(((await context.viewFacet.isSuspended(user2.address)))).to.be.equal(false)
+		})
+	})
+
+	describe("deactiveEmergencyMode", () => {
+		it("Should deactiveEmergencyMode successfully", async function () {
+			await expect(context.controlFacet.connect(owner).deactiveEmergencyMode()).to.not.reverted
+			expect((((await context.viewFacet.pauseState()).emergencyMode))).to.be.equal(false)
 		})
 	})
 }
