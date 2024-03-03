@@ -50,6 +50,11 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit DeallocatePartyA(msg.sender, amount);
 	}
 
+	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB notSuspended(msg.sender){
+		AccountFacetImpl.internalTransfer(user, amount);
+		emit InternalTransfer(msg.sender,user,amount); 
+	}
+
 	// PartyB
 	function allocateForPartyB(uint256 amount, address partyA) public whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
 		AccountFacetImpl.allocateForPartyB(amount, partyA);
