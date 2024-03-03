@@ -52,12 +52,14 @@ interface IControlEvents {
 	event PauseAccounting();
 	event PausePartyAActions();
 	event PausePartyBActions();
+	event PauseInternalTransfer();
 	event ActiveEmergencyMode();
 	event UnpauseGlobal();
 	event UnpauseLiquidation();
 	event UnpauseAccounting();
 	event UnpausePartyAActions();
 	event UnpausePartyBActions();
+	event UnpauseInternalTransfer();
 	event DeactiveEmergencyMode();
 	event SetLiquidationTimeout(uint256 oldLiquidationTimeout, uint256 newLiquidationTimeout);
 	event SetSuspendedAddress(address user, bool isSuspended);

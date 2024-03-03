@@ -80,6 +80,18 @@ library AccountFacetImpl {
 		accountLayout.partyBAllocatedBalances[msg.sender][recipient] += amount;
 	}
 
+	function internalTransfer(address user, uint256 amount) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+
+		require(
+			accountLayout.allocatedBalances[user] + amount <= GlobalAppStorage.layout().balanceLimitPerUser,
+			"AccountFacet: Allocated balance limit reached"
+		);
+
+		accountLayout.balances[msg.sender] -= amount;
+		accountLayout.allocatedBalances[user] += amount;
+	}
+
 	function allocateForPartyB(uint256 amount, address partyA) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
