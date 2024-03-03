@@ -50,6 +50,11 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit DeallocatePartyA(msg.sender, amount);
 	}
 
+	/// @notice Transfers the sender's deposite balance to the user allocated balance.
+	/// @dev allocatedPerUser is checked
+    /// @dev The sender and the recipient user cannot be partyB.
+    /// @param user The address of the user to whom the amount is allocated.
+    /// @param amount The amount to transfer and allocate.
 	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB notSuspended(msg.sender){
 		AccountFacetImpl.internalTransfer(user, amount);
 		emit InternalTransfer(msg.sender,user,amount); 
