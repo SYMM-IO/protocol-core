@@ -9,7 +9,31 @@ import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
 import "./IPartyAFacet.sol";
 
+/**
+/// @title A title that should describe the contract/interface
+/// @notice The contract is designed to facilitate interactions between Party A and the protocol regarding quote management.<br>
+			It provides functions for sending quotes, expiring quotes, canceling quotes, requesting to close positions,<br>
+			canceling close requests, and force-canceling quotes and close requests.
+*/
 contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
+	
+/**
+ * @notice Send a Quote to the protocol, and this quote status will be pending.
+ * @dev sendQuote can read more about the cva, lf, partyAmm, partyBmm, maxFundingRate in bla bla bla.
+ * @param partyBsWhiteList List of addresses allowed for Party B.
+ * @param symbolId The ID of the symbol being quoted.
+ * @param positionType The type of position (e.g., Long, Short).
+ * @param orderType The type of order (e.g., Limit, Market).
+ * @param price The quoted price.
+ * @param quantity The quantity being quoted.
+ * @param cva The Credit Valuation Adjustment value.
+ * @param lf The Liquidation Fee value.
+ * @param partyAmm The partyA Maintenance Margin value.
+ * @param partyBmm The partyB Maintenance Margin value.
+ * @param maxFundingRate The maximum funding rate allowed.
+ * @param deadline The deadline for the quote.
+ * @param upnlSig The signature for SingleUpnlAndPrice.
+ */
 	function sendQuote(
 		address[] memory partyBsWhiteList,
 		uint256 symbolId,
