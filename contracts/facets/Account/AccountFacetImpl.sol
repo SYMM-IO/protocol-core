@@ -82,7 +82,7 @@ library AccountFacetImpl {
 
 	function internalTransfer(address user, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-
+		
 		require(
 			accountLayout.allocatedBalances[user] + amount <= GlobalAppStorage.layout().balanceLimitPerUser,
 			"AccountFacet: Allocated balance limit reached"
