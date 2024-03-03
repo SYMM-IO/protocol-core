@@ -10,8 +10,13 @@ import "./IAccountFacet.sol";
 import "./AccountFacetImpl.sol";
 import "../../storages/GlobalAppStorage.sol";
 
+/// @title Manage Deposits and Allocated Amounts
 contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	//Party A
+
+	/// @notice Allows either Party A or Party B to deposit collateral.
+	/// @dev This function can be utilized by both parties to deposit collateral into the system.
+	/// @param amount The collateral amount of collateral to be deposited, specified in decimal units.
 	function deposit(uint256 amount) external whenNotAccountingPaused {
 		AccountFacetImpl.deposit(msg.sender, amount);
 		emit Deposit(msg.sender, msg.sender, amount);
