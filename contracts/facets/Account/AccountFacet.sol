@@ -55,7 +55,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	/// @dev The sender and the recipient user cannot be partyB.
 	/// @param user The address of the user to whom the amount is allocated.
 	/// @param amount The amount to transfer and allocate.
-	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB notSuspended(msg.sender){
+	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender){
 		AccountFacetImpl.internalTransfer(user, amount);
 		emit InternalTransfer(msg.sender,user,amount); 
 	}
