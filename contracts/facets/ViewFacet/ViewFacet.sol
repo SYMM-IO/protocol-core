@@ -413,6 +413,7 @@ contract ViewFacet is IViewFacet {
 			bool accountingPaused,
 			bool partyBActionsPaused,
 			bool partyAActionsPaused,
+			bool internalTransferPaused,
 			bool emergencyMode
 		)
 	{
@@ -423,6 +424,7 @@ contract ViewFacet is IViewFacet {
 			appLayout.accountingPaused,
 			appLayout.partyBActionsPaused,
 			appLayout.partyAActionsPaused,
+			appLayout.internalTransferPaused,
 			appLayout.emergencyMode
 		);
 	}
