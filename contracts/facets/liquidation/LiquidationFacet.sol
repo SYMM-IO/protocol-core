@@ -11,6 +11,12 @@ import "./LiquidationFacetImpl.sol";
 import "../../storages/AccountStorage.sol";
 
 contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
+	/**
+	 * @notice Liquidates Party A's position based on the provided signature.
+	 * @dev This function can only be called when liquidation is not paused and Party A is not already liquidated.
+	 * @param partyA The address of Party A to be liquidated.
+	 * @param liquidationSig The signature containing liquidation data.
+	 */
 	function liquidatePartyA(
 		address partyA,
 		LiquidationSig memory liquidationSig
@@ -25,6 +31,12 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		);
 	}
 
+	/**
+	 * @notice Sets prices for symbols based on the provided signature.
+	 * @dev This function can only be called when liquidation is not paused and the caller has the LIQUIDATOR_ROLE.
+	 * @param partyA The address of Party A associated with the liquidation.
+	 * @param liquidationSig The signature containing symbol IDs and their corresponding prices.
+	 */
 	function setSymbolsPrice(
 		address partyA,
 		LiquidationSig memory liquidationSig
@@ -33,6 +45,11 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices);
 	}
 
+	/**
+	 * @notice Liquidates pending positions for Party A.
+	 * @dev This function can only be called when liquidation is not paused and the caller has the LIQUIDATOR_ROLE.
+	 * @param partyA The address of Party A whose pending positions will be liquidated.
+	 */
 	function liquidatePendingPositionsPartyA(address partyA) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		uint256[] memory pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
@@ -40,6 +57,12 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		emit LiquidatePendingPositionsPartyA(msg.sender, partyA, pendingQuotes);
 	}
 
+	/**
+	 * @notice Liquidates positions for Party A.
+	 * @dev This function can only be called when liquidation is not paused and the caller has the LIQUIDATOR_ROLE.
+	 * @param partyA The address of Party A whose positions will be liquidated.
+	 * @param quoteIds An array of quote IDs representing the positions to be liquidated.
+	 */
 	function liquidatePositionsPartyA(
 		address partyA,
 		uint256[] memory quoteIds
@@ -54,6 +77,12 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		}
 	}
 
+	/**
+	 * @notice Settles liquidation for Party A with specified Party Bs.
+	 * @dev This function can only be called when liquidation is not paused.
+	 * @param partyA The address of Party A to settle liquidation for.
+	 * @param partyBs An array of addresses representing Party Bs involved in the settlement.
+	 */
 	function settlePartyALiquidation(address partyA, address[] memory partyBs) external whenNotLiquidationPaused {
 		int256[] memory settleAmounts = LiquidationFacetImpl.settlePartyALiquidation(partyA, partyBs);
 		emit SettlePartyALiquidation(partyA, partyBs, settleAmounts);
@@ -62,6 +91,14 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		}
 	}
 
+	/**
+	 * @notice Resolves a liquidation dispute for Party A with specified Party Bs and settlement amounts.
+	 * @dev This function can only be called by accounts with the DISPUTE_ROLE role.
+	 * @param partyA The address of Party A involved in the dispute.
+	 * @param partyBs An array of addresses representing Party Bs involved in the dispute.
+	 * @param amounts An array of settlement amounts corresponding to Party Bs.
+	 * @param disputed A boolean indicating whether the liquidation was disputed.
+	 */
 	function resolveLiquidationDispute(
 		address partyA,
 		address[] memory partyBs,
@@ -72,6 +109,13 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		emit ResolveLiquidationDispute(partyA, partyBs, amounts, disputed);
 	}
 
+	/**
+	 * @notice Liquidates Party B with respect to Party A using the provided unrealized profit and loss signature.
+	 * @dev This function can only be called by accounts with the LIQUIDATOR_ROLE role.
+	 * @param partyB The address of Party B to be liquidated.
+	 * @param partyA The address of Party A related to the liquidation.
+	 * @param upnlSig The signature containing the unrealized profit and loss data.
+	 */
 	function liquidatePartyB(
 		address partyB,
 		address partyA,
@@ -81,6 +125,13 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		LiquidationFacetImpl.liquidatePartyB(partyB, partyA, upnlSig);
 	}
 
+	/**
+	 * @notice Liquidates positions of Party B with respect to Party A using the provided quote price signature.
+	 * @dev This function can only be called by accounts with the LIQUIDATOR_ROLE role.
+	 * @param partyB The address of Party B whose positions are being liquidated.
+	 * @param partyA The address of Party A related to the liquidation.
+	 * @param priceSig The signature containing the quote price data.
+	 */
 	function liquidatePositionsPartyB(
 		address partyB,
 		address partyA,

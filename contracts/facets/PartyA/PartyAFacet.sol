@@ -9,31 +9,24 @@ import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
 import "./IPartyAFacet.sol";
 
-/**
-/// @title A title that should describe the contract/interface
-/// @notice The contract is designed to facilitate interactions between Party A and the protocol regarding quote management.<br>
-			It provides functions for sending quotes, expiring quotes, canceling quotes, requesting to close positions,<br>
-			canceling close requests, and force-canceling quotes and close requests.
-*/
 contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
-	
-/**
- * @notice Send a Quote to the protocol, and this quote status will be pending.
- * @dev sendQuote can read more about the cva, lf, partyAmm, partyBmm, maxFundingRate in bla bla bla.
- * @param partyBsWhiteList List of addresses allowed for Party B.
- * @param symbolId The ID of the symbol being quoted.
- * @param positionType The type of position (e.g., Long, Short).
- * @param orderType The type of order (e.g., Limit, Market).
- * @param price The quoted price.
- * @param quantity The quantity being quoted.
- * @param cva The Credit Valuation Adjustment value.
- * @param lf The Liquidation Fee value.
- * @param partyAmm The partyA Maintenance Margin value.
- * @param partyBmm The partyB Maintenance Margin value.
- * @param maxFundingRate The maximum funding rate allowed.
- * @param deadline The deadline for the quote.
- * @param upnlSig The signature for SingleUpnlAndPrice.
- */
+	/**
+	 * @notice Send a Quote to the protocol, and this quote status will be pending.
+	 * @dev sendQuote can read more about the cva, lf, partyAmm, partyBmm, maxFundingRate in bla bla bla.
+	 * @param partyBsWhiteList List of addresses allowed for Party B.
+	 * @param symbolId The ID of the symbol being quoted.
+	 * @param positionType The type of position (e.g., Long, Short).
+	 * @param orderType The type of order (e.g., Limit, Market).
+	 * @param price The quoted price.
+	 * @param quantity The quantity being quoted.
+	 * @param cva The Credit Valuation Adjustment value.
+	 * @param lf The Liquidation Fee value.
+	 * @param partyAmm The partyA Maintenance Margin value.
+	 * @param partyBmm The partyB Maintenance Margin value.
+	 * @param maxFundingRate The maximum funding rate allowed.
+	 * @param deadline The deadline for the quote.
+	 * @param upnlSig The signature for SingleUpnlAndPrice.
+	 */
 	function sendQuote(
 		address[] memory partyBsWhiteList,
 		uint256 symbolId,
@@ -84,6 +77,11 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		);
 	}
 
+	/**
+	 * @notice Expires the specified quotes.
+	 * @dev This function can only be called when Party A actions are not paused.
+	 * @param expiredQuoteIds An array of IDs of the quotes to be expired.
+	 */
 	function expireQuote(uint256[] memory expiredQuoteIds) external whenNotPartyAActionsPaused {
 		QuoteStatus result;
 		for (uint8 i; i < expiredQuoteIds.length; i++) {
@@ -92,6 +90,11 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		}
 	}
 
+	/**
+	 * @notice Requests to cancel the specified quote.
+	 * @dev This function can only be called by Party A of the quote, and when Party A actions are not paused.
+	 * @param quoteId The ID of the quote to be canceled.
+	 */
 	function requestToCancelQuote(uint256 quoteId) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
 		QuoteStatus result = PartyAFacetImpl.requestToCancelQuote(quoteId);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
@@ -103,6 +106,15 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		}
 	}
 
+	/**
+	 * @notice Requests to close a position associated with the specified quote.
+	 * @dev This function can only be called by Party A of the quote, and when Party A actions are not paused.
+	 * @param quoteId The ID of the quote associated with the position to be closed.
+	 * @param closePrice The closing price for the position.
+	 * @param quantityToClose The quantity of the position to be closed.
+	 * @param orderType The type of order for the position closure.
+	 * @param deadline The deadline for executing the position closure.
+	 */
 	function requestToClosePosition(
 		uint256 quoteId,
 		uint256 closePrice,
@@ -126,6 +138,11 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		);
 	}
 
+	/**
+	 * @notice Requests to cancel a pending position closure request associated with the specified quote.
+	 * @dev This function can only be called by Party A of the quote, and when Party A actions are not paused.
+	 * @param quoteId The ID of the quote associated with the pending position closure request to be canceled.
+	 */
 	function requestToCancelCloseRequest(uint256 quoteId) external whenNotPartyAActionsPaused onlyPartyAOfQuote(quoteId) notLiquidated(quoteId) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
@@ -137,16 +154,32 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		}
 	}
 
+	/**
+	 * @notice Forces the cancellation of the specified quote.
+	 * @dev This function can only be called when Party A actions are not paused and the quote is not liquidated.
+	 * @param quoteId The ID of the quote to be canceled.
+	 */
 	function forceCancelQuote(uint256 quoteId) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
 		PartyAFacetImpl.forceCancelQuote(quoteId);
 		emit ForceCancelQuote(quoteId, QuoteStatus.CANCELED);
 	}
 
+	/**
+	 * @notice Forces the cancellation of the close request associated with the specified quote.
+	 * @dev This function can only be called when Party A actions are not paused and the quote is not liquidated.
+	 * @param quoteId The ID of the quote for which the close request should be canceled.
+	 */
 	function forceCancelCloseRequest(uint256 quoteId) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
 		PartyAFacetImpl.forceCancelCloseRequest(quoteId);
 		emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
 	}
 
+	/**
+	 * @notice Forces the closure of the position associated with the specified quote using the provided signature.
+	 * @dev This function can only be called when Party A actions are not paused and the quote is not liquidated.
+	 * @param quoteId The ID of the quote for which the position should be forced to close.
+	 * @param sig The signature containing the high and low prices used to force close the position.
+	 */
 	function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
