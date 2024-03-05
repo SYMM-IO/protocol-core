@@ -9,6 +9,12 @@ import "../../utils/Pausable.sol";
 import "./IFundingRateFacet.sol";
 
 contract FundingRateFacet is Pausable, IFundingRateFacet {
+	/// @notice Charges funding rates for a given Party A.
+	/// @dev This function can only be called when Party B actions are not paused.
+	/// @param partyA The address of Party A.
+	/// @param quoteIds An array of quote IDs associated with the funding rates.
+	/// @param rates An array of funding rates.
+	/// @param upnlSig The signature of the PairUpnl data structure.
 	function chargeFundingRate(
 		address partyA,
 		uint256[] memory quoteIds,
