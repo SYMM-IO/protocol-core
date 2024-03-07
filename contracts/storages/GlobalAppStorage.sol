@@ -21,6 +21,7 @@ library GlobalAppStorage {
 		uint256 balanceLimitPerUser;
 		mapping(address => bool) partyBEmergencyStatus;
 		mapping(address => mapping(bytes32 => bool)) hasRole;
+		bool internalTransferPaused;
 	}
 
 	function layout() internal pure returns (Layout storage l) {
