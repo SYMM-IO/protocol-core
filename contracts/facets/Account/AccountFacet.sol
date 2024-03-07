@@ -34,7 +34,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 
 	function allocate(uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.allocate(amount);
-		emit AllocatePartyA(msg.sender, amount);
+		emit AllocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
 	}
 
 	function depositAndAllocate(uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
@@ -42,18 +42,18 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
 		AccountFacetImpl.allocate(amountWith18Decimals);
 		emit Deposit(msg.sender, msg.sender, amount);
-		emit AllocatePartyA(msg.sender, amountWith18Decimals);
+		emit AllocatePartyA(msg.sender, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]);
 	}
 
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.deallocate(amount, upnlSig);
-		emit DeallocatePartyA(msg.sender, amount);
+		emit DeallocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
 	}
 
 	// PartyB
 	function allocateForPartyB(uint256 amount, address partyA) public whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
 		AccountFacetImpl.allocateForPartyB(amount, partyA);
-		emit AllocateForPartyB(msg.sender, partyA, amount);
+		emit AllocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
 	}
 
 	function deallocateForPartyB(
@@ -62,7 +62,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		SingleUpnlSig memory upnlSig
 	) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) notLiquidatedPartyA(partyA) onlyPartyB {
 		AccountFacetImpl.deallocateForPartyB(amount, partyA, upnlSig);
-		emit DeallocateForPartyB(msg.sender, partyA, amount);
+		emit DeallocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
 	}
 
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external whenNotPartyBActionsPaused {
