@@ -50,14 +50,16 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit DeallocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
 	}
 
-	/// @notice Transfers the sender's deposite balance to the user allocated balance.
-	/// @dev allocatedPerUser is checked
+	/// @notice Transfers the sender's deposited balance to the user allocated balance.
 	/// @dev The sender and the recipient user cannot be partyB.
-	/// @param user The address of the user to whom the amount is allocated.
+	/// @dev PartyA should not be in the liquidation process.
+	/// @param user The address of the user to whom the amount will be allocated.
 	/// @param amount The amount to transfer and allocate.
-	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender){
+	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender) notLiquidatedPartyA(user){
 		AccountFacetImpl.internalTransfer(user, amount);
-		emit InternalTransfer(msg.sender,user,amount); 
+		emit InternalTransfer(msg.sender, user, amount);
+		emit Withdraw(msg.sender, user, amount);
+		emit AllocatePartyA(user, amount, AccountStorage.layout().allocatedBalances[user]);
 	}
 
 	// PartyB
