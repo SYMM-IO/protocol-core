@@ -113,17 +113,17 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
     }
 
     function claimAllGas(address recipient) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        require(recipient != address(this), "MultiAccount: recipient can not be the contract itself");
         BLAST.claimAllGas(address(this), recipient);
     }
 
     function claimMaxGas(address recipient) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        require(recipient != address(this), "MultiAccount: recipient can not be the contract itself");
         BLAST.claimMaxGas(address(this), recipient);
     }
 
     function claimGasAtMinClaimRate(address recipient, uint256 minRate) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        require(recipient != address(this), "MultiAccount: recipient can not be the contract itself");
         BLAST.claimGasAtMinClaimRate(address(this), recipient, minRate);
     }
 
