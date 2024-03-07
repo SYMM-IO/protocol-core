@@ -21,7 +21,8 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 			partyA,
 			AccountStorage.layout().allocatedBalances[partyA],
 			liquidationSig.upnl,
-			liquidationSig.totalUnrealizedLoss
+			liquidationSig.totalUnrealizedLoss,
+			liquidationSig.liquidationId
 		);
 	}
 
@@ -30,35 +31,35 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		LiquidationSig memory liquidationSig
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		LiquidationFacetImpl.setSymbolsPrice(partyA, liquidationSig);
-		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices);
+		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices, liquidationSig.liquidationId);
 	}
 
 	function liquidatePendingPositionsPartyA(address partyA) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		uint256[] memory pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
-		LiquidationFacetImpl.liquidatePendingPositionsPartyA(partyA);
-		emit LiquidatePendingPositionsPartyA(msg.sender, partyA, pendingQuotes);
+		bytes memory liquidationId = LiquidationFacetImpl.liquidatePendingPositionsPartyA(partyA);
+		emit LiquidatePendingPositionsPartyA(msg.sender, partyA, pendingQuotes, liquidationId);
 	}
 
 	function liquidatePositionsPartyA(
 		address partyA,
 		uint256[] memory quoteIds
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
-		(bool disputed, uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = LiquidationFacetImpl.liquidatePositionsPartyA(
+		(bool disputed, uint256[] memory liquidatedAmounts, uint256[] memory closeIds, bytes memory liquidationId) = LiquidationFacetImpl.liquidatePositionsPartyA(
 			partyA,
 			quoteIds
 		);
-		emit LiquidatePositionsPartyA(msg.sender, partyA, quoteIds, liquidatedAmounts, closeIds);
+		emit LiquidatePositionsPartyA(msg.sender, partyA, quoteIds, liquidatedAmounts, closeIds, liquidationId);
 		if (disputed) {
-			emit LiquidationDisputed(partyA);
+			emit LiquidationDisputed(partyA, liquidationId);
 		}
 	}
 
 	function settlePartyALiquidation(address partyA, address[] memory partyBs) external whenNotLiquidationPaused {
-		int256[] memory settleAmounts = LiquidationFacetImpl.settlePartyALiquidation(partyA, partyBs);
-		emit SettlePartyALiquidation(partyA, partyBs, settleAmounts);
+		(int256[] memory settleAmounts, bytes memory liquidationId) = LiquidationFacetImpl.settlePartyALiquidation(partyA, partyBs);
+		emit SettlePartyALiquidation(partyA, partyBs, settleAmounts, liquidationId);
 		if (MAStorage.layout().liquidationStatus[partyA] == false) {
-			emit FullyLiquidatedPartyA(partyA);
+			emit FullyLiquidatedPartyA(partyA, liquidationId);
 		}
 	}
 
@@ -68,8 +69,8 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		int256[] memory amounts,
 		bool disputed
 	) external onlyRole(LibAccessibility.DISPUTE_ROLE) {
-		LiquidationFacetImpl.resolveLiquidationDispute(partyA, partyBs, amounts, disputed);
-		emit ResolveLiquidationDispute(partyA, partyBs, amounts, disputed);
+		bytes memory liquidationId = LiquidationFacetImpl.resolveLiquidationDispute(partyA, partyBs, amounts, disputed);
+		emit ResolveLiquidationDispute(partyA, partyBs, amounts, disputed, liquidationId);
 	}
 
 	function liquidatePartyB(
