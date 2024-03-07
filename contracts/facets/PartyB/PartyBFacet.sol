@@ -61,7 +61,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 		QuoteStatus res = PartyBFacetImpl.unlockQuote(quoteId);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		if (res == QuoteStatus.EXPIRED) {
-			emit ExpireQuote(res, quoteId, 0);
+			emit ExpireQuoteOpen(res, quoteId);
 		} else if (res == QuoteStatus.PENDING) {
 			emit UnlockQuote(quote.partyB, quoteId, QuoteStatus.PENDING);
 		}
