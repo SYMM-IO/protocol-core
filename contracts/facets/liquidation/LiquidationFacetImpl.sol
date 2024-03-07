@@ -78,11 +78,13 @@ library LiquidationFacetImpl {
 		}
 	}
 
-	function liquidatePendingPositionsPartyA(address partyA) internal returns(bytes memory){
+	function liquidatePendingPositionsPartyA(address partyA) internal returns(uint256[] memory liquidatedAmounts, bytes memory liquidationId){
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
 		require(MAStorage.layout().liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
+		liquidatedAmounts = new uint256[](quoteLayout.partyAPendingQuotes[partyA].length);
+		liquidationId = accountLayout.liquidationDetails[partyA].liquidationId;
 		for (uint256 index = 0; index < quoteLayout.partyAPendingQuotes[partyA].length; index++) {
 			Quote storage quote = quoteLayout.quotes[quoteLayout.partyAPendingQuotes[partyA][index]];
 			if (
@@ -95,10 +97,10 @@ library LiquidationFacetImpl {
 			accountLayout.partyAReimbursement[partyA] += LibQuote.getTradingFee(quote.id);
 			quote.quoteStatus = QuoteStatus.CANCELED;
 			quote.statusModifyTimestamp = block.timestamp;
+			liquidatedAmounts[index] = quote.quantity;
 		}
 		accountLayout.pendingLockedBalances[partyA].makeZero();
 		delete quoteLayout.partyAPendingQuotes[partyA];
-		return accountLayout.liquidationDetails[partyA].liquidationId;
 	}
 
 	function liquidatePositionsPartyA(

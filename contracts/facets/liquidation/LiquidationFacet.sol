@@ -37,8 +37,8 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	function liquidatePendingPositionsPartyA(address partyA) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		uint256[] memory pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
-		bytes memory liquidationId = LiquidationFacetImpl.liquidatePendingPositionsPartyA(partyA);
-		emit LiquidatePendingPositionsPartyA(msg.sender, partyA, pendingQuotes, liquidationId);
+		(uint256[] memory liquidatedAmounts, bytes memory liquidationId) = LiquidationFacetImpl.liquidatePendingPositionsPartyA(partyA);
+		emit LiquidatePendingPositionsPartyA(msg.sender, partyA, pendingQuotes, liquidatedAmounts, liquidationId);
 	}
 
 	function liquidatePositionsPartyA(
