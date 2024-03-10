@@ -32,7 +32,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit Withdraw(msg.sender, user, amount);
 	}
 
-	function allocate(uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
+	function allocate(uint256 amount) external whenNotAccountingPaused notSuspended(msg.sender) notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.allocate(amount);
 		emit AllocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
 	}
@@ -72,7 +72,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		uint256 amount,
 		address partyA,
 		SingleUpnlSig memory upnlSig
-	) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) notLiquidatedPartyA(partyA) onlyPartyB {
+	) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) notSuspended(msg.sender) notLiquidatedPartyA(partyA) onlyPartyB {
 		AccountFacetImpl.deallocateForPartyB(amount, partyA, upnlSig);
 		emit DeallocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
 	}
