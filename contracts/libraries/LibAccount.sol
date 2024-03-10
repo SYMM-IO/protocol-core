@@ -10,11 +10,22 @@ import "../storages/AccountStorage.sol";
 library LibAccount {
 	using LockedValuesOps for LockedValues;
 
+	/**
+	 * @notice Calculates the total locked balances of Party A.
+	 * @param partyA The address of Party A.
+	 * @return The total locked balances of Party A.
+	 */
 	function partyATotalLockedBalances(address partyA) internal view returns (uint256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		return accountLayout.pendingLockedBalances[partyA].totalForPartyA() + accountLayout.lockedBalances[partyA].totalForPartyA();
 	}
 
+	/**
+	 * @notice Calculates the total locked balances of Party B for a specific Party A.
+	 * @param partyB The address of Party B.
+	 * @param partyA The address of Party A.
+	 * @return The total locked balances of Party B for the specified Party A.
+	 */
 	function partyBTotalLockedBalances(address partyB, address partyA) internal view returns (uint256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		return
@@ -22,6 +33,12 @@ library LibAccount {
 			accountLayout.partyBLockedBalances[partyB][partyA].totalForPartyB();
 	}
 
+	/**
+	 * @notice Calculates the available balance for a quote for Party A.
+	 * @param upnl The unrealized profit and loss.
+	 * @param partyA The address of Party A.
+	 * @return The available balance for a quote for Party A.
+	 */
 	function partyAAvailableForQuote(int256 upnl, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		int256 available;
@@ -45,6 +62,12 @@ library LibAccount {
 		return available;
 	}
 
+	/**
+	 * @notice Calculates the available balance for Party A.
+	 * @param upnl The unrealized profit and loss.
+	 * @param partyA The address of Party A.
+	 * @return The available balance for Party A.
+	 */
 	function partyAAvailableBalance(int256 upnl, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		int256 available;
@@ -61,6 +84,12 @@ library LibAccount {
 		return available;
 	}
 
+	/**
+	 * @notice Calculates the available balance for liquidation for Party A.
+	 * @param upnl The unrealized profit and loss.
+	 * @param partyA The address of Party A.
+	 * @return The available balance for liquidation for Party A.
+	 */
 	function partyAAvailableBalanceForLiquidation(int256 upnl, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		int256 freeBalance = int256(accountLayout.allocatedBalances[partyA]) -
@@ -68,6 +97,13 @@ library LibAccount {
 		return freeBalance + upnl;
 	}
 
+	/**
+	 * @notice Calculates the available balance for a quote for Party B.
+	 * @param upnl The unrealized profit and loss.
+	 * @param partyB The address of Party B.
+	 * @param partyA The address of Party A.
+	 * @return The available balance for a quote for Party B.
+	 */
 	function partyBAvailableForQuote(int256 upnl, address partyB, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		int256 available;
@@ -94,6 +130,13 @@ library LibAccount {
 		return available;
 	}
 
+	/**
+	 * @notice Calculates the available balance for Party B.
+	 * @param upnl The unrealized profit and loss.
+	 * @param partyB The address of Party B.
+	 * @param partyA The address of Party A.
+	 * @return The available balance for Party B.
+	 */
 	function partyBAvailableBalance(int256 upnl, address partyB, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		int256 available;
@@ -113,6 +156,13 @@ library LibAccount {
 		return available;
 	}
 
+	/**
+	 * @notice Calculates the available balance for liquidation for Party B.
+	 * @param upnl The unrealized profit and loss.
+	 * @param partyB The address of Party B.
+	 * @param partyA The address of Party A.
+	 * @return The available balance for liquidation for Party B.
+	 */
 	function partyBAvailableBalanceForLiquidation(int256 upnl, address partyB, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		int256 a = int256(accountLayout.partyBAllocatedBalances[partyB][partyA]) -

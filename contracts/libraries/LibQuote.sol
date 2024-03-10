@@ -14,10 +14,21 @@ import "../storages/MAStorage.sol";
 library LibQuote {
 	using LockedValuesOps for LockedValues;
 
+	/**
+	 * @notice Calculates the remaining open amount of a quote.
+	 * @param quote The quote for which to calculate the remaining open amount.
+	 * @return The remaining open amount of the quote.
+	 */
 	function quoteOpenAmount(Quote storage quote) internal view returns (uint256) {
 		return quote.quantity - quote.closedAmount;
 	}
 
+	/**
+	 * @notice Gets the index of an item in an array.
+	 * @param array_ The array in which to search for the item.
+	 * @param item The item to find the index of.
+	 * @return The index of the item in the array, or type(uint256).max if the item is not found.
+	 */
 	function getIndexOfItem(uint256[] storage array_, uint256 item) internal view returns (uint256) {
 		for (uint256 index = 0; index < array_.length; index++) {
 			if (array_[index] == item) return index;
@@ -25,6 +36,11 @@ library LibQuote {
 		return type(uint256).max;
 	}
 
+	/**
+	 * @notice Removes an item from an array.
+	 * @param array_ The array from which to remove the item.
+	 * @param item The item to remove from the array.
+	 */
 	function removeFromArray(uint256[] storage array_, uint256 item) internal {
 		uint256 index = getIndexOfItem(array_, item);
 		require(index != type(uint256).max, "LibQuote: Item not Found");
@@ -32,19 +48,35 @@ library LibQuote {
 		array_.pop();
 	}
 
+	/**
+	 * @notice Removes a quote from the pending quotes of Party A.
+	 * @param quote The quote to remove from the pending quotes.
+	 */
 	function removeFromPartyAPendingQuotes(Quote storage quote) internal {
 		removeFromArray(QuoteStorage.layout().partyAPendingQuotes[quote.partyA], quote.id);
 	}
 
+	/**
+	 * @notice Removes a quote from the pending quotes of Party B.
+	 * @param quote The quote to remove from the pending quotes.
+	 */
 	function removeFromPartyBPendingQuotes(Quote storage quote) internal {
 		removeFromArray(QuoteStorage.layout().partyBPendingQuotes[quote.partyB][quote.partyA], quote.id);
 	}
 
+	/**
+	 * @notice Removes a quote from both Party A's and Party B's pending quotes.
+	 * @param quote The quote to remove from the pending quotes.
+	 */
 	function removeFromPendingQuotes(Quote storage quote) internal {
 		removeFromPartyAPendingQuotes(quote);
 		removeFromPartyBPendingQuotes(quote);
 	}
 
+	/**
+	 * @notice Adds a quote to the open positions.
+	 * @param quoteId The ID of the quote to add to the open positions.
+	 */
 	function addToOpenPositions(uint256 quoteId) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
@@ -59,6 +91,10 @@ library LibQuote {
 		quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] += 1;
 	}
 
+	/**
+	 * @notice Removes a quote from the open positions.
+	 * @param quoteId The ID of the quote to remove from the open positions.
+	 */
 	function removeFromOpenPositions(uint256 quoteId) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
@@ -80,6 +116,14 @@ library LibQuote {
 		quoteLayout.partyBPositionsIndex[quote.id] = 0;
 	}
 
+	/**
+	 * @notice Calculates the value of a quote for Party A based on the current price and filled amount.
+	 * @param currentPrice The current price of the quote.
+	 * @param filledAmount The filled amount of the quote.
+	 * @param quote The quote for which to calculate the value.
+	 * @return hasMadeProfit A boolean indicating whether Party A has made a profit.
+	 * @return pnl The profit or loss value for Party A.
+	 */
 	function getValueOfQuoteForPartyA(
 		uint256 currentPrice,
 		uint256 filledAmount,
@@ -102,6 +146,11 @@ library LibQuote {
 		}
 	}
 
+	/**
+	 * @notice Gets the trading fee for a quote.
+	 * @param quoteId The ID of the quote for which to get the trading fee.
+	 * @return fee The trading fee for the quote.
+	 */
 	function getTradingFee(uint256 quoteId) internal view returns (uint256 fee) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
@@ -112,6 +161,12 @@ library LibQuote {
 		}
 	}
 
+	/**
+	 * @notice Closes a quote.
+	 * @param quote The quote to close.
+	 * @param filledAmount The filled amount of the quote.
+	 * @param closedPrice The price at which the quote is closed.
+	 */
 	function closeQuote(Quote storage quote, uint256 filledAmount, uint256 closedPrice) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
@@ -186,6 +241,11 @@ library LibQuote {
 		}
 	}
 
+	/**
+	 * @notice Expires a quote.
+	 * @param quoteId The ID of the quote to expire.
+	 * @return result The resulting status of the quote after expiration.
+	 */
 	function expireQuote(uint256 quoteId) internal returns (QuoteStatus result) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
