@@ -51,7 +51,7 @@ library AccountStorage {
 		mapping(address => mapping(address => uint256)) partyBAllocatedBalances;
 		mapping(address => mapping(address => LockedValues)) partyBPendingLockedBalances;
 		mapping(address => mapping(address => LockedValues)) partyBLockedBalances;
-		mapping(address => uint256) withdrawCooldown;
+		mapping(address => uint256) withdrawCooldown; // is better to call lastDeallocateTime
 		mapping(address => uint256) partyANonces;
 		mapping(address => mapping(address => uint256)) partyBNonces;
 		mapping(address => bool) suspendedAddresses;

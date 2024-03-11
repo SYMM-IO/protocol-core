@@ -124,6 +124,10 @@ contract ViewFacet is IViewFacet {
 		return AccountStorage.layout().liquidationDetails[partyA];
 	}
 
+	function getDeallocateDebounceTime() external view returns (uint256) {
+		return MAStorage.layout().deallocateDebounceTime;
+	}
+
 	function getSettlementStates(address partyA, address[] memory partyBs) external view returns (SettlementState[] memory) {
 		SettlementState[] memory states = new SettlementState[](partyBs.length);
 		for (uint256 i = 0; i < partyBs.length; i++) {

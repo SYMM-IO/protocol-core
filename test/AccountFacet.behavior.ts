@@ -156,6 +156,17 @@ export function shouldBehaveLikeAccountFacet(): void {
 				expect(await context.viewFacet.allocatedBalanceOfPartyA(userAddress)).to.equal("250")
 			})
 
+			it("Should fail to deallocate too often", async function () {
+				const userAddress = context.signers.user.getAddress()
+				await context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
+				await expect(
+					context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
+				).to.be.revertedWith("AccountFacet: Too many deallocate in a short window")
+				await time.increase((await context.viewFacet.getDeallocateDebounceTime()).add(1))
+				await context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
+				expect(await context.viewFacet.balanceOf(userAddress)).to.equal("50")
+			})
+
 			it("Should fail to withdraw due to cooldown", async function () {
 				await context.accountFacet.connect(context.signers.user).deallocate("50", await getDummySingleUpnlSig())
 				await expect(context.accountFacet.connect(context.signers.user).withdraw("50")).to.be.revertedWith("AccountFacet: Cooldown hasn't reached")

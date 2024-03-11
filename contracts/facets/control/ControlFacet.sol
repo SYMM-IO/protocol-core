@@ -253,6 +253,11 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		MAStorage.layout().pendingQuotesValidLength = pendingQuotesValidLength;
 	}
 
+	function setDeallocateDebounceTime(uint256 deallocateDebounceTime) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		emit SetDeallocateDebounceTime(MAStorage.layout().deallocateDebounceTime, deallocateDebounceTime);
+		MAStorage.layout().deallocateDebounceTime = deallocateDebounceTime;
+	}
+
 	// Pause State
 
 	function setFeeCollector(address feeCollector) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {

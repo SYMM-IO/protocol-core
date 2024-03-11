@@ -38,6 +38,7 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1, 17))
 	await context.controlFacet.connect(context.signers.admin).setLiquidationTimeout(100)
 	await context.controlFacet.connect(context.signers.admin).setDeallocateCooldown(120)
+	await context.controlFacet.connect(context.signers.admin).setDeallocateDebounceTime(120)
 	await context.controlFacet.connect(context.signers.admin).setBalanceLimitPerUser(decimal(10000))
 	await context.controlFacet.connect(context.signers.admin).setForceCloseCooldowns(300, 120)
 	await context.controlFacet.connect(context.signers.admin).registerPartyB(context.signers.hedger.getAddress())
