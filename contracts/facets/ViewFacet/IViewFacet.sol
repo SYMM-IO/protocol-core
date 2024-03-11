@@ -45,6 +45,8 @@ interface IViewFacet {
 
 	function getLiquidatedStateOfPartyA(address partyA) external view returns (LiquidationDetail memory);
 
+	function getDeallocateDebounceTime() external view returns (uint256);
+
 	function getSettlementStates(address partyA, address[] memory partyBs) external view returns (SettlementState[] memory);
 
 	///////////////////////////////////////////

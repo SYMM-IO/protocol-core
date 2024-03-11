@@ -48,6 +48,10 @@ library AccountFacetImpl {
 
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(
+			block.timestamp >= accountLayout.withdrawCooldown[msg.sender] + MAStorage.layout().deallocateDebounceTime,
+			"AccountFacet: Too many deallocate in a short window"
+		);
 		require(accountLayout.allocatedBalances[msg.sender] >= amount, "AccountFacet: Insufficient allocated Balance");
 		LibMuon.verifyPartyAUpnl(upnlSig, msg.sender);
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
@@ -82,7 +86,7 @@ library AccountFacetImpl {
 
 	function internalTransfer(address user, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		
+
 		require(
 			accountLayout.allocatedBalances[user] + amount <= GlobalAppStorage.layout().balanceLimitPerUser,
 			"AccountFacet: Allocated balance limit reached"

@@ -73,6 +73,8 @@ interface IControlFacet is IControlEvents {
 
 	function setPendingQuotesValidLength(uint256 pendingQuotesValidLength) external;
 
+	function setDeallocateDebounceTime(uint256 deallocateDebounceTime) external;
+
 	// Pause State
 
 	function setFeeCollector(address feeCollector) external;
