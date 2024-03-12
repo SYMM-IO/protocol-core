@@ -14,8 +14,10 @@ task("deploy:stablecoin", "Deploys the FakeStablecoin", async (_, { ethers, run 
 
 	const signers: SignerWithAddress[] = await ethers.getSigners();
 	const owner: SignerWithAddress = signers[0];
-	console.log("using address: " + JSON.stringify(owner));
+	console.log("using addressx: " + JSON.stringify(owner));
+	await new Promise(r => setTimeout(r, 2000));
 	console.log("with balance: " + await owner.getBalance());
+	await new Promise(r => setTimeout(r, 2000));
 
 	const StablecoinFactory = await ethers.getContractFactory("FakeStablecoin");
 	const stablecoin = await StablecoinFactory.connect(owner).deploy();
