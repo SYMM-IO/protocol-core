@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgrad
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import "../facets/BlastConfig/IBlast.sol";
+import "../facets/BlastConfig/IBlastPoints.sol";
 
 contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumerableUpgradeable {
     bytes32 public constant TRUSTED_ROLE = keccak256("TRUSTED_ROLE");
@@ -20,6 +21,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
     mapping(address => bool) public multicastWhitelist;
 
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
+    IBlastPoints public constant BLAST_POINTS = IBlastPoints(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -36,6 +38,11 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
         symmioAddress = symmioAddress_;
         BLAST.configureClaimableYield();
         BLAST.configureClaimableGas();
+    }
+
+    function configurePointsOperator(address operator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(operator != address(0), "BlastConfigFacet: invalid operator");
+        BLAST_POINTS.configurePointsOperator(operator);
     }
 
     event SetSymmioAddress(address oldSymmioAddress, address newSymmioAddress);

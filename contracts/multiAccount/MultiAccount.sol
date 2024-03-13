@@ -14,6 +14,7 @@ import "../interfaces/ISymmio.sol";
 import "../interfaces/ISymmioPartyA.sol";
 import "../interfaces/IMultiAccount.sol";
 import "../facets/BlastConfig/IBlast.sol";
+import "../facets/BlastConfig/IBlastPoints.sol";
 
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -36,6 +37,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
     mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses; // account -> target -> selector -> state
 
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
+    IBlastPoints public constant BLAST_POINTS = IBlastPoints(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800);
 
     modifier onlyOwner(address account, address sender) {
         require(owners[account] == sender, "MultiAccount: Sender isn't owner of account");
@@ -60,6 +62,11 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
         accountImplementation = accountImplementation_;
         BLAST.configureClaimableYield();
         BLAST.configureClaimableGas();
+    }
+
+    function configurePointsOperator(address operator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(operator != address(0), "BlastConfigFacet: invalid operator");
+        BLAST_POINTS.configurePointsOperator(operator);
     }
 
     function delegateAccess(address account, address target, bytes4 selector, bool state) external onlyOwner(account, msg.sender) {

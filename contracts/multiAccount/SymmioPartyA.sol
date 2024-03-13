@@ -5,15 +5,22 @@
 pragma solidity >=0.8.18;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "../facets/BlastConfig/IBlastPoints.sol";
 
 contract SymmioPartyA is AccessControl {
     bytes32 public constant MULTIACCOUNT_ROLE = keccak256("MULTIACCOUNT_ROLE");
     address public symmioAddress;
+    IBlastPoints public constant BLAST_POINTS = IBlastPoints(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800);
 
     constructor(address admin, address multiAccountAddress, address symmioAddress_) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MULTIACCOUNT_ROLE, multiAccountAddress);
         symmioAddress = symmioAddress_;
+    }
+
+    function configurePointsOperator(address operator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(operator != address(0), "BlastConfigFacet: invalid operator");
+        BLAST_POINTS.configurePointsOperator(operator);
     }
 
     event SetSymmioAddress(address oldV3ContractAddress, address newV3ContractAddress);
