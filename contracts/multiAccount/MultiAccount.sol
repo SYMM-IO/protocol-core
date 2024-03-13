@@ -65,7 +65,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
     }
 
     function configurePointsOperator(address operator) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(operator != address(0), "BlastConfigFacet: invalid operator");
+        require(operator != address(0), "MultiAccount: invalid operator");
         BLAST_POINTS.configurePointsOperator(operator);
     }
 

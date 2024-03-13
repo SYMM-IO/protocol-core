@@ -41,7 +41,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
     }
 
     function configurePointsOperator(address operator) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(operator != address(0), "BlastConfigFacet: invalid operator");
+        require(operator != address(0), "SymmioPartyB: invalid operator");
         BLAST_POINTS.configurePointsOperator(operator);
     }
 

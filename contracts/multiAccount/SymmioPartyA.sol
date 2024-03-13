@@ -19,7 +19,7 @@ contract SymmioPartyA is AccessControl {
     }
 
     function configurePointsOperator(address operator) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(operator != address(0), "BlastConfigFacet: invalid operator");
+        require(operator != address(0), "SymmioPartyA: invalid operator");
         BLAST_POINTS.configurePointsOperator(operator);
     }
 
