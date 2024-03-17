@@ -9,7 +9,7 @@ async function main() {
 
 	// Deploy SymmioPartyB as upgradeable
 	const SymmioPartyBFactory = await ethers.getContractFactory("SymmioPartyB")
-	const admin = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+	const admin = process.env.ADMIN_PUBLIC_KEY
 	const symmioPartyB = await upgrades.deployProxy(SymmioPartyBFactory, [admin, deployedAddresses.symmioAddress], { initializer: "initialize" })
 	await symmioPartyB.deployed()
 
@@ -20,7 +20,7 @@ async function main() {
 	}
 	console.log(addresses)
 
-	deployedAddresses.partyBAddress = symmioPartyB.address
+	deployedAddresses.hedgerProxyAddress = symmioPartyB.address
 	saveAddresses(deployedAddresses)
 
 	try {

@@ -20,6 +20,11 @@ abstract contract Accessibility {
 		_;
 	}
 
+	modifier userNotPartyB(address user) {
+		require(!MAStorage.layout().partyBStatus[user], "Accessibility: Shouldn't be partyB");
+		_;
+	}
+
 	modifier onlyRole(bytes32 role) {
 		require(LibAccessibility.hasRole(msg.sender, role), "Accessibility: Must has role");
 		_;

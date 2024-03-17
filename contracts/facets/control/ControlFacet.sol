@@ -286,6 +286,11 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit PausePartyBActions();
 	}
 
+	function pauseInternalTransfer() external onlyRole(LibAccessibility.PAUSER_ROLE) {
+		GlobalAppStorage.layout().internalTransferPaused = true;
+		emit PauseInternalTransfer();
+	}
+
 	function activeEmergencyMode() external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
 		GlobalAppStorage.layout().emergencyMode = true;
 		emit ActiveEmergencyMode();
@@ -314,6 +319,11 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	function unpausePartyBActions() external onlyRole(LibAccessibility.UNPAUSER_ROLE) {
 		GlobalAppStorage.layout().partyBActionsPaused = false;
 		emit UnpausePartyBActions();
+	}
+
+	function unpauseInternalTransfer() external onlyRole(LibAccessibility.UNPAUSER_ROLE) {
+		GlobalAppStorage.layout().internalTransferPaused = false;
+		emit UnpauseInternalTransfer();
 	}
 
 	function setLiquidationTimeout(uint256 liquidationTimeout) external onlyRole(LibAccessibility.SETTER_ROLE) {

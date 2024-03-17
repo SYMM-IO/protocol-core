@@ -64,7 +64,11 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		QuoteStatus result;
 		for (uint8 i; i < expiredQuoteIds.length; i++) {
 			result = LibQuote.expireQuote(expiredQuoteIds[i]);
-			emit ExpireQuote(result, expiredQuoteIds[i], 0);
+			if (result == QuoteStatus.OPENED){
+				emit ExpireQuoteClose(result, expiredQuoteIds[i], QuoteStorage.layout().closeIds[expiredQuoteIds[i]]);
+			} else {
+				emit ExpireQuoteOpen(result, expiredQuoteIds[i]);
+			}
 		}
 	}
 
@@ -73,7 +77,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
 		if (result == QuoteStatus.EXPIRED) {
-			emit ExpireQuote(result, quoteId, 0);
+			emit ExpireQuoteOpen(result, quoteId);
 		} else if (result == QuoteStatus.CANCELED || result == QuoteStatus.CANCEL_PENDING) {
 			emit RequestToCancelQuote(quote.partyA, quote.partyB, result, quoteId);
 		}
@@ -107,7 +111,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
 		if (result == QuoteStatus.OPENED) {
-			emit ExpireQuote(QuoteStatus.OPENED, quoteId, quoteLayout.closeIds[quoteId]);
+			emit ExpireQuoteClose(QuoteStatus.OPENED, quoteId, quoteLayout.closeIds[quoteId]);
 		} else if (result == QuoteStatus.CANCEL_CLOSE_PENDING) {
 			emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING, quoteLayout.closeIds[quoteId]);
 		}
@@ -120,7 +124,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 
 	function forceCancelCloseRequest(uint256 quoteId) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
 		PartyAFacetImpl.forceCancelCloseRequest(quoteId);
-		emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED);
+		emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
 	}
 
 	function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
