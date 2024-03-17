@@ -55,7 +55,7 @@ export async function createRunContext(diamond: string, collateral: string, only
 		hedger2: signers[5],
 		bridge: signers[6],
 		bridge2: signers[7],
-		others: [],
+		others: [signers[8],signers[9]],
 	}
 
 	context.diamond = diamond

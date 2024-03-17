@@ -178,7 +178,7 @@ export class Hedger {
 
 		let upnl = BigNumber.from(0)
 		for (const pos of openPositions) {
-			const priceDiff = pos.openedPrice.sub(await getPrice((await this.context.viewFacet.getSymbol(pos.symbolId)).name))
+			const priceDiff = pos.openedPrice.sub(await getPrice())
 			const amount = pos.quantity.sub(pos.closedAmount)
 			upnl.add(unDecimal(amount.mul(priceDiff)).mul(pos.positionType == PositionType.LONG ? -1 : 1))
 		}
