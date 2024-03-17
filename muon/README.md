@@ -49,7 +49,7 @@ This method is same as uPnl_A but at last its signature include **symbolIds** an
 
 ### verify
 
-The verify method takes several inputs, including the **signature**, **reqId**, **nonceAddress**, **start**, **size**, **v3Contract**, **partyA**, **nonce**, **uPnl**, **loss**, **symbolIds**, **prices**, **timestamp**, and **chainId**. It verifies the signature by comparing it with a generated hash of the provided parameters. If the signature is successfully verified, the method returns a subset of the input data, including the **v3contract**, **partyA**, **nonce**, **uPnl**, **loss**, **symbolIds** within a specified range, **prices** corresponding to those **symbolIds**, **timestamp**, and **chainId**. If the signature verification fails, an error is thrown.
+The verify method takes several inputs, including the **signature**, **reqId**, **nonceAddress**, **start**, **size**, **v3Contract**, **partyA**, **nonce**, **uPnl**, **loss**, **symbolIds**, **prices**, **timestamp**, and **chainId**. It verifies The Muon signature by comparing it with a generated hash of the provided parameters. If The Muon signature is successfully verified, the method returns a subset of the input data, including the **v3contract**, **partyA**, **nonce**, **uPnl**, **loss**, **symbolIds** within a specified range, **prices** corresponding to those **symbolIds**, **timestamp**, and **chainId**. If The Muon signature verification fails, an error is thrown.
 
 ### uPnl_A_withSymbolPrice
 

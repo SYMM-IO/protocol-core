@@ -15,8 +15,8 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 	bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
-	mapping(bytes4 => bool) public restrictedSelectors;
-	mapping(address => bool) public multicastWhitelist;
+	mapping(bytes4 => bool) public restrictedSelectors; // selector -> isRestricted
+	mapping(address => bool) public multicastWhitelist; // contractAddress -> isAllowedForMulticast
 
 	/// @custom:oz-upgrades-unsafe-allow constructor
 	constructor() {
@@ -62,8 +62,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	/**
 	 * @dev Updates the address of the Symmio contract.
 	 * @param addr The new address of the Symmio contract.
-	 * Requirements:
-	 * - Caller must have the DEFAULT_ADMIN_ROLE.
 	 */
 	function setSymmioAddress(address addr) external onlyRole(DEFAULT_ADMIN_ROLE) {
 		emit SetSymmioAddress(symmioAddress, addr);
@@ -71,11 +69,9 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	}
 
 	/**
-	 * @dev Sets the state of a restricted selector.
+	 * @dev Restricts or lifts restrictions on a selector for Party B..
 	 * @param selector The function selector to set the state for.
 	 * @param state The state to set for the selector.
-	 * Requirements:
-	 * - Caller must have the DEFAULT_ADMIN_ROLE.
 	 */
 	function setRestrictedSelector(bytes4 selector, bool state) external onlyRole(DEFAULT_ADMIN_ROLE) {
 		restrictedSelectors[selector] = state;
@@ -83,12 +79,9 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	}
 
 	/**
-	 * @dev Sets the state of a multicast whitelist address.
+	 * @dev Allows or disallows Party B to call a method from a specific contract.
 	 * @param addr The address to set the state for.
 	 * @param state The state to set for the address.
-	 * Requirements:
-	 * - Caller must have the MANAGER_ROLE.
-	 * - Address cannot be the contract address.
 	 */
 	function setMulticastWhitelist(address addr, bool state) external onlyRole(MANAGER_ROLE) {
 		require(addr != address(this), "SymmioPartyB: Invalid address");
@@ -100,9 +93,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	 * @dev Approves an ERC20 token for spending by Symmio.
 	 * @param token The address of the ERC20 token.
 	 * @param amount The amount of tokens to approve.
-	 * Requirements:
-	 * - Caller must have the TRUSTED_ROLE.
-	 * - Contract must not be paused.
 	 */
 	function _approve(address token, uint256 amount) external onlyRole(TRUSTED_ROLE) whenNotPaused {
 		require(IERC20Upgradeable(token).approve(symmioAddress, amount), "SymmioPartyB: Not approved");
@@ -112,11 +102,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	 * @dev Executes a call to a destination address with the provided call data.
 	 * @param destAddress The destination address to call.
 	 * @param callData The call data to be used for the call.
-	 * Requirements:
-	 * - Destination address cannot be zero.
-	 * - Call data length must be at least 4.
-	 * - Caller must have appropriate role or whitelist access.
-	 * - Contract must not be paused.
 	 */
 	function _executeCall(address destAddress, bytes memory callData) internal {
 		require(destAddress != address(0), "SymmioPartyB: Invalid address");
@@ -144,8 +129,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	/**
 	 * @dev Executes multiple calls to the Symmio contract.
 	 * @param _callDatas An array of call data to be used for the calls.
-	 * Requirements:
-	 * - Contract must not be paused.
 	 */
 	function _call(bytes[] calldata _callDatas) external whenNotPaused {
 		for (uint8 i; i < _callDatas.length; i++) _executeCall(symmioAddress, _callDatas[i]);
@@ -155,9 +138,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	 * @dev Executes multiple calls to specified destination addresses.
 	 * @param destAddresses An array of destination addresses to call.
 	 * @param _callDatas An array of call data to be used for the calls.
-	 * Requirements:
-	 * - Length of destAddresses must match length of _callDatas.
-	 * - Contract must not be paused.
 	 */
 	function _multicastCall(address[] calldata destAddresses, bytes[] calldata _callDatas) external whenNotPaused {
 		require(destAddresses.length == _callDatas.length, "SymmioPartyB: Array length mismatch");
@@ -169,8 +149,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	 * @dev Withdraws ERC20 tokens from the contract to the caller.
 	 * @param token The address of the ERC20 token.
 	 * @param amount The amount of tokens to withdraw.
-	 * Requirements:
-	 * - Caller must have the MANAGER_ROLE.
 	 */
 	function withdrawERC20(address token, uint256 amount) external onlyRole(MANAGER_ROLE) {
 		require(IERC20Upgradeable(token).transfer(msg.sender, amount), "SymmioPartyB: Not transferred");
@@ -178,8 +156,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 
 	/**
 	 * @dev Pauses the contract.
-	 * Requirements:
-	 * - Caller must have the PAUSER_ROLE.
 	 */
 	function pause() external onlyRole(PAUSER_ROLE) {
 		_pause();
@@ -187,8 +163,6 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 
 	/**
 	 * @dev Unpauses the contract.
-	 * Requirements:
-	 * - Caller must have the UNPAUSER_ROLE.
 	 */
 	function unpause() external onlyRole(UNPAUSER_ROLE) {
 		_unpause();

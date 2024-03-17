@@ -12,10 +12,9 @@ import "../../storages/AccountStorage.sol";
 
 contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	/**
-	 * @notice Liquidates Party A's position based on the provided signature.
-	 * @dev This function can only be called when liquidation is not paused and Party A is not already liquidated.
+	 * @notice Liquidates Party A based on the provided signature.
 	 * @param partyA The address of Party A to be liquidated.
-	 * @param liquidationSig The signature containing liquidation data.
+	 * @param liquidationSig The Muon signature.
 	 */
 	function liquidatePartyA(
 		address partyA,
@@ -33,10 +32,10 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	}
 
 	/**
-	 * @notice Sets prices for symbols based on the provided signature.
-	 * @dev This function can only be called when liquidation is not paused and the caller has the LIQUIDATOR_ROLE.
+	 * @notice Sets the prices of symbols at the time of liquidation.
+	 * @dev The Muon signature here should be the same as the one that got partyA liquidated.
 	 * @param partyA The address of Party A associated with the liquidation.
-	 * @param liquidationSig The signature containing symbol IDs and their corresponding prices.
+	 * @param liquidationSig The Muon signature containing symbol IDs and their corresponding prices.
 	 */
 	function setSymbolsPrice(
 		address partyA,
@@ -47,8 +46,7 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	}
 
 	/**
-	 * @notice Liquidates pending positions for Party A.
-	 * @dev This function can only be called when liquidation is not paused and the caller has the LIQUIDATOR_ROLE.
+	 * @notice Liquidates pending positions of Party A.
 	 * @param partyA The address of Party A whose pending positions will be liquidated.
 	 */
 	function liquidatePendingPositionsPartyA(address partyA) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
@@ -59,8 +57,7 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	}
 
 	/**
-	 * @notice Liquidates positions for Party A.
-	 * @dev This function can only be called when liquidation is not paused and the caller has the LIQUIDATOR_ROLE.
+	 * @notice Liquidates other positions of Party A.
 	 * @param partyA The address of Party A whose positions will be liquidated.
 	 * @param quoteIds An array of quote IDs representing the positions to be liquidated.
 	 */
@@ -80,7 +77,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 
 	/**
 	 * @notice Settles liquidation for Party A with specified Party Bs.
-	 * @dev This function can only be called when liquidation is not paused.
 	 * @param partyA The address of Party A to settle liquidation for.
 	 * @param partyBs An array of addresses representing Party Bs involved in the settlement.
 	 */
@@ -94,7 +90,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 
 	/**
 	 * @notice Resolves a liquidation dispute for Party A with specified Party Bs and settlement amounts.
-	 * @dev This function can only be called by accounts with the DISPUTE_ROLE role.
 	 * @param partyA The address of Party A involved in the dispute.
 	 * @param partyBs An array of addresses representing Party Bs involved in the dispute.
 	 * @param amounts An array of settlement amounts corresponding to Party Bs.
@@ -111,11 +106,10 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	}
 
 	/**
-	 * @notice Liquidates Party B with respect to Party A using the provided unrealized profit and loss signature.
-	 * @dev This function can only be called by accounts with the LIQUIDATOR_ROLE role.
+	 * @notice Liquidates Party B with respect to a Party A.
 	 * @param partyB The address of Party B to be liquidated.
 	 * @param partyA The address of Party A related to the liquidation.
-	 * @param upnlSig The signature containing the unrealized profit and loss data.
+	 * @param upnlSig The Muon signature containing the unrealized profit and loss data.
 	 */
 	function liquidatePartyB(
 		address partyB,
@@ -127,11 +121,10 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	}
 
 	/**
-	 * @notice Liquidates positions of Party B with respect to Party A using the provided quote price signature.
-	 * @dev This function can only be called by accounts with the LIQUIDATOR_ROLE role.
+	 * @notice Liquidates positions of Party B the Party A.
 	 * @param partyB The address of Party B whose positions are being liquidated.
 	 * @param partyA The address of Party A related to the liquidation.
-	 * @param priceSig The signature containing the quote price data.
+	 * @param priceSig The Muon signature containing the quote price data.
 	 */
 	function liquidatePositionsPartyB(
 		address partyB,
