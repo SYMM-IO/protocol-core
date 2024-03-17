@@ -11,6 +11,11 @@ import "./LiquidationFacetImpl.sol";
 import "../../storages/AccountStorage.sol";
 
 contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
+	/**
+	 * @notice Liquidates Party A based on the provided signature.
+	 * @param partyA The address of Party A to be liquidated.
+	 * @param liquidationSig The Muon signature.
+	 */
 	function liquidatePartyA(
 		address partyA,
 		LiquidationSig memory liquidationSig
@@ -26,6 +31,12 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		);
 	}
 
+	/**
+	 * @notice Sets the prices of symbols at the time of liquidation.
+	 * @dev The Muon signature here should be the same as the one that got partyA liquidated.
+	 * @param partyA The address of Party A associated with the liquidation.
+	 * @param liquidationSig The Muon signature containing symbol IDs and their corresponding prices.
+	 */
 	function setSymbolsPrice(
 		address partyA,
 		LiquidationSig memory liquidationSig
@@ -34,6 +45,10 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices, liquidationSig.liquidationId);
 	}
 
+	/**
+	 * @notice Liquidates pending positions of Party A.
+	 * @param partyA The address of Party A whose pending positions will be liquidated.
+	 */
 	function liquidatePendingPositionsPartyA(address partyA) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		uint256[] memory pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
@@ -41,6 +56,11 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		emit LiquidatePendingPositionsPartyA(msg.sender, partyA, pendingQuotes, liquidatedAmounts, liquidationId);
 	}
 
+	/**
+	 * @notice Liquidates other positions of Party A.
+	 * @param partyA The address of Party A whose positions will be liquidated.
+	 * @param quoteIds An array of quote IDs representing the positions to be liquidated.
+	 */
 	function liquidatePositionsPartyA(
 		address partyA,
 		uint256[] memory quoteIds
@@ -55,6 +75,11 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		}
 	}
 
+	/**
+	 * @notice Settles liquidation for Party A with specified Party Bs.
+	 * @param partyA The address of Party A to settle liquidation for.
+	 * @param partyBs An array of addresses representing Party Bs involved in the settlement.
+	 */
 	function settlePartyALiquidation(address partyA, address[] memory partyBs) external whenNotLiquidationPaused {
 		(int256[] memory settleAmounts, bytes memory liquidationId) = LiquidationFacetImpl.settlePartyALiquidation(partyA, partyBs);
 		emit SettlePartyALiquidation(partyA, partyBs, settleAmounts, liquidationId);
@@ -63,6 +88,13 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		}
 	}
 
+	/**
+	 * @notice Resolves a liquidation dispute for Party A with specified Party Bs and settlement amounts.
+	 * @param partyA The address of Party A involved in the dispute.
+	 * @param partyBs An array of addresses representing Party Bs involved in the dispute.
+	 * @param amounts An array of settlement amounts corresponding to Party Bs.
+	 * @param disputed A boolean indicating whether the liquidation was disputed.
+	 */
 	function resolveLiquidationDispute(
 		address partyA,
 		address[] memory partyBs,
@@ -73,6 +105,12 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		emit ResolveLiquidationDispute(partyA, partyBs, amounts, disputed, liquidationId);
 	}
 
+	/**
+	 * @notice Liquidates Party B with respect to a Party A.
+	 * @param partyB The address of Party B to be liquidated.
+	 * @param partyA The address of Party A related to the liquidation.
+	 * @param upnlSig The Muon signature containing the unrealized profit and loss data.
+	 */
 	function liquidatePartyB(
 		address partyB,
 		address partyA,
@@ -82,6 +120,12 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		LiquidationFacetImpl.liquidatePartyB(partyB, partyA, upnlSig);
 	}
 
+	/**
+	 * @notice Liquidates positions of Party B the Party A.
+	 * @param partyB The address of Party B whose positions are being liquidated.
+	 * @param partyA The address of Party A related to the liquidation.
+	 * @param priceSig The Muon signature containing the quote price data.
+	 */
 	function liquidatePositionsPartyB(
 		address partyB,
 		address partyA,

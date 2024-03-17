@@ -21,7 +21,7 @@ interface IControlFacet is IControlEvents {
 
 	function deregisterPartyB(address partyB, uint256 index) external;
 
-	function setMuonConfig(uint256 upnlValidTime, uint256 priceValidTime, uint256 priceQuantityValidTime) external;
+	function setMuonConfig(uint256 upnlValidTime, uint256 priceValidTime) external;
 
 	function setMuonIds(uint256 muonAppId, address validGateway, PublicKey memory publicKey) external;
 
