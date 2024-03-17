@@ -8,9 +8,10 @@ import { User } from "./models/User"
 import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
 import { Hedger } from "./models/Hedger"
 import { decimal, unDecimal } from "./utils/Common"
+import { decimal, unDecimal } from "./utils/Common"
 
 export function shouldBehaveLikeAccountFacet(): void {
-	let context: RunContext, user: User, hedger: Hedger
+	let context: RunContext, user: User, user2: User, hedger: Hedger
 
 	beforeEach(async function () {
 		context = await loadFixture(initializeFixture)
@@ -217,6 +218,33 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 				expect(newAllocatedBalanceOfPartyB).to.be.equal(decimal(120).sub(decimal(50)))
 			})
+		})
+	})
+
+	describe("InternalTransfer", async function () {
+		beforeEach(async()=>{
+			user2 = new User(context, context.signers.user2)
+			await user2.setup()
+			await user2.setBalances("500")
+	
+			hedger = new Hedger(context, context.signers.hedger)
+			await hedger.setup()
+			await hedger.setBalances("500")
+	
+			await context.accountFacet.connect(context.signers.user).deposit("300")
+		})
+
+		it('should internal transfer successfully',async()=>{
+			await context.accountFacet.connect(context.signers.user).internalTransfer(await user2.getAddress(),"250")
+			expect(await context.viewFacet.balanceOf(await user2.getAddress())).to.be.equal('0')
+			expect(await context.viewFacet.allocatedBalanceOfPartyA(await user2.getAddress())).to.be.equal('250')
+			
+			expect(await context.viewFacet.balanceOf(await user.getAddress())).to.be.equal('50')
+		})
+
+		it('should fail internal transfer if one of sides be partyB',async()=>{
+			await expect(context.accountFacet.connect(context.signers.user).internalTransfer(await hedger.getAddress(),"250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
+			await expect(context.accountFacet.connect(context.signers.hedger).internalTransfer(await user.getAddress(),"250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
 		})
 	})
 }

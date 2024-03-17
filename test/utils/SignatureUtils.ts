@@ -5,17 +5,18 @@ import { PairUpnlAndPriceSigStruct, SingleUpnlSigStruct } from "../../src/types/
 import { LiquidationSigStruct, QuotePriceSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
 import { getBlockTimestamp } from "./Common"
 import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
+import { zeroAddress } from "./Common"
 
 export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<SingleUpnlSigStruct> {
 	return {
 		reqId: "0x",
 		timestamp: await getBlockTimestamp(),
 		upnl: upnl,
-		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		gatewaySignature: zeroAddress,
 		sigs: {
 			signature: "0",
-			owner: "0x0000000000000000000000000000000000000000",
-			nonce: "0x0000000000000000000000000000000000000000",
+			owner: zeroAddress,
+			nonce: zeroAddress,
 		},
 	}
 }
@@ -35,11 +36,11 @@ export async function getDummyLiquidationSig(
 		totalUnrealizedLoss: totalUnrealizedLoss,
 		prices: prices,
 		symbolIds: symbolIds,
-		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		gatewaySignature: zeroAddress,
 		sigs: {
 			signature: "0",
-			owner: "0x0000000000000000000000000000000000000000",
-			nonce: "0x0000000000000000000000000000000000000000",
+			owner: zeroAddress,
+			nonce: zeroAddress,
 		},
 	}
 }
@@ -49,11 +50,11 @@ export async function getDummySingleUpnlAndPriceSig(price: BigNumberish = 1, upn
 		reqId: "0x",
 		timestamp: await getBlockTimestamp(),
 		upnl: upnl,
-		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		gatewaySignature: zeroAddress,
 		sigs: {
 			signature: "0",
-			owner: "0x0000000000000000000000000000000000000000",
-			nonce: "0x0000000000000000000000000000000000000000",
+			owner: zeroAddress,
+			nonce: zeroAddress,
 		},
 		price: price,
 	}
@@ -69,11 +70,11 @@ export async function getDummyPairUpnlAndPriceSig(
 		timestamp: await getBlockTimestamp(),
 		upnlPartyA: upnlPartyA,
 		upnlPartyB: upnlPartyB,
-		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		gatewaySignature: zeroAddress,
 		sigs: {
 			signature: "0",
-			owner: "0x0000000000000000000000000000000000000000",
-			nonce: "0x0000000000000000000000000000000000000000",
+			owner: zeroAddress,
+			nonce: zeroAddress,
 		},
 		price: price,
 	}
@@ -88,11 +89,11 @@ export async function getDummyPairUpnlSig(
 		timestamp: BigNumber.from(await getBlockTimestamp()),
 		upnlPartyA: upnlPartyA,
 		upnlPartyB: upnlPartyB,
-		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		gatewaySignature: zeroAddress,
 		sigs: {
 			signature: BigNumber.from(0),
-			owner: "0x0000000000000000000000000000000000000000",
-			nonce: "0x0000000000000000000000000000000000000000",
+			owner: zeroAddress,
+			nonce: zeroAddress,
 		} as any,
 	} as any
 }
@@ -120,11 +121,11 @@ export async function getDummyHighLowPriceSig(
 		symbolId: symbolId,
 		upnlPartyB: upnlPartyB,
 		upnlPartyA: upnlPartyA,
-		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		gatewaySignature: zeroAddress,
 		sigs: {
 			signature: "0",
-			owner: "0x0000000000000000000000000000000000000000",
-			nonce: "0x0000000000000000000000000000000000000000",
+			owner: zeroAddress,
+			nonce: zeroAddress,
 		},
 	}
 }
@@ -135,11 +136,11 @@ export async function getDummyPriceSig(quoteIds: BigNumberish[] = [], prices: Bi
 		timestamp: await getBlockTimestamp(),
 		quoteIds: quoteIds,
 		prices: prices,
-		gatewaySignature: "0x0000000000000000000000000000000000000000",
+		gatewaySignature: zeroAddress,
 		sigs: {
 			signature: "0",
-			owner: "0x0000000000000000000000000000000000000000",
-			nonce: "0x0000000000000000000000000000000000000000",
+			owner: zeroAddress,
+			nonce: zeroAddress,
 		},
 	}
 }

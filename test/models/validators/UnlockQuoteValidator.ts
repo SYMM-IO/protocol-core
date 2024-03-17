@@ -6,6 +6,7 @@ import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"
 import { TransactionValidator } from "./TransactionValidator"
 import { logger } from "../../utils/LoggerUtils"
+import { zeroAddress } from "../../utils/Common"
 
 export type UnlockQuoteValidatorBeforeArg = {
 	user: User
@@ -38,6 +39,6 @@ export class UnlockQuoteValidator implements TransactionValidator {
 
 		const quote = await context.viewFacet.getQuote(arg.quoteId)
 		expect(quote.quoteStatus).to.be.equal(QuoteStatus.PENDING)
-		expect(quote.partyB).to.be.equal("0x0000000000000000000000000000000000000000")
+		expect(quote.partyB).to.be.equal(zeroAddress)
 	}
 }

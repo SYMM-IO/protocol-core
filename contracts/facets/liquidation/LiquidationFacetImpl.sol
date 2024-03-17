@@ -20,13 +20,14 @@ library LiquidationFacetImpl {
 
 	function liquidatePartyA(address partyA, LiquidationSig memory liquidationSig) internal {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
 		LibMuon.verifyLiquidationSig(liquidationSig, partyA);
 		require(block.timestamp <= liquidationSig.timestamp + MuonStorage.layout().upnlValidTime, "LiquidationFacet: Expired signature");
 		int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(liquidationSig.upnl, partyA);
 		require(availableBalance < 0, "LiquidationFacet: PartyA is solvent");
 		maLayout.liquidationStatus[partyA] = true;
-		AccountStorage.layout().liquidationDetails[partyA] = LiquidationDetail({
+		accountLayout.liquidationDetails[partyA] = LiquidationDetail({
 			liquidationId: liquidationSig.liquidationId,
 			liquidationType: LiquidationType.NONE,
 			upnl: liquidationSig.upnl,
@@ -38,10 +39,10 @@ library LiquidationFacetImpl {
 			partyAAccumulatedUpnl: 0,
 			disputed: false
 		});
-		AccountStorage.layout().liquidators[partyA].push(msg.sender);
+		accountLayout.liquidators[partyA].push(msg.sender);
 	}
 
-	function setSymbolsPrice(address partyA, LiquidationSig memory liquidationSig) internal {
+	function setSymbolsPrice(address partyA, LiquidationSig memory liquidationSig) internal{
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
@@ -73,13 +74,17 @@ library LiquidationFacetImpl {
 				accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.OVERDUE;
 				accountLayout.liquidationDetails[partyA].deficit = deficit;
 			}
-			AccountStorage.layout().liquidators[partyA].push(msg.sender);
+			accountLayout.liquidators[partyA].push(msg.sender);
 		}
 	}
 
-	function liquidatePendingPositionsPartyA(address partyA) internal {
+	function liquidatePendingPositionsPartyA(address partyA) internal returns(uint256[] memory liquidatedAmounts, bytes memory liquidationId){
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+
 		require(MAStorage.layout().liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
+		liquidatedAmounts = new uint256[](quoteLayout.partyAPendingQuotes[partyA].length);
+		liquidationId = accountLayout.liquidationDetails[partyA].liquidationId;
 		for (uint256 index = 0; index < quoteLayout.partyAPendingQuotes[partyA].length; index++) {
 			Quote storage quote = quoteLayout.quotes[quoteLayout.partyAPendingQuotes[partyA][index]];
 			if (
@@ -87,26 +92,28 @@ library LiquidationFacetImpl {
 				quoteLayout.partyBPendingQuotes[quote.partyB][partyA].length > 0
 			) {
 				delete quoteLayout.partyBPendingQuotes[quote.partyB][partyA];
-				AccountStorage.layout().partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
+				accountLayout.partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
 			}
-			AccountStorage.layout().partyAReimbursement[partyA] += LibQuote.getTradingFee(quote.id);
+			accountLayout.partyAReimbursement[partyA] += LibQuote.getTradingFee(quote.id);
 			quote.quoteStatus = QuoteStatus.CANCELED;
 			quote.statusModifyTimestamp = block.timestamp;
+			liquidatedAmounts[index] = quote.quantity;
 		}
-		AccountStorage.layout().pendingLockedBalances[partyA].makeZero();
+		accountLayout.pendingLockedBalances[partyA].makeZero();
 		delete quoteLayout.partyAPendingQuotes[partyA];
 	}
 
 	function liquidatePositionsPartyA(
 		address partyA,
 		uint256[] memory quoteIds
-	) internal returns (bool, uint256[] memory liquidatedAmounts, uint256[] memory closeIds) {
+	) internal returns (bool, uint256[] memory liquidatedAmounts, uint256[] memory closeIds, bytes memory liquidationId) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 
 		liquidatedAmounts = new uint256[](quoteIds.length);
 		closeIds = new uint256[](quoteIds.length);
+		liquidationId = accountLayout.liquidationDetails[partyA].liquidationId;
 
 		require(maLayout.liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
 		for (uint256 index = 0; index < quoteIds.length; index++) {
@@ -207,20 +214,23 @@ library LiquidationFacetImpl {
 			accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl != accountLayout.liquidationDetails[partyA].upnl
 		) {
 			accountLayout.liquidationDetails[partyA].disputed = true;
-			return (true, liquidatedAmounts, closeIds);
+			return (true, liquidatedAmounts, closeIds, liquidationId);
 		}
-		return (false, liquidatedAmounts, closeIds);
+		return (false, liquidatedAmounts, closeIds, liquidationId);
 	}
 
-	function resolveLiquidationDispute(address partyA, address[] memory partyBs, int256[] memory amounts, bool disputed) internal {
-		AccountStorage.layout().liquidationDetails[partyA].disputed = disputed;
+	function resolveLiquidationDispute(address partyA, address[] memory partyBs, int256[] memory amounts, bool disputed) internal returns (bytes memory) {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+
+		accountLayout.liquidationDetails[partyA].disputed = disputed;
 		require(partyBs.length == amounts.length, "LiquidationFacet: Invalid length");
 		for (uint256 i = 0; i < partyBs.length; i++) {
-			AccountStorage.layout().settlementStates[partyA][partyBs[i]].actualAmount = amounts[i];
+			accountLayout.settlementStates[partyA][partyBs[i]].actualAmount = amounts[i];
 		}
+		return accountLayout.liquidationDetails[partyA].liquidationId;
 	}
 
-	function settlePartyALiquidation(address partyA, address[] memory partyBs) internal returns (int256[] memory settleAmounts) {
+	function settlePartyALiquidation(address partyA, address[] memory partyBs) internal returns (int256[] memory settleAmounts, bytes memory liquidationId) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		require(
@@ -229,6 +239,7 @@ library LiquidationFacetImpl {
 		);
 		require(MAStorage.layout().liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
 		require(!accountLayout.liquidationDetails[partyA].disputed, "LiquidationFacet: PartyA liquidation process get disputed");
+		liquidationId = accountLayout.liquidationDetails[partyA].liquidationId;
 		settleAmounts = new int256[](partyBs.length);
 		for (uint256 i = 0; i < partyBs.length; i++) {
 			address partyB = partyBs[i];
