@@ -96,7 +96,7 @@ library MuonStorage {
 	struct Layout {
 		uint256 upnlValidTime;
 		uint256 priceValidTime;
-		uint256 priceQuantityValidTime;
+		uint256 priceQuantityValidTime; // UNUSED: Should be deleted later
 		uint256 muonAppId;
 		PublicKey muonPublicKey;
 		address validGateway;

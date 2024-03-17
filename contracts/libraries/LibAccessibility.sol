@@ -18,6 +18,12 @@ library LibAccessibility {
 	bytes32 public constant SUSPENDER_ROLE = keccak256("SUSPENDER_ROLE");
 	bytes32 public constant DISPUTE_ROLE = keccak256("DISPUTE_ROLE");
 
+	/**
+	 * @notice Checks if a user has a specific role.
+	 * @param user The address of the user.
+	 * @param role The role to check.
+	 * @return Whether the user has the specified role.
+	 */
 	function hasRole(address user, bytes32 role) internal view returns (bool) {
 		GlobalAppStorage.Layout storage layout = GlobalAppStorage.layout();
 		return layout.hasRole[user][role];

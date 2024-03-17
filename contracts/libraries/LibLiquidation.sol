@@ -12,16 +12,28 @@ import "./LibQuote.sol";
 library LibLiquidation {
 	using LockedValuesOps for LockedValues;
 
+	/**
+	 * @notice Liquidates Party B.
+	 * @param partyB The address of Party B.
+	 * @param partyA The address of Party A.
+	 * @param upnlPartyB The unrealized profit and loss of Party B.
+	 * @param timestamp The timestamp of the liquidation.
+	 */
 	function liquidatePartyB(address partyB, address partyA, int256 upnlPartyB, uint256 timestamp) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 
+		// Calculate available balance for liquidation
 		int256 availableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlPartyB, partyB, partyA);
 
+		// Ensure Party B is insolvent
 		require(availableBalance < 0, "LiquidationFacet: partyB is solvent");
+
 		uint256 liquidatorShare;
 		uint256 remainingLf;
+
+		// Determine liquidator share and remaining locked funds
 		if (uint256(-availableBalance) < accountLayout.partyBLockedBalances[partyB][partyA].lf) {
 			remainingLf = accountLayout.partyBLockedBalances[partyB][partyA].lf - uint256(-availableBalance);
 			liquidatorShare = (remainingLf * maLayout.liquidatorShare) / 1e18;
@@ -33,6 +45,7 @@ library LibLiquidation {
 			maLayout.partyBPositionLiquidatorsShare[partyB][partyA] = 0;
 		}
 
+		// Update liquidation status and timestamp for Party B
 		maLayout.partyBLiquidationStatus[partyB][partyA] = true;
 		maLayout.partyBLiquidationTimestamp[partyB][partyA] = timestamp;
 
@@ -51,14 +64,18 @@ library LibLiquidation {
 				index++;
 			}
 		}
+
+		// Update allocated balances for Party A
 		accountLayout.allocatedBalances[partyA] += accountLayout.partyBAllocatedBalances[partyB][partyA] - remainingLf;
 
+		// Clear pending quotes and reset balances for Party B
 		delete quoteLayout.partyBPendingQuotes[partyB][partyA];
 		accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
 		accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
 		accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
 		accountLayout.partyANonces[partyA] += 1;
 
+		// Transfer liquidator share to the liquidator
 		if (liquidatorShare > 0) {
 			accountLayout.allocatedBalances[msg.sender] += liquidatorShare;
 		}
