@@ -131,7 +131,7 @@ interface IViewFacet {
 
 	///////////////////////////////////////////
 
-	function getMuonConfig() external view returns (uint256 upnlValidTime, uint256 priceValidTime, uint256 priceQuantityValidTime);
+	function getMuonConfig() external view returns (uint256 upnlValidTime, uint256 priceValidTime);
 
 	function getMuonIds() external view returns (uint256 muonAppId, PublicKey memory muonPublicKey, address validGateway);
 

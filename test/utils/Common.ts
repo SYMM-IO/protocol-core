@@ -11,6 +11,8 @@ import { network } from "hardhat"
 
 const defaultSerializer = new JsonSerializer()
 
+export const zeroAddress = "0x0000000000000000000000000000000000000000"
+
 export function decimal(value: number, decimal: number = 18): BigNumber {
 	return BigNumber.from(value).mul(BigNumber.from(10).pow(decimal))
 }
