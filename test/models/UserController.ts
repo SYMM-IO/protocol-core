@@ -80,7 +80,7 @@ export class UserController {
 		const symbol: SymbolStructOutput = pick(await getSymbols(this.manager.context))
 		let symbolQP = this.manager.symbolManager.getSymbolQuantityPrecision(symbol.symbolId.toNumber())
 		let symbolPP = this.manager.symbolManager.getSymbolPricePrecision(symbol.symbolId.toNumber())
-		const price = await getPrice(symbol.name)
+		const price = await getPrice()
 		const upnl = await this.user.getUpnl()
 		const availableForQuote = await this.user.getAvailableBalanceForQuote(upnl)
 		if (availableForQuote.lt(symbol.minAcceptableQuoteValue)) throw new ManagedError("Insufficient funds available")
@@ -186,7 +186,7 @@ export class UserController {
 				}
 
 				const orderType = pick([OrderType.LIMIT, OrderType.MARKET])
-				const price = await getPrice(symbol.name)
+				const price = await getPrice()
 				const hedger = this.manager.getHedger(quote.partyB)
 
 				const closePrice = roundToPrecision(price.add(randomBigNumberRatio(price, 0.05).mul(pick([1, -1]))), symbolPP)
