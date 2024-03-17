@@ -17,17 +17,15 @@ import "../interfaces/IMultiAccount.sol";
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
 	using SafeERC20Upgradeable for IERC20Upgradeable;
 
-	// Defining roles for access control
 	bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 	bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 
-	// State variables
 	mapping(address => Account[]) public accounts; // User to their accounts mapping
 	mapping(address => uint256) public indexOfAccount; // Account to its index mapping
 	mapping(address => address) public owners; // Account to its owner mapping
 
-	address public accountsAdmin; // Admin address for the contract
+	address public accountsAdmin; // Admin address for the accounts
 	address public symmioAddress; // Address of the Symmio platform
 	uint256 public saltCounter; // Counter for generating unique addresses with create2
 	bytes public accountImplementation;
@@ -47,7 +45,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	/**
 	 * @dev Initializes the contract with necessary parameters.
-	 * @param admin The admin address for the contract.
+	 * @param admin The admin address for the accounts contracts.
 	 * @param symmioAddress_ The address of the Symmio platform.
 	 * @param accountImplementation_ The bytecode of the account implementation contract.
 	 */
@@ -94,7 +92,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	/**
 	 * @dev Sets the implementation contract for the account.
-	 * @param accountImplementation_ The address of the new implementation contract.
+	 * @param accountImplementation_ The bytecodes of the new implementation contract.
 	 */
 	function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
 		emit SetAccountImplementation(accountImplementation, accountImplementation_);

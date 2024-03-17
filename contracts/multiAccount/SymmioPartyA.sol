@@ -24,16 +24,14 @@ contract SymmioPartyA is AccessControl {
 
 	/**
 	 * @dev Emitted when the Symmio address is updated.
-	 * @param oldV3ContractAddress The address of the old Symmio contract.
-	 * @param newV3ContractAddress The address of the new Symmio contract.
+	 * @param oldSymmioContractAddress The address of the old Symmio contract.
+	 * @param newSymmioContractAddress The address of the new Symmio contract.
 	 */
-	event SetSymmioAddress(address oldV3ContractAddress, address newV3ContractAddress);
+	event SetSymmioAddress(address oldSymmioContractAddress, address newSymmioContractAddress);
 
 	/**
 	 * @dev Updates the address of the Symmio contract.
 	 * @param symmioAddress_ The new address of the Symmio contract.
-	 * Requirements:
-	 * - Caller must have the DEFAULT_ADMIN_ROLE.
 	 */
 	function setSymmioAddress(address symmioAddress_) external onlyRole(DEFAULT_ADMIN_ROLE) {
 		emit SetSymmioAddress(symmioAddress, symmioAddress_);
@@ -45,8 +43,6 @@ contract SymmioPartyA is AccessControl {
 	 * @param _callData The data to be used for the function call.
 	 * @return _success A boolean indicating whether the call was successful.
 	 * @return _resultData The result data returned by the function call.
-	 * Requirements:
-	 * - Caller must have the MULTIACCOUNT_ROLE.
 	 */
 	function _call(bytes memory _callData) external onlyRole(MULTIACCOUNT_ROLE) returns (bool _success, bytes memory _resultData) {
 		return symmioAddress.call{ value: 0 }(_callData);

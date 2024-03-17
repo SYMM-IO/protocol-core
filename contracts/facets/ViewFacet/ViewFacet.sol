@@ -20,7 +20,6 @@ import "./IViewFacet.sol";
 contract ViewFacet is IViewFacet {
 	using LockedValuesOps for LockedValues;
 
-	// Account
 	/**
 	 * @notice Returns the balance of the specified user.
 	 * @param user The address of the user.
@@ -31,7 +30,7 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
-	 * @notice Returns various statistics related to Party A.
+	 * @notice Returns various values related to Party A.
 	 * @param partyA The address of Party A.
 	 * @return liquidationStatus The liquidation status of Party A.
 	 * @return allocatedBalances The allocated balances of Party A.
@@ -154,7 +153,7 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
-	 * @notice Returns the withdrawal cooldown of a user.
+	 * @notice Returns the withdrawal cooldown of a user(indicating the most recent time the user executed a deallocation.).
 	 * @param user The address of the user.
 	 * @return The withdrawal cooldown of the user.
 	 */
@@ -213,9 +212,6 @@ contract ViewFacet is IViewFacet {
 		return states;
 	}
 
-	///////////////////////////////////////////
-
-	// Symbols
 	/**
 	 * @notice Returns the details of a symbol by its ID.
 	 * @param symbolId The ID of the symbol.
@@ -282,9 +278,6 @@ contract ViewFacet is IViewFacet {
 		return symbols;
 	}
 
-	////////////////////////////////////
-
-	// Quotes
 	/**
 	 * @notice Returns the details of a quote by its ID.
 	 * @param quoteId The ID of the quote.
@@ -513,9 +506,6 @@ contract ViewFacet is IViewFacet {
 		return QuoteStorage.layout().partyBPendingQuotes[partyB][partyA];
 	}
 
-	/////////////////////////////////////
-
-	// Role
 	/**
 	 * @notice Checks if a user has a specific role.
 	 * @param user The address of the user.
@@ -535,9 +525,6 @@ contract ViewFacet is IViewFacet {
 		return keccak256(abi.encodePacked(str));
 	}
 
-	//////////////////////////////////////
-
-	// MA
 	/**
 	 * @notice Returns the address of the collateral contract.
 	 * @return The address of the collateral contract.
@@ -658,18 +645,14 @@ contract ViewFacet is IViewFacet {
 		);
 	}
 
-	///////////////////////////////////////////
-
 	/**
 	 * @notice Retrieves the configuration parameters of the Muon system.
 	 * @return upnlValidTime The validity period of UPNL.
 	 * @return priceValidTime The validity period of price.
-	 * @return priceQuantityValidTime The validity period of price quantity.
 	 */
-	function getMuonConfig() external view returns (uint256 upnlValidTime, uint256 priceValidTime, uint256 priceQuantityValidTime) {
+	function getMuonConfig() external view returns (uint256 upnlValidTime, uint256 priceValidTime) {
 		upnlValidTime = MuonStorage.layout().upnlValidTime;
 		priceValidTime = MuonStorage.layout().priceValidTime;
-		priceQuantityValidTime = MuonStorage.layout().priceQuantityValidTime;
 	}
 
 	/**
@@ -737,10 +720,10 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
-	 * @notice Verifies the signature of the Muon TSS and gateway.
+	 * @notice Verifies The Muon signature of the Muon TSS and gateway.
 	 * @param hash The hash to verify.
 	 * @param sign The Schnorr signature.
-	 * @param gatewaySignature The signature from the gateway.
+	 * @param gatewaySignature The Muon signature from the gateway.
 	 */
 	function verifyMuonTSSAndGateway(bytes32 hash, SchnorrSign memory sign, bytes memory gatewaySignature) external view {
 		LibMuon.verifyTSSAndGateway(hash, sign, gatewaySignature);
