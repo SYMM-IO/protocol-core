@@ -11,6 +11,7 @@ import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior"
 import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
 import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
 import { shouldBehaveLikeMultiAccount } from "./MultiAccount.behavior"
+import { shouldBehaveLikeControlFacet } from "./ControlFacet.behavior"
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == "static") {
@@ -60,6 +61,10 @@ describe("UnitTests", function () {
 		
 		describe("MultiAccount", async function () {
 			shouldBehaveLikeMultiAccount()
+		})
+
+		describe("ControlFacet", async function () {
+			shouldBehaveLikeControlFacet()
 		})
 	} else if (process.env.TEST_MODE == "fuzz") {
 		describe("FuzzTest", async function () {
