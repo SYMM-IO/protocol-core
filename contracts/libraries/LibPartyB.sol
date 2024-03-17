@@ -13,6 +13,11 @@ import "./LibLockedValues.sol";
 library LibPartyB {
 	using LockedValuesOps for LockedValues;
 
+	/**
+	 * @notice Checks if the Party B is valid to lock a quote.
+	 * @param quoteId The ID of the quote to be locked.
+	 * @param upnl The unrealized profit and loss of the Party B.
+	 */
 	function checkPartyBValidationToLockQuote(uint256 quoteId, int256 upnl) internal view {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();

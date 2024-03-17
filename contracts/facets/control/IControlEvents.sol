@@ -7,11 +7,11 @@ pragma solidity >=0.8.18;
 interface IControlEvents {
 	event RoleGranted(bytes32 role, address user);
 	event RoleRevoked(bytes32 role, address user);
-	event SetMuonConfig(uint256 upnlValidTime, uint256 priceValidTime, uint256 priceQuantityValidTime);
+	event SetMuonConfig(uint256 upnlValidTime, uint256 priceValidTime);
 	event SetMuonIds(uint256 muonAppId, address gateway, uint256 x, uint8 parity);
 	event SetCollateral(address collateral);
 	event AddSymbol(
-		uint256 id,
+		uint256 symbolId,
 		string name,
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF,
@@ -21,8 +21,8 @@ interface IControlEvents {
 		uint256 fundingRateWindowTime
 	);
 	event SetFeeCollector(address oldFeeCollector, address newFeeCollector);
-	event SetSymbolValidationState(uint256 id, bool oldState, bool isValid);
-	event SetSymbolFundingState(uint256 id, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime);
+	event SetSymbolValidationState(uint256 symbolId, bool oldState, bool isValid);
+	event SetSymbolFundingState(uint256 symbolId, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime);
 	event SetSymbolAcceptableValues(
 		uint256 symbolId,
 		uint256 oldMinAcceptableQuoteValue,
