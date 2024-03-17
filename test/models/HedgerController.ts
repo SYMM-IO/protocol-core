@@ -23,6 +23,7 @@ import { LockQuoteValidator, LockQuoteValidatorBeforeOutput } from "./validators
 import { OpenPositionValidator, OpenPositionValidatorBeforeOutput } from "./validators/OpenPositionValidator"
 import { UnlockQuoteValidator, UnlockQuoteValidatorBeforeOutput } from "./validators/UnlockQuoteValidator"
 import { QuoteCheckpoint } from "./quoteCheckpoint"
+import { zeroAddress } from "../utils/Common"
 
 export class HedgerController {
 	private context: RunContext
@@ -40,9 +41,7 @@ export class HedgerController {
 					.getQueueObservable(status)
 					.pipe(
 						concatMap(qId => from(this.context.viewFacet.getQuote(qId))),
-						filter(
-							quote => quote.quoteStatus == status && (quote.partyB == "0x0000000000000000000000000000000000000000" || quote.partyB == userAddress),
-						),
+						filter(quote => quote.quoteStatus == status && (quote.partyB == zeroAddress || quote.partyB == userAddress)),
 					)
 					.subscribe(async quote => {
 						this.manager.actionsLoop.next({
