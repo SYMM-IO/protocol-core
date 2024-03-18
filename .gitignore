@@ -32,3 +32,6 @@ serverLog.log
 detailedDebug.log
 pnpm-lock.yaml
 .openzeppelin
+.yarn
+.pnp.loader.mjs
+.pnp.cjs
