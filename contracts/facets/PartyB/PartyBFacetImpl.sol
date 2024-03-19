@@ -10,6 +10,7 @@ import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/LibPartyB.sol";
+import "../../libraries/SharedEvents.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -65,8 +66,11 @@ library PartyBFacetImpl {
 		quote.quoteStatus = QuoteStatus.CANCELED;
 		accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
 		accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
+
 		// send trading Fee back to partyA
-		accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quoteId);
+		uint256 fee = LibQuote.getTradingFee(quoteId);
+		accountLayout.allocatedBalances[quote.partyA] += fee;
+		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 
 		LibQuote.removeFromPendingQuotes(quote);
 	}
@@ -190,7 +194,10 @@ library PartyBFacetImpl {
 
 			if (newStatus == QuoteStatus.CANCELED) {
 				// send trading Fee back to partyA
-				accountLayout.allocatedBalances[newQuote.partyA] += LibQuote.getTradingFee(newQuote.id);
+				uint256 fee = LibQuote.getTradingFee(newQuote.id);
+				accountLayout.allocatedBalances[newQuote.partyA] += fee;
+				emit SharedEvents.BalanceChangePartyA(newQuote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
+
 				// part of quote has been filled and part of it has been canceled
 				accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
 				accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);

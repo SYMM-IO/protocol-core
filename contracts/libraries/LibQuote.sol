@@ -5,6 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "./LibLockedValues.sol";
+import "../libraries/SharedEvents.sol";
 import "../storages/QuoteStorage.sol";
 import "../storages/AccountStorage.sol";
 import "../storages/GlobalAppStorage.sol";
@@ -211,14 +212,18 @@ library LibQuote {
 				"LibQuote: PartyA should first exit its positions that are incurring losses"
 			);
 			accountLayout.allocatedBalances[quote.partyA] += pnl;
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, pnl, SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] -= pnl;
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, pnl, SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 		} else {
 			require(
 				accountLayout.allocatedBalances[quote.partyA] >= pnl,
 				"LibQuote: PartyA should first exit its positions that are currently in profit."
 			);
 			accountLayout.allocatedBalances[quote.partyA] -= pnl;
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, pnl, SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += pnl;
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, pnl, SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 		}
 
 		quote.avgClosedPrice = (quote.avgClosedPrice * quote.closedAmount + filledAmount * closedPrice) / (quote.closedAmount + filledAmount);
@@ -265,8 +270,12 @@ library LibQuote {
 		if (quote.quoteStatus == QuoteStatus.PENDING || quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
 			quote.statusModifyTimestamp = block.timestamp;
 			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
+
 			// send trading Fee back to partyA
-			accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
+			uint256 fee = LibQuote.getTradingFee(quote.id);
+			accountLayout.allocatedBalances[quote.partyA] += fee;
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
+
 			removeFromPartyAPendingQuotes(quote);
 			if (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
 				accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);

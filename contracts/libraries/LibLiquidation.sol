@@ -6,6 +6,7 @@ pragma solidity >=0.8.18;
 
 import "../storages/MuonStorage.sol";
 import "../storages/QuoteStorage.sol";
+import "../libraries/SharedEvents.sol";
 import "./LibAccount.sol";
 import "./LibQuote.sol";
 
@@ -55,7 +56,9 @@ library LibLiquidation {
 			Quote storage quote = quoteLayout.quotes[pendingQuotes[index]];
 			if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING)) {
 				accountLayout.pendingLockedBalances[partyA].subQuote(quote);
-				accountLayout.allocatedBalances[partyA] += LibQuote.getTradingFee(quote.id);
+				uint256 fee = LibQuote.getTradingFee(quote.id);
+				accountLayout.allocatedBalances[partyA] += fee;
+				emit SharedEvents.BalanceChangePartyA(partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 				pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
 				pendingQuotes.pop();
 				quote.quoteStatus = QuoteStatus.CANCELED;
@@ -66,10 +69,13 @@ library LibLiquidation {
 		}
 
 		// Update allocated balances for Party A
-		accountLayout.allocatedBalances[partyA] += accountLayout.partyBAllocatedBalances[partyB][partyA] - remainingLf;
+		uint256 value = accountLayout.partyBAllocatedBalances[partyB][partyA] - remainingLf;
+		accountLayout.allocatedBalances[partyA] += value;
+		emit SharedEvents.BalanceChangePartyA(partyA, value, SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 
 		// Clear pending quotes and reset balances for Party B
 		delete quoteLayout.partyBPendingQuotes[partyB][partyA];
+		emit SharedEvents.BalanceChangePartyB(partyB, partyA, pnl, SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 		accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
 		accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
 		accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
@@ -78,6 +84,7 @@ library LibLiquidation {
 		// Transfer liquidator share to the liquidator
 		if (liquidatorShare > 0) {
 			accountLayout.allocatedBalances[msg.sender] += liquidatorShare;
+			emit SharedEvents.BalanceChangePartyA(msg.sender, liquidatorShare, SharedEvents.BalanceChangeType.LF_IN);
 		}
 	}
 }
