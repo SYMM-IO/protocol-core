@@ -10,6 +10,7 @@ import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/LibLiquidation.sol";
+import "../../libraries/SharedEvents.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -105,7 +106,9 @@ library PartyAFacetImpl {
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
 		quoteLayout.quotes[currentId] = quote;
 
-		accountLayout.allocatedBalances[msg.sender] -= LibQuote.getTradingFee(currentId);
+		uint256 fee = LibQuote.getTradingFee(currentId);
+		accountLayout.allocatedBalances[msg.sender] -= fee;
+		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
 	}
 
 	function requestToCancelQuote(uint256 quoteId) internal returns (QuoteStatus result) {
@@ -118,7 +121,9 @@ library PartyAFacetImpl {
 			result = LibQuote.expireQuote(quoteId);
 		} else if (quote.quoteStatus == QuoteStatus.PENDING) {
 			quote.quoteStatus = QuoteStatus.CANCELED;
-			accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
+			uint256 fee = LibQuote.getTradingFee(quote.id);
+			accountLayout.allocatedBalances[quote.partyA] += fee;
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
 			LibQuote.removeFromPartyAPendingQuotes(quote);
 			result = QuoteStatus.CANCELED;
@@ -183,7 +188,9 @@ library PartyAFacetImpl {
 		accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 
 		// send trading Fee back to partyA
-		accountLayout.allocatedBalances[quote.partyA] += LibQuote.getTradingFee(quote.id);
+		uint256 fee = LibQuote.getTradingFee(quote.id);
+		accountLayout.allocatedBalances[quote.partyA] += fee;
+		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 
 		LibQuote.removeFromPendingQuotes(quote);
 	}
