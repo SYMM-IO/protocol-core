@@ -67,8 +67,8 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
         require(target != msg.sender && target != account, "MultiAccount: invalid target");
         for (uint256 i = selector.length; i != 0; i--) {
             delegatedAccesses[account][target][selector[i - 1]] = state;
+            emit DelegateAccess(account, target, selector[i - 1], state);
         }
-        emit DelegateAccesses(account, target, selector, state);
     }
 
     function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
