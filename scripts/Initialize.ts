@@ -65,7 +65,7 @@ export async function initialize(): Promise<RunContext> {
 	let output: Addresses = loadAddresses()
 	output.collateralAddress = collateral.address
 	output.symmioAddress = diamond.address
-	output.MulticallAddress = multicall?.address
+	output.multicallAddress = multicall?.address
 	saveAddresses(output)
 	return context
 }

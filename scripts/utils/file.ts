@@ -5,7 +5,7 @@ export type Addresses = {
 	collateralAddress?: string
 	multiAccountAddress?: string
 	hedgerProxyAddress?: string
-	MulticallAddress?: string
+	multicallAddress?: string
 }
 
 export function loadAddresses(): Addresses {
