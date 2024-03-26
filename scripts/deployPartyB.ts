@@ -24,7 +24,7 @@ async function main() {
 	}
 	console.log(addresses)
 
-	deployedAddresses.partyBAddress = symmioPartyB.address
+	deployedAddresses.hedgerProxyAddress = symmioPartyB.address
 	saveAddresses(deployedAddresses)
 
 	try {
