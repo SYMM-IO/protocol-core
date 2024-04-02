@@ -18,6 +18,7 @@ if (!privateKey)
 const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR
 const privateKeyList: string[] = privateKeysStr?.split(",") || []
 
+const mantleAPIKey: string = process.env.MANTLE_API_KEY || ""
 const ftmAPIKey: string = process.env.FTM_API_KEY || ""
 const bnbApiKey: string = process.env.BNB_API_KEY || ""
 const baseApiKey: string = process.env.BASE_API_KEY || ""
@@ -71,9 +72,18 @@ const config: HardhatUserConfig = {
 			url: "https://zkevm-rpc.com",
 			accounts: [ privateKey ],
 		},
+		blast: {
+			url: "https://rpc.blast.io",
+			accounts: [ privateKey ],
+		},
+		mantle: {
+			url: "https://1rpc.io/mantle",
+			accounts: [ privateKey ],
+		},
 	},
 	etherscan: {
 		apiKey: {
+			mantle: mantleAPIKey,
 			fantom: ftmAPIKey,
 			bnb: bnbApiKey,
 			base: baseApiKey,
@@ -82,6 +92,14 @@ const config: HardhatUserConfig = {
 			opbnb: opBnbApiKey,
 		},
 		customChains: [
+			{
+				network: "mantle",
+				chainId: 5000,
+				urls: {
+					apiURL: "https://explorer.mantle.xyz/api",
+					browserURL: "https://explorer.mantle.xyz"
+				}
+			},
 			{
 				network: "base",
 				chainId: 8453,
