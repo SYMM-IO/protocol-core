@@ -131,6 +131,14 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		GlobalAppStorage.layout().feeCollector = feeCollector;
 	}
 
+
+	/// @notice Sets the deallocate debounce time. User can't deallocate more than once in this window
+	/// @param The deallocate debounce time in seconds.
+	function setDeallocateDebounceTime(uint256 deallocateDebounceTime) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		emit SetDeallocateDebounceTime(MAStorage.layout().deallocateDebounceTime, deallocateDebounceTime);
+		MAStorage.layout().deallocateDebounceTime = deallocateDebounceTime;
+	}
+
 	// Symbol State //////////////////////////////////////////////////////////////////
 
 	/// @notice Adds a new trading symbol.

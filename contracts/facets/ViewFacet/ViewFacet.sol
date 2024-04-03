@@ -199,6 +199,14 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Returns the deallocate debounce time.
+	 * @return deallocateDebounceTime.
+	 */
+	function getDeallocateDebounceTime() external view returns (uint256) {
+		return MAStorage.layout().deallocateDebounceTime;
+	}
+
+	/**
 	 * @notice Returns the settlement states of Party B for a specific Party A.
 	 * @param partyA The address of Party A.
 	 * @param partyBs The addresses of Party Bs.
