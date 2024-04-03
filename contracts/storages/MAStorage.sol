@@ -27,6 +27,7 @@ library MAStorage {
 		uint256 forceCloseSecondCooldown;
 		uint256 forceClosePricePenalty;
 		uint256 forceCloseMinSigPeriod;
+		uint256 deallocateDebounceTime;
 	}
 
 	function layout() internal pure returns (Layout storage l) {
