@@ -11,10 +11,17 @@ import "./IBlastPoints.sol";
 contract BlastConfigFacet is Accessibility {
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
     IBlastPoints public constant BLAST_POINTS = IBlastPoints(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800);
+    IERC20Rebasing public constant USDB = IERC20Rebasing(0x4300000000000000000000000000000000000003);
 
     function configureYield() external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
         BLAST.configureClaimableYield();
         BLAST.configureClaimableGas();
+        USDB.configure(YieldMode.CLAIMABLE);
+    }
+
+    function claimUSDB(address recipient, uint256 amount) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+        require(recipient != address(this), "BlastConfigFacet: recipient can not be the contract itself");
+        USDB.claim(recipient, amount);
     }
 
     function configurePointsOperator(address operator) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
