@@ -9,6 +9,7 @@ import "../../libraries/LibMuon.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/LibLiquidation.sol";
+import "../../libraries/SharedEvents.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -249,22 +250,30 @@ library LiquidationFacetImpl {
 
 			int256 settleAmount = accountLayout.settlementStates[partyA][partyB].actualAmount;
 			accountLayout.partyBAllocatedBalances[partyB][partyA] += accountLayout.settlementStates[partyA][partyB].cva;
+			emit SharedEvents.BalanceChangePartyA(partyA, accountLayout.settlementStates[partyA][partyB].cva, SharedEvents.BalanceChangeType.CVA_OUT);
+			emit SharedEvents.BalanceChangePartyB(partyB, partyA, accountLayout.settlementStates[partyA][partyB].cva, SharedEvents.BalanceChangeType.CVA_IN);
+
 			if (settleAmount < 0) {
 				accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(-settleAmount);
+				emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(-settleAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 				settleAmounts[i] = settleAmount;
 			} else {
 				if (accountLayout.partyBAllocatedBalances[partyB][partyA] >= uint256(settleAmount)) {
 					accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(settleAmount);
 					settleAmounts[i] = settleAmount;
+					emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(settleAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 				} else {
 					settleAmounts[i] = int256(accountLayout.partyBAllocatedBalances[partyB][partyA]);
 					accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
+					emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(settleAmounts[i]), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 				}
 			}
 			delete accountLayout.settlementStates[partyA][partyB];
 		}
 		if (accountLayout.liquidationDetails[partyA].involvedPartyBCounts == 0) {
+			emit SharedEvents.BalanceChangePartyA(partyA, accountLayout.allocatedBalances[partyA], SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 			accountLayout.allocatedBalances[partyA] = accountLayout.partyAReimbursement[partyA];
+			emit SharedEvents.BalanceChangePartyA(partyA, accountLayout.partyAReimbursement[partyA], SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 			accountLayout.partyAReimbursement[partyA] = 0;
 			accountLayout.lockedBalances[partyA].makeZero();
 
@@ -272,6 +281,8 @@ library LiquidationFacetImpl {
 			if (lf > 0) {
 				accountLayout.allocatedBalances[accountLayout.liquidators[partyA][0]] += lf / 2;
 				accountLayout.allocatedBalances[accountLayout.liquidators[partyA][1]] += lf / 2;
+				emit SharedEvents.BalanceChangePartyA(accountLayout.liquidators[partyA][0], lf / 2, SharedEvents.BalanceChangeType.LF_IN);
+				emit SharedEvents.BalanceChangePartyA(accountLayout.liquidators[partyA][1], lf / 2, SharedEvents.BalanceChangeType.LF_IN);
 			}
 			delete accountLayout.liquidators[partyA];
 			delete accountLayout.liquidationDetails[partyA].liquidationType;

@@ -9,7 +9,7 @@ import "../../utils/Pausable.sol";
 import "./IAccountFacet.sol";
 import "./AccountFacetImpl.sol";
 import "../../storages/GlobalAppStorage.sol";
-
+import "../../libraries/SharedEvents.sol";
 
 contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 
@@ -48,6 +48,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function allocate(uint256 amount) external whenNotAccountingPaused notSuspended(msg.sender) notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.allocate(amount);
 		emit AllocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
+		emit SharedEvents.BalanceChangePartyA(msg.sender, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
 	/// @notice Allows Party A to deposit a specified amount of collateral and immediately allocate it.
@@ -58,6 +59,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		AccountFacetImpl.allocate(amountWith18Decimals);
 		emit Deposit(msg.sender, msg.sender, amount);
 		emit AllocatePartyA(msg.sender, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]);
+		emit SharedEvents.BalanceChangePartyA(msg.sender, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
 	/// @notice Allows Party A to deallocate a specified amount of collateral.
@@ -66,6 +68,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.deallocate(amount, upnlSig);
 		emit DeallocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
+		emit SharedEvents.BalanceChangePartyA(msg.sender, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 	}
 
 	/// @notice Transfers the sender's deposited balance to the user allocated balance.
@@ -78,6 +81,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit InternalTransfer(msg.sender, user, amount);
 		emit Withdraw(msg.sender, user, amount);
 		emit AllocatePartyA(user, amount, AccountStorage.layout().allocatedBalances[user]);
+		emit SharedEvents.BalanceChangePartyA(user, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
 	/// @notice Allows Party B to allocate a specified amount of collateral for an specified partyA.
@@ -87,6 +91,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function allocateForPartyB(uint256 amount, address partyA) public whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
 		AccountFacetImpl.allocateForPartyB(amount, partyA);
 		emit AllocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
+		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
 	/// @notice Allows Party B to deallocate a specified amount of collateral
@@ -101,6 +106,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) notSuspended(msg.sender) notLiquidatedPartyA(partyA) onlyPartyB {
 		AccountFacetImpl.deallocateForPartyB(amount, partyA, upnlSig);
 		emit DeallocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
+		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 	}
 
 	/// @notice Allows transferring the allocation of partyB from one party A to another.
@@ -111,5 +117,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external whenNotPartyBActionsPaused {
 		AccountFacetImpl.transferAllocation(amount, origin, recipient, upnlSig);
 		emit TransferAllocation(amount, origin, recipient);
+		emit SharedEvents.BalanceChangePartyB(msg.sender, origin, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
+		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 }
