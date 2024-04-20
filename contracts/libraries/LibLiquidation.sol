@@ -75,7 +75,8 @@ library LibLiquidation {
 
 		// Clear pending quotes and reset balances for Party B
 		delete quoteLayout.partyBPendingQuotes[partyB][partyA];
-		emit SharedEvents.BalanceChangePartyB(partyB, partyA, pnl, SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
+		emit SharedEvents.BalanceChangePartyB(partyB, partyA, accountLayout.partyBAllocatedBalances[partyB][partyA],
+			SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 		accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
 		accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
 		accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
