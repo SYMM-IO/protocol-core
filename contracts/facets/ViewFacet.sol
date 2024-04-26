@@ -18,6 +18,16 @@ import "../libraries/LibLockedValues.sol";
 contract ViewFacet {
     using LockedValuesOps for LockedValues;
 
+    struct Bitmap {
+        uint256 size;
+        BitmapElement[] elements;
+    }
+
+    struct BitmapElement {
+        uint256 offset;
+        uint256 bitmap;
+    }
+
     // Account
     function balanceOf(address user) external view returns (uint256) {
         return AccountStorage.layout().balances[user];
@@ -460,5 +470,28 @@ contract ViewFacet {
 
     function getNextQuoteId() external view returns (uint256){
         return QuoteStorage.layout().lastId;
+    }
+
+    function getQuotesWithBitmap(
+        Bitmap calldata bitmap,
+        uint256 gasNeededForReturn
+    ) external view returns (Quote[] memory quotes) {
+        QuoteStorage.Layout storage qL = QuoteStorage.layout();
+
+        quotes = new Quote[](bitmap.size);
+        uint256 quoteIndex = 0;
+
+        for (uint256 i = 0; i < bitmap.elements.length; ++i) {
+            uint256 bits = bitmap.elements[i].bitmap;
+            uint256 offset = bitmap.elements[i].offset;
+            while (bits > 0 && gasleft() > gasNeededForReturn) {
+                if ((bits & 1) > 0) {
+                    quotes[quoteIndex] = qL.quotes[offset];
+                    ++quoteIndex;
+                }
+                ++offset;
+                bits >>= 1;
+            }
+        }
     }
 }
