@@ -16,6 +16,23 @@ contract Multicall3 {
 		bytes callData;
 	}
 
+	struct Result {
+		bool success;
+		bytes returnData;
+	}
+
+	struct Call2 {
+		address target;
+		uint256 gasLimit;
+		bytes callData;
+	}
+
+	struct Result2 {
+		bool success;
+		uint256 gasUsed;
+		bytes returnData;
+	}
+
 	struct Call3 {
 		address target;
 		bool allowFailure;
@@ -29,9 +46,18 @@ contract Multicall3 {
 		bytes callData;
 	}
 
-	struct Result {
-		bool success;
-		bytes returnData;
+
+	function multicall(Call2[] memory calls) public returns (uint256 blockNumber, Result2[] memory returnData) {
+		blockNumber = block.number;
+		returnData = new Result2[](calls.length);
+		for (uint256 i = 0; i < calls.length; i++) {
+			(address target, uint256 gasLimit, bytes memory callData) =
+			(calls[i].target, calls[i].gasLimit, calls[i].callData);
+			uint256 gasLeftBefore = gasleft();
+			(bool success, bytes memory ret) = target.call{gas: gasLimit}(callData);
+			uint256 gasUsed = gasLeftBefore - gasleft();
+			returnData[i] = Result2(success, gasUsed, ret);
+		}
 	}
 
 	/// @notice Backwards-compatible call aggregation with Multicall
@@ -111,16 +137,16 @@ contract Multicall3 {
 			calli = calls[i];
 			(result.success, result.returnData) = calli.target.call(calli.callData);
 			assembly {
-				// Revert if the call fails and failure is not allowed
-				// `allowFailure := calldataload(add(calli, 0x20))` and `success := mload(result)`
+			// Revert if the call fails and failure is not allowed
+			// `allowFailure := calldataload(add(calli, 0x20))` and `success := mload(result)`
 				if iszero(or(calldataload(add(calli, 0x20)), mload(result))) {
-					// set "Error(string)" signature: bytes32(bytes4(keccak256("Error(string)")))
+				// set "Error(string)" signature: bytes32(bytes4(keccak256("Error(string)")))
 					mstore(0x00, 0x08c379a000000000000000000000000000000000000000000000000000000000)
-					// set data offset
+				// set data offset
 					mstore(0x04, 0x0000000000000000000000000000000000000000000000000000000000000020)
-					// set length of revert string
+				// set length of revert string
 					mstore(0x24, 0x0000000000000000000000000000000000000000000000000000000000000017)
-					// set revert string: bytes32(abi.encodePacked("Multicall3: call failed"))
+				// set revert string: bytes32(abi.encodePacked("Multicall3: call failed"))
 					mstore(0x44, 0x4d756c746963616c6c333a2063616c6c206661696c6564000000000000000000)
 					revert(0x00, 0x64)
 				}
@@ -151,16 +177,16 @@ contract Multicall3 {
 			}
 			(result.success, result.returnData) = calli.target.call{ value: val }(calli.callData);
 			assembly {
-				// Revert if the call fails and failure is not allowed
-				// `allowFailure := calldataload(add(calli, 0x20))` and `success := mload(result)`
+			// Revert if the call fails and failure is not allowed
+			// `allowFailure := calldataload(add(calli, 0x20))` and `success := mload(result)`
 				if iszero(or(calldataload(add(calli, 0x20)), mload(result))) {
-					// set "Error(string)" signature: bytes32(bytes4(keccak256("Error(string)")))
+				// set "Error(string)" signature: bytes32(bytes4(keccak256("Error(string)")))
 					mstore(0x00, 0x08c379a000000000000000000000000000000000000000000000000000000000)
-					// set data offset
+				// set data offset
 					mstore(0x04, 0x0000000000000000000000000000000000000000000000000000000000000020)
-					// set length of revert string
+				// set length of revert string
 					mstore(0x24, 0x0000000000000000000000000000000000000000000000000000000000000017)
-					// set revert string: bytes32(abi.encodePacked("Multicall3: call failed"))
+				// set revert string: bytes32(abi.encodePacked("Multicall3: call failed"))
 					mstore(0x44, 0x4d756c746963616c6c333a2063616c6c206661696c6564000000000000000000)
 					revert(0x00, 0x84)
 				}
