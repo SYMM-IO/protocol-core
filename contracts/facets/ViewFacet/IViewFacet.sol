@@ -10,6 +10,17 @@ import "../../storages/MuonStorage.sol";
 import "../../storages/BridgeStorage.sol";
 
 interface IViewFacet {
+
+	struct Bitmap {
+		uint256 size;
+		BitmapElement[] elements;
+	}
+
+	struct BitmapElement {
+		uint256 offset;
+		uint256 bitmap;
+	}
+
 	// Account
 	function balanceOf(address user) external view returns (uint256);
 
@@ -92,6 +103,8 @@ interface IViewFacet {
 	function getPartyAPendingQuotes(address partyA) external view returns (uint256[] memory);
 
 	function getPartyBPendingQuotes(address partyB, address partyA) external view returns (uint256[] memory);
+
+	function getQuotesWithBitmap(Bitmap calldata bitmap, uint256 gasNeededForReturn) external view returns (Quote[] memory quotes);
 
 	/////////////////////////////////////
 
