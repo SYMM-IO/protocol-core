@@ -515,6 +515,35 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Retrieves a filtered list of quotes based on a bitmap. The method returns quotes only if sufficient gas remains.
+	 * @param bitmap A structured data type representing a bitmap, used to indicate which quotes to retrieve based on their positions. The bitmap consists of multiple elements, each with an offset and a 256-bit integer representing selectable quotes.
+	 * @param gasNeededForReturn The minimum gas required to complete the function execution and return the data. This ensures the function doesn't start a retrieval that it can't complete.
+	 * @return quotes An array of `Quote` structures, each corresponding to a quote identified by the bitmap.
+	 */
+	function getQuotesWithBitmap(
+		Bitmap calldata bitmap,
+		uint256 gasNeededForReturn
+	) external view returns (Quote[] memory quotes) {
+		QuoteStorage.Layout storage qL = QuoteStorage.layout();
+
+		quotes = new Quote[](bitmap.size);
+		uint256 quoteIndex = 0;
+
+		for (uint256 i = 0; i < bitmap.elements.length; ++i) {
+			uint256 bits = bitmap.elements[i].bitmap;
+			uint256 offset = bitmap.elements[i].offset;
+			while (bits > 0 && gasleft() > gasNeededForReturn) {
+				if ((bits & 1) > 0) {
+					quotes[quoteIndex] = qL.quotes[offset];
+					++quoteIndex;
+				}
+				++offset;
+				bits >>= 1;
+			}
+		}
+	}
+
+	/**
 	 * @notice Checks if a user has a specific role.
 	 * @param user The address of the user.
 	 * @param role The role to check.
