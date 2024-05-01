@@ -67,8 +67,8 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 			await user.liquidateAndSetSymbolPrices([1], [decimal(8)])
 			await user.liquidatePendingPositions()
 
-			expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.CANCELED)
-			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.CANCELED)
+			expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED_PENDING)
+			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED_PENDING)
 
 			let balanceInfoOfPartyA: BalanceInfo = await user.getBalanceInfo()
 			expect(balanceInfoOfPartyA.allocatedBalances).to.be.equal(decimal(500).sub(await getTradingFeeForQuotes(context, [1, 2, 3, 4])))
@@ -213,7 +213,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 			expect(balanceInfo.pendingLockedLf).to.be.equal("0")
 			expect(balanceInfo.totalPendingLockedPartyB).to.be.equal("0")
 
-			expect((await context.viewFacet.getQuote(5)).quoteStatus).to.be.equal(QuoteStatus.CANCELED)
+			expect((await context.viewFacet.getQuote(5)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED_PENDING)
 		})
 
 		it("Should fail to liquidate a partyB twice", async function () {

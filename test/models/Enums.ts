@@ -9,6 +9,7 @@ export enum QuoteStatus {
 	CLOSED,
 	LIQUIDATED,
 	EXPIRED,
+	LIQUIDATED_PENDING,
 }
 
 export enum PositionType {

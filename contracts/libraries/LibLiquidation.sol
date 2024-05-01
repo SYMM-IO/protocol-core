@@ -61,7 +61,7 @@ library LibLiquidation {
 				emit SharedEvents.BalanceChangePartyA(partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 				pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
 				pendingQuotes.pop();
-				quote.quoteStatus = QuoteStatus.CANCELED;
+				quote.quoteStatus = QuoteStatus.LIQUIDATED_PENDING;
 				quote.statusModifyTimestamp = block.timestamp;
 			} else {
 				index++;

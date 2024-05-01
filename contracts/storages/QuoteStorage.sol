@@ -26,7 +26,8 @@ enum QuoteStatus {
 	CANCEL_CLOSE_PENDING, //6
 	CLOSED, //7
 	LIQUIDATED, //8
-	EXPIRED //9
+	EXPIRED, //9
+	LIQUIDATED_PENDING //10
 }
 
 struct Quote {

@@ -96,7 +96,7 @@ library LiquidationFacetImpl {
 				accountLayout.partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
 			}
 			accountLayout.partyAReimbursement[partyA] += LibQuote.getTradingFee(quote.id);
-			quote.quoteStatus = QuoteStatus.CANCELED;
+			quote.quoteStatus = QuoteStatus.LIQUIDATED_PENDING;
 			quote.statusModifyTimestamp = block.timestamp;
 			liquidatedAmounts[index] = quote.quantity;
 		}
