@@ -70,4 +70,23 @@ library BridgeFacetImpl {
 
 		IERC20(appLayout.collateral).safeTransfer(msg.sender, totalAmount);
 	}
+
+	function suspendBridgeTransaction(uint256 transactionId) internal {
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+
+		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid status");
+		bridgeTransaction.status = BridgeTransactionStatus.SUSPENDED;
+	}
+
+	function restoreBridgeTransaction(uint256 transactionId, uint256 validAmount) internal {
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+
+		require(bridgeTransaction.status == BridgeTransactionStatus.SUSPENDED, "BridgeFacet: Invalid status");
+
+		AccountStorage.layout().balances[msg.sender] += (bridgeTransaction.amount - validAmount);
+		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
+		bridgeTransaction.amount = validAmount;
+	}
 }
