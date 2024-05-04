@@ -682,6 +682,15 @@ contract ViewFacet is IViewFacet {
 		);
 	}
 
+
+	/**
+	 * @notice Returns the deallocateCooldown.
+	 * @return deallocateCooldown The deallocate cooldown.
+	 */
+	function deallocateCooldown() external view returns (uint256) {
+		return MAStorage.layout().deallocateCooldown;
+	}
+
 	/**
 	 * @notice Retrieves the configuration parameters of the Muon system.
 	 * @return upnlValidTime The validity period of UPNL.
