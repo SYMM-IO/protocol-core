@@ -26,6 +26,7 @@ library BridgeStorage {
 		mapping(address => bool) bridges;
 		mapping(uint256 => BridgeTransaction) bridgeTransactions;
 		uint256 lastId;
+		address invalidBridgedAmountsPool;
 	}
 
 	function layout() internal pure returns (Layout storage l) {
