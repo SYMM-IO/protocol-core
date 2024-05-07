@@ -678,10 +678,20 @@ contract ViewFacet is IViewFacet {
 			MAStorage.layout().forceCancelCooldown,
 			MAStorage.layout().forceCancelCloseCooldown,
 			MAStorage.layout().forceCloseFirstCooldown,
-			MAStorage.layout().forceCloseSecondCooldown
 		);
 	}
 
+	/**
+	 * @notice Returns the force close cooldowns.
+	 * @return forceCloseFirstCooldown The force close first cooldown.
+	 * @return forceCloseSecondCooldown The force close second cooldown.
+	 */
+	function forceCloseCooldowns() external view returns (uint256, uint256) {
+		return (
+			MAStorage.layout().forceCloseFirstCooldown,
+			MAStorage.layout().forceCloseSecondCooldown
+		);
+	}
 
 	/**
 	 * @notice Returns the deallocateCooldown.
