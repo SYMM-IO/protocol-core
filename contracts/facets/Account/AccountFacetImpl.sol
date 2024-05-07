@@ -58,7 +58,6 @@ library AccountFacetImpl {
 		require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
 		require(uint256(availableBalance) >= amount, "AccountFacet: partyA will be liquidatable");
 
-		accountLayout.partyANonces[msg.sender] += 1;
 		accountLayout.allocatedBalances[msg.sender] -= amount;
 		accountLayout.balances[msg.sender] += amount;
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
@@ -113,7 +112,6 @@ library AccountFacetImpl {
 		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
 		require(uint256(availableBalance) >= amount, "PartyBFacet: Will be liquidatable");
 
-		accountLayout.partyBNonces[msg.sender][partyA] += 1;
 		accountLayout.partyBAllocatedBalances[msg.sender][partyA] -= amount;
 		accountLayout.balances[msg.sender] += amount;
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
