@@ -18,8 +18,8 @@ facets_dirs = scandir(contract_address)
 def main():
     abi_data = []
     for address in facets_dirs:
-        file = [f"{address}/{f}" for f in os.listdir(address) if re.fullmatch(".*\.json", f) and
-                not re.fullmatch('.*\.dbg\.json', f)]
+        file = [f"{address}/{f}" for f in os.listdir(address) if re.fullmatch(r'.*\.json', f) and
+                not re.fullmatch(r'.*\.dbg\.json', f)]
         if len(file) == 0:
             continue
         file = file[0]
