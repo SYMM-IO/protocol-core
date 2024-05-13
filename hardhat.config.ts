@@ -25,6 +25,7 @@ const baseApiKey: string = process.env.BASE_API_KEY || ""
 const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
 const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || ""
 const opBnbApiKey: string = process.env.OPBNB_API_KEY || ""
+const arbitrumApiKey: string = process.env.ARBITRUM_API_KEY || ""
 
 const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || ""
 
@@ -80,16 +81,21 @@ const config: HardhatUserConfig = {
 			url: "https://1rpc.io/mantle",
 			accounts: [ privateKey ],
 		},
+		arbitrum: {
+			url: "https://1rpc.io/arb",
+			accounts: [ privateKey ],
+		},
 	},
 	etherscan: {
 		apiKey: {
 			mantle: mantleAPIKey,
 			fantom: ftmAPIKey,
-			bnb: bnbApiKey,
+			bsc: bnbApiKey,
 			base: baseApiKey,
 			polygon: polygonApiKey,
 			zkEvm: zkEvmApiKey,
 			opbnb: opBnbApiKey,
+			arbitrumOne: arbitrumApiKey,
 		},
 		customChains: [
 			{
