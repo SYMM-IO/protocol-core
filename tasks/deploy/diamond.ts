@@ -3,27 +3,9 @@ import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { task, types } from "hardhat/config";
 
 import { FacetCutAction, getSelectors } from "../utils/diamondCut";
-import { readData, writeData } from "../utils/fs";
+import { writeData } from "../utils/fs";
 import { generateGasReport } from "../utils/gas";
-import { FacetNames } from "./constants";
-
-const JSON_FILE_NAME = "deployed.json";
-
-task("verify:deployment", "Verifies the initial deployment").setAction(async (_, { run }) => {
-	const deployedAddresses = readData(JSON_FILE_NAME);
-
-	for (const address of deployedAddresses) {
-		try {
-			console.log(`Verifying ${address.address}`);
-			await run("verify:verify", {
-				address: address.address,
-				constructorArguments: address.constructorArguments,
-			});
-		} catch (err) {
-			console.error(err);
-		}
-	}
-});
+import { DEPLOYMENT_LOG_FILE, FacetNames } from "./constants";
 
 task("deploy:diamond", "Deploys the Diamond contract")
 	.addParam("logData", "Write the deployed addresses to a data file", true, types.boolean)
@@ -111,7 +93,7 @@ task("deploy:diamond", "Deploys the Diamond contract")
 
 		// Write addresses to JSON file for etherscan verification
 		if (logData) {
-			writeData(JSON_FILE_NAME, [
+			writeData(DEPLOYMENT_LOG_FILE, [
 				{
 					name: "DiamondCut",
 					address: diamondCutFacet.address,

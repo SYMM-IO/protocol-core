@@ -35,14 +35,18 @@ export class RunContext {
 		hedger2: SignerWithAddress
 		bridge: SignerWithAddress
 		bridge2: SignerWithAddress
+		feeCollector: SignerWithAddress
+		feeCollector2: SignerWithAddress
 		others: SignerWithAddress[]
 	}
 	diamond!: string
+	multiAccount!: string
+	multiAccount2?: string
 	collateral: any
 	manager!: TestManager
 }
 
-export async function createRunContext(diamond: string, collateral: string, onlyInitialize: boolean = false): Promise<RunContext> {
+export async function createRunContext(diamond: string, collateral: string, multiAccount: string, multiAccount2: string | undefined = undefined, onlyInitialize: boolean = false): Promise<RunContext> {
 	let context = new RunContext()
 
 	const signers: SignerWithAddress[] = await ethers.getSigners()
@@ -55,10 +59,14 @@ export async function createRunContext(diamond: string, collateral: string, only
 		hedger2: signers[5],
 		bridge: signers[6],
 		bridge2: signers[7],
-		others: [signers[8],signers[9]],
+		feeCollector: signers[8],
+		feeCollector2: signers[9],
+		others: [signers[10], signers[11]],
 	}
 
 	context.diamond = diamond
+	context.multiAccount = multiAccount
+	context.multiAccount2 = multiAccount2
 	context.collateral = await ethers.getContractAt("FakeStablecoin", collateral)
 	context.accountFacet = await ethers.getContractAt("AccountFacet", diamond)
 	context.diamondCutFacet = await ethers.getContractAt("DiamondCutFacet", diamond)

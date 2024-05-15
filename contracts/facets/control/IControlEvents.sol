@@ -20,7 +20,7 @@ interface IControlEvents {
 		uint256 fundingRateEpochDuration,
 		uint256 fundingRateWindowTime
 	);
-	event SetFeeCollector(address oldFeeCollector, address newFeeCollector);
+	event SetFeeCollector(address affiliate, address oldFeeCollector, address newFeeCollector);
 	event SetSymbolValidationState(uint256 symbolId, bool oldState, bool isValid);
 	event SetSymbolFundingState(uint256 symbolId, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime);
 	event SetSymbolAcceptableValues(
@@ -68,6 +68,8 @@ interface IControlEvents {
 	event SetBalanceLimitPerUser(uint256 balanceLimitPerUser);
 	event RegisterPartyB(address partyB);
 	event DeregisterPartyB(address partyB, uint256 index);
+	event RegisterAffiliate(address affilate);
+	event DeregisterAffiliate(address affilate);
 	event AddBridge(address bridge);
 	event RemoveBridge(address bridge);
 }

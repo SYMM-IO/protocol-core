@@ -1,15 +1,15 @@
 import { expect } from "chai"
 import { BigNumber } from "ethers"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet"
+import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
 import { getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal } from "../../utils/Common"
 import { logger } from "../../utils/LoggerUtils"
+import { expectToBeApproximately } from "../../utils/SafeMath"
 import { PositionType, QuoteStatus } from "../Enums"
 import { Hedger } from "../Hedger"
 import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"
 import { TransactionValidator } from "./TransactionValidator"
-import { expectToBeApproximately } from "../../utils/SafeMath"
 
 export type FillCloseRequestValidatorBeforeArg = {
 	user: User

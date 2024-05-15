@@ -21,6 +21,7 @@ interface IPartyAFacet is IPartyAEvents {
 		uint256 partyBmm,
 		uint256 maxFundingRate,
 		uint256 deadline,
+		address affiliate,
 		SingleUpnlAndPriceSig memory upnlSig
 	) external;
 

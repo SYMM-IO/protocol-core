@@ -8,6 +8,7 @@ import { keccak256 } from "js-sha3"
 
 const DISPUTE_ROLE = `0x${keccak256("DISPUTE_ROLE")}`
 const PARTY_B_MANAGER_ROLE = `0x${keccak256("PARTY_B_MANAGER_ROLE")}`
+const AFFILIATE_MANAGER_ROLE = `0x${keccak256("AFFILIATE_MANAGER_ROLE")}`
 const SYMBOL_MANAGER_ROLE = `0x${keccak256("SYMBOL_MANAGER_ROLE")}`
 const SETTER_ROLE = `0x${keccak256("SETTER_ROLE")}`
 const SUSPENDER_ROLE = `0x${keccak256("SUSPENDER_ROLE")}`
@@ -38,6 +39,7 @@ export function shouldBehaveLikeControlFacet(): void {
 		await context.controlFacet.connect(owner).grantRole(owner.address, PAUSER_ROLE)
 		await context.controlFacet.connect(owner).grantRole(owner.address, SUSPENDER_ROLE)
 		await context.controlFacet.connect(owner).grantRole(owner.address, UNPAUSER_ROLE)
+		await context.controlFacet.connect(owner).grantRole(owner.address, AFFILIATE_MANAGER_ROLE)
 	})
 
 	describe("transferOwnership", () => {
@@ -258,9 +260,9 @@ export function shouldBehaveLikeControlFacet(): void {
 
 	describe("setForceCloseCooldowns", () => {
 		it("Should setForceCloseCooldowns successfully", async function () {
-			await expect(context.controlFacet.connect(owner).setForceCloseCooldowns(BigNumber.from("1708784117"),BigNumber.from("1708794117"))).to.not.reverted
-			expect((await context.viewFacet.coolDownsOfMA())[3]).to.be.equal(BigNumber.from("1708784117"))
-			expect((await context.viewFacet.coolDownsOfMA())[4]).to.be.equal(BigNumber.from("1708794117"))
+			await expect(context.controlFacet.connect(owner).setForceCloseCooldowns(BigNumber.from("1708784117"), BigNumber.from("1708794117"))).to.not.reverted
+			expect((await context.viewFacet.forceCloseCooldowns())[0]).to.be.equal(BigNumber.from("1708784117"))
+			expect((await context.viewFacet.forceCloseCooldowns())[1]).to.be.equal(BigNumber.from("1708794117"))
 		})
 	})
 
@@ -287,12 +289,12 @@ export function shouldBehaveLikeControlFacet(): void {
 
 	describe("setFeeCollector", () => {
 		it("Should setFeeCollector successfully", async function () {
-			await expect(context.controlFacet.connect(owner).setFeeCollector(user2.address)).to.not.reverted
-			expect((await context.viewFacet.getFeeCollector())).to.be.equal(user2.address)
+			await expect(context.controlFacet.connect(owner).setFeeCollector(context.multiAccount2!, user2.address)).to.not.reverted
+			expect((await context.viewFacet.getFeeCollector(context.multiAccount2!))).to.be.equal(user2.address)
 		})
 
 		it("Should not setFeeCollector when address is zero", async function () {
-			await expect(context.controlFacet.connect(owner).setFeeCollector(constants.AddressZero)).to.be.revertedWith('ControlFacet: Zero address')
+			await expect(context.controlFacet.connect(owner).setFeeCollector(context.multiAccount2!, constants.AddressZero)).to.be.revertedWith('ControlFacet: Zero address')
 		})
 	})
 
@@ -323,7 +325,7 @@ export function shouldBehaveLikeControlFacet(): void {
 			expect(((await context.viewFacet.pauseState()).globalPaused)).to.be.equal(false)
 		})
 	})
-	
+
 	describe("unpauseLiquidation", () => {
 		it("Should unpauseLiquidation successfully", async function () {
 			await expect(context.controlFacet.connect(owner).unpauseLiquidation()).to.not.reverted

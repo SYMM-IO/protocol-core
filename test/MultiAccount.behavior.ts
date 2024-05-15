@@ -1,20 +1,20 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
+import { BigNumberish } from "ethers"
+import { ethers, upgrades } from "hardhat"
+import { PromiseOrValue } from "../src/types/common"
+import { PairUpnlAndPriceSigStruct } from "../src/types/contracts/interfaces/ISymmio"
+import { initializeFixture } from "./Initialize.fixture"
+import { PositionType, QuoteStatus } from "./models/Enums"
 import { Hedger } from "./models/Hedger"
 import { RunContext } from "./models/RunContext"
 import { User } from "./models/User"
-import { initializeFixture } from "./Initialize.fixture"
-import { decimal } from "./utils/Common"
-import { ethers, upgrades } from "hardhat"
-import { expect } from "chai"
-import { BigNumberish } from "ethers"
-import { limitQuoteRequestBuilder, marketQuoteRequestBuilder, QuoteRequest } from "./models/requestModels/QuoteRequest"
-import { PositionType, QuoteStatus } from "./models/Enums"
-import { marketOpenRequestBuilder, OpenRequest } from "./models/requestModels/OpenRequest"
 import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest"
 import { FillCloseRequest, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest"
+import { OpenRequest, marketOpenRequestBuilder } from "./models/requestModels/OpenRequest"
+import { QuoteRequest, limitQuoteRequestBuilder, marketQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
+import { decimal } from "./utils/Common"
 import { getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
-import { PromiseOrValue } from "../src/types/common"
-import { PairUpnlAndPriceSigStruct } from "../src/types/contracts/interfaces/ISymmio"
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
 	return [
@@ -30,6 +30,7 @@ async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> 
 		request.partyBmm,
 		request.maxFundingRate,
 		await request.deadline,
+		request.affiliate,
 		await request.upnlSig,
 	]
 }
@@ -169,7 +170,7 @@ export function shouldBehaveLikeMultiAccount() {
 				await multiAccount.connect(context.signers.user).addAccount("Test")
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 				user2Address = await context.signers.user2.getAddress()
-				selector = ethers.utils.hexDataSlice("0x7f2755b2", 0, 4)
+				selector = ethers.utils.hexDataSlice("0x1bbdc2a5", 0, 4)
 
 				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510))
 

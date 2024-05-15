@@ -1,11 +1,11 @@
-import { BigNumber } from "ethers"
-import { User } from "../User"
-import { BridgeTransactionStructOutput } from "../../../src/types/contracts/facets/ViewFacet"
-import { RunContext } from "../RunContext"
-import { TransactionValidator } from "./TransactionValidator"
-import { logger } from "../../utils/LoggerUtils"
 import { expect } from "chai"
+import { BigNumber } from "ethers"
+import { BridgeTransactionStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
+import { logger } from "../../utils/LoggerUtils"
 import { BridgeTransactionStatus } from "../Enums"
+import { RunContext } from "../RunContext"
+import { User } from "../User"
+import { TransactionValidator } from "./TransactionValidator"
 
 export type TransferToBridgeValidatorBeforeArg = {
 	bridge: string

@@ -9,6 +9,7 @@ import { OrderType, PositionType } from "../Enums"
 
 export interface QuoteRequest {
 	partyBWhiteList: string[]
+	affiliate: string
 	symbolId: BigNumberish
 	positionType: PositionType
 	orderType: OrderType
@@ -36,6 +37,7 @@ const limitDefaultQuoteRequest: QuoteRequest = {
 	lf: decimal(3),
 	maxFundingRate: decimal(2, 16),
 	deadline: getBlockTimestamp(500),
+	affiliate: "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE", //FIXME find a better way
 	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
 }
 
@@ -52,6 +54,7 @@ const marketDefaultQuoteRequest: QuoteRequest = {
 	lf: decimal(3),
 	maxFundingRate: decimal(2, 16),
 	deadline: getBlockTimestamp(500),
+	affiliate: "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE", //FIXME find a better way
 	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
 }
 

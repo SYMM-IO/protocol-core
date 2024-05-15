@@ -2,15 +2,15 @@ import { BigNumber as BN } from "bignumber.js"
 import { expect } from "chai"
 import { BigNumber } from "ethers"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet"
-import { getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common"
+import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
+import { getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, getTradingFeeForQuoteWithFilledAmount, getTradingFeeForQuotes } from "../../utils/Common"
 import { logger } from "../../utils/LoggerUtils"
+import { expectToBeApproximately } from "../../utils/SafeMath"
 import { QuoteStatus } from "../Enums"
 import { Hedger } from "../Hedger"
 import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"
 import { TransactionValidator } from "./TransactionValidator"
-import { expectToBeApproximately } from "../../utils/SafeMath"
 
 export type OpenPositionValidatorBeforeArg = {
 	user: User
@@ -22,6 +22,7 @@ export type OpenPositionValidatorBeforeOutput = {
 	balanceInfoPartyA: BalanceInfo
 	balanceInfoPartyB: BalanceInfo
 	quote: QuoteStructOutput
+	feeCollectorBalance: BigNumber
 }
 
 export type OpenPositionValidatorAfterArg = {
@@ -38,10 +39,12 @@ export type OpenPositionValidatorAfterArg = {
 export class OpenPositionValidator implements TransactionValidator {
 	async before(context: RunContext, arg: OpenPositionValidatorBeforeArg): Promise<OpenPositionValidatorBeforeOutput> {
 		logger.debug("Before OpenPositionValidator...")
+		const quote = await context.viewFacet.getQuote(arg.quoteId)
 		return {
 			balanceInfoPartyA: await arg.user.getBalanceInfo(),
 			balanceInfoPartyB: await arg.hedger.getBalanceInfo(await arg.user.getAddress()),
-			quote: await context.viewFacet.getQuote(arg.quoteId),
+			quote: quote,
+			feeCollectorBalance: await context.viewFacet.balanceOf(await context.viewFacet.getFeeCollector(quote.affiliate)),
 		}
 	}
 
@@ -53,6 +56,9 @@ export class OpenPositionValidator implements TransactionValidator {
 		expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.OPENED)
 		expect(newQuote.openedPrice).to.be.equal(arg.openedPrice)
 		expect(newQuote.quantity).to.be.equal(arg.fillAmount)
+
+		const newCollectorBalance = await context.viewFacet.balanceOf(await context.viewFacet.getFeeCollector(newQuote.affiliate))
+		expect(newCollectorBalance).to.be.equal(arg.beforeOutput.feeCollectorBalance.add(await getTradingFeeForQuoteWithFilledAmount(context, newQuote.id!, arg.fillAmount)))
 
 		const oldLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([oldQuote])
 		const newLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([newQuote])

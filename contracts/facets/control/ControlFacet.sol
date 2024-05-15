@@ -16,7 +16,6 @@ import "../../libraries/LibDiamond.sol";
 import "../../storages/BridgeStorage.sol";
 
 contract ControlFacet is Accessibility, Ownable, IControlFacet {
-
 	/// @notice Transfers ownership of the contract to a new address.
 	/// @dev This function can only be called by the current owner of the contract.
 	/// @param owner The address of the new owner.
@@ -76,13 +75,28 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit DeregisterPartyB(partyB, index);
 	}
 
+	/// @notice Registers an affiliate into the system.
+	/// @param affiliate The address of the affiliate to be registered.
+	function registerAffiliate(address affiliate) external onlyRole(LibAccessibility.AFFILIATE_MANAGER_ROLE) {
+		require(affiliate != address(0), "ControlFacet: Zero address");
+		require(!MAStorage.layout().affiliateStatus[affiliate], "ControlFacet: Address is already registered");
+		MAStorage.layout().affiliateStatus[affiliate] = true;
+		emit RegisterAffiliate(affiliate);
+	}
+
+	/// @notice Deregisters an affiliate from the system.
+	/// @param affiliate The address of the affiliate to be deregistered.
+	function deregisterAffiliate(address affiliate) external onlyRole(LibAccessibility.AFFILIATE_MANAGER_ROLE) {
+		require(affiliate != address(0), "ControlFacet: Zero address");
+		require(MAStorage.layout().affiliateStatus[affiliate], "ControlFacet: Address is not registered");
+		MAStorage.layout().affiliateStatus[affiliate] = false;
+		emit DeregisterAffiliate(affiliate);
+	}
+
 	/// @notice Sets the configuration parameters for Muon.
 	/// @param upnlValidTime The validity duration for upnl.
 	/// @param priceValidTime The validity duration for price.
-	function setMuonConfig(
-		uint256 upnlValidTime,
-		uint256 priceValidTime
-	) external onlyRole(LibAccessibility.MUON_SETTER_ROLE) {
+	function setMuonConfig(uint256 upnlValidTime, uint256 priceValidTime) external onlyRole(LibAccessibility.MUON_SETTER_ROLE) {
 		emit SetMuonConfig(upnlValidTime, priceValidTime);
 		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
 		muonLayout.upnlValidTime = upnlValidTime;
@@ -123,14 +137,15 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		MAStorage.layout().pendingQuotesValidLength = pendingQuotesValidLength;
 	}
 
-	/// @notice Sets the address which protocol fees are being transferred to in the system.
+	/// @notice Sets the address which protocol fees for an specific affiliate are being transferred to in the system.
+	/// @param affiliate The address of affiliate.
 	/// @param feeCollector The address of fee collector.
-	function setFeeCollector(address feeCollector) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+	function setFeeCollector(address affiliate, address feeCollector) external onlyRole(LibAccessibility.AFFILIATE_MANAGER_ROLE) {
 		require(feeCollector != address(0), "ControlFacet: Zero address");
-		emit SetFeeCollector(GlobalAppStorage.layout().feeCollector, feeCollector);
-		GlobalAppStorage.layout().feeCollector = feeCollector;
+		require(MAStorage.layout().affiliateStatus[affiliate], "ControlFacet: Invalid affiliate");
+		emit SetFeeCollector(affiliate, GlobalAppStorage.layout().affiliateFeeCollector[affiliate], feeCollector);
+		GlobalAppStorage.layout().affiliateFeeCollector[affiliate] = feeCollector;
 	}
-
 
 	/// @notice Sets the deallocate debounce time. User can't deallocate more than once in this window
 	/// @param deallocateDebounceTime in seconds.

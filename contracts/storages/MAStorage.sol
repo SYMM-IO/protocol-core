@@ -28,6 +28,7 @@ library MAStorage {
 		uint256 forceClosePricePenalty;
 		uint256 forceCloseMinSigPeriod;
 		uint256 deallocateDebounceTime;
+		mapping(address => bool) affiliateStatus;
 	}
 
 	function layout() internal pure returns (Layout storage l) {
