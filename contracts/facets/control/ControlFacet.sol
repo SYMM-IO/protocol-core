@@ -347,10 +347,11 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	}
 
 	/// @notice Sets the gap ratio used in force closing of positions.
+	/// @param symbolId The symbolId that this ratio is going to be applied for.
 	/// @param forceCloseGapRatio The new gap ratio used in force closing of positions.
-	function setForceCloseGapRatio(uint256 forceCloseGapRatio) external onlyRole(LibAccessibility.SETTER_ROLE) {
-		emit SetForceCloseGapRatio(MAStorage.layout().forceCloseGapRatio, forceCloseGapRatio);
-		MAStorage.layout().forceCloseGapRatio = forceCloseGapRatio;
+	function setForceCloseGapRatio(uint256 symbolId, uint256 forceCloseGapRatio) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		emit SetForceCloseGapRatio(symbolId, SymbolStorage.layout().forceCloseGapRatio[symbolId], forceCloseGapRatio);
+		SymbolStorage.layout().forceCloseGapRatio[symbolId] = forceCloseGapRatio;
 	}
 
 	// Pause State //////////////////////////////////////////////////

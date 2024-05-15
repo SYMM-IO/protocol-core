@@ -73,7 +73,7 @@ interface IControlFacet is IControlEvents {
 
 	function setLiquidatorShare(uint256 liquidatorShare) external;
 
-	function setForceCloseGapRatio(uint256 forceCloseGapRatio) external;
+	function setForceCloseGapRatio(uint256 symbolId, uint256 forceCloseGapRatio) external;
 
 	function setPendingQuotesValidLength(uint256 pendingQuotesValidLength) external;
 
