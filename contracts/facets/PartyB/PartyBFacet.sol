@@ -175,7 +175,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 	function emergencyClosePosition(
 		uint256 quoteId,
 		PairUpnlAndPriceSig memory upnlSig
-	) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) whenEmergencyMode(msg.sender) notLiquidated(quoteId) {
+	) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		uint256 filledAmount = LibQuote.quoteOpenAmount(quote);

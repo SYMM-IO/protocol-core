@@ -560,13 +560,14 @@ export function shouldBehaveLikeClosePosition(): void {
 	})
 
 	describe("Emergency Close", async function () {
-		beforeEach(async function () {})
+		beforeEach(async function () { })
 
 		it("Should fail when not emergency mode", async function () {
-			await expect(hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build())).to.be.revertedWith("Pausable: It isn't emergency mode")
+			await expect(hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build()))
+				.to.be.revertedWith("PartyBFacet: Operation not allowed. Either emergency mode must be active, party B must be in emergency status, or the symbol must be delisted")
 		})
 
-		describe("Emergency mode activated", async function () {
+		describe("Emergency status for partyB activated", async function () {
 			beforeEach(async function () {
 				await context.controlFacet.setPartyBEmergencyStatus([await hedger2.getAddress()], true)
 				await context.controlFacet.setPartyBEmergencyStatus([await hedger.getAddress()], true)
@@ -590,6 +591,54 @@ export function shouldBehaveLikeClosePosition(): void {
 				await expect(hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().upnlPartyB(decimal(-410)).build())).to.be.revertedWith(
 					"LibSolvency: Available balance is lower than zero",
 				)
+			})
+
+			it("Should run successfully", async function () {
+				const validator = new EmergencyCloseRequestValidator()
+				const beforeOut = await validator.before(context, {
+					user: user,
+					hedger: hedger,
+					quoteId: BigNumber.from(1),
+				})
+				await hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build())
+				await validator.after(context, {
+					user: user,
+					hedger: hedger,
+					quoteId: BigNumber.from(1),
+					price: decimal(1),
+					beforeOutput: beforeOut,
+				})
+			})
+		})
+
+
+		describe("Emergency mode get activated", async function () {
+			beforeEach(async function () {
+				await context.controlFacet.activeEmergencyMode()
+			})
+
+			it("Should run successfully", async function () {
+				const validator = new EmergencyCloseRequestValidator()
+				const beforeOut = await validator.before(context, {
+					user: user,
+					hedger: hedger,
+					quoteId: BigNumber.from(1),
+				})
+				await hedger.emergencyClosePosition(1, emergencyCloseRequestBuilder().build())
+				await validator.after(context, {
+					user: user,
+					hedger: hedger,
+					quoteId: BigNumber.from(1),
+					price: decimal(1),
+					beforeOutput: beforeOut,
+				})
+			})
+		})
+
+		describe("Symbol gets deListed", async function () {
+
+			beforeEach(async function () {
+				await context.controlFacet.setSymbolValidationState((await context.viewFacet.getQuote(1)).symbolId, false)
 			})
 
 			it("Should run successfully", async function () {

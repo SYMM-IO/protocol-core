@@ -40,12 +40,4 @@ abstract contract Pausable {
 		require(!GlobalAppStorage.layout().internalTransferPaused, "Pausable: Internal transfer paused");
 		_;
 	}
-
-	modifier whenEmergencyMode(address partyB) {
-		require(
-			GlobalAppStorage.layout().emergencyMode || GlobalAppStorage.layout().partyBEmergencyStatus[partyB],
-			"Pausable: It isn't emergency mode"
-		);
-		_;
-	}
 }
