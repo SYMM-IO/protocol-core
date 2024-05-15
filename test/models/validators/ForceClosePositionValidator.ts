@@ -1,14 +1,14 @@
-import { BigNumber } from "ethers"
-import { BalanceInfo, User } from "../User"
-import { Hedger } from "../Hedger"
-import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet"
-import { RunContext } from "../RunContext"
-import { TransactionValidator } from "./TransactionValidator"
-import { logger } from "../../utils/LoggerUtils"
 import { expect } from "chai"
-import { OrderType, PositionType, QuoteStatus } from "../Enums"
+import { BigNumber } from "ethers"
+import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
 import { decimal, getBlockTimestamp, unDecimal } from "../../utils/Common"
+import { logger } from "../../utils/LoggerUtils"
 import { expectToBeApproximately } from "../../utils/SafeMath"
+import { OrderType, PositionType, QuoteStatus } from "../Enums"
+import { Hedger } from "../Hedger"
+import { RunContext } from "../RunContext"
+import { BalanceInfo, User } from "../User"
+import { TransactionValidator } from "./TransactionValidator"
 
 export type ForceClosePositionValidatorBeforeArg = {
 	user: User
@@ -53,9 +53,9 @@ export class ForceClosePositionValidator implements TransactionValidator {
 		const newQuote = await context.viewFacet.getQuote(arg.quoteId)
 		const oldQuote = arg.beforeOutput.quote
 		const penalty = await context.viewFacet.forceClosePricePenalty()
-		const coolDownsOfMA = await context.viewFacet.coolDownsOfMA()
-		const forceCloseFirstCooldown = coolDownsOfMA[3]
-		const forceCloseSecondCooldown = coolDownsOfMA[4]
+		const coolDownsOfMA = await context.viewFacet.forceCloseCooldowns()
+		const forceCloseFirstCooldown = coolDownsOfMA[0]
+		const forceCloseSecondCooldown = coolDownsOfMA[1]
 		const forceCloseMinSigPeriod = await context.viewFacet.forceCloseMinSigPeriod()
 		const partyBBalanceInfo = arg.hedger.getBalanceInfo(await arg.user.getAddress())
 		const isPartyBLiquidated = (await partyBBalanceInfo).allocatedBalances == BigNumber.from(0)

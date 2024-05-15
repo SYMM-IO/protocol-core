@@ -10,7 +10,6 @@ import "../../storages/MuonStorage.sol";
 import "../../storages/BridgeStorage.sol";
 
 interface IViewFacet {
-
 	struct Bitmap {
 		uint256 size;
 		BitmapElement[] elements;
@@ -118,13 +117,15 @@ interface IViewFacet {
 	// MA
 	function getCollateral() external view returns (address);
 
-	function getFeeCollector() external view returns (address);
+	function getFeeCollector(address affiliate) external view returns (address);
 
 	function isPartyALiquidated(address partyA) external view returns (bool);
 
 	function isPartyBLiquidated(address partyB, address partyA) external view returns (bool);
 
 	function isPartyB(address user) external view returns (bool);
+
+	function isAffiliate(address affiliate) external view returns (bool);
 
 	function pendingQuotesValidLength() external view returns (uint256);
 
@@ -140,7 +141,7 @@ interface IViewFacet {
 
 	function partyBLiquidationTimestamp(address partyB, address partyA) external view returns (uint256);
 
-	function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256, uint256);
+	function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256);
 
 	///////////////////////////////////////////
 

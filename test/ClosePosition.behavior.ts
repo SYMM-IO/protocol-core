@@ -643,9 +643,9 @@ export function shouldBehaveLikeClosePosition(): void {
 
 		async function prepareSigTimes(period: number = 10) {
 			const now = await getBlockTimestamp()
-			const cooldowns = await context.viewFacet.coolDownsOfMA()
-			const firstCooldown = cooldowns[3]
-			const secondCooldown = cooldowns[4]
+			const cooldowns = await context.viewFacet.forceCloseCooldowns()
+			const firstCooldown = cooldowns[0]
+			const secondCooldown = cooldowns[1]
 			const startTime = firstCooldown.add(now)
 			const endTime = firstCooldown.add(now).add(period)
 			await time.increase(firstCooldown.add(period).add(secondCooldown).add(1))

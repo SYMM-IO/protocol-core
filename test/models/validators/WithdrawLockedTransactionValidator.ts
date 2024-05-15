@@ -1,10 +1,10 @@
+import { expect } from "chai"
 import { BigNumber } from "ethers"
-import { BridgeTransactionStructOutput } from "../../../src/types/contracts/facets/ViewFacet"
+import { BridgeTransactionStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
+import { logger } from "../../utils/LoggerUtils"
+import { BridgeTransactionStatus } from "../Enums"
 import { RunContext } from "../RunContext"
 import { TransactionValidator } from "./TransactionValidator"
-import { logger } from "../../utils/LoggerUtils"
-import { expect } from "chai"
-import { BridgeTransactionStatus } from "../Enums"
 
 export type WithdrawLockedTransactionValidatorBeforeArg = {
 	bridge: string

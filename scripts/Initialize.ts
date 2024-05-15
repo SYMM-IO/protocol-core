@@ -1,5 +1,5 @@
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils"
-import { run } from "hardhat"
+import { ethers, run } from "hardhat"
 
 import { createRunContext, RunContext } from "../test/models/RunContext"
 import { decimal } from "../test/utils/Common"
@@ -16,10 +16,11 @@ export async function initialize(): Promise<RunContext> {
 		genABI: false,
 		reportGas: true,
 	})
-
 	let multicall = process.env.DEPLOY_MULTICALL == "true" ? await run("deploy:multicall") : undefined
 
-	let context = await createRunContext(diamond.address, collateral.address, true)
+	const multiAccount = await run("deploy:multiAccount", { symmioAddress: diamond.address, admin: process.env.ADMIN_PUBLIC_KEY });
+
+	let context = await createRunContext(diamond.address, collateral.address, multiAccount.address, undefined, true)
 
 	await runTx(context.controlFacet.connect(context.signers.admin).setAdmin(context.signers.admin.getAddress()))
 	await runTx(context.controlFacet.connect(context.signers.admin).setCollateral(context.collateral.address))
@@ -34,6 +35,9 @@ export async function initialize(): Promise<RunContext> {
 	)
 	await runTx(
 		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE"))),
+	)
+	await runTx(
+		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
 	)
 	await runTx(
 		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
@@ -61,6 +65,8 @@ export async function initialize(): Promise<RunContext> {
 	await runTx(context.controlFacet.connect(context.signers.admin).setLiquidationTimeout(100))
 	await runTx(context.controlFacet.connect(context.signers.admin).setDeallocateCooldown(120))
 	await runTx(context.controlFacet.connect(context.signers.admin).setBalanceLimitPerUser(decimal(100000)))
+	await runTx(context.controlFacet.connect(context.signers.admin).registerAffiliate(context.multiAccount))
+	await runTx(context.controlFacet.connect(context.signers.admin).setFeeCollector(context.multiAccount, context.signers.feeCollector.address))
 
 	let output: Addresses = loadAddresses()
 	output.collateralAddress = collateral.address
@@ -71,7 +77,7 @@ export async function initialize(): Promise<RunContext> {
 }
 
 async function main() {
-	let context = await initialize()
+	await initialize()
 	console.log("Initialized successfully")
 }
 

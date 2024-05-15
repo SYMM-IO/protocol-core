@@ -11,7 +11,7 @@ library GlobalAppStorage {
 
 	struct Layout {
 		address collateral;
-		address feeCollector;
+		address deprecatedFeeCollector;
 		bool globalPaused;
 		bool liquidationPaused;
 		bool accountingPaused;
@@ -22,6 +22,7 @@ library GlobalAppStorage {
 		mapping(address => bool) partyBEmergencyStatus;
 		mapping(address => mapping(bytes32 => bool)) hasRole;
 		bool internalTransferPaused;
+		mapping(address => address) affiliateFeeCollector;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

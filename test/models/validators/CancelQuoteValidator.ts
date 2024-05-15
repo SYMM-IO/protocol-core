@@ -1,14 +1,14 @@
 import { expect } from "chai"
 import { BigNumber } from "ethers"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet"
+import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
 import { getTotalPartyALockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common"
+import { logger } from "../../utils/LoggerUtils"
+import { expectToBeApproximately } from "../../utils/SafeMath"
 import { QuoteStatus } from "../Enums"
 import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"
-import { logger } from "../../utils/LoggerUtils"
 import { TransactionValidator } from "./TransactionValidator"
-import { expectToBeApproximately } from "../../utils/SafeMath"
 
 export type CancelQuoteValidatorBeforeArg = {
 	user: User

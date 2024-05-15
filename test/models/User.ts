@@ -60,6 +60,7 @@ export class User {
 				request.partyBmm,
 				request.maxFundingRate,
 				request.deadline,
+				this.context.multiAccount,
 				await request.upnlSig,
 			)
 		let id = (await tx.wait()).events?.filter((x: any) => x.event == "SendQuote")[0]!.args!.quoteId

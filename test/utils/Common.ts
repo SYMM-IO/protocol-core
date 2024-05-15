@@ -120,6 +120,15 @@ export async function getTradingFeeForQuotes(context: RunContext, quoteIds: Prom
 	return out
 }
 
+export async function getTradingFeeForQuoteWithFilledAmount(context: RunContext, quoteId: BigNumberish, filledAmounts: BigNumber): Promise<BigNumber> {
+	let out = BigNumber.from(0)
+	let q = await context.viewFacet.getQuote(quoteId)
+	let tf = (await context.viewFacet.getSymbol(q.symbolId)).tradingFee
+	if (q.orderType == OrderType.LIMIT) out = out.add(unDecimal(filledAmounts.mul(q.requestedOpenPrice).mul(tf), 36))
+	else out = out.add(unDecimal(filledAmounts.mul(q.marketPrice).mul(tf), 36))
+	return out
+}
+
 export async function pausePartyB(context: RunContext) {
 	await context.controlFacet.connect(context.signers.admin).pausePartyBActions()
 }

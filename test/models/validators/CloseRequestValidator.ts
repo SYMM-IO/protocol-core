@@ -1,9 +1,9 @@
 import { expect } from "chai"
 import { BigNumber } from "ethers"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/facets/ViewFacet"
-import { QuoteStatus } from "../Enums"
+import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
 import { logger } from "../../utils/LoggerUtils"
+import { QuoteStatus } from "../Enums"
 import { Hedger } from "../Hedger"
 import { RunContext } from "../RunContext"
 import { BalanceInfo, User } from "../User"

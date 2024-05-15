@@ -75,7 +75,6 @@ contract SymmioInitHelper is AccessControlEnumerable {
 		address collateral,
 		uint256 liquidatorShare,
 		uint256 pendingQuotesValidLength,
-		address feeCollector,
 		uint256 balanceLimitPerUser
 	) external onlyRole(SETTER_ROLE) {
 		ISymmio(symmioAddress).registerPartyB(partyB);
@@ -83,7 +82,6 @@ contract SymmioInitHelper is AccessControlEnumerable {
 		ISymmio(symmioAddress).setCollateral(collateral);
 		ISymmio(symmioAddress).setLiquidatorShare(liquidatorShare);
 		ISymmio(symmioAddress).setPendingQuotesValidLength(pendingQuotesValidLength);
-		ISymmio(symmioAddress).setFeeCollector(feeCollector);
 		ISymmio(symmioAddress).setBalanceLimitPerUser(balanceLimitPerUser);
 	}
 }

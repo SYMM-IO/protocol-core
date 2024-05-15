@@ -21,6 +21,10 @@ interface IControlFacet is IControlEvents {
 
 	function deregisterPartyB(address partyB, uint256 index) external;
 
+	function registerAffiliate(address affiliate) external;
+
+	function deregisterAffiliate(address affiliate) external;
+
 	function setMuonConfig(uint256 upnlValidTime, uint256 priceValidTime) external;
 
 	function setMuonIds(uint256 muonAppId, address validGateway, PublicKey memory publicKey) external;
@@ -76,8 +80,7 @@ interface IControlFacet is IControlEvents {
 	function setDeallocateDebounceTime(uint256 deallocateDebounceTime) external;
 
 	// Pause State
-
-	function setFeeCollector(address feeCollector) external;
+	function setFeeCollector(address affiliate, address feeCollector) external;
 
 	function pauseGlobal() external;
 

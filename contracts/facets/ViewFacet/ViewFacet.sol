@@ -520,10 +520,7 @@ contract ViewFacet is IViewFacet {
 	 * @param gasNeededForReturn The minimum gas required to complete the function execution and return the data. This ensures the function doesn't start a retrieval that it can't complete.
 	 * @return quotes An array of `Quote` structures, each corresponding to a quote identified by the bitmap.
 	 */
-	function getQuotesWithBitmap(
-		Bitmap calldata bitmap,
-		uint256 gasNeededForReturn
-	) external view returns (Quote[] memory quotes) {
+	function getQuotesWithBitmap(Bitmap calldata bitmap, uint256 gasNeededForReturn) external view returns (Quote[] memory quotes) {
 		QuoteStorage.Layout storage qL = QuoteStorage.layout();
 
 		quotes = new Quote[](bitmap.size);
@@ -572,10 +569,11 @@ contract ViewFacet is IViewFacet {
 
 	/**
 	 * @notice Returns the address of the fee collector.
+	 * @param affiliate The address of affiliate.
 	 * @return The address of the fee collector.
 	 */
-	function getFeeCollector() external view returns (address) {
-		return GlobalAppStorage.layout().feeCollector;
+	function getFeeCollector(address affiliate) external view returns (address) {
+		return GlobalAppStorage.layout().affiliateFeeCollector[affiliate];
 	}
 
 	/**
@@ -597,13 +595,22 @@ contract ViewFacet is IViewFacet {
 		return MAStorage.layout().partyBLiquidationStatus[partyB][partyA];
 	}
 
-	/**
+	/**`
 	 * @notice Checks if a user is a party B.
 	 * @param user The address of the user.
 	 * @return True if the user is a party B, false otherwise.
 	 */
 	function isPartyB(address user) external view returns (bool) {
 		return MAStorage.layout().partyBStatus[user];
+	}
+
+	/**
+	 * @notice Checks if an address is a registered affiliate.
+	 * @param affiliate The address of the affiliate.
+	 * @return True if the user is a registered affiliate, false otherwise.
+	 */
+	function isAffiliate(address affiliate) external view returns (bool) {
+		return MAStorage.layout().affiliateStatus[affiliate];
 	}
 
 	/**
@@ -670,14 +677,13 @@ contract ViewFacet is IViewFacet {
 	 * @return forceCancelCooldown The force cancel cooldown.
 	 * @return forceCancelCloseCooldown The force cancel close cooldown.
 	 * @return forceCloseFirstCooldown The force close first cooldown.
-	 * @return forceCloseSecondCooldown The force close second cooldown.
 	 */
-	function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256, uint256) {
+	function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256) {
 		return (
 			MAStorage.layout().deallocateCooldown,
 			MAStorage.layout().forceCancelCooldown,
 			MAStorage.layout().forceCancelCloseCooldown,
-			MAStorage.layout().forceCloseFirstCooldown,
+			MAStorage.layout().forceCloseFirstCooldown
 		);
 	}
 
@@ -687,10 +693,7 @@ contract ViewFacet is IViewFacet {
 	 * @return forceCloseSecondCooldown The force close second cooldown.
 	 */
 	function forceCloseCooldowns() external view returns (uint256, uint256) {
-		return (
-			MAStorage.layout().forceCloseFirstCooldown,
-			MAStorage.layout().forceCloseSecondCooldown
-		);
+		return (MAStorage.layout().forceCloseFirstCooldown, MAStorage.layout().forceCloseSecondCooldown);
 	}
 
 	/**

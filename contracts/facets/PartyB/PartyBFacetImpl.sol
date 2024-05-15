@@ -96,10 +96,10 @@ library PartyBFacetImpl {
 		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
 		if (quote.orderType == OrderType.LIMIT) {
 			require(quote.quantity >= filledAmount && filledAmount > 0, "PartyBFacet: Invalid filledAmount");
-			accountLayout.balances[GlobalAppStorage.layout().feeCollector] += (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
+			accountLayout.balances[GlobalAppStorage.layout().affiliateFeeCollector[quote.affiliate]] += (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
 		} else {
 			require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
-			accountLayout.balances[GlobalAppStorage.layout().feeCollector] += (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
+			accountLayout.balances[GlobalAppStorage.layout().affiliateFeeCollector[quote.affiliate]] += (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
 		}
 		if (quote.positionType == PositionType.LONG) {
 			require(openedPrice <= quote.requestedOpenPrice, "PartyBFacet: Opened price isn't valid");
@@ -185,7 +185,8 @@ library PartyBFacetImpl {
 				quantityToClose: 0,
 				lastFundingPaymentTimestamp: 0,
 				deadline: quote.deadline,
-				tradingFee: quote.tradingFee
+				tradingFee: quote.tradingFee,
+				affiliate: quote.affiliate
 			});
 
 			quoteLayout.quoteIdsOf[quote.partyA].push(currentId);

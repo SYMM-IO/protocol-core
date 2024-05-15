@@ -55,6 +55,7 @@ export enum LiquidationType {
 
 export enum BridgeTransactionStatus {
 	RECEIVED,
+	SUSPENDED,
 	WITHDRAWN,
 }
 

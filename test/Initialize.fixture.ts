@@ -13,7 +13,10 @@ export async function initializeFixture(): Promise<RunContext> {
 	})
 	let multicall = process.env.DEPLOY_MULTICALL == "true" ? await run("deploy:multicall") : undefined
 
-	let context = await createRunContext(diamond.address, collateral.address)
+	const multiAccount = await run("deploy:multiAccount", { symmioAddress: diamond.address, admin: process.env.ADMIN_PUBLIC_KEY });
+	const multiAccount2 = await run("deploy:multiAccount", { symmioAddress: diamond.address, admin: process.env.ADMIN_PUBLIC_KEY });
+
+	let context = await createRunContext(diamond.address, collateral.address, multiAccount.address, multiAccount2.address, true)
 
 	await context.controlFacet.connect(context.signers.admin).setAdmin(context.signers.admin.getAddress())
 
@@ -27,7 +30,8 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE")))
-	await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
+	context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
+		await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.liquidator.getAddress(), keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
@@ -43,6 +47,10 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet.connect(context.signers.admin).setForceCloseCooldowns(300, 120)
 	await context.controlFacet.connect(context.signers.admin).registerPartyB(context.signers.hedger.getAddress())
 	await context.controlFacet.connect(context.signers.admin).registerPartyB(context.signers.hedger2.getAddress())
+	await context.controlFacet.connect(context.signers.admin).registerAffiliate(context.multiAccount)
+	await context.controlFacet.connect(context.signers.admin).registerAffiliate(context.multiAccount2!)
+	await context.controlFacet.connect(context.signers.admin).setFeeCollector(context.multiAccount, context.signers.feeCollector.address)
+	await context.controlFacet.connect(context.signers.admin).setFeeCollector(context.multiAccount2!, context.signers.feeCollector2.address)
 
 	return context
 }

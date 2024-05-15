@@ -1,7 +1,7 @@
 import { BigNumber } from "ethers"
-import { randomBigNumber } from "./RandomUtils"
-import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet"
+import { QuoteStructOutput } from "../../src/types/contracts/interfaces/ISymmio"
 import { decimal } from "./Common"
+import { randomBigNumber } from "./RandomUtils"
 
 export async function getPrice() {
 	const def = BigNumber.from(200000).mul(10).pow(18)

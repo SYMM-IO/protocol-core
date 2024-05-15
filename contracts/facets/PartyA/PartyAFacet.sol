@@ -42,6 +42,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		uint256 partyBmm,
 		uint256 maxFundingRate,
 		uint256 deadline,
+		address affiliate,
 		SingleUpnlAndPriceSig memory upnlSig
 	) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
 		uint256 quoteId = PartyAFacetImpl.sendQuote(
@@ -57,6 +58,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			partyBmm,
 			maxFundingRate,
 			deadline,
+			affiliate,
 			upnlSig
 		);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];

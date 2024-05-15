@@ -33,6 +33,7 @@ library PartyAFacetImpl {
 		uint256 partyBmm,
 		uint256 maxFundingRate,
 		uint256 deadline,
+		address affiliate,
 		SingleUpnlAndPriceSig memory upnlSig
 	) internal returns (uint256 currentId) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
@@ -68,6 +69,7 @@ library PartyAFacetImpl {
 				lockedValues.totalForPartyA() + ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
 			"PartyAFacet: insufficient available balance"
 		);
+		require(maLayout.affiliateStatus[affiliate], "PartyAFacet: Invalid affiliate");
 
 		// lock funds the in middle of way
 		accountLayout.pendingLockedBalances[msg.sender].add(lockedValues);
@@ -100,7 +102,8 @@ library PartyAFacetImpl {
 			quantityToClose: 0,
 			lastFundingPaymentTimestamp: 0,
 			deadline: deadline,
-			tradingFee: symbolLayout.symbols[symbolId].tradingFee
+			tradingFee: symbolLayout.symbols[symbolId].tradingFee,
+			affiliate: affiliate
 		});
 		quoteLayout.quoteIdsOf[msg.sender].push(currentId);
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
