@@ -623,10 +623,11 @@ contract ViewFacet is IViewFacet {
 
 	/**
 	 * @notice Returns the force close gap ratio.
+	 * @param symbolId The symbolId that this ratio is for.
 	 * @return The force close gap ratio.
 	 */
-	function forceCloseGapRatio() external view returns (uint256) {
-		return MAStorage.layout().forceCloseGapRatio;
+	function forceCloseGapRatio(uint256 symbolId) external view returns (uint256) {
+		return SymbolStorage.layout().forceCloseGapRatio[symbolId];
 	}
 
 	/**

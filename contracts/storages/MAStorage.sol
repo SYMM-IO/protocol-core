@@ -17,7 +17,7 @@ library MAStorage {
 		uint256 liquidationTimeout;
 		uint256 liquidatorShare; // in 18 decimals
 		uint256 pendingQuotesValidLength;
-		uint256 forceCloseGapRatio;
+		uint256 deprecatedForceCloseGapRatio; // DEPRECATED
 		mapping(address => bool) partyBStatus;
 		mapping(address => bool) liquidationStatus;
 		mapping(address => mapping(address => bool)) partyBLiquidationStatus;

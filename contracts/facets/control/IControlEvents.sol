@@ -45,7 +45,7 @@ interface IControlEvents {
 	event SetForceCloseMinSigPeriod(uint256 oldCloseMinSigPeriod, uint256 newCloseMinSigPeriod);
 	event SetForceCancelCloseCooldown(uint256 oldForceCancelCloseCooldown, uint256 newForceCancelCloseCooldown);
 	event SetLiquidatorShare(uint256 oldLiquidatorShare, uint256 newLiquidatorShare);
-	event SetForceCloseGapRatio(uint256 oldForceCloseGapRatio, uint256 newForceCloseGapRatio);
+	event SetForceCloseGapRatio(uint256 symbolId, uint256 oldForceCloseGapRatio, uint256 newForceCloseGapRatio);
 	event SetPendingQuotesValidLength(uint256 oldPendingQuotesValidLength, uint256 newPendingQuotesValidLength);
 	event SetDeallocateDebounceTime(uint256 oldDeallocateDebounceTime, uint256 newDeallocateDebounceTime);
 	event PauseGlobal();

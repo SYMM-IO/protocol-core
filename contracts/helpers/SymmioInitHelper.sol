@@ -37,7 +37,6 @@ contract SymmioInitHelper is AccessControlEnumerable {
 		uint256 forceCloseSecondCooldown,
 		uint256 forceClosePricePenalty,
 		uint256 forceCloseMinSigPeriod,
-		uint256 forceCloseGapRatio,
 		uint256 liquidationTimeout
 	) external onlyRole(SETTER_ROLE) {
 		ISymmio(symmioAddress).setDeallocateCooldown(deallocateCooldown);
@@ -46,7 +45,6 @@ contract SymmioInitHelper is AccessControlEnumerable {
 		ISymmio(symmioAddress).setForceClosePricePenalty(forceClosePricePenalty);
 		ISymmio(symmioAddress).setForceCancelCloseCooldown(forceCancelCloseCooldown);
 		ISymmio(symmioAddress).setForceCloseMinSigPeriod(forceCloseMinSigPeriod);
-		ISymmio(symmioAddress).setForceCloseGapRatio(forceCloseGapRatio);
 		ISymmio(symmioAddress).setLiquidationTimeout(liquidationTimeout);
 	}
 

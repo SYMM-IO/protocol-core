@@ -216,6 +216,7 @@ library PartyAFacetImpl {
 		HighLowPriceSig memory sig
 	) internal returns (uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
+		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		require(quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyAFacet: Invalid state");
 		require(sig.endTime + maLayout.forceCloseSecondCooldown <= quote.deadline, "PartyBFacet: Close request is expired");
@@ -225,14 +226,14 @@ library PartyAFacetImpl {
 		require(sig.averagePrice <= sig.highest && sig.averagePrice >= sig.lowest, "PartyAFacet: Invalid average price");
 		if (quote.positionType == PositionType.LONG) {
 			require(
-				sig.highest >= quote.requestedClosePrice + (quote.requestedClosePrice * maLayout.forceCloseGapRatio) / 1e18,
+				sig.highest >= quote.requestedClosePrice + (quote.requestedClosePrice * symbolLayout.forceCloseGapRatio[quote.symbolId]) / 1e18,
 				"PartyAFacet: Requested close price not reached"
 			);
 			closePrice = quote.requestedClosePrice + (quote.requestedClosePrice * maLayout.forceClosePricePenalty) / 1e18;
 			closePrice = closePrice > sig.averagePrice ? closePrice : sig.averagePrice; // max
 		} else {
 			require(
-				sig.lowest <= quote.requestedClosePrice - (quote.requestedClosePrice * maLayout.forceCloseGapRatio) / 1e18,
+				sig.lowest <= quote.requestedClosePrice - (quote.requestedClosePrice * symbolLayout.forceCloseGapRatio[quote.symbolId]) / 1e18,
 				"PartyAFacet: Requested close price not reached"
 			);
 			closePrice = quote.requestedClosePrice - (quote.requestedClosePrice * maLayout.forceClosePricePenalty) / 1e18;
