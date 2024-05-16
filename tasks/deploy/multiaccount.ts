@@ -1,5 +1,5 @@
 import { task, types } from "hardhat/config"
-import { readData, writeData, fileExists } from "../utils/fs"
+import { fileExists, readData, writeData } from "../utils/fs"
 import { DEPLOYMENT_LOG_FILE } from "./constants"
 
 task("deploy:multiAccount", "Deploys the MultiAccount")

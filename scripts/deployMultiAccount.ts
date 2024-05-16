@@ -1,4 +1,4 @@
-import { run, ethers } from "hardhat"
+import { run } from "hardhat"
 import { Addresses, loadAddresses, saveAddresses } from "./utils/file"
 
 async function main() {
