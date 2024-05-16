@@ -1,5 +1,5 @@
 import { task, types } from "hardhat/config"
-import { readData, writeData } from "../utils/fs"
+import { readData, writeData, fileExists } from "../utils/fs"
 import { DEPLOYMENT_LOG_FILE } from "./constants"
 
 task("deploy:symmioPartyB", "Deploys the SymmioPartyB")
@@ -29,6 +29,13 @@ task("deploy:symmioPartyB", "Deploys the SymmioPartyB")
 
     // Update the deployed addresses JSON file
     if (logData) {
+      // Ensure the log file exists
+      if (!fileExists(DEPLOYMENT_LOG_FILE)) {
+        writeData(DEPLOYMENT_LOG_FILE, [])
+        console.log(`Created new log file: ${DEPLOYMENT_LOG_FILE}`)
+      }
+
+      // Read existing data
       let deployedData = []
       try {
         deployedData = readData(DEPLOYMENT_LOG_FILE)
