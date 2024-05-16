@@ -87,12 +87,13 @@ library LibAccount {
 	/**
 	 * @notice Calculates the available balance for liquidation for Party A.
 	 * @param upnl The unrealized profit and loss.
+	 * @param allocatedBalance The allocatedBalance of Party A.
 	 * @param partyA The address of Party A.
 	 * @return The available balance for liquidation for Party A.
 	 */
-	function partyAAvailableBalanceForLiquidation(int256 upnl, address partyA) internal view returns (int256) {
+	function partyAAvailableBalanceForLiquidation(int256 upnl, uint256 allocatedBalance, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		int256 freeBalance = int256(accountLayout.allocatedBalances[partyA]) -
+		int256 freeBalance = int256(allocatedBalance) -
 			int256(accountLayout.lockedBalances[partyA].cva + accountLayout.lockedBalances[partyA].lf);
 		return freeBalance + upnl;
 	}
