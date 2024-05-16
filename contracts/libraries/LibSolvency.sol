@@ -22,7 +22,11 @@ library LibSolvency {
 	function isSolventAfterOpenPosition(uint256 quoteId, uint256 filledAmount, PairUpnlAndPriceSig memory upnlSig) internal view returns (bool) {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, quote.partyB, quote.partyA);
-		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnlPartyA, quote.partyA);
+		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
+			upnlSig.upnlPartyA,
+			AccountStorage.layout().allocatedBalances[quote.partyA],
+			quote.partyA
+		);
 
 		if (quote.positionType == PositionType.LONG) {
 			if (quote.openedPrice >= upnlSig.price) {
@@ -71,7 +75,9 @@ library LibSolvency {
 			LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, quote.partyB, quote.partyA) +
 			int256(unlockedAmount);
 
-		partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnlPartyA, quote.partyA) + int256(unlockedAmount);
+		partyAAvailableBalance =
+			LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnlPartyA, AccountStorage.layout().allocatedBalances[quote.partyA], quote.partyA) +
+			int256(unlockedAmount);
 
 		if (quote.positionType == PositionType.LONG) {
 			if (closedPrice >= upnlSig.price) {
@@ -137,7 +143,11 @@ library LibSolvency {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		uint256 unlockedAmount = (quantityToClose * (quote.lockedValues.cva + quote.lockedValues.lf)) / LibQuote.quoteOpenAmount(quote);
 
-		int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnl, msg.sender) + int256(unlockedAmount);
+		int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
+			upnlSig.upnl,
+			AccountStorage.layout().allocatedBalances[quote.partyA],
+			msg.sender
+		) + int256(unlockedAmount);
 
 		require(availableBalance >= 0, "LibSolvency: Available balance is lower than zero");
 		if (quote.positionType == PositionType.LONG && closePrice <= upnlSig.price) {
