@@ -6,6 +6,7 @@ export type Addresses = {
   multiAccountAddress?: string,
   hedgerProxyAddress?: string,
   MulticallAddress?: string,
+  Multicall2Address?: string,
 }
 
 export function loadAddresses(): Addresses {

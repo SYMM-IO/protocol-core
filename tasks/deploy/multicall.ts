@@ -47,3 +47,50 @@ task("deploy:multicall", "Deploys the Multicall")
 
     return multicall
   })
+
+
+
+task("deploy:multicall2", "Deploys the Multicall2")
+  .addOptionalParam("logData", "Write the deployed addresses to a data file", true, types.boolean)
+  .setAction(async ({ logData }, { ethers, run }) => {
+    console.log("Running deploy:multicall2")
+
+    const signers: SignerWithAddress[] = await ethers.getSigners()
+    const owner: SignerWithAddress = signers[0]
+
+    const Factory = await ethers.getContractFactory("Multicall2")
+    const multicall = await Factory.connect(owner).deploy()
+    await multicall.deployed()
+
+    await multicall.deployTransaction.wait()
+    console.log("Multicall2 deployed:", multicall.address)
+
+    if (logData) {
+      // Ensure the log file exists
+      if (!fileExists(DEPLOYMENT_LOG_FILE)) {
+        writeData(DEPLOYMENT_LOG_FILE, [])
+        console.log(`Created new log file: ${DEPLOYMENT_LOG_FILE}`)
+      }
+
+      // Read existing data
+      let deployedData = []
+      try {
+        deployedData = readData(DEPLOYMENT_LOG_FILE)
+      } catch (err) {
+        console.error(`Could not read existing JSON file: ${err}`)
+      }
+
+      // Append new data
+      deployedData.push({
+        name: "Multicall2",
+        address: multicall.address,
+        constructorArguments: [],
+      })
+
+      // Write updated data back to JSON file
+      writeData(DEPLOYMENT_LOG_FILE, deployedData)
+      console.log("Deployed addresses written to JSON file")
+    }
+
+    return multicall
+  })

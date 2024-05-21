@@ -15,6 +15,7 @@ export async function initialize(): Promise<RunContext> {
   })
 
   let multicall = process.env.DEPLOY_MULTICALL == "true" ? await run("deploy:multicall") : undefined
+  let multicall2 = process.env.DEPLOY_MULTICALL == "true" ? await run("deploy:multicall2") : undefined
 
   let context = await createRunContext(diamond.address, collateral.address, true)
 
@@ -56,6 +57,7 @@ export async function initialize(): Promise<RunContext> {
   output.collateralAddress = collateral.address
   output.symmioAddress = diamond.address
   output.MulticallAddress = multicall?.address
+  output.Multicall2Address = multicall2?.address
   saveAddresses(output)
   return context
 }
