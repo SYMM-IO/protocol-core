@@ -27,9 +27,10 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	 * @param partyBmm The partyB Maintenance Margin value. The amount that is actually behind the position and is considered in liquidation status
 	 * @param maxFundingRate The maximum funding rate allowed from user side.
 	 * @param deadline The user should set a deadline for their request. If no PartyB takes action on the quote within this timeframe, the request will expire
+	 * @param affiliate The affiliate of this quote
 	 * @param upnlSig The Muon signature for user upnl and symbol price
 	 */
-	function sendQuote(
+	function sendQuoteWithAffiliate(
 		address[] memory partyBsWhiteList,
 		uint256 symbolId,
 		PositionType positionType,
@@ -59,6 +60,76 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			maxFundingRate,
 			deadline,
 			affiliate,
+			upnlSig
+		);
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		emit SendQuote(
+			msg.sender,
+			quoteId,
+			partyBsWhiteList,
+			symbolId,
+			positionType,
+			orderType,
+			price,
+			upnlSig.price,
+			quantity,
+			quote.lockedValues.cva,
+			quote.lockedValues.lf,
+			quote.lockedValues.partyAmm,
+			quote.lockedValues.partyBmm,
+			quote.tradingFee,
+			deadline
+		);
+	}
+
+	/**
+ * @notice Send a Quote to the protocol. The quote status will be pending.
+	 * @param partyBsWhiteList List of party B addresses allowed to act on this quote.
+	 * @param symbolId Each symbol within the system possesses a unique identifier, for instance, BTCUSDT carries its own distinct ID
+	 * @param positionType Can be SHORT or LONG (0 or 1)
+	 * @param orderType Can be LIMIT or MARKET (0 or 1)
+	 * @param price For limit orders, this is the user-requested price for the position, and for market orders, this acts as the price threshold
+	 * 				that the user is willing to open a position. For example, if the market price for an arbitrary symbol is $1000 and the user wants to
+	 * 				open a short position on this symbol they might be ok with prices up to $990
+	 * @param quantity Size of the position
+	 * @param cva The Credit Valuation Adjustment value. In the system, either partyA or partyB can get liquidated and CVA is the penalty that the
+	 * 			liquidated side should pay to the other one
+	 * @param lf Liquidation Fee. It is the prize that will be paid to the liquidator user
+	 * @param partyAmm The partyA Maintenance Margin value. The amount that is actually behind the position and is considered in liquidation status
+	 * @param partyBmm The partyB Maintenance Margin value. The amount that is actually behind the position and is considered in liquidation status
+	 * @param maxFundingRate The maximum funding rate allowed from user side.
+	 * @param deadline The user should set a deadline for their request. If no PartyB takes action on the quote within this timeframe, the request will expire
+	 * @param upnlSig The Muon signature for user upnl and symbol price
+	 */
+	function sendQuote(
+		address[] memory partyBsWhiteList,
+		uint256 symbolId,
+		PositionType positionType,
+		OrderType orderType,
+		uint256 price,
+		uint256 quantity,
+		uint256 cva,
+		uint256 lf,
+		uint256 partyAmm,
+		uint256 partyBmm,
+		uint256 maxFundingRate,
+		uint256 deadline,
+		SingleUpnlAndPriceSig memory upnlSig
+	) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
+		uint256 quoteId = PartyAFacetImpl.sendQuote(
+			partyBsWhiteList,
+			symbolId,
+			positionType,
+			orderType,
+			price,
+			quantity,
+			cva,
+			lf,
+			partyAmm,
+			partyBmm,
+			maxFundingRate,
+			deadline,
+			address(0),
 			upnlSig
 		);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];

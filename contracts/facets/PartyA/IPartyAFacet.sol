@@ -21,6 +21,22 @@ interface IPartyAFacet is IPartyAEvents {
 		uint256 partyBmm,
 		uint256 maxFundingRate,
 		uint256 deadline,
+		SingleUpnlAndPriceSig memory upnlSig
+	) external;
+
+	function sendQuoteWithAffiliate(
+		address[] memory partyBsWhiteList,
+		uint256 symbolId,
+		PositionType positionType,
+		OrderType orderType,
+		uint256 price,
+		uint256 quantity,
+		uint256 cva,
+		uint256 lf,
+		uint256 partyAmm,
+		uint256 partyBmm,
+		uint256 maxFundingRate,
+		uint256 deadline,
 		address affiliate,
 		SingleUpnlAndPriceSig memory upnlSig
 	) external;

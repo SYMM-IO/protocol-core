@@ -78,7 +78,6 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @notice Registers an affiliate into the system.
 	/// @param affiliate The address of the affiliate to be registered.
 	function registerAffiliate(address affiliate) external onlyRole(LibAccessibility.AFFILIATE_MANAGER_ROLE) {
-		require(affiliate != address(0), "ControlFacet: Zero address");
 		require(!MAStorage.layout().affiliateStatus[affiliate], "ControlFacet: Address is already registered");
 		MAStorage.layout().affiliateStatus[affiliate] = true;
 		emit RegisterAffiliate(affiliate);
@@ -87,7 +86,6 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @notice Deregisters an affiliate from the system.
 	/// @param affiliate The address of the affiliate to be deregistered.
 	function deregisterAffiliate(address affiliate) external onlyRole(LibAccessibility.AFFILIATE_MANAGER_ROLE) {
-		require(affiliate != address(0), "ControlFacet: Zero address");
 		require(MAStorage.layout().affiliateStatus[affiliate], "ControlFacet: Address is not registered");
 		MAStorage.layout().affiliateStatus[affiliate] = false;
 		emit DeregisterAffiliate(affiliate);
