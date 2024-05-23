@@ -16,7 +16,11 @@ library FundingRateFacetImpl {
 		LibMuon.verifyPairUpnl(upnlSig, msg.sender, partyA);
 		require(quoteIds.length == rates.length && quoteIds.length > 0, "PartyBFacet: Length not match");
 		int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, msg.sender, partyA);
-		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnlPartyA, partyA);
+		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
+			upnlSig.upnlPartyA,
+			AccountStorage.layout().allocatedBalances[partyA],
+			partyA
+		);
 		uint256 epochDuration;
 		uint256 windowTime;
 		for (uint256 i = 0; i < quoteIds.length; i++) {

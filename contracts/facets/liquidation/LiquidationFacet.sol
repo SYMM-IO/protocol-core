@@ -27,7 +27,10 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 			AccountStorage.layout().allocatedBalances[partyA],
 			liquidationSig.upnl,
 			liquidationSig.totalUnrealizedLoss,
-			liquidationSig.liquidationId
+			liquidationSig.liquidationId,
+			liquidationSig.liquidationBlockNumber,
+			liquidationSig.liquidationTimestamp,
+			liquidationSig.liquidationAllocatedBalance
 		);
 	}
 
