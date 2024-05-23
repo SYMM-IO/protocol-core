@@ -23,7 +23,9 @@ interface IAccountFacet is IAccountEvents {
 
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external;
 
-	// PartyB
+	function internalTransfer(address user, uint256 amount) external;
+
+		// PartyB
 	function allocateForPartyB(uint256 amount, address partyA) external;
 
 	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) external;

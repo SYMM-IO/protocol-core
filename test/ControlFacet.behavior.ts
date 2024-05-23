@@ -282,8 +282,8 @@ export function shouldBehaveLikeControlFacet(): void {
 
 	describe("setForceCloseGapRatio", () => {
 		it("Should setForceCloseGapRatio successfully", async function () {
-			await expect(context.controlFacet.connect(owner).setForceCloseGapRatio(BigNumber.from("200"))).to.not.reverted
-			expect((await context.viewFacet.forceCloseGapRatio())).to.be.equal(BigNumber.from("200"))
+			await expect(context.controlFacet.connect(owner).setForceCloseGapRatio(1,BigNumber.from("200"))).to.not.reverted
+			expect((await context.viewFacet.forceCloseGapRatio(1))).to.be.equal(BigNumber.from("200"))
 		})
 	})
 

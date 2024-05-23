@@ -84,6 +84,7 @@ library BridgeFacetImpl {
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
 		require(bridgeTransaction.status == BridgeTransactionStatus.SUSPENDED, "BridgeFacet: Invalid status");
+		require(bridgeLayout.invalidBridgedAmountsPool != address(0), "BridgeFacet: Zero address");
 
 		AccountStorage.layout().balances[bridgeLayout.invalidBridgedAmountsPool] += (bridgeTransaction.amount - validAmount);
 		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;

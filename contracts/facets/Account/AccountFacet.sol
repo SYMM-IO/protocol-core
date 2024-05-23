@@ -53,7 +53,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 
 	/// @notice Allows Party A to deposit a specified amount of collateral and immediately allocate it.
 	/// @param amount The precise amount of collateral to be deposited and allocated, specified in collateral decimals.
-	function depositAndAllocate(uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
+	function depositAndAllocate(uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
 		AccountFacetImpl.deposit(msg.sender, amount);
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
 		AccountFacetImpl.allocate(amountWith18Decimals);
@@ -78,7 +78,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	/// @param amount The amount to transfer and allocate in 18 decimals.
 	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender) notLiquidatedPartyA(user){
 		AccountFacetImpl.internalTransfer(user, amount);
-		emit InternalTransfer(msg.sender, user, amount);
+		emit InternalTransfer(msg.sender, user, AccountStorage.layout().allocatedBalances[user], amount);
 		emit Withdraw(msg.sender, user, amount);
 		emit AllocatePartyA(user, amount, AccountStorage.layout().allocatedBalances[user]);
 		emit SharedEvents.BalanceChangePartyA(user, amount, SharedEvents.BalanceChangeType.ALLOCATE);
@@ -87,7 +87,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	/// @notice Allows Party B to allocate a specified amount of collateral for an specified partyA.
 	/// @dev This function can only be called by Party B when Party B actions are not paused and Party B is not liquidated.
 	/// @param amount The precise amount of collateral to be allocated, specified in 18 decimals.
-	/// @param partyA The address of Party A 
+	/// @param partyA The address of Party A
 	function allocateForPartyB(uint256 amount, address partyA) public whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
 		AccountFacetImpl.allocateForPartyB(amount, partyA);
 		emit AllocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
@@ -97,7 +97,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	/// @notice Allows Party B to deallocate a specified amount of collateral
 	/// @dev This function can only be called by Party B when Party B actions are not paused and neither Party A nor Party B is liquidated.
 	/// @param amount The precise amount of collateral to be deallocated, specified in decimals.
-	/// @param partyA The address of Party A 
+	/// @param partyA The address of Party A
 	/// @param upnlSig The Muon signature for SingleUpnlSig.
 	function deallocateForPartyB(
 		uint256 amount,
@@ -116,7 +116,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	/// @param upnlSig The Muon signature for SingleUpnlSig.
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external whenNotPartyBActionsPaused {
 		AccountFacetImpl.transferAllocation(amount, origin, recipient, upnlSig);
-		emit TransferAllocation(amount, origin, recipient);
+		emit TransferAllocation(amount, origin, AccountStorage.layout().partyBAllocatedBalances[msg.sender][origin], recipient, AccountStorage.layout().partyBAllocatedBalances[msg.sender][recipient]);
 		emit SharedEvents.BalanceChangePartyB(msg.sender, origin, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
