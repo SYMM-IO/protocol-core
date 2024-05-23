@@ -31,6 +31,7 @@ struct LiquidationDetail {
 	uint256 involvedPartyBCounts;
 	int256 partyAAccumulatedUpnl;
 	bool disputed;
+	uint256 liquidationTimestamp;
 }
 
 struct Price {
