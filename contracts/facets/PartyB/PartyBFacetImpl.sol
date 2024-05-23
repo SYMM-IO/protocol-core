@@ -154,7 +154,7 @@ library PartyBFacetImpl {
 			);
 			// check that new pending position is not minor position
 			require(
-				(quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
+				newStatus == QuoteStatus.CANCELED || (quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
 					SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
 				"PartyBFacet: Quote value is low"
 			);

@@ -77,7 +77,6 @@ library AccountFacetImpl {
 		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
 		require(uint256(availableBalance) >= amount, "PartyBFacet: Will be liquidatable");
 
-		accountLayout.partyBNonces[msg.sender][origin] += 1;
 		accountLayout.partyBAllocatedBalances[msg.sender][origin] -= amount;
 		// allocate for recipient
 		accountLayout.partyBAllocatedBalances[msg.sender][recipient] += amount;
