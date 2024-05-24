@@ -170,7 +170,7 @@ export function shouldBehaveLikeMultiAccount() {
 				await multiAccount.connect(context.signers.user).addAccount("Test")
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 				user2Address = await context.signers.user2.getAddress()
-				selector = ethers.utils.hexDataSlice("0x1bbdc2a5", 0, 4)
+				selector = ethers.utils.hexDataSlice("0x40f1310c", 0, 4)
 
 				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510))
 
@@ -187,7 +187,7 @@ export function shouldBehaveLikeMultiAccount() {
 			})
 			it("should send quote with delegate access", async () => {
 				let quoteRequest1 = limitQuoteRequestBuilder().build()
-				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuote", await getListFormatOfQuoteRequest(quoteRequest1))
+				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
 				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector, true)
 				await multiAccount.connect(context.signers.user2)._call(partyAAccount, [sendQuote1])
 				expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
@@ -267,7 +267,7 @@ export function shouldBehaveLikeMultiAccount() {
 		}) //!-----------------------------------------------------------------------
 		it("Should be able to send Quotes", async () => {
 			let quoteRequest1 = limitQuoteRequestBuilder().build()
-			let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuote", await getListFormatOfQuoteRequest(quoteRequest1))
+			let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
 			await multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1])
 			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
 		})
@@ -275,9 +275,9 @@ export function shouldBehaveLikeMultiAccount() {
 		describe("Locking quotes", function () {
 			beforeEach(async () => {
 				let quoteRequest1 = marketQuoteRequestBuilder().build()
-				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuote", await getListFormatOfQuoteRequest(quoteRequest1))
+				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
 				let quoteRequest2 = marketQuoteRequestBuilder().positionType(PositionType.SHORT).build()
-				let sendQuote2 = context.partyAFacet.interface.encodeFunctionData("sendQuote", await getListFormatOfQuoteRequest(quoteRequest2))
+				let sendQuote2 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest2))
 
 				await context.collateral.connect(context.signers.admin).mint(symmioPartyB.address, decimal(1000000))
 

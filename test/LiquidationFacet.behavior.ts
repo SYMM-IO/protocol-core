@@ -59,7 +59,10 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 	describe("Liquidate PartyA", async function () {
 		it("Should fail on partyA being solvent", async function () {
 			await expect(
-				context.liquidationFacet.liquidatePartyA(context.signers.user.getAddress(), await getDummyLiquidationSig("0x10", 0, [], [], 0)),
+				context.liquidationFacet.liquidatePartyA(
+					context.signers.user.getAddress(),
+					await getDummyLiquidationSig("0x10", 0, [], [], 0, (await user.getBalanceInfo()).allocatedBalances),
+				),
 			).to.be.revertedWith("LiquidationFacet: PartyA is solvent")
 		})
 
