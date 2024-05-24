@@ -27,10 +27,14 @@ export async function getDummyLiquidationSig(
 	symbolIds: BigNumberish[],
 	prices: BigNumberish[],
 	totalUnrealizedLoss: BigNumberish,
+	allocatedBalance: BigNumberish,
 ): Promise<LiquidationSigStruct> {
 	return {
 		reqId: "0x",
 		timestamp: getBlockTimestamp(),
+		liquidationBlockNumber: 1,
+		liquidationTimestamp: getBlockTimestamp(),
+		liquidationAllocatedBalance: allocatedBalance,
 		liquidationId: liquidationId,
 		upnl: upnl,
 		totalUnrealizedLoss: totalUnrealizedLoss,

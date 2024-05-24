@@ -6,7 +6,6 @@ import { PromiseOrValue } from "../../src/types/common"
 import { getPriceFetcher, serializeToJson, unDecimal } from "../utils/Common"
 import { logger } from "../utils/LoggerUtils"
 import { getPrice } from "../utils/PriceUtils"
-import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet"
 import { PositionType } from "./Enums"
 import { RunContext } from "./RunContext"
 import { CloseRequest, limitCloseRequestBuilder } from "./requestModels/CloseRequest"
@@ -15,6 +14,7 @@ import { runTx } from "../utils/TxUtils"
 import { getDummyLiquidationSig } from "../utils/SignatureUtils"
 import { LiquidationSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
 import { HighLowPriceSigStruct } from "../../src/types/contracts/facets/PartyA/PartyAFacet"
+import { QuoteStructOutput } from "../../src/types/contracts/interfaces/ISymmio";
 
 export class User {
 	constructor(private context: RunContext, private signer: SignerWithAddress) {}
@@ -47,7 +47,7 @@ export class User {
 		)
 		let tx = await this.context.partyAFacet
 			.connect(this.signer)
-			.sendQuote(
+			.sendQuoteWithAffiliate(
 				request.partyBWhiteList,
 				request.symbolId,
 				request.positionType,
@@ -202,7 +202,8 @@ export class User {
 	): Promise<LiquidationSigStruct> {
 		const upnl = await this.getUpnl(getPriceFetcher(symbolIds, prices))
 		const totalUnrealizedLoss = await this.getTotalUnrealisedLoss(getPriceFetcher(symbolIds, prices))
-		const sign = await getDummyLiquidationSig("0x10", upnl, symbolIds, prices, totalUnrealizedLoss)
+		const allocatedBalance = (await this.getBalanceInfo()).allocatedBalances
+		const sign = await getDummyLiquidationSig("0x10", upnl, symbolIds, prices, totalUnrealizedLoss, allocatedBalance)
 		await this.context.liquidationFacet.connect(liquidator).liquidatePartyA(this.getAddress(), sign)
 		await this.context.liquidationFacet.connect(liquidator).setSymbolsPrice(this.getAddress(), sign)
 		return sign
