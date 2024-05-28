@@ -811,7 +811,7 @@ contract ViewFacet is IViewFacet {
 	 * @return The next available bridge transaction ID.
 	 */
 	function getNextBridgeTransactionId() external view returns (uint256) {
-		return QuoteStorage.layout().lastId;
+		return BridgeStorage.layout().lastId;
 	}
 
 	/**
