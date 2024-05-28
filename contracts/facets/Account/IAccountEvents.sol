@@ -9,7 +9,7 @@ interface IAccountEvents {
 	event Withdraw(address sender, address user, uint256 amount);
 	event AllocatePartyA(address user, uint256 amount, uint256 newAllocatedBalance);
 	event DeallocatePartyA(address user, uint256 amount, uint256 newAllocatedBalance);
-    event InternalTransfer(address sender, address user, uint256 usernewAllocatedBalance, uint256 amount);
+    event InternalTransfer(address sender, address user, uint256 userNewAllocatedBalance, uint256 amount);
 	event AllocateForPartyB(address partyB, address partyA, uint256 amount, uint256 newAllocatedBalance);
 	event DeallocateForPartyB(address partyB, address partyA, uint256 amount, uint256 newAllocatedBalance);
 	event TransferAllocation(uint256 amount, address origin, uint256 originNewAllocatedBalance, address recipient, uint256 recipientNewAllocatedBalance);
