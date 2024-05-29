@@ -245,7 +245,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	}
 
 	/**
-	 * @notice Forces the cancellation of the close request associated with the specified quote when partyB is not responsive for a certian amount of time(ForceCancelCloseCooldown).
+	 * @notice Forces the cancellation of the close request associated with the specified quote when partyB is not responsive for a certain amount of time(ForceCancelCloseCooldown).
 	 * @param quoteId The ID of the quote for which the close request should be canceled.
 	 */
 	function forceCancelCloseRequest(uint256 quoteId) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
