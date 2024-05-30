@@ -8,6 +8,7 @@ import "../../utils/Pausable.sol";
 import "../../utils/Accessibility.sol";
 import "./ILiquidationFacet.sol";
 import "./LiquidationFacetImpl.sol";
+import "./DeferredLiquidationFacetImpl.sol";
 import "../../storages/AccountStorage.sol";
 
 contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
@@ -27,10 +28,7 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 			AccountStorage.layout().allocatedBalances[partyA],
 			liquidationSig.upnl,
 			liquidationSig.totalUnrealizedLoss,
-			liquidationSig.liquidationId,
-			liquidationSig.liquidationBlockNumber,
-			liquidationSig.liquidationTimestamp,
-			liquidationSig.liquidationAllocatedBalance
+			liquidationSig.liquidationId
 		);
 	}
 
@@ -45,6 +43,43 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		LiquidationSig memory liquidationSig
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		LiquidationFacetImpl.setSymbolsPrice(partyA, liquidationSig);
+		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices, liquidationSig.liquidationId);
+	}
+
+	/**
+	 * @notice Deferred liquidates Party A based on the provided signature.
+	 * @param partyA The address of Party A to be liquidated.
+	 * @param liquidationSig The Muon signature.
+	 */
+	function deferredLiquidatePartyA(
+		address partyA,
+		DeferredLiquidationSig memory liquidationSig
+	) external whenNotLiquidationPaused notLiquidatedPartyA(partyA) onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
+		DeferredLiquidationFacetImpl.deferredLiquidatePartyA(partyA, liquidationSig);
+		emit DeferredLiquidatePartyA(
+			msg.sender,
+			partyA,
+			AccountStorage.layout().allocatedBalances[partyA],
+			liquidationSig.upnl,
+			liquidationSig.totalUnrealizedLoss,
+			liquidationSig.liquidationId,
+			liquidationSig.liquidationBlockNumber,
+			liquidationSig.liquidationTimestamp,
+			liquidationSig.liquidationAllocatedBalance
+		);
+	}
+
+	/**
+	 * @notice Deferred sets the prices of symbols at the time of liquidation.
+	 * @dev The Muon signature here should be the same as the one that got partyA liquidated.
+	 * @param partyA The address of Party A associated with the liquidation.
+	 * @param liquidationSig The Muon signature containing symbol IDs and their corresponding prices.
+	 */
+	function deferredSetSymbolsPrice(
+		address partyA,
+		DeferredLiquidationSig memory liquidationSig
+	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
+		DeferredLiquidationFacetImpl.deferredSetSymbolsPrice(partyA, liquidationSig);
 		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices, liquidationSig.liquidationId);
 	}
 

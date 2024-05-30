@@ -12,10 +12,18 @@ interface ILiquidationEvents is IPartiesEvents {
 		uint256 allocatedBalance,
 		int256 upnl,
 		int256 totalUnrealizedLoss,
+		bytes liquidationId
+	);
+	event DeferredLiquidatePartyA(
+		address liquidator,
+		address partyA,
+		uint256 allocatedBalance,
+		int256 upnl,
+		int256 totalUnrealizedLoss,
 		bytes liquidationId,
-		uint256 liqduiationBlockNumber,
-		uint256 liqduiationTimestamp,
-		uint256 liqduiationAllocatedBalance
+		uint256 liquidationBlockNumber,
+		uint256 liquidationTimestamp,
+		uint256 liquidationAllocatedBalance
 	);
 	event LiquidatePositionsPartyA(
 		address liquidator,

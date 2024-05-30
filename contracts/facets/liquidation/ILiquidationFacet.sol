@@ -13,6 +13,10 @@ interface ILiquidationFacet is ILiquidationEvents {
 
 	function setSymbolsPrice(address partyA, LiquidationSig memory liquidationSig) external;
 
+	function deferredLiquidatePartyA(address partyA, DeferredLiquidationSig memory liquidationSig) external;
+
+	function deferredSetSymbolsPrice(address partyA, DeferredLiquidationSig memory liquidationSig) external;
+
 	function liquidatePendingPositionsPartyA(address partyA) external;
 
 	function liquidatePositionsPartyA(address partyA, uint256[] memory quoteIds) external;

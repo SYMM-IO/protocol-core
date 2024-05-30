@@ -53,12 +53,24 @@ struct PairUpnlAndPriceSig {
 	SchnorrSign sigs;
 }
 
-struct LiquidationSig {
+struct DeferredLiquidationSig {
 	bytes reqId; // Unique identifier for the liquidation request
 	uint256 timestamp; // Timestamp when the liquidation signature was created
 	uint256 liquidationBlockNumber; // Block number at which the user became insolvent
 	uint256 liquidationTimestamp; // Timestamp when the user became insolvent
 	uint256 liquidationAllocatedBalance; // User's allocated balance at the time of insolvency
+	bytes liquidationId; // Unique identifier for the liquidation event
+	int256 upnl; // User's unrealized profit and loss at the time of insolvency
+	int256 totalUnrealizedLoss; // Total unrealized loss of the user at the time of insolvency
+	uint256[] symbolIds; // List of symbol IDs involved in the liquidation
+	uint256[] prices; // Corresponding prices of the symbols involved in the liquidation
+	bytes gatewaySignature; // Signature from the gateway for verification
+	SchnorrSign sigs; // Schnorr signature for additional verification
+}
+
+struct LiquidationSig {
+	bytes reqId; // Unique identifier for the liquidation request
+	uint256 timestamp; // Timestamp when the liquidation signature was created
 	bytes liquidationId; // Unique identifier for the liquidation event
 	int256 upnl; // User's unrealized profit and loss at the time of insolvency
 	int256 totalUnrealizedLoss; // Total unrealized loss of the user at the time of insolvency
