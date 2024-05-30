@@ -24,24 +24,9 @@ library LiquidationFacetImpl {
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
         LibMuon.verifyLiquidationSig(liquidationSig, partyA);
-
-        int256 liquidationAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
-            liquidationSig.upnl,
-            liquidationSig.liquidationAllocatedBalance,
-            partyA
-        );
-        require(liquidationAvailableBalance < 0, "LiquidationFacet: PartyA is solvent");
-
-        int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
-            liquidationSig.upnl,
-            accountLayout.allocatedBalances[partyA],
-            partyA
-        );
-        if (availableBalance > 0) {
-            accountLayout.allocatedBalances[partyA] -= uint256(availableBalance);
-            accountLayout.partyAReimbursement[partyA] += uint256(availableBalance);
-        }
-
+        require(block.timestamp <= liquidationSig.timestamp + MuonStorage.layout().upnlValidTime, "LiquidationFacet: Expired signature");
+        int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(liquidationSig.upnl, accountLayout.allocatedBalances[partyA], partyA);
+        require(availableBalance < 0, "LiquidationFacet: PartyA is solvent");
         maLayout.liquidationStatus[partyA] = true;
         accountLayout.liquidationDetails[partyA] = LiquidationDetail({
             liquidationId: liquidationSig.liquidationId,
@@ -54,44 +39,47 @@ library LiquidationFacetImpl {
             involvedPartyBCounts: 0,
             partyAAccumulatedUpnl: 0,
             disputed: false,
-            liquidationTimestamp: liquidationSig.liquidationTimestamp
+            liquidationTimestamp: liquidationSig.timestamp
         });
         accountLayout.liquidators[partyA].push(msg.sender);
     }
 
-    function setSymbolsPrice(address partyA, LiquidationSig memory liquidationSig) internal {
+    function setSymbolsPrice(address partyA, LiquidationSig memory liquidationSig) internal{
         MAStorage.Layout storage maLayout = MAStorage.layout();
         AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
         LibMuon.verifyLiquidationSig(liquidationSig, partyA);
         require(maLayout.liquidationStatus[partyA], "LiquidationFacet: PartyA is solvent");
-
-        LiquidationDetail storage detail = accountLayout.liquidationDetails[partyA];
-        require(keccak256(detail.liquidationId) == keccak256(liquidationSig.liquidationId), "LiquidationFacet: Invalid liqiudationId");
-
+        require(
+            keccak256(accountLayout.liquidationDetails[partyA].liquidationId) == keccak256(liquidationSig.liquidationId),
+            "LiquidationFacet: Invalid liquidationId"
+        );
         for (uint256 index = 0; index < liquidationSig.symbolIds.length; index++) {
-            accountLayout.symbolsPrices[partyA][liquidationSig.symbolIds[index]] = Price(liquidationSig.prices[index], detail.timestamp);
+            accountLayout.symbolsPrices[partyA][liquidationSig.symbolIds[index]] = Price(
+                liquidationSig.prices[index],
+                accountLayout.liquidationDetails[partyA].timestamp
+            );
         }
 
         int256 availableBalance = LibAccount.partyAAvailableBalanceForLiquidation(liquidationSig.upnl, accountLayout.allocatedBalances[partyA], partyA);
-
-        if (detail.liquidationType == LiquidationType.NONE) {
-            if (uint256(- availableBalance) < accountLayout.lockedBalances[partyA].lf) {
-                uint256 remainingLf = accountLayout.lockedBalances[partyA].lf - uint256(- availableBalance);
-                detail.liquidationType = LiquidationType.NORMAL;
-                detail.liquidationFee = remainingLf;
-            } else if (uint256(- availableBalance) <= accountLayout.lockedBalances[partyA].lf + accountLayout.lockedBalances[partyA].cva) {
-                uint256 deficit = uint256(- availableBalance) - accountLayout.lockedBalances[partyA].lf;
-                detail.liquidationType = LiquidationType.LATE;
-                detail.deficit = deficit;
+        if (accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.NONE) {
+            if (uint256(-availableBalance) < accountLayout.lockedBalances[partyA].lf) {
+                uint256 remainingLf = accountLayout.lockedBalances[partyA].lf - uint256(-availableBalance);
+                accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.NORMAL;
+                accountLayout.liquidationDetails[partyA].liquidationFee = remainingLf;
+            } else if (uint256(-availableBalance) <= accountLayout.lockedBalances[partyA].lf + accountLayout.lockedBalances[partyA].cva) {
+                uint256 deficit = uint256(-availableBalance) - accountLayout.lockedBalances[partyA].lf;
+                accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.LATE;
+                accountLayout.liquidationDetails[partyA].deficit = deficit;
             } else {
-                uint256 deficit = uint256(- availableBalance) - accountLayout.lockedBalances[partyA].lf - accountLayout.lockedBalances[partyA].cva;
-                detail.liquidationType = LiquidationType.OVERDUE;
-                detail.deficit = deficit;
+                uint256 deficit = uint256(-availableBalance) - accountLayout.lockedBalances[partyA].lf - accountLayout.lockedBalances[partyA].cva;
+                accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.OVERDUE;
+                accountLayout.liquidationDetails[partyA].deficit = deficit;
             }
             accountLayout.liquidators[partyA].push(msg.sender);
         }
     }
+
 
     function liquidatePendingPositionsPartyA(address partyA) internal returns (uint256[] memory liquidatedAmounts, bytes memory liquidationId) {
         QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
