@@ -39,7 +39,7 @@ interface IPartyAFacet is IPartyAEvents {
 		uint256 deadline,
 		address affiliate,
 		SingleUpnlAndPriceSig memory upnlSig
-	) external;
+	) external returns (uint256);
 
 	function expireQuote(uint256[] memory expiredQuoteIds) external;
 
