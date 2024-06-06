@@ -45,8 +45,8 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		uint256 deadline,
 		address affiliate,
 		SingleUpnlAndPriceSig memory upnlSig
-	) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
-		uint256 quoteId = PartyAFacetImpl.sendQuote(
+	) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) returns (uint256 quoteId) {
+		quoteId = PartyAFacetImpl.sendQuote(
 			partyBsWhiteList,
 			symbolId,
 			positionType,
