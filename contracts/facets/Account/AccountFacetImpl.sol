@@ -89,7 +89,7 @@ library AccountFacetImpl {
 			accountLayout.allocatedBalances[user] + amount <= GlobalAppStorage.layout().balanceLimitPerUser,
 			"AccountFacet: Allocated balance limit reached"
 		);
-
+		require(accountLayout.balances[msg.sender] >= amount, "AccountFacet: Insufficient balance");
 		accountLayout.balances[msg.sender] -= amount;
 		accountLayout.allocatedBalances[user] += amount;
 	}
