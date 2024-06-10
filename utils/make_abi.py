@@ -14,7 +14,9 @@ def main():
             if re.fullmatch(r'.*\.json', file_path) and not re.fullmatch(r'.*\.dbg\.json', file_path):
                 with open(file_path) as f:
                     data = json.loads(f.read())
-                    abi_data += data['abi']
+                    for abi in data['abi']:
+                        if abi not in abi_data:
+                            abi_data.append(abi)
     abi_data.sort(key=lambda x: x.get('name'))
     with open('abi.json', 'w') as f:
         json.dump(abi_data, f, indent=3)
