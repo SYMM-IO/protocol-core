@@ -152,6 +152,14 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		MAStorage.layout().deallocateDebounceTime = deallocateDebounceTime;
 	}
 
+	/// @notice Sets invalid bridged amounts pool address.
+	/// @param pool the address of new pool.
+	function setInvalidBridgedAmountsPool(address pool) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		require(pool != address(0), "ControlFacet: Zero address");
+		emit SetInvalidBridgedAmountsPool(BridgeStorage.layout().invalidBridgedAmountsPool, pool);
+		BridgeStorage.layout().invalidBridgedAmountsPool = pool;
+	}
+
 	// Symbol State //////////////////////////////////////////////////////////////////
 
 	/// @notice Adds a new trading symbol.

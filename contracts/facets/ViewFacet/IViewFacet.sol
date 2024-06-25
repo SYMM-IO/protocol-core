@@ -57,6 +57,8 @@ interface IViewFacet {
 
 	function getDeallocateDebounceTime() external view returns (uint256);
 
+	function getInvalidBridgedAmountsPool() external view returns (address);
+
 	function getSettlementStates(address partyA, address[] memory partyBs) external view returns (SettlementState[] memory);
 
 	///////////////////////////////////////////
