@@ -76,7 +76,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	/// @dev PartyA should not be in the liquidation process.
 	/// @param user The address of the user to whom the amount will be allocated.
 	/// @param amount The amount to transfer and allocate in 18 decimals.
-	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender) notLiquidatedPartyA(user){
+	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender) notSuspended(user) notLiquidatedPartyA(user){
 		AccountFacetImpl.internalTransfer(user, amount);
 		emit InternalTransfer(msg.sender, user, AccountStorage.layout().allocatedBalances[user], amount);
 		emit Withdraw(msg.sender, user, amount);
