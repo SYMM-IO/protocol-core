@@ -24,7 +24,7 @@ library BridgeFacetImpl {
 
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
 		require(AccountStorage.layout().balances[user] >= amountWith18Decimals, "BridgeFacet: Insufficient balance");
-		
+
 		uint256 currentId = ++bridgeLayout.lastId;
 		BridgeTransaction memory bridgeTransaction = BridgeTransaction({
 			id: currentId,
@@ -59,8 +59,8 @@ library BridgeFacetImpl {
 
 		uint256 totalAmount = 0;
 		for (uint256 i = transactionIds.length; i != 0; i--) {
-			require(transactionIds[i-1] <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
-			BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i-1]];
+			require(transactionIds[i - 1] <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
+			BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i - 1]];
 			require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
 			require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
 			require(bridgeTransaction.bridge == msg.sender, "BridgeFacet: Sender is not the transaction's bridge");
@@ -83,11 +83,15 @@ library BridgeFacetImpl {
 	function restoreBridgeTransaction(uint256 transactionId, uint256 validAmount) internal {
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
 		require(bridgeTransaction.status == BridgeTransactionStatus.SUSPENDED, "BridgeFacet: Invalid status");
 		require(bridgeLayout.invalidBridgedAmountsPool != address(0), "BridgeFacet: Zero address");
+		require(validAmount <= bridgeTransaction.amount, "BridgeFacet: High valid amount");
 
-		AccountStorage.layout().balances[bridgeLayout.invalidBridgedAmountsPool] += (bridgeTransaction.amount - validAmount);
+		AccountStorage.layout().balances[bridgeLayout.invalidBridgedAmountsPool] +=
+			((bridgeTransaction.amount - validAmount) * (10 ** 18)) /
+			(10 ** IERC20Metadata(appLayout.collateral).decimals());
 		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
 		bridgeTransaction.amount = validAmount;
 	}
