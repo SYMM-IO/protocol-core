@@ -48,6 +48,7 @@ interface IControlEvents {
 	event SetForceCloseGapRatio(uint256 symbolId, uint256 oldForceCloseGapRatio, uint256 newForceCloseGapRatio);
 	event SetPendingQuotesValidLength(uint256 oldPendingQuotesValidLength, uint256 newPendingQuotesValidLength);
 	event SetDeallocateDebounceTime(uint256 oldDeallocateDebounceTime, uint256 newDeallocateDebounceTime);
+	event SetInvalidBridgedAmountsPool(address oldInvalidBridgedAmountsPool, address newInvalidBridgedAmountsPool);
 	event PauseGlobal();
 	event PauseLiquidation();
 	event PauseAccounting();

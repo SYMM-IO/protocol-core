@@ -79,6 +79,8 @@ interface IControlFacet is IControlEvents {
 
 	function setDeallocateDebounceTime(uint256 deallocateDebounceTime) external;
 
+	function setInvalidBridgedAmountsPool(address pool) external;
+
 	// Pause State
 	function setFeeCollector(address affiliate, address feeCollector) external;
 
