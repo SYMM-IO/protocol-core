@@ -6,9 +6,10 @@ pragma solidity >=0.8.18;
 
 import "./FundingRateFacetImpl.sol";
 import "../../utils/Pausable.sol";
+import "../../utils/Accessibility.sol";
 import "./IFundingRateFacet.sol";
 
-contract FundingRateFacet is Pausable, IFundingRateFacet {
+contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 	/// @notice Charges funding rates for a given Party A position.
 	/// @param partyA The address of Party A.
 	/// @param quoteIds An array of quote IDs that we are about to get fudning for.
@@ -19,7 +20,7 @@ contract FundingRateFacet is Pausable, IFundingRateFacet {
 		uint256[] memory quoteIds,
 		int256[] memory rates,
 		PairUpnlSig memory upnlSig
-	) external whenNotPartyBActionsPaused {
+	) external whenNotPartyBActionsPaused notLiquidatedPartyA(partyA) {
 		FundingRateFacetImpl.chargeFundingRate(partyA, quoteIds, rates, upnlSig);
 		emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
 	}
