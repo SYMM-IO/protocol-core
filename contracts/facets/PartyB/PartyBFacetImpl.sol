@@ -83,23 +83,28 @@ library PartyBFacetImpl {
 	) internal returns (uint256 currentId) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		require(accountLayout.suspendedAddresses[quote.partyA] == false, "PartyBFacet: PartyA is suspended");
 		require(SymbolStorage.layout().symbols[quote.symbolId].isValid, "PartyBFacet: Symbol is not valid");
-		require(!AccountStorage.layout().suspendedAddresses[msg.sender], "PartyBFacet: Sender is Suspended");
+		require(!accountLayout.suspendedAddresses[msg.sender], "PartyBFacet: Sender is Suspended");
 
-		require(!GlobalAppStorage.layout().partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
-		require(!GlobalAppStorage.layout().emergencyMode, "PartyBFacet: System is in emergency mode");
+		require(!appLayout.partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
+		require(!appLayout.emergencyMode, "PartyBFacet: System is in emergency mode");
 
 		require(quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyBFacet: Invalid state");
 		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
+
+		address feeCollector = appLayout.affiliateFeeCollector[quote.affiliate] == address(0)
+			? appLayout.defaultFeeCollector
+			: appLayout.affiliateFeeCollector[quote.affiliate];
 		if (quote.orderType == OrderType.LIMIT) {
 			require(quote.quantity >= filledAmount && filledAmount > 0, "PartyBFacet: Invalid filledAmount");
-			accountLayout.balances[GlobalAppStorage.layout().affiliateFeeCollector[quote.affiliate]] += (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
+			accountLayout.balances[feeCollector] += (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
 		} else {
 			require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
-			accountLayout.balances[GlobalAppStorage.layout().affiliateFeeCollector[quote.affiliate]] += (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
+			accountLayout.balances[feeCollector] += (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
 		}
 		if (quote.positionType == PositionType.LONG) {
 			require(openedPrice <= quote.requestedOpenPrice, "PartyBFacet: Opened price isn't valid");
@@ -154,7 +159,8 @@ library PartyBFacetImpl {
 			);
 			// check that new pending position is not minor position
 			require(
-				newStatus == QuoteStatus.CANCELED || (quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
+				newStatus == QuoteStatus.CANCELED ||
+					(quote.lockedValues.totalForPartyA() - filledLockedValues.totalForPartyA()) >=
 					SymbolStorage.layout().symbols[quote.symbolId].minAcceptableQuoteValue,
 				"PartyBFacet: Quote value is low"
 			);

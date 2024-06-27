@@ -11,7 +11,7 @@ library GlobalAppStorage {
 
 	struct Layout {
 		address collateral;
-		address deprecatedFeeCollector;
+		address defaultFeeCollector;
 		bool globalPaused;
 		bool liquidationPaused;
 		bool accountingPaused;
