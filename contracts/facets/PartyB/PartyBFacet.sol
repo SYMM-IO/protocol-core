@@ -19,7 +19,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 	 * @param upnlSig The Muon signature containing the upnl value used to lock the quote.
 	 */
 	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
-		PartyBFacetImpl.lockQuote(quoteId, upnlSig, true);
+		PartyBFacetImpl.lockQuote(quoteId, upnlSig);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		emit LockQuote(quote.partyB, quoteId);
 	}
@@ -40,7 +40,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 		PairUpnlAndPriceSig memory pairUpnlSig
 	) external whenNotPartyBActionsPaused onlyPartyB notLiquidated(quoteId) {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-		PartyBFacetImpl.lockQuote(quoteId, upnlSig, false);
+		PartyBFacetImpl.lockQuote(quoteId, upnlSig);
 		emit LockQuote(quote.partyB, quoteId);
 		uint256 newId = PartyBFacetImpl.openPosition(quoteId, filledAmount, openedPrice, pairUpnlSig);
 		emit OpenPosition(quoteId, quote.partyA, quote.partyB, filledAmount, openedPrice);
