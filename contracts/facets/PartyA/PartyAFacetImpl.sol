@@ -10,6 +10,7 @@ import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/LibLiquidation.sol";
+import "../../libraries/LibAccessibility.sol";
 import "../../libraries/SharedEvents.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
@@ -41,6 +42,7 @@ library PartyAFacetImpl {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 
+		require(!LibAccessibility.hasRole(msg.sender, LibAccessibility.LIQUIDATOR_ROLE), "PartyAFacet: Liquidator can't be partyA");
 		require(
 			quoteLayout.partyAPendingQuotes[msg.sender].length < maLayout.pendingQuotesValidLength,
 			"PartyAFacet: Number of pending quotes out of range"

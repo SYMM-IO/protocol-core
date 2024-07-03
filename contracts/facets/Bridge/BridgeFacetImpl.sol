@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 library BridgeFacetImpl {
 	using SafeERC20 for IERC20;
 
-	function transferToBridge(address user, uint256 amount, address bridge) internal {
+	function transferToBridge(address user, uint256 amount, address bridge) internal returns (uint256 currentId) {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 
@@ -25,7 +25,7 @@ library BridgeFacetImpl {
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
 		require(AccountStorage.layout().balances[user] >= amountWith18Decimals, "BridgeFacet: Insufficient balance");
 
-		uint256 currentId = ++bridgeLayout.lastId;
+		currentId = ++bridgeLayout.lastId;
 		BridgeTransaction memory bridgeTransaction = BridgeTransaction({
 			id: currentId,
 			amount: amount,
@@ -36,6 +36,7 @@ library BridgeFacetImpl {
 		});
 		AccountStorage.layout().balances[user] -= amountWith18Decimals;
 		bridgeLayout.bridgeTransactions[currentId] = bridgeTransaction;
+		bridgeLayout.bridgeTransactionIds[bridge].push(currentId);
 	}
 
 	function withdrawReceivedBridgeValue(uint256 transactionId) internal {
@@ -84,11 +85,15 @@ library BridgeFacetImpl {
 	function restoreBridgeTransaction(uint256 transactionId, uint256 validAmount) internal {
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
 		require(bridgeTransaction.status == BridgeTransactionStatus.SUSPENDED, "BridgeFacet: Invalid status");
 		require(bridgeLayout.invalidBridgedAmountsPool != address(0), "BridgeFacet: Zero address");
+		require(validAmount <= bridgeTransaction.amount, "BridgeFacet: High valid amount");
 
-		AccountStorage.layout().balances[bridgeLayout.invalidBridgedAmountsPool] += (bridgeTransaction.amount - validAmount);
+		AccountStorage.layout().balances[bridgeLayout.invalidBridgedAmountsPool] +=
+			((bridgeTransaction.amount - validAmount) * (10 ** 18)) /
+			(10 ** IERC20Metadata(appLayout.collateral).decimals());
 		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
 		bridgeTransaction.amount = validAmount;
 	}
