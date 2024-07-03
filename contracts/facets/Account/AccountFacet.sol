@@ -79,7 +79,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender) notSuspended(user) notLiquidatedPartyA(user){
 		AccountFacetImpl.internalTransfer(user, amount);
 		emit InternalTransfer(msg.sender, user, AccountStorage.layout().allocatedBalances[user], amount);
-		emit Withdraw(msg.sender, user, amount);
+		emit Withdraw(msg.sender, user, ((amount * (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals())) / (10 ** 18)));
 		emit AllocatePartyA(user, amount, AccountStorage.layout().allocatedBalances[user]);
 		emit SharedEvents.BalanceChangePartyA(user, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
