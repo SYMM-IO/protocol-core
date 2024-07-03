@@ -89,6 +89,8 @@ interface IViewFacet {
 
 	function partyAPositionsCount(address partyA) external view returns (uint256);
 
+	function getBridgeTransactions(address bridge, uint256 start, uint256 size) external view returns (BridgeTransaction[] memory);
+
 	function getPartyAOpenPositions(address partyA, uint256 start, uint256 size) external view returns (Quote[] memory);
 
 	function getPartyBOpenPositions(address partyB, address partyA, uint256 start, uint256 size) external view returns (Quote[] memory);
