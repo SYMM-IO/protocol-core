@@ -207,6 +207,14 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Returns the invalid bridged amounts pool address.
+	 * @return invalidBridgedAmountsPool.
+	 */
+	function getInvalidBridgedAmountsPool() external view returns (address) {
+		return BridgeStorage.layout().invalidBridgedAmountsPool;
+	}
+
+	/**
 	 * @notice Returns the settlement states of Party B for a specific Party A.
 	 * @param partyA The address of Party A.
 	 * @param partyBs The addresses of Party Bs.
