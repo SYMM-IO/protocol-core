@@ -71,7 +71,7 @@ library PartyAFacetImpl {
 				lockedValues.totalForPartyA() + ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
 			"PartyAFacet: insufficient available balance"
 		);
-		require(maLayout.affiliateStatus[affiliate], "PartyAFacet: Invalid affiliate");
+		require(maLayout.affiliateStatus[affiliate] || affiliate == address(0), "PartyAFacet: Invalid affiliate");
 
 		// lock funds the in middle of way
 		accountLayout.pendingLockedBalances[msg.sender].add(lockedValues);
