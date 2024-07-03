@@ -207,6 +207,14 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Returns the invalid bridged amounts pool address.
+	 * @return invalidBridgedAmountsPool.
+	 */
+	function getInvalidBridgedAmountsPool() external view returns (address) {
+		return BridgeStorage.layout().invalidBridgedAmountsPool;
+	}
+
+	/**
 	 * @notice Returns the settlement states of Party B for a specific Party A.
 	 * @param partyA The address of Party A.
 	 * @param partyBs The addresses of Party Bs.
@@ -370,6 +378,26 @@ contract ViewFacet is IViewFacet {
 	 */
 	function partyAPositionsCount(address partyA) external view returns (uint256) {
 		return QuoteStorage.layout().partyAPositionsCount[partyA];
+	}
+
+		/**
+	 * @notice Returns an array of bridge transactions associated with a bridge.
+	 * @param bridge The address of bridge.
+	 * @param start The starting index.
+	 * @param size The size of the array.
+	 * @return An array of bridge transactions.
+	 */
+	function getBridgeTransactions(address bridge, uint256 start, uint256 size) external view returns (BridgeTransaction[] memory) {
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+
+		if (bridgeLayout.bridgeTransactionIds[bridge].length < start + size) {
+			size = bridgeLayout.bridgeTransactionIds[bridge].length - start;
+		}
+		BridgeTransaction[] memory txs = new BridgeTransaction[](size);
+		for (uint256 i = start; i < start + size; i++) {
+			txs[i - start] = bridgeLayout.bridgeTransactions[bridgeLayout.bridgeTransactionIds[bridge][i]];
+		}
+		return txs;
 	}
 
 	/**
