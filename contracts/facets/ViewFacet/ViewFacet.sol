@@ -380,6 +380,26 @@ contract ViewFacet is IViewFacet {
 		return QuoteStorage.layout().partyAPositionsCount[partyA];
 	}
 
+		/**
+	 * @notice Returns an array of bridge transactions associated with a bridge.
+	 * @param bridge The address of bridge.
+	 * @param start The starting index.
+	 * @param size The size of the array.
+	 * @return An array of bridge transactions.
+	 */
+	function getBridgeTransactions(address bridge, uint256 start, uint256 size) external view returns (BridgeTransaction[] memory) {
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+
+		if (bridgeLayout.bridgeTransactionIds[bridge].length < start + size) {
+			size = bridgeLayout.bridgeTransactionIds[bridge].length - start;
+		}
+		BridgeTransaction[] memory txs = new BridgeTransaction[](size);
+		for (uint256 i = start; i < start + size; i++) {
+			txs[i - start] = bridgeLayout.bridgeTransactions[bridgeLayout.bridgeTransactionIds[bridge][i]];
+		}
+		return txs;
+	}
+
 	/**
 	 * @notice Returns an array of open positions associated with a party A address.
 	 * @param partyA The address of party A.
