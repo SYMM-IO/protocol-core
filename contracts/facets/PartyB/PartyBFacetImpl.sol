@@ -21,16 +21,13 @@ import "../../storages/SymbolStorage.sol";
 library PartyBFacetImpl {
 	using LockedValuesOps for LockedValues;
 
-	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig, bool increaseNonce) internal {
+	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
 		LibPartyB.checkPartyBValidationToLockQuote(quoteId, upnlSig.upnl);
-		if (increaseNonce) {
-			accountLayout.partyBNonces[msg.sender][quote.partyA] += 1;
-		}
 		quote.statusModifyTimestamp = block.timestamp;
 		quote.quoteStatus = QuoteStatus.LOCKED;
 		quote.partyB = msg.sender;
