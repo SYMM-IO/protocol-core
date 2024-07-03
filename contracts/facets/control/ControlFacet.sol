@@ -38,6 +38,12 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @param role The role to be granted
 	function grantRole(address user, bytes32 role) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
 		require(user != address(0), "ControlFacet: Zero address");
+		if (role == LibAccessibility.LIQUIDATOR_ROLE) {
+			require(
+				QuoteStorage.layout().partyAPendingQuotes[user].length == 0 && QuoteStorage.layout().partyAOpenPositions[user].length == 0,
+				"ControlFacet: PartyA can't become liquidator"
+			);
+		}
 		GlobalAppStorage.layout().hasRole[user][role] = true;
 		emit RoleGranted(role, user);
 	}
@@ -150,6 +156,14 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	function setDeallocateDebounceTime(uint256 deallocateDebounceTime) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		emit SetDeallocateDebounceTime(MAStorage.layout().deallocateDebounceTime, deallocateDebounceTime);
 		MAStorage.layout().deallocateDebounceTime = deallocateDebounceTime;
+	}
+
+	/// @notice Sets invalid bridged amounts pool address.
+	/// @param pool the address of new pool.
+	function setInvalidBridgedAmountsPool(address pool) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		require(pool != address(0), "ControlFacet: Zero address");
+		emit SetInvalidBridgedAmountsPool(BridgeStorage.layout().invalidBridgedAmountsPool, pool);
+		BridgeStorage.layout().invalidBridgedAmountsPool = pool;
 	}
 
 	// Symbol State //////////////////////////////////////////////////////////////////
