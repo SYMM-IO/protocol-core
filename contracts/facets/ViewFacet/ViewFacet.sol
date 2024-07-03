@@ -605,6 +605,14 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Returns the address of the default fee collector.
+	 * @return The address of the defaultfee collector.
+	 */
+	function getDefaultFeeCollector() external view returns (address) {
+		return GlobalAppStorage.layout().defaultFeeCollector;
+	}
+
+	/**
 	 * @notice Checks if a party A is liquidated.
 	 * @param partyA The address of party A.
 	 * @return True if party A is liquidated, false otherwise.

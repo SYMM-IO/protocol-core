@@ -123,6 +123,8 @@ interface IViewFacet {
 
 	function getFeeCollector(address affiliate) external view returns (address);
 
+	function getDefaultFeeCollector() external view returns (address);
+
 	function isPartyALiquidated(address partyA) external view returns (bool);
 
 	function isPartyBLiquidated(address partyB, address partyA) external view returns (bool);

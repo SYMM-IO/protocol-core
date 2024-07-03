@@ -21,6 +21,7 @@ interface IControlEvents {
 		uint256 fundingRateWindowTime
 	);
 	event SetFeeCollector(address affiliate, address oldFeeCollector, address newFeeCollector);
+	event SetDefaultFeeCollector(address oldDefaultFeeCollector, address newDefaultFeeCollector);
 	event SetSymbolValidationState(uint256 symbolId, bool oldState, bool isValid);
 	event SetSymbolFundingState(uint256 symbolId, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime);
 	event SetSymbolAcceptableValues(

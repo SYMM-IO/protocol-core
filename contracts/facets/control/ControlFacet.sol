@@ -151,6 +151,13 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		GlobalAppStorage.layout().affiliateFeeCollector[affiliate] = feeCollector;
 	}
 
+    /// @notice Sets the address of the default fee collector.
+    /// @param feeCollector The address of fee collector.
+    function setDefaultFeeCollector(address feeCollector) external onlyRole(LibAccessibility.SETTER_ROLE) {
+        emit SetDefaultFeeCollector(GlobalAppStorage.layout().defaultFeeCollector, feeCollector);
+        GlobalAppStorage.layout().defaultFeeCollector = feeCollector;
+    }
+
 	/// @notice Sets the deallocate debounce time. User can't deallocate more than once in this window
 	/// @param deallocateDebounceTime in seconds.
 	function setDeallocateDebounceTime(uint256 deallocateDebounceTime) external onlyRole(LibAccessibility.SETTER_ROLE) {
