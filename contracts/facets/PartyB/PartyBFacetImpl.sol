@@ -330,8 +330,8 @@ library PartyBFacetImpl {
 			accountLayout.allocatedBalances[partyA] -= uint256(-amountToTransfer);
 			accountLayout.partyBAllocatedBalances[msg.sender][partyA] += uint256(-amountToTransfer);
 		}
-		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-		accountLayout.partyANonces[quote.partyA] += 1;
+		accountLayout.partyBNonces[msg.sender][partyA] += 1;
+		accountLayout.partyANonces[partyA] += 1;
 	}
 
 }
