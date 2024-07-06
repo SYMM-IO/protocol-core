@@ -22,7 +22,9 @@ interface IPartyBEvents is IPartiesEvents {
 		QuoteStatus quoteStatus,
 		uint256 closeId
 	);
+	event FillCloseRequest(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 	event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
+	event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 	event EmergencyClosePosition(
 		uint256 quoteId,
 		address partyA,
@@ -32,4 +34,5 @@ interface IPartyBEvents is IPartiesEvents {
 		QuoteStatus quoteStatus,
 		uint256 closeId
 	);
+	event EmergencyClosePosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 }
