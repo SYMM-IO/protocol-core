@@ -190,4 +190,19 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 			quoteLayout.closeIds[quoteId]
 		);
 	}
+
+	function settleUpnl(
+		SettleSig memory settleSig, 
+		uint256[] memory newPrices, 
+		address partyA
+	) external whenNotPartyBActionsPaused notLiquidatedPartyA(partyA) notLiquidatedPartyB(msg.sender, partyA) {
+		PartyBFacetImpl.settleUpnl(settleSig, newPrices, partyA);
+		// todo: emit sharedEvents
+		emit SettleUpnl(
+			settleSig.quoteIds,
+			newPrices,
+			msg.sender,
+			partyA
+		);
+	} 
 }

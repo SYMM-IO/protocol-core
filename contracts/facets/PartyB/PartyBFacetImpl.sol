@@ -285,4 +285,43 @@ library PartyBFacetImpl {
 		accountLayout.partyANonces[quote.partyA] += 1;
 		LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
 	}
+
+	function settleUpnl(SettleSig memory settleSig, uint256[] memory newPrices, address partyA) internal {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+
+		LibMuon.verifySettle(settleSig, msg.sender, partyA);
+		// check solvency
+		require(LibAccount.partyAAvailableBalanceForLiquidation(settleSig.upnlPartyA, accountLayout.allocatedBalances[partyA], partyA) >= 0,"PartyBFacet: PartyA should be solvent");
+		require(LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyB, msg.sender, partyA) >= 0,"PartyBFacet: PartyB should be solvent");
+		// amount to transfer from partyA to partyB
+		int256 amountToTransfer;
+		for(uint8 i = 0; i < quotePrices.quoteIds.length; i++){
+			Quote storage quote = quoteLayout.quotes[quotePrices.quoteIds[i].quoteId];
+			require(quote.partyA == partyA, "PartyBFacet: PartyA is invalid");
+			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be partyB of quote");
+			require(
+				quote.quoteStatus == QuoteStatus.OPENED ||
+					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
+					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
+				"PartyBFacet: Invalid state"
+			);
+
+			if(quote.openedPrice > quotePrices.prices[i]) {
+				require(newPrices[i] <= quote.openedPrice && newPrices[i] >= quotePrices.prices[i], "");
+				
+			}else{
+				require(newPrices[i] >= quote.openedPrice && newPrices[i] <= quotePrices.prices[i], "");
+			}
+			if(quote.positionType == PositionType.LONG){
+				amountToTransfer += (quote.openedPrice - newPrices[i]) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
+			}else{
+				amountToTransfer += (newPrices[i] - quote.openedPrice) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
+			}
+
+			quote.openedPrice = newPrices[i];
+		}
+			
+	}
+
 }
