@@ -25,7 +25,7 @@ interface IPartiesEvents {
 		uint256 deadline
 	);
 
-	event ExpireQuote(uint256 quoteId); // For backward compatibility, will be removed in future
+	event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId); // For backward compatibility, will be removed in future
 
 	event ExpireQuoteOpen(QuoteStatus quoteStatus, uint256 quoteId);
 
