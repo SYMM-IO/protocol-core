@@ -294,10 +294,14 @@ library PartyBFacetImpl {
 		// check solvency
 		require(LibAccount.partyAAvailableBalanceForLiquidation(settleSig.upnlPartyA, accountLayout.allocatedBalances[partyA], partyA) >= 0,"PartyBFacet: PartyA should be solvent");
 		require(LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyB, msg.sender, partyA) >= 0,"PartyBFacet: PartyB should be solvent");
-		// amount to transfer from partyA to partyB
+		require(settleSig.quoteIds.length == newPrices.length, "PartyBFacet: Invalid length");
+		
+		// TODO: add limits to prevent countinous increasing of Nonce
+		
+		// amount to transfer from partyB to partyA (if it's positive it means we should increase partyA allocated balance)
 		int256 amountToTransfer;
-		for(uint8 i = 0; i < quotePrices.quoteIds.length; i++){
-			Quote storage quote = quoteLayout.quotes[quotePrices.quoteIds[i].quoteId];
+		for(uint8 i = 0; i < settleSig.quoteIds.length; i++){
+			Quote storage quote = quoteLayout.quotes[settleSig.quoteIds[i].quoteId];
 			require(quote.partyA == partyA, "PartyBFacet: PartyA is invalid");
 			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be partyB of quote");
 			require(
@@ -306,22 +310,28 @@ library PartyBFacetImpl {
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
 				"PartyBFacet: Invalid state"
 			);
-
-			if(quote.openedPrice > quotePrices.prices[i]) {
-				require(newPrices[i] <= quote.openedPrice && newPrices[i] >= quotePrices.prices[i], "");
+			if(quote.openedPrice > settleSig.prices[i]) {
+				require(newPrices[i] < quote.openedPrice && newPrices[i] >= settleSig.prices[i], "PartyBFacet: New price is out of range");
 				
-			}else{
-				require(newPrices[i] >= quote.openedPrice && newPrices[i] <= quotePrices.prices[i], "");
+			} else {
+				require(newPrices[i] > quote.openedPrice && newPrices[i] <= settleSig.prices[i], "PartyBFacet: New price is out of range");
 			}
-			if(quote.positionType == PositionType.LONG){
-				amountToTransfer += (quote.openedPrice - newPrices[i]) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
-			}else{
-				amountToTransfer += (newPrices[i] - quote.openedPrice) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
+			if (quote.positionType == PositionType.LONG) {
+				amountToTransfer += (int256(newPrices[i]) - int256(quote.openedPrice)) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
+			} else {
+				amountToTransfer += (int256(quote.openedPrice) - int256(newPrices[i])) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
 			}
-
 			quote.openedPrice = newPrices[i];
 		}
-			
+		if (amountToTransfer >= 0 ) {
+			accountLayout.allocatedBalances[partyA] += uint256(amountToTransfer);
+			accountLayout.partyBAllocatedBalances[msg.sender][partyA] -= uint256(amountToTransfer);
+		} else {
+			accountLayout.allocatedBalances[partyA] -= uint256(-amountToTransfer);
+			accountLayout.partyBAllocatedBalances[msg.sender][partyA] += uint256(-amountToTransfer);
+		}
+		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+		accountLayout.partyANonces[quote.partyA] += 1;
 	}
 
 }
