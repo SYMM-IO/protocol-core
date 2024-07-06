@@ -248,7 +248,7 @@ library LibMuon {
 	function verifySettle(SettleSig memory settleSig, address partyB, address partyA) internal view {
 		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
 		require(block.timestamp <= settleSig.timestamp + muonLayout.upnlValidTime, "LibMuon: Expired signature");
-
+		require(settleSig.prices.length == settleSig.quoteIds.length, "LibMuon: Invalid length");
 		bytes32 hash = keccak256(
 			abi.encodePacked(
 				muonLayout.muonAppId,
