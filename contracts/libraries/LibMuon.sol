@@ -244,4 +244,28 @@ library LibMuon {
 		);
 		verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
 	}
+
+	function verifySettle(SettleSig memory settleSig, address partyB, address partyA) internal view {
+		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+		require(block.timestamp <= settleSig.timestamp + muonLayout.upnlValidTime, "LibMuon: Expired signature");
+
+		bytes32 hash = keccak256(
+			abi.encodePacked(
+				muonLayout.muonAppId,
+				settleSig.reqId,
+				address(this),
+				partyB,
+				partyA,
+				AccountStorage.layout().partyBNonces[partyB][partyA],
+				AccountStorage.layout().partyANonces[partyA],
+				settleSig.quoteIds,
+				settleSig.prices,
+				settleSig.upnlPartyB,
+				settleSig.upnlPartyA,
+				upnlSig.timestamp,
+				getChainId()
+			)
+		);
+		verifyTSSAndGateway(hash, settleSig.sigs, settleSig.gatewaySignature);
+	}
 }
