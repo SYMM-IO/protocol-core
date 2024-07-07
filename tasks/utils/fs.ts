@@ -15,6 +15,10 @@ export function writeData(relativePath: string, data: object): void {
     writeFileSync(`${BASE_PATH}/${relativePath}`, JSON.stringify(data, null, 2))
 }
 
+export function fileExists(path: string): boolean {
+    return fs.existsSync(path)
+}
+
 export function createDirectory(path: string): void {
     if (!fs.existsSync(path)) {
         fs.mkdirSync(path, {recursive: true})
