@@ -60,7 +60,6 @@
     "solidity",
     "typescript"
   ],
-  "packageManager": "yarn@3.2.1",
   "publishConfig": {
     "access": "public"
   },
