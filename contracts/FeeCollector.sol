@@ -5,11 +5,11 @@
 pragma solidity >=0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 
 interface ISymmio {
     function withdraw(uint256 amount) external;
@@ -17,7 +17,7 @@ interface ISymmio {
     function getCollateral() external view returns (address);
 }
 
-contract FeeCollector is Initializable, PausableUpgradeable, AccessControlUpgradeable {
+contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumerableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     struct Stakeholder {
@@ -28,6 +28,7 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlUpgrad
     // Defining roles for access control
     bytes32 public constant COLLECTOR_ROLE = keccak256("COLLECTOR_ROLE");
     bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 
@@ -82,11 +83,10 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlUpgrad
         stakeholders[0].share = symmioShare_;
     }
 
-    function setStakeholders(Stakeholder[] calldata newStakeholders) external onlyRole(SETTER_ROLE) {
+    function setStakeholders(Stakeholder[] calldata newStakeholders) external onlyRole(MANAGER_ROLE) {
         // Clear the existing stakeholders list except the first one (Symmio)
         delete stakeholders;
         stakeholders.push(Stakeholder(symmioReceiver, symmioShare));
-        totalStakeholderShare = 0;
 
         uint256 newTotalStakeholderShare = 0;
         for (uint256 i = 0; i < newStakeholders.length; i++) {
