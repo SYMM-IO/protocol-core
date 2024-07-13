@@ -251,7 +251,7 @@ library PartyAFacetImpl {
 
 		LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
 		if (settleBefore) {
-			LibMuon.verifySettle(settleSig, partyA);
+			LibMuon.verifySettle(settleSig, quote.partyA);
 		}
 		AccountStorage.layout().partyANonces[quote.partyA] += 1;
 		AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
