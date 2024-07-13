@@ -54,4 +54,11 @@ interface IPartyAFacet is IPartyAEvents {
 	function forceCancelCloseRequest(uint256 quoteId) external;
 
 	function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig) external;
+
+	function settleAndForceClosePosition(
+		uint256 quoteId,
+		HighLowPriceSig memory highLowPriceSig,
+		SettleSig memory settleSig,
+		uint256[] memory newPrices
+	) external;
 }
