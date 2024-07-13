@@ -350,14 +350,18 @@ library PartyBFacetImpl {
 			resultAmount += amount;
 			if (amount >= 0) {
 				accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(amount);
+				emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(amount), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 			} else {
 				accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(-amount);
+				emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(amount), SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 			}
 		}
-		if (amount >= 0) {
+		if (resultAmount >= 0) {
 			accountLayout.allocatedBalances[partyA] += uint256(resultAmount);
+			emit SharedEvents.BalanceChangePartyA(partyA, uint256(resultAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 		} else {
 			accountLayout.allocatedBalances[partyA] -= uint256(-resultAmount);
+			emit SharedEvents.BalanceChangePartyA(partyA, uint256(-resultAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 		}
 	}
 }
