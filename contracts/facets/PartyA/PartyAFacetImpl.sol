@@ -9,6 +9,7 @@ import "../../libraries/LibMuon.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
+import "../../libraries/LibPartyB.sol";
 import "../../libraries/LibLiquidation.sol";
 import "../../libraries/LibAccessibility.sol";
 import "../../libraries/SharedEvents.sol";
@@ -249,6 +250,8 @@ library PartyAFacetImpl {
 			require(sig.endTime - sig.startTime >= maLayout.forceCloseMinSigPeriod, "PartyAFacet: Invalid signature period");
 
 		LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
+		LibMuon.verifySettle(settleSig, partyA);
+
 		AccountStorage.layout().partyANonces[quote.partyA] += 1;
 		AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
 
@@ -277,7 +280,9 @@ library PartyAFacetImpl {
 			upnlPartyB = sig.upnlPartyB + diff;
 			LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, upnlPartyB, block.timestamp);
 		} else {
-			if (settleBefore) {}
+			if (settleBefore) {
+				LibPartyB.settleUpnl(settleSig, newPrices, msg.sender, true);
+			}
 			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		}
 	}
