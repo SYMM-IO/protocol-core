@@ -262,12 +262,13 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		uint256 filledAmount = quote.quantityToClose;
+		SettleSig memory settleSig;
 		(uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) = PartyAFacetImpl.forceClosePosition(
 			quoteId,
 			sig,
 			false,
-			[],
-			[]
+			settleSig,
+			new uint256[](0)
 		);
 		if (isPartyBLiquidated) {
 			emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);

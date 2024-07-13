@@ -267,7 +267,7 @@ library LibMuon {
 				settleSig.partyBs,
 				settleSig.upnlPartyBs,
 				settleSig.upnlPartyA,
-				upnlSig.timestamp,
+				settleSig.timestamp,
 				getChainId()
 			)
 		);

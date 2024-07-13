@@ -47,7 +47,7 @@ library LibPartyB {
 		require(isValidPartyB, "PartyBFacet: Sender isn't whitelisted");
 	}
 
-	function settleUpnl(SettleSig memory settleSig, uint256[] memory newPrices, address partyA, address partAIsSender) internal {
+	function settleUpnl(SettleSig memory settleSig, uint256[] memory newPrices, address partyA, bool useForForceClose) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
@@ -65,13 +65,13 @@ library LibPartyB {
 		for (uint8 i = 0; i < settleSig.partyBs.length; i++) {
 			address partyB = settleSig.partyBs[i];
 			delete maLayout.amountToTransfer[partyB];
-			maLayout.partyBUpnls[partyB] = settleSig.partyBUpnls[i];
+			maLayout.partyBUpnls[partyB] = settleSig.upnlPartyBs[i];
 			require(
-				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.partyBUpnls[i], partyB, partyA) >= 0,
+				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[i], partyB, partyA) >= 0,
 				"PartyBFacet: PartyB should be solvent"
 			);
 			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "PartyBFacet: PartyB is in liquidation process");
-			if (!partAIsSender && msg.sender != partyB) {
+			if (!useForForceClose && msg.sender != partyB) {
 				require(
 					block.timestamp >=
 						MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] + MAStorage.layout().settlementCooldown,
@@ -81,9 +81,7 @@ library LibPartyB {
 			}
 			accountLayout.partyBNonces[partyB][partyA] += 1;
 		}
-		if (partAIsSender) {
-			require(msg.sender == partyA, "PartyBFacet: Sender should be partyA Of positions");
-		} else {
+		if (!useForForceClose) {
 			require(quoteLayout.partyBOpenPositions[msg.sender][partyA].length > 0, "PartyBFacet: Sender should have a position with partyA");
 		}
 		require(settleSig.quoteIds.length == newPrices.length, "PartyBFacet: Invalid length");
