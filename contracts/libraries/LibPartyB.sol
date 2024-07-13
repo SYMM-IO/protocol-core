@@ -6,8 +6,10 @@ pragma solidity >=0.8.18;
 
 import "../storages/QuoteStorage.sol";
 import "../storages/MAStorage.sol";
+import "../storages/MuonStorage.sol";
 import "../storages/QuoteStorage.sol";
 import "./LibAccount.sol";
+import "./LibQuote.sol";
 import "./LibLockedValues.sol";
 
 library LibPartyB {
@@ -48,9 +50,7 @@ library LibPartyB {
 	function settleUpnl(SettleSig memory settleSig, uint256[] memory newPrices, address partyA, address partAIsSender) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		mapping(address => int256) memory partyBUpnls;
-		// amount to transfer from partyB to partyA (if it's positive it means we should increase partyA allocated balance)
-		mapping(address => int256) memory amountToTransfer; // partyB => amount
+		MAStorage.Layout storage maLayout = MAStorage.layout();
 
 		// check solvency
 		require(
@@ -58,9 +58,14 @@ library LibPartyB {
 			"PartyBFacet: PartyA should be solvent"
 		);
 
+		for (uint8 i = 0; i < settleSig.quoteIds.length; i++) {
+			delete maLayout.partyBUpnls[quoteLayout.quotes[settleSig.quoteIds[i]].partyB];
+		}
+
 		for (uint8 i = 0; i < settleSig.partyBs.length; i++) {
 			address partyB = settleSig.partyBs[i];
-			partyBUpnls[partyB] = settleSig.partyBUpnls[i];
+			delete maLayout.amountToTransfer[partyB];
+			maLayout.partyBUpnls[partyB] = settleSig.partyBUpnls[i];
 			require(
 				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.partyBUpnls[i], partyB, partyA) >= 0,
 				"PartyBFacet: PartyB should be solvent"
@@ -79,16 +84,16 @@ library LibPartyB {
 		if (partAIsSender) {
 			require(msg.sender == partyA, "PartyBFacet: Sender should be partyA Of positions");
 		} else {
-			require(partyBUpnls[msg.sender] != 0, "PartyBFacet: Sender should have a position with partyA");
+			require(quoteLayout.partyBOpenPositions[msg.sender][partyA].length > 0, "PartyBFacet: Sender should have a position with partyA");
 		}
 		require(settleSig.quoteIds.length == newPrices.length, "PartyBFacet: Invalid length");
 
 		accountLayout.partyANonces[partyA] += 1;
 
 		for (uint8 i = 0; i < settleSig.quoteIds.length; i++) {
-			Quote storage quote = quoteLayout.quotes[settleSig.quoteIds[i].quoteId];
+			Quote storage quote = quoteLayout.quotes[settleSig.quoteIds[i]];
 			require(quote.partyA == partyA, "PartyBFacet: PartyA is invalid");
-			require(partyBUpnls[quote.partyB] != 0, "PartyBFacet: Sender should be partyB of quote");
+			require(maLayout.partyBUpnls[quote.partyB] != 0, "PartyBFacet: The Upnl for PartyB of quote is not given");
 			require(
 				quote.quoteStatus == QuoteStatus.OPENED ||
 					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
@@ -101,12 +106,12 @@ library LibPartyB {
 				require(newPrices[i] > quote.openedPrice && newPrices[i] <= settleSig.prices[i], "PartyBFacet: New price is out of range");
 			}
 			if (quote.positionType == PositionType.LONG) {
-				amountToTransfer[quote.partyB] +=
-					((int256(newPrices[i]) - int256(quote.openedPrice)) * int256(libQuote.quoteOpenAmount(quote))) /
+				maLayout.amountToTransfer[quote.partyB] +=
+					((int256(newPrices[i]) - int256(quote.openedPrice)) * int256(LibQuote.quoteOpenAmount(quote))) /
 					1e18;
 			} else {
-				amountToTransfer[quote.partyB] +=
-					((int256(quote.openedPrice) - int256(newPrices[i])) * int256(libQuote.quoteOpenAmount(quote))) /
+				maLayout.amountToTransfer[quote.partyB] +=
+					((int256(quote.openedPrice) - int256(newPrices[i])) * int256(LibQuote.quoteOpenAmount(quote))) /
 					1e18;
 			}
 			quote.openedPrice = newPrices[i];
@@ -114,7 +119,7 @@ library LibPartyB {
 		int256 resultAmount;
 		for (uint8 i = 0; i < settleSig.partyBs.length; i++) {
 			address partyB = settleSig.partyBs[i];
-			int256 amount = amountToTransfer[partyB];
+			int256 amount = maLayout.amountToTransfer[partyB];
 			resultAmount += amount;
 			if (amount >= 0) {
 				accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(amount);

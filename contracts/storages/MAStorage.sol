@@ -29,6 +29,10 @@ library MAStorage {
 		uint256 forceCloseMinSigPeriod;
 		uint256 deallocateDebounceTime;
 		mapping(address => bool) affiliateStatus;
+		// settlement variables
+		mapping(address => int256) partyBUpnls;
+		// amount to transfer from partyB to partyA (if it's positive it means we should increase partyA allocated balance)
+		mapping(address => int256) amountToTransfer; // partyB => amount
 		uint256 settlementCooldown;
 		mapping(address => mapping(address => mapping(address => uint256))) lastUpnlSettlementTimestamp; // subject partyB => object partyB => partyA => timestamp
 	}
