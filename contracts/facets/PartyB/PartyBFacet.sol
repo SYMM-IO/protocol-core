@@ -203,6 +203,6 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 		address partyA
 	) external whenNotPartyBActionsPaused notLiquidatedPartyA(partyA) {
 		PartyBFacetImpl.settleUpnl(settleSig, newPrices, partyA);
-		emit SettleUpnl(settleSig.quoteIds, newPrices, msg.sender, partyA);
+		emit SettleUpnl(settleSig.quoteIds, newPrices, settleSig.partyBs, partyA);
 	}
 }

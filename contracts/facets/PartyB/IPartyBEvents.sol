@@ -32,10 +32,4 @@ interface IPartyBEvents is IPartiesEvents {
 		QuoteStatus quoteStatus,
 		uint256 closeId
 	);
-	event SettleUpnl(
-		uint256[] quoteIds,
-		uint256[] newPrices,
-		address partyB,
-		address partyA
-	);
 }

@@ -250,8 +250,9 @@ library PartyAFacetImpl {
 			require(sig.endTime - sig.startTime >= maLayout.forceCloseMinSigPeriod, "PartyAFacet: Invalid signature period");
 
 		LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
-		LibMuon.verifySettle(settleSig, partyA);
-
+		if (settleBefore) {
+			LibMuon.verifySettle(settleSig, partyA);
+		}
 		AccountStorage.layout().partyANonces[quote.partyA] += 1;
 		AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
 
