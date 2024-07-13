@@ -66,14 +66,14 @@ library LibPartyB {
 				"PartyBFacet: PartyB should be solvent"
 			);
 			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "PartyBFacet: PartyB is in liquidation process");
-			if (!partAIsSender) {
+			if (!partAIsSender && msg.sender != partyB) {
 				require(
 					block.timestamp >=
 						MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] + MAStorage.layout().settlementCooldown,
 					"PartyBFacet: Cooldown should be passed"
 				);
+				MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] = block.timestamp;
 			}
-			MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] = block.timestamp;
 			accountLayout.partyBNonces[partyB][partyA] += 1;
 		}
 		if (partAIsSender) {
