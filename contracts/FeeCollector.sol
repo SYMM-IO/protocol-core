@@ -39,6 +39,12 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
     Stakeholder[] public stakeholders;
     uint256 public totalStakeholderShare;
 
+    // Events
+    event SymmioAddressUpdated(address indexed oldAddress, address indexed newAddress);
+    event SymmioStakeholderUpdated(address indexed oldReceiver, address indexed newReceiver, uint256 oldShare, uint256 newShare);
+    event StakeholdersUpdated(Stakeholder[] newStakeholders);
+    event FeesClaimed(uint256 amount, address indexed collateralToken);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -67,20 +73,23 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
 
     function setSymmioAddress(address symmioAddress_) external onlyRole(SETTER_ROLE) {
         require(symmioAddress_ != address(0), "FeeCollector: Zero address");
+        address oldAddress = symmioAddress;
         symmioAddress = symmioAddress_;
+        emit SymmioAddressUpdated(oldAddress, symmioAddress_);
     }
 
-    function setSymmioReceiver(address symmioReceiver_) external onlyRole(SETTER_ROLE) {
+    function setSymmioStakeholder(address symmioReceiver_, uint256 symmioShare_) external onlyRole(SETTER_ROLE) {
         require(symmioReceiver_ != address(0), "FeeCollector: Zero address");
-        symmioReceiver = symmioReceiver_;
-        stakeholders[0].receiver = symmioReceiver_;
-    }
-
-    function setSymmioShare(uint256 symmioShare_) external onlyRole(SETTER_ROLE) {
         require(symmioShare_ <= 1e18, "FeeCollector: Invalid share");
 
+        address oldReceiver = symmioReceiver;
+        uint256 oldShare = symmioShare;
+
+        symmioReceiver = symmioReceiver_;
         symmioShare = symmioShare_;
-        stakeholders[0].share = symmioShare_;
+        stakeholders[0] = Stakeholder(symmioReceiver_, symmioShare_);
+
+        emit SymmioStakeholderUpdated(oldReceiver, symmioReceiver_, oldShare, symmioShare_);
     }
 
     function setStakeholders(Stakeholder[] calldata newStakeholders) external onlyRole(MANAGER_ROLE) {
@@ -98,6 +107,7 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
         require(newTotalStakeholderShare + symmioShare == 1e18, "FeeCollector: Total shares must equal 1");
 
         totalStakeholderShare = newTotalStakeholderShare;
+        emit StakeholdersUpdated(newStakeholders);
     }
 
     function claimFee(uint256 amount) external onlyRole(COLLECTOR_ROLE) whenNotPaused {
@@ -108,6 +118,7 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
         for (uint256 i = 0; i < stakeholders.length; i++) {
             IERC20Upgradeable(collateral).safeTransfer(stakeholders[i].receiver, (stakeholders[i].share * amount) / 1e18);
         }
+        emit FeesClaimed(amount, collateral);
     }
 
     function pause() external onlyRole(PAUSER_ROLE) whenNotPaused {

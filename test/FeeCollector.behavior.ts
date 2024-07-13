@@ -77,39 +77,45 @@ describe("FeeCollector", function () {
         });
     });
 
-    describe("setSymmioReceiver", function () {
-        it("Should allow setter to change Symmio receiver", async function () {
+    describe("setSymmioStakeholder", function () {
+        it("Should allow setter to change Symmio receiver and share", async function () {
             const newReceiver = ethers.Wallet.createRandom().address;
-            await feeCollector.connect(setter).setSymmioReceiver(newReceiver);
-            expect(await feeCollector.symmioReceiver()).to.equal(newReceiver);
-        });
-
-        it("Should revert if called by non-setter", async function () {
-            await expect(feeCollector.connect(owner).setSymmioReceiver(ethers.constants.AddressZero))
-                .to.be.reverted;
-        });
-
-        it("Should revert if new receiver is zero address", async function () {
-            await expect(feeCollector.connect(setter).setSymmioReceiver(ethers.constants.AddressZero))
-                .to.be.revertedWith("FeeCollector: Zero address");
-        });
-    });
-
-    describe("setSymmioShare", function () {
-        it("Should allow setter to change Symmio share", async function () {
             const newShare = ethers.utils.parseEther("0.6");
-            await feeCollector.connect(setter).setSymmioShare(newShare);
+            await feeCollector.connect(setter).setSymmioStakeholder(newReceiver, newShare);
+            expect(await feeCollector.symmioReceiver()).to.equal(newReceiver);
             expect(await feeCollector.symmioShare()).to.equal(newShare);
         });
 
         it("Should revert if called by non-setter", async function () {
-            await expect(feeCollector.connect(owner).setSymmioShare(0))
+            await expect(feeCollector.connect(owner).setSymmioStakeholder(ethers.constants.AddressZero, 0))
                 .to.be.reverted;
         });
 
+        it("Should revert if new receiver is zero address", async function () {
+            await expect(feeCollector.connect(setter).setSymmioStakeholder(ethers.constants.AddressZero, symmioShare))
+                .to.be.revertedWith("FeeCollector: Zero address");
+        });
+
         it("Should revert if new share is greater than 100%", async function () {
-            await expect(feeCollector.connect(setter).setSymmioShare(ethers.utils.parseEther("1.1")))
+            await expect(feeCollector.connect(setter).setSymmioStakeholder(symmioReceiver.address, ethers.utils.parseEther("1.1")))
                 .to.be.revertedWith("FeeCollector: Invalid share");
+        });
+
+        it("Should update stakeholders array", async function () {
+            const newReceiver = ethers.Wallet.createRandom().address;
+            const newShare = ethers.utils.parseEther("0.6");
+            await feeCollector.connect(setter).setSymmioStakeholder(newReceiver, newShare);
+            const updatedStakeholder = await feeCollector.stakeholders(0);
+            expect(updatedStakeholder.receiver).to.equal(newReceiver);
+            expect(updatedStakeholder.share).to.equal(newShare);
+        });
+
+        it("Should emit SymmioStakeholderUpdated event", async function () {
+            const newReceiver = ethers.Wallet.createRandom().address;
+            const newShare = ethers.utils.parseEther("0.6");
+            await expect(feeCollector.connect(setter).setSymmioStakeholder(newReceiver, newShare))
+                .to.emit(feeCollector, "SymmioStakeholderUpdated")
+                .withArgs(symmioReceiver.address, newReceiver, symmioShare, newShare);
         });
     });
 
