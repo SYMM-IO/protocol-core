@@ -110,8 +110,9 @@ struct SettleSig {
 	uint256 timestamp;
 	uint256[] quoteIds;
 	uint256[] prices;
+	address[] partyBs;
+	int256[] upnlPartyBs;
 	int256 upnlPartyA;
-	int256 upnlPartyB;
 	bytes gatewaySignature;
 	SchnorrSign sigs;
 }

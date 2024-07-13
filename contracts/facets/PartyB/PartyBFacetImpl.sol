@@ -289,49 +289,75 @@ library PartyBFacetImpl {
 	function settleUpnl(SettleSig memory settleSig, uint256[] memory newPrices, address partyA) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-
-		LibMuon.verifySettle(settleSig, msg.sender, partyA);
-		// check solvency
-		require(LibAccount.partyAAvailableBalanceForLiquidation(settleSig.upnlPartyA, accountLayout.allocatedBalances[partyA], partyA) >= 0,"PartyBFacet: PartyA should be solvent");
-		require(LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyB, msg.sender, partyA) >= 0,"PartyBFacet: PartyB should be solvent");
-		require(settleSig.quoteIds.length == newPrices.length, "PartyBFacet: Invalid length");
-		
-		// TODO: add limits to prevent countinous increasing of Nonce
-		
+		mapping(address => int256) memory partyBUpnls;
 		// amount to transfer from partyB to partyA (if it's positive it means we should increase partyA allocated balance)
-		int256 amountToTransfer;
-		for(uint8 i = 0; i < settleSig.quoteIds.length; i++){
+		mapping(address => int256) memory amountToTransfer; // partyB => amount
+
+		LibMuon.verifySettle(settleSig, partyA);
+		// check solvency
+		require(
+			LibAccount.partyAAvailableBalanceForLiquidation(settleSig.upnlPartyA, accountLayout.allocatedBalances[partyA], partyA) >= 0,
+			"PartyBFacet: PartyA should be solvent"
+		);
+
+		for (uint8 i = 0; i < settleSig.partyBs.length; i++) {
+			address partyB = settleSig.partyBs[i];
+			partyBUpnls[partyB] = settleSig.partyBUpnls[i];
+			require(
+				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.partyBUpnls[i], partyB, partyA) >= 0,
+				"PartyBFacet: PartyB should be solvent"
+			);
+			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "Accessibility: PartyB is in liquidation process");
+			accountLayout.partyBNonces[partyB][partyA] += 1;
+		}
+		require(partyBUpnls[msg.sender] != 0, "PartyBFacet: Sender should have a position with partyA");
+		require(settleSig.quoteIds.length == newPrices.length, "PartyBFacet: Invalid length");
+
+		accountLayout.partyANonces[partyA] += 1;
+
+		// TODO: add limits to prevent countinous increasing of Nonce
+
+		for (uint8 i = 0; i < settleSig.quoteIds.length; i++) {
 			Quote storage quote = quoteLayout.quotes[settleSig.quoteIds[i].quoteId];
 			require(quote.partyA == partyA, "PartyBFacet: PartyA is invalid");
-			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be partyB of quote");
+			require(partyBUpnls[quote.partyB] != 0, "PartyBFacet: Sender should be partyB of quote");
 			require(
 				quote.quoteStatus == QuoteStatus.OPENED ||
 					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
 				"PartyBFacet: Invalid state"
 			);
-			if(quote.openedPrice > settleSig.prices[i]) {
+			if (quote.openedPrice > settleSig.prices[i]) {
 				require(newPrices[i] < quote.openedPrice && newPrices[i] >= settleSig.prices[i], "PartyBFacet: New price is out of range");
-				
 			} else {
 				require(newPrices[i] > quote.openedPrice && newPrices[i] <= settleSig.prices[i], "PartyBFacet: New price is out of range");
 			}
 			if (quote.positionType == PositionType.LONG) {
-				amountToTransfer += (int256(newPrices[i]) - int256(quote.openedPrice)) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
+				amountToTransfer[quote.partyB] +=
+					((int256(newPrices[i]) - int256(quote.openedPrice)) * int256(libQuote.quoteOpenAmount(quote))) /
+					1e18;
 			} else {
-				amountToTransfer += (int256(quote.openedPrice) - int256(newPrices[i])) * int256(libQuote.quoteOpenAmount(quote)) / 1e18;
+				amountToTransfer[quote.partyB] +=
+					((int256(quote.openedPrice) - int256(newPrices[i])) * int256(libQuote.quoteOpenAmount(quote))) /
+					1e18;
 			}
 			quote.openedPrice = newPrices[i];
 		}
-		if (amountToTransfer >= 0 ) {
-			accountLayout.allocatedBalances[partyA] += uint256(amountToTransfer);
-			accountLayout.partyBAllocatedBalances[msg.sender][partyA] -= uint256(amountToTransfer);
-		} else {
-			accountLayout.allocatedBalances[partyA] -= uint256(-amountToTransfer);
-			accountLayout.partyBAllocatedBalances[msg.sender][partyA] += uint256(-amountToTransfer);
+		int256 resultAmount;
+		for (uint8 i = 0; i < settleSig.partyBs.length; i++) {
+			address partyB = settleSig.partyBs[i];
+			int256 amount = amountToTransfer[partyB];
+			resultAmount += amount;
+			if (amount >= 0) {
+				accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(amount);
+			} else {
+				accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(-amount);
+			}
 		}
-		accountLayout.partyBNonces[msg.sender][partyA] += 1;
-		accountLayout.partyANonces[partyA] += 1;
+		if (amount >= 0) {
+			accountLayout.allocatedBalances[partyA] += uint256(resultAmount);
+		} else {
+			accountLayout.allocatedBalances[partyA] -= uint256(-resultAmount);
+		}
 	}
-
 }
