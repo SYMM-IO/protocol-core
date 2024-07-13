@@ -29,6 +29,8 @@ library MAStorage {
 		uint256 forceCloseMinSigPeriod;
 		uint256 deallocateDebounceTime;
 		mapping(address => bool) affiliateStatus;
+		uint256 settlementCooldown;
+		mapping(address => mapping(address => mapping(address => uint256))) lastUpnlSettlementTimestamp; // subject partyB => object partyB => partyA => timestamp
 	}
 
 	function layout() internal pure returns (Layout storage l) {

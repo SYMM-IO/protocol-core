@@ -65,7 +65,15 @@ library LibPartyB {
 				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.partyBUpnls[i], partyB, partyA) >= 0,
 				"PartyBFacet: PartyB should be solvent"
 			);
-			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "Accessibility: PartyB is in liquidation process");
+			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "PartyBFacet: PartyB is in liquidation process");
+			if (!partAIsSender) {
+				require(
+					block.timestamp >=
+						MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] + MAStorage.layout().settlementCooldown,
+					"PartyBFacet: Cooldown should be passed"
+				);
+			}
+			MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] = block.timestamp;
 			accountLayout.partyBNonces[partyB][partyA] += 1;
 		}
 		if (partAIsSender) {
@@ -76,8 +84,6 @@ library LibPartyB {
 		require(settleSig.quoteIds.length == newPrices.length, "PartyBFacet: Invalid length");
 
 		accountLayout.partyANonces[partyA] += 1;
-
-		// TODO: add limits to prevent countinous increasing of Nonce
 
 		for (uint8 i = 0; i < settleSig.quoteIds.length; i++) {
 			Quote storage quote = quoteLayout.quotes[settleSig.quoteIds[i].quoteId];
