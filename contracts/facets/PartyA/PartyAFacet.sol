@@ -83,7 +83,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	}
 
 	/**
- * @notice Send a Quote to the protocol. The quote status will be pending.
+	 * @notice Send a Quote to the protocol. The quote status will be pending.
 	 * @param partyBsWhiteList List of party B addresses allowed to act on this quote.
 	 * @param symbolId Each symbol within the system possesses a unique identifier, for instance, BTCUSDT carries its own distinct ID
 	 * @param positionType Can be SHORT or LONG (0 or 1)
@@ -264,7 +264,40 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		uint256 filledAmount = quote.quantityToClose;
 		(uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) = PartyAFacetImpl.forceClosePosition(
 			quoteId,
-			sig
+			sig,
+			false,
+			[],
+			[]
+		);
+		if (isPartyBLiquidated) {
+			emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);
+		} else {
+			emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
+		}
+	}
+
+	/**
+	 * @notice Settles the positions then forces the closure of the position associated with the specified quote.
+	 * @param quoteId The ID of the quote for which the position should be forced to close.
+	 * @param settleSig The data struct contains quoteIds and upnl of parties and market prices
+	 * @param newPrices New prices to be set as openedPrice for the specified quotes.
+	 * @param highLowPriceSig The Muon signature.
+	 */
+	function settleAndForceClosePosition(
+		uint256 quoteId,
+		HighLowPriceSig memory highLowPriceSig,
+		SettleSig memory settleSig,
+		uint256[] memory newPrices
+	) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		Quote storage quote = quoteLayout.quotes[quoteId];
+		uint256 filledAmount = quote.quantityToClose;
+		(uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) = PartyAFacetImpl.forceClosePosition(
+			quoteId,
+			highLowPriceSig,
+			true,
+			settleSig,
+			newPrices
 		);
 		if (isPartyBLiquidated) {
 			emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);

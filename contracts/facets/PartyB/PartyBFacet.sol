@@ -191,13 +191,18 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 		);
 	}
 
+	/**
+	 * @notice Allows Party B to settle the upnl of party A position for the specified quotes.
+	 * @param settleSig The data struct contains quoteIds and upnl of parties and market prices
+	 * @param newPrices New prices to be set as openedPrice for the specified quotes.
+	 * @param partyA Address of party A
+	 */
 	function settleUpnl(
 		SettleSig memory settleSig,
 		uint256[] memory newPrices,
 		address partyA
 	) external whenNotPartyBActionsPaused notLiquidatedPartyA(partyA) {
 		PartyBFacetImpl.settleUpnl(settleSig, newPrices, partyA);
-		// TODO: emit SharedEvents
 		emit SettleUpnl(settleSig.quoteIds, newPrices, msg.sender, partyA);
 	}
 }

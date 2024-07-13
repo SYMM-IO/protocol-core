@@ -215,7 +215,10 @@ library PartyAFacetImpl {
 
 	function forceClosePosition(
 		uint256 quoteId,
-		HighLowPriceSig memory sig
+		HighLowPriceSig memory sig,
+		bool settleBefore,
+		SettleSig memory settleSig,
+		uint256[] memory newPrices
 	) internal returns (uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
@@ -274,6 +277,7 @@ library PartyAFacetImpl {
 			upnlPartyB = sig.upnlPartyB + diff;
 			LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, upnlPartyB, block.timestamp);
 		} else {
+			if (settleBefore) {}
 			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		}
 	}
