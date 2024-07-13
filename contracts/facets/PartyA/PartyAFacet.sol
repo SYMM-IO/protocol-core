@@ -279,9 +279,9 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	/**
 	 * @notice Settles the positions then forces the closure of the position associated with the specified quote.
 	 * @param quoteId The ID of the quote for which the position should be forced to close.
+	 * @param highLowPriceSig The Muon signature.
 	 * @param settleSig The data struct contains quoteIds and upnl of parties and market prices
 	 * @param newPrices New prices to be set as openedPrice for the specified quotes.
-	 * @param highLowPriceSig The Muon signature.
 	 */
 	function settleAndForceClosePosition(
 		uint256 quoteId,
@@ -302,7 +302,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		if (isPartyBLiquidated) {
 			emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);
 		} else {
-			// TODO event settle
+			emit SettleUpnl(settleSig.quoteIds, newPrices, settleSig.partyBs, msg.sender);
 			emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
 		}
 	}
