@@ -31,6 +31,4 @@ interface IPartiesEvents {
 	event ExpireQuoteClose(QuoteStatus quoteStatus, uint256 quoteId, uint256 closeId);
 
 	event LiquidatePartyB(address liquidator, address partyB, address partyA, uint256 partyBAllocatedBalance, int256 upnl);
-
-	event SettleUpnl(QuoteSettlementData[] settlementData, uint256[] updatedPrices, address partyA);
 }

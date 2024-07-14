@@ -285,9 +285,4 @@ library PartyBFacetImpl {
 		accountLayout.partyANonces[quote.partyA] += 1;
 		LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
 	}
-
-	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA) internal {
-		LibMuon.verifySettlement(settleSig, partyA);
-		LibPartyB.settleUpnl(settleSig, updatedPrices, partyA, false);
-	}
 }
