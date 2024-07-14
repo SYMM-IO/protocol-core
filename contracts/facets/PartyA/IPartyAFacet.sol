@@ -59,6 +59,6 @@ interface IPartyAFacet is IPartyAEvents {
 		uint256 quoteId,
 		HighLowPriceSig memory highLowPriceSig,
 		SettlementSig memory settleSig,
-		uint256[] memory newPrices
+		uint256[] memory updatedPrices
 	) external;
 }

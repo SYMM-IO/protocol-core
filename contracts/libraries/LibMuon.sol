@@ -266,6 +266,7 @@ library LibMuon {
 				AccountStorage.layout().partyANonces[partyA],
 				quoteIds,
 				currentPrices,
+				settleSig.upnlPartyBs,
 				settleSig.upnlPartyA,
 				settleSig.timestamp,
 				getChainId()
