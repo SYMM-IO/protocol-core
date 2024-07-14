@@ -264,7 +264,8 @@ export function shouldBehaveLikeMultiAccount() {
 			await context.collateral.connect(context.signers.user).approve(multiAccount.address, ethers.constants.MaxUint256)
 
 			await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500))
-		}) //!-----------------------------------------------------------------------
+		})
+
 		it("Should be able to send Quotes", async () => {
 			let quoteRequest1 = limitQuoteRequestBuilder().build()
 			let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))

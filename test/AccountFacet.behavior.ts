@@ -8,7 +8,6 @@ import { User } from "./models/User"
 import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
 import { Hedger } from "./models/Hedger"
 import { decimal, unDecimal } from "./utils/Common"
-import { decimal, unDecimal } from "./utils/Common"
 
 export function shouldBehaveLikeAccountFacet(): void {
 	let context: RunContext, user: User, user2: User, hedger: Hedger
