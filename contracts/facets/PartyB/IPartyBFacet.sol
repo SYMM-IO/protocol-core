@@ -28,6 +28,4 @@ interface IPartyBFacet is IPartyBEvents {
 	function acceptCancelCloseRequest(uint256 quoteId) external;
 
 	function emergencyClosePosition(uint256 quoteId, PairUpnlAndPriceSig memory upnlSig) external;
-
-	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA) external;
 }
