@@ -57,14 +57,17 @@ library LibPartyB {
 			"PartyBFacet: PartyA is insolvent"
 		);
 
-        require(isForceClose || quoteLayout.partyBOpenPositions[msg.sender][partyA].length > 0, "PartyBFacet: Sender should have a position with partyA");
+		require(
+			isForceClose || quoteLayout.partyBOpenPositions[msg.sender][partyA].length > 0,
+			"PartyBFacet: Sender should have a position with partyA"
+		);
 		accountLayout.partyANonces[partyA] += 1;
 
-        int256[] memory settleAmounts = new int256[](settleSig.upnlPartyBs.length);
-        address[] memory partyBs = new address[](settleSig.upnlPartyBs.length);
+		int256[] memory settleAmounts = new int256[](settleSig.upnlPartyBs.length);
+		address[] memory partyBs = new address[](settleSig.upnlPartyBs.length);
 
 		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
-            QuoteSettlementData memory data = settleSig.quotesSettlementsData[i];
+			QuoteSettlementData memory data = settleSig.quotesSettlementsData[i];
 			Quote storage quote = quoteLayout.quotes[data.quoteId];
 			require(quote.partyA == partyA, "PartyBFacet: PartyA is invalid");
 			require(
@@ -73,23 +76,8 @@ library LibPartyB {
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
 				"PartyBFacet: Invalid state"
 			);
-            require(
-                LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[data.partyBUpnlIndex], quote.partyB, partyA) >= 0,
-                "PartyBFacet: PartyB should be solvent"
-            );
-            require(!MAStorage.layout().partyBLiquidationStatus[quote.partyB][partyA], "PartyBFacet: PartyB is in liquidation process");
 
-            partyBs[data.partyBUpnlIndex] = quote.partyB;
-
-            if (!isForceClose && msg.sender != quote.partyB && MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][quote.partyB][partyA] != block.timestamp) {
-                require(
-                    block.timestamp >=
-                    MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][quote.partyB][partyA] + MAStorage.layout().settlementCooldown,
-                    "PartyBFacet: Cooldown should be passed"
-                );
-                MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][quote.partyB][partyA] = block.timestamp;
-            }
-            accountLayout.partyBNonces[quote.partyB][partyA] += 1;
+			partyBs[data.partyBUpnlIndex] = quote.partyB;
 
 			if (quote.openedPrice > data.currentPrice) {
 				require(updatedPrices[i] < quote.openedPrice && updatedPrices[i] >= data.currentPrice, "PartyBFacet: Updated price is out of range");
@@ -97,26 +85,44 @@ library LibPartyB {
 				require(updatedPrices[i] > quote.openedPrice && updatedPrices[i] <= data.currentPrice, "PartyBFacet: Updated price is out of range");
 			}
 			if (quote.positionType == PositionType.LONG) {
-                settleAmounts[data.partyBUpnlIndex] +=
+				settleAmounts[data.partyBUpnlIndex] +=
 					((int256(updatedPrices[i]) - int256(quote.openedPrice)) * int256(LibQuote.quoteOpenAmount(quote))) /
 					1e18;
 			} else {
-                settleAmounts[data.partyBUpnlIndex] +=
+				settleAmounts[data.partyBUpnlIndex] +=
 					((int256(quote.openedPrice) - int256(updatedPrices[i])) * int256(LibQuote.quoteOpenAmount(quote))) /
 					1e18;
 			}
 			quote.openedPrice = updatedPrices[i];
 		}
+
 		int256 totalSettlementAmount;
 		for (uint8 i = 0; i < partyBs.length; i++) {
 			address partyB = partyBs[i];
+
+			require(
+				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[i], partyB, partyA) >= 0,
+				"PartyBFacet: PartyB should be solvent"
+			);
+			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "PartyBFacet: PartyB is in liquidation process");
+
+			if (!isForceClose && msg.sender != partyB) {
+				require(
+					block.timestamp >=
+						MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] + MAStorage.layout().settlementCooldown,
+					"PartyBFacet: Cooldown should be passed"
+				);
+				MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] = block.timestamp;
+			}
+			accountLayout.partyBNonces[partyB][partyA] += 1;
+
 			int256 settlementAmount = settleAmounts[i];
 			totalSettlementAmount += settlementAmount;
 			if (settlementAmount >= 0) {
 				accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(settlementAmount);
 				emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(settlementAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 			} else {
-				accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(- settlementAmount);
+				accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(-settlementAmount);
 				emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(settlementAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 			}
 		}
@@ -124,8 +130,8 @@ library LibPartyB {
 			accountLayout.allocatedBalances[partyA] += uint256(totalSettlementAmount);
 			emit SharedEvents.BalanceChangePartyA(partyA, uint256(totalSettlementAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 		} else {
-			accountLayout.allocatedBalances[partyA] -= uint256(- totalSettlementAmount);
-			emit SharedEvents.BalanceChangePartyA(partyA, uint256(- totalSettlementAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
+			accountLayout.allocatedBalances[partyA] -= uint256(-totalSettlementAmount);
+			emit SharedEvents.BalanceChangePartyA(partyA, uint256(-totalSettlementAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 		}
 	}
 }
