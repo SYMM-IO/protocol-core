@@ -217,9 +217,8 @@ library PartyAFacetImpl {
 	function forceClosePosition(
 		uint256 quoteId,
 		HighLowPriceSig memory sig,
-		bool settleBefore,
-		SettleSig memory settleSig,
-		uint256[] memory newPrices
+		SettlementSig memory settlementSig,
+		uint256[] memory updatedPrices
 	) internal returns (uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
@@ -250,8 +249,8 @@ library PartyAFacetImpl {
 			require(sig.endTime - sig.startTime >= maLayout.forceCloseMinSigPeriod, "PartyAFacet: Invalid signature period");
 
 		LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
-		if (settleBefore) {
-			LibMuon.verifySettle(settleSig, quote.partyA);
+		if (updatedPrices.length > 0) {
+			LibMuon.verifySettlement(settlementSig, quote.partyA);
 		}
 		AccountStorage.layout().partyANonces[quote.partyA] += 1;
 		AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
@@ -281,8 +280,8 @@ library PartyAFacetImpl {
 			upnlPartyB = sig.upnlPartyB + diff;
 			LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, upnlPartyB, block.timestamp);
 		} else {
-			if (settleBefore) {
-				LibPartyB.settleUpnl(settleSig, newPrices, msg.sender, true);
+			if (updatedPrices.length > 0) {
+				LibPartyB.settleUpnl(settlementSig, updatedPrices, msg.sender, true);
 			}
 			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		}

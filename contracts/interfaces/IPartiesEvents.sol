@@ -5,6 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "../storages/QuoteStorage.sol";
+import "../storages/MuonStorage.sol";
 
 interface IPartiesEvents {
 	event SendQuote(
@@ -31,5 +32,5 @@ interface IPartiesEvents {
 
 	event LiquidatePartyB(address liquidator, address partyB, address partyA, uint256 partyBAllocatedBalance, int256 upnl);
 
-	event SettleUpnl(uint256[] quoteIds, uint256[] newPrices, address[] partyBs, address partyA);
+	event SettleUpnl(QuoteSettlementData[] quoteIds, uint256[] updatedPrices, address partyA);
 }

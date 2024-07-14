@@ -58,7 +58,7 @@ interface IPartyAFacet is IPartyAEvents {
 	function settleAndForceClosePosition(
 		uint256 quoteId,
 		HighLowPriceSig memory highLowPriceSig,
-		SettleSig memory settleSig,
+		SettlementSig memory settleSig,
 		uint256[] memory newPrices
 	) external;
 }

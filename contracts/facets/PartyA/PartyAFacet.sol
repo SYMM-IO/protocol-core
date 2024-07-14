@@ -262,11 +262,10 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		uint256 filledAmount = quote.quantityToClose;
-		SettleSig memory settleSig;
+		SettlementSig memory settleSig;
 		(uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) = PartyAFacetImpl.forceClosePosition(
 			quoteId,
 			sig,
-			false,
 			settleSig,
 			new uint256[](0)
 		);
@@ -282,13 +281,13 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	 * @param quoteId The ID of the quote for which the position should be forced to close.
 	 * @param highLowPriceSig The Muon signature.
 	 * @param settleSig The data struct contains quoteIds and upnl of parties and market prices
-	 * @param newPrices New prices to be set as openedPrice for the specified quotes.
+	 * @param updatedPrices New prices to be set as openedPrice for the specified quotes.
 	 */
 	function settleAndForceClosePosition(
 		uint256 quoteId,
 		HighLowPriceSig memory highLowPriceSig,
-		SettleSig memory settleSig,
-		uint256[] memory newPrices
+		SettlementSig memory settleSig,
+		uint256[] memory updatedPrices
 	) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
@@ -296,14 +295,13 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		(uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) = PartyAFacetImpl.forceClosePosition(
 			quoteId,
 			highLowPriceSig,
-			true,
 			settleSig,
-			newPrices
+			updatedPrices
 		);
 		if (isPartyBLiquidated) {
 			emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);
 		} else {
-			emit SettleUpnl(settleSig.quoteIds, newPrices, settleSig.partyBs, msg.sender);
+			emit SettleUpnl(settleSig.quotesSettlementsData, updatedPrices, msg.sender);
 			emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
 		}
 	}

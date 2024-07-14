@@ -105,12 +105,16 @@ struct HighLowPriceSig {
 	SchnorrSign sigs;
 }
 
-struct SettleSig {
+struct QuoteSettlementData{
+	uint256 quoteId;
+	uint256 currentPrice;
+	uint8 partyBUpnlIndex;
+}
+
+struct SettlementSig {
 	bytes reqId;
 	uint256 timestamp;
-	uint256[] quoteIds;
-	uint256[] prices;
-	address[] partyBs;
+	QuoteSettlementData[] quotesSettlementsData;
 	int256[] upnlPartyBs;
 	int256 upnlPartyA;
 	bytes gatewaySignature;
