@@ -245,27 +245,27 @@ library LibMuon {
 		verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
 	}
 
-	function verifySettle(SettleSig memory settleSig, address partyA) internal view {
+	function verifySettlement(SettlementSig memory settleSig, address partyA) internal view {
 		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
 		require(block.timestamp <= settleSig.timestamp + muonLayout.upnlValidTime, "LibMuon: Expired signature");
-		require(settleSig.prices.length == settleSig.quoteIds.length, "LibMuon: Invalid quotes length");
-		require(settleSig.partyBs.length == settleSig.upnlPartyBs.length, "LibMuon: Invalid partyBs length");
-
-		uint256[] memory nonces = new uint256[](settleSig.partyBs.length);
-		for (uint8 i = 0; i < settleSig.partyBs.length; i++) {
-			nonces[i] = AccountStorage.layout().partyBNonces[settleSig.partyBs[i]][partyA];
+		uint256[] memory nonces = new uint256[](settleSig.upnlPartyBs.length);
+		uint256[] memory quoteIds = new uint256[](settleSig.quotesSettlementsData.length);
+		uint256[] memory currentPrices = new uint256[](settleSig.quotesSettlementsData.length);
+		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
+			nonces[i] = AccountStorage.layout().partyBNonces[QuoteStorage.layout().quotes[settleSig.quotesSettlementsData[i].quoteId].partyB][partyA];
+			quoteIds[i] = settleSig.quotesSettlementsData[i].quoteId;
+			currentPrices[i] = settleSig.quotesSettlementsData[i].currentPrice;
 		}
 		bytes32 hash = keccak256(
 			abi.encodePacked(
+				"verifySettlement",
 				muonLayout.muonAppId,
 				settleSig.reqId,
 				address(this),
 				nonces,
 				AccountStorage.layout().partyANonces[partyA],
-				settleSig.quoteIds,
-				settleSig.prices,
-				settleSig.partyBs,
-				settleSig.upnlPartyBs,
+				quoteIds,
+				currentPrices,
 				settleSig.upnlPartyA,
 				settleSig.timestamp,
 				getChainId()

@@ -286,8 +286,8 @@ library PartyBFacetImpl {
 		LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
 	}
 
-	function settleUpnl(SettleSig memory settleSig, uint256[] memory newPrices, address partyA) internal {
-		LibMuon.verifySettle(settleSig, partyA);
+	function settleUpnl(SettlementSig memory settleSig, uint256[] memory newPrices, address partyA) internal {
+		LibMuon.verifySettlement(settleSig, partyA);
 		LibPartyB.settleUpnl(settleSig, newPrices, partyA, false);
 	}
 }
