@@ -6,6 +6,7 @@ pragma solidity >=0.8.18;
 
 interface IFundingRateEvents {
 	event ChargeFundingRate(address partyB, address partyA, uint256[] quoteIds, int256[] rates);
-	event SetFundingFee(uint256[] symbolIds, int256[] fees, address partyB);
+	event SetLongFundingFee(uint256[] symbolIds, int256[] fees, address partyB);
+	event SetShortFundingFee(uint256[] symbolIds, int256[] fees, address partyB);
 	event SetEpochDuration(uint256[] symbolIds, uint256[] durations, address partyB);
 }

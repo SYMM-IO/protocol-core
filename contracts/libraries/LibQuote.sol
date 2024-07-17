@@ -296,8 +296,13 @@ library LibQuote {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
 		uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
-				fundingFee.epochDuration;
-		int256 totalFee = (fundingFee.accumulatedFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentFee);
+			fundingFee.epochDuration;
+		int256 totalFee;
+		if (quote.positionType == PositionType.LONG) {
+			totalFee = (fundingFee.accumulatedLongFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentLongFee); 
+		} else {
+			totalFee = (fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentShortFee); 
+		}	
 		fee = int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee);
 	}
 }

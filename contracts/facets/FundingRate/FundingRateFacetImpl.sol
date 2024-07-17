@@ -84,30 +84,55 @@ library FundingRateFacetImpl {
 			require(fundingFee.epochDuration > 0, "ChargeFundingFacet: Zero epoch duration");
 			uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
 				fundingFee.epochDuration;
-			int256 newAccumulatedFee = ((fundingFee.accumulatedFee * int256(fundingFee.epochs)) + (fundingFee.currentFee * int256(newEpochs))) /
-				(int256(newEpochs) + int256(fundingFee.epochs));
+			int256 newAccumulatedLongFee = ((fundingFee.accumulatedLongFee * int256(fundingFee.epochs)) +
+				(fundingFee.currentLongFee * int256(newEpochs))) / (int256(newEpochs) + int256(fundingFee.epochs));
+			int256 newAccumulatedShortFee = ((fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) +
+				(fundingFee.currentShortFee * int256(newEpochs))) / (int256(newEpochs) + int256(fundingFee.epochs));
+			fundingFee.accumulatedLongFee = newAccumulatedLongFee;
+			fundingFee.accumulatedShortFee = newAccumulatedShortFee;
 			fundingFee.epochDuration = durations[i];
-			fundingFee.accumulatedFee = newAccumulatedFee;
 			fundingFee.epochs += newEpochs;
 		}
 	}
 
-	function setFundingFee(uint256[] memory symbolIds, int256[] memory fees) internal {
-		require(symbolIds.length == fees.length, "ChargeFundingFacet: Invalid length");
+	function updateAccumulatedFundingFee(uint256[] memory symbolIds, int256[] memory longFees, int256[] memory shortFees) internal {
+		require(symbolIds.length == longFees.length && longFees.length == shortFees.length, "ChargeFundingFacet: Invalid length");
 		for (uint8 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 			require(fundingFee.epochDuration > 0, "ChargeFundingFacet: Zero epoch duration");
 			uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
 				fundingFee.epochDuration;
-			int256 newAccumulatedFee = ((fundingFee.accumulatedFee * int256(fundingFee.epochs)) + (fundingFee.currentFee * int256(newEpochs))) /
-				(int256(newEpochs) + int256(fundingFee.epochs));
-			fundingFee.currentFee = fees[i];
-			fundingFee.accumulatedFee = newAccumulatedFee;
+			int256 newAccumulatedLongFee = ((fundingFee.accumulatedLongFee * int256(fundingFee.epochs)) +
+				(fundingFee.currentLongFee * int256(newEpochs))) / (int256(newEpochs) + int256(fundingFee.epochs));
+			int256 newAccumulatedShortFee = ((fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) +
+				(fundingFee.currentShortFee * int256(newEpochs))) / (int256(newEpochs) + int256(fundingFee.epochs));
+			fundingFee.currentLongFee = longFees[i];
+			fundingFee.currentShortFee = shortFees[i];
+			fundingFee.accumulatedLongFee = newAccumulatedLongFee;
+			fundingFee.accumulatedShortFee = newAccumulatedShortFee;
 			fundingFee.epochs += newEpochs;
 		}
 	}
 
-	function chargeAccumulatedFundingRate(uint256 quoteId) internal {
-		int256 fee = LibQuote.getAccumulatedFundingFee(quoteId);
+	function setFundingFee(uint256[] memory symbolIds, int256[] memory longFees, int256[] memory shortFees) internal {
+		updateAccumulatedFundingFee(symbolIds, longFees, shortFees);
+	}
+
+	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longFees) internal {
+		int256[] memory shortFees = new int256[](longFees.length);
+		for (uint8 i = 0; i < symbolIds.length; i++) {
+			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
+			shortFees[i] = fundingFee.currentShortFee;
+		}
+		updateAccumulatedFundingFee(symbolIds, longFees, shortFees);
+	}
+
+	function setShortFundingFee(uint256[] memory symbolIds, int256[] memory shortFees) internal {
+		int256[] memory longFees = new int256[](shortFees.length);
+		for (uint8 i = 0; i < symbolIds.length; i++) {
+			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
+			longFees[i] = fundingFee.currentLongFee;
+		}
+		updateAccumulatedFundingFee(symbolIds, longFees, shortFees);
 	}
 }
