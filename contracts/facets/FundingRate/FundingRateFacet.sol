@@ -24,4 +24,16 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 		FundingRateFacetImpl.chargeFundingRate(partyA, quoteIds, rates, upnlSig);
 		emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
 	}
+
+	// TODO: add comments + add modifiers + add signature?
+	function setFundingFee(uint256[] memory symbolIds, int256[] memory fees) external whenNotPartyBActionsPaused onlyPartyB {
+		FundingRateFacetImpl.setFundingFee(symbolIds, fees);
+		emit SetFundingFee(symbolIds, fees, msg.sender);
+	}
+
+	// TODO: add comments + add modifiers + add signature?
+	function setEpochDurations(uint256[] memory symbolIds, uint256[] memory durations) external whenNotPartyBActionsPaused onlyPartyB {
+		FundingRateFacetImpl.setEpochDuration(symbolIds, durations, msg.sender);
+		emit SetEpochDuration(symbolIds, durations, msg.sender);
+	}
 }
