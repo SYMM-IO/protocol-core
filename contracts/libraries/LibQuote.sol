@@ -291,4 +291,13 @@ library LibQuote {
 			result = QuoteStatus.OPENED;
 		}
 	}
+
+	function getAccumulatedFundingFee(uint256 quoteId) internal view returns (int256 fee) {
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
+		uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
+				fundingFee.epochDuration;
+		int256 totalFee = (fundingFee.accumulatedFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentFee);
+		fee = int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee);
+	}
 }
