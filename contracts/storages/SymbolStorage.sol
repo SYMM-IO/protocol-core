@@ -17,8 +17,10 @@ struct Symbol {
 }
 
 struct FundingFee {
-	int256 currentFee;
-	int256 accumulatedFee;
+	int256 currentLongFee;
+	int256 currentShortFee;
+	int256 accumulatedLongFee;
+	int256 accumulatedShortFee;
 	uint256 epochs;
 	uint256 epochDuration;
 }
@@ -29,8 +31,8 @@ library SymbolStorage {
 	struct Layout {
 		mapping(uint256 => Symbol) symbols;
 		uint256 lastId;
-		mapping(uint256 => uint256) forceCloseGapRatio; //symbolId -> forceCloseGapRatio
-		mapping(uint256 => mapping(address => FundingFee)) fundingFees; // symbolId -> partyB Address -> funding Fee
+		mapping(uint256 => uint256) forceCloseGapRatio; // symbolId -> forceCloseGapRatio
+		mapping(uint256 => mapping(address => FundingFee)) fundingFees; // SymbolId -> PartyB Address -> Funding Fee
 	}
 
 	function layout() internal pure returns (Layout storage l) {
