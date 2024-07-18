@@ -9,6 +9,7 @@ import { UserController } from "./models/UserController"
 import { decimal } from "./utils/Common"
 import fsPromise from "fs/promises"
 import { BigNumber } from "ethers"
+import {QuoteCheckpoint} from "./models/quoteCheckpoint";
 
 export function shouldBehaveLikeFuzzTest(): void {
 	beforeEach(async function () {

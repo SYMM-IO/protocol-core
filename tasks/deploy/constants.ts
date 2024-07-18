@@ -8,6 +8,8 @@ export const FacetNames = [
 	"BridgeFacet",
 	"ViewFacet",
 	"FundingRateFacet",
+	"ForceActionsFacet",
+	"SettlementFacet",
 ];
 
 export const DEPLOYMENT_LOG_FILE = "deployed.json";

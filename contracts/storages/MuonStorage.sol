@@ -105,6 +105,22 @@ struct HighLowPriceSig {
 	SchnorrSign sigs;
 }
 
+struct QuoteSettlementData{
+	uint256 quoteId;
+	uint256 currentPrice;
+	uint8 partyBUpnlIndex;
+}
+
+struct SettlementSig {
+	bytes reqId;
+	uint256 timestamp;
+	QuoteSettlementData[] quotesSettlementsData;
+	int256[] upnlPartyBs;
+	int256 upnlPartyA;
+	bytes gatewaySignature;
+	SchnorrSign sigs;
+}
+
 library MuonStorage {
 	bytes32 internal constant MUON_STORAGE_SLOT = keccak256("diamond.standard.storage.muon");
 

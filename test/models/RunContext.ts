@@ -6,11 +6,11 @@ import {
 	BridgeFacet,
 	ControlFacet,
 	DiamondCutFacet,
-	DiamondLoupeFacet,
+	DiamondLoupeFacet, ForceActionsFacet,
 	FundingRateFacet,
 	LiquidationFacet,
 	PartyAFacet,
-	PartyBFacet,
+	PartyBFacet, SettlementFacet,
 	ViewFacet,
 } from "../../src/types"
 import { TestManager } from "./TestManager"
@@ -26,6 +26,8 @@ export class RunContext {
 	liquidationFacet!: LiquidationFacet
 	controlFacet!: ControlFacet
 	fundingRateFacet!: FundingRateFacet
+	settlementFacet!: SettlementFacet
+	forceActionsFacet!: ForceActionsFacet
 	signers!: {
 		admin: SignerWithAddress
 		user: SignerWithAddress
@@ -78,6 +80,8 @@ export async function createRunContext(diamond: string, collateral: string, mult
 	context.liquidationFacet = await ethers.getContractAt("LiquidationFacet", diamond)
 	context.controlFacet = await ethers.getContractAt("ControlFacet", diamond)
 	context.fundingRateFacet = await ethers.getContractAt("FundingRateFacet", diamond)
+	context.settlementFacet = await ethers.getContractAt("SettlementFacet", diamond)
+	context.forceActionsFacet = await ethers.getContractAt("ForceActionsFacet", diamond)
 
 	context.manager = new TestManager(context, onlyInitialize)
 	if (!onlyInitialize) await context.manager.start()

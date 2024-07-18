@@ -2,7 +2,6 @@ import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
 import { expect } from "chai"
 import { BigNumber } from "ethers"
 
-import { QuoteStruct } from "../src/types/contracts/facets/ViewFacet"
 import { initializeFixture } from "./Initialize.fixture"
 import { PositionType, QuoteStatus } from "./models/Enums"
 import { Hedger } from "./models/Hedger"
@@ -13,6 +12,7 @@ import { LockQuoteValidator } from "./models/validators/LockQuoteValidator"
 import { UnlockQuoteValidator } from "./models/validators/UnlockQuoteValidator"
 import { decimal, pausePartyB } from "./utils/Common"
 import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import {QuoteStruct} from "../src/types/contracts/interfaces/ISymmio";
 
 export function shouldBehaveLikeLockQuote(): void {
 	let context: RunContext, user: User, hedger: Hedger, hedger2: Hedger

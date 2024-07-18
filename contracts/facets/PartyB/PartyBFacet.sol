@@ -94,7 +94,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 	}
 
 	/**
-	 * @notice Opens a position for the specified quote. The opened position's size can't be excessively small or large. 
+	 * @notice Opens a position for the specified quote. The opened position's size can't be excessively small or large.
 	 * 			If it's like 99/100, the leftover will be a minuscule quote that falls below the minimum acceptable quote value.
 	 * 			Conversely, the position might be so small that it also falls beneath the minimum value.
 	 * 			Also, the remaining open portion of the position cannot fall below the minimum acceptable quote value for that particular symbol.
@@ -141,7 +141,7 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 	/**
 	 * @notice Fills the close request for the specified quote.
 	 * @param quoteId The ID of the quote for which the close request is filled.
-	 * @param filledAmount The filled amount for the close request. PartyB can fill the LIMIT requests in multiple steps 
+	 * @param filledAmount The filled amount for the close request. PartyB can fill the LIMIT requests in multiple steps
 	 * 						and each within a different price but the market requests should be filled all at once.
 	 * @param closedPrice The closed price for the close request.
 	 * @param upnlSig The Muon signature containing PairUpnlAndPriceSig data.
