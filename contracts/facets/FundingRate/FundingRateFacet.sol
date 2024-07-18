@@ -25,7 +25,10 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 		emit ChargeFundingRate(msg.sender, partyA, quoteIds, rates);
 	}
 
-	// TODO: add comments + add modifiers + add signature?
+	/// @notice Set funding rates for a given Symbols.
+	/// @param symbolIds An array of symbol ids.
+	/// @param longFees An array of funding fees for long positions.
+	/// @param shortFees An array of funding fees for short positions.
 	function setFundingFee(
 		uint256[] memory symbolIds,
 		int256[] memory longFees,
@@ -36,27 +39,42 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 		emit SetShortFundingFee(symbolIds, shortFees, msg.sender);
 	}
 
-	// TODO: add comments + add modifiers + add signature?
+	/// @notice Set funding rates for a given Symbols.
+	/// @param symbolIds An array of symbol ids.
+	/// @param longFees An array of funding fees for long positions.
 	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longFees) external whenNotPartyBActionsPaused onlyPartyB {
 		FundingRateFacetImpl.setLongFundingFee(symbolIds, longFees);
 		emit SetLongFundingFee(symbolIds, longFees, msg.sender);
 	}
 
-	// TODO: add comments + add modifiers + add signature?
+	/// @notice Set funding rates for a given Symbols.
+	/// @param symbolIds An array of symbol ids.
+	/// @param shortFees An array of funding fees for short positions.
 	function setShortFundingFee(uint256[] memory symbolIds, int256[] memory shortFees) external whenNotPartyBActionsPaused onlyPartyB {
 		FundingRateFacetImpl.setShortFundingFee(symbolIds, shortFees);
 		emit SetShortFundingFee(symbolIds, shortFees, msg.sender);
 	}
 
-	// TODO: add comments + add modifiers + add signature?
+	/// @notice Set epoch durations for funding rates for a given Symbols.
+	/// @param symbolIds An array of symbol ids.
+	/// @param durations An array of durations for funding fees.
 	function setEpochDurations(uint256[] memory symbolIds, uint256[] memory durations) external whenNotPartyBActionsPaused onlyPartyB {
 		FundingRateFacetImpl.setEpochDuration(symbolIds, durations, msg.sender);
 		emit SetEpochDuration(symbolIds, durations, msg.sender);
 	}
 
-	// TODO: add comments + add modifiers + add signature?
-	function chargeAccumulatedFundingFee(uint256[] memory quoteIds) external whenNotPartyBActionsPaused whenNotPartyBActionsPaused {
-		FundingRateFacetImpl.chargeAccumulatedFundingFee(quoteIds);
+	/// @notice Charges funding rates for a given Party A position.
+	/// @param partyA The address of Party A.
+	/// @param partyB The address of Party B.
+	/// @param quoteIds An array of quote IDs that we are about to get fudning for.
+	/// @param upnlSig The Muon signature for upnl of both parties.
+	function chargeAccumulatedFundingFee(
+		address partyA,
+		address partyB,
+		uint256[] memory quoteIds,
+		PairUpnlSig memory upnlSig
+	) external whenNotPartyBActionsPaused whenNotPartyAActionsPaused notLiquidatedPartyA(partyA) {
+		FundingRateFacetImpl.chargeAccumulatedFundingFee(partyA, partyB, quoteIds, upnlSig);
 		emit ChargeAccumulatedFundingFee(quoteIds, msg.sender);
 	}
 }
