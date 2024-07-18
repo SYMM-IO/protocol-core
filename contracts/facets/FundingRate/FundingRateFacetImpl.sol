@@ -136,9 +136,27 @@ library FundingRateFacetImpl {
 		updateAccumulatedFundingFee(symbolIds, longFees, shortFees);
 	}
 
-	function chargeAccumulatedFundingFee(uint256[] memory quoteIds) internal {
+	function chargeAccumulatedFundingFee(address partyA, address partyB, uint256[] memory quoteIds, PairUpnlSig memory upnlSig) internal {
+		LibMuon.verifyPairUpnl(upnlSig, partyB, partyA);
 		for (uint8 i = 0; i < quoteIds.length; i++) {
+			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
+			require(quote.partyA == partyA, "ChargeFundingFacet: Invalid quote");
+			require(quote.partyB == partyB, "ChargeFundingFacet: Sender isn't partyB of quote");
+			require(
+				quote.quoteStatus == QuoteStatus.OPENED ||
+					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
+					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
+				"ChargeFundingFacet: Invalid state"
+			);
 			LibQuote.chargeAccumulatedFundingFee(quoteIds[i]);
 		}
+		int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, partyB, partyA);
+		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
+			upnlSig.upnlPartyA,
+			AccountStorage.layout().allocatedBalances[partyA],
+			partyA
+		);
+		require(partyAAvailableBalance >= 0, "ChargeFundingFacet: PartyA will be insolvent");
+		require(partyBAvailableBalance >= 0, "ChargeFundingFacet: PartyB will be insolvent");
 	}
 }
