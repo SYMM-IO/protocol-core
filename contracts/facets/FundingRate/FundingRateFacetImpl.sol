@@ -135,4 +135,10 @@ library FundingRateFacetImpl {
 		}
 		updateAccumulatedFundingFee(symbolIds, longFees, shortFees);
 	}
+
+	function chargeAccumulatedFundingFee(uint256[] memory quoteIds) internal {
+		for (uint8 i = 0; i < quoteIds.length; i++) {
+			LibQuote.chargeAccumulatedFundingFee(quoteIds[i]);
+		}
+	}
 }
