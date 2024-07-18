@@ -244,4 +244,34 @@ library LibMuon {
 		);
 		verifyTSSAndGateway(hash, sig.sigs, sig.gatewaySignature);
 	}
+
+	function verifySettlement(SettlementSig memory settleSig, address partyA) internal view {
+		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+		require(block.timestamp <= settleSig.timestamp + muonLayout.upnlValidTime, "LibMuon: Expired signature");
+		uint256[] memory nonces = new uint256[](settleSig.upnlPartyBs.length);
+		uint256[] memory quoteIds = new uint256[](settleSig.quotesSettlementsData.length);
+		uint256[] memory currentPrices = new uint256[](settleSig.quotesSettlementsData.length);
+		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
+			nonces[i] = AccountStorage.layout().partyBNonces[QuoteStorage.layout().quotes[settleSig.quotesSettlementsData[i].quoteId].partyB][partyA];
+			quoteIds[i] = settleSig.quotesSettlementsData[i].quoteId;
+			currentPrices[i] = settleSig.quotesSettlementsData[i].currentPrice;
+		}
+		bytes32 hash = keccak256(
+			abi.encodePacked(
+				"verifySettlement",
+				muonLayout.muonAppId,
+				settleSig.reqId,
+				address(this),
+				nonces,
+				AccountStorage.layout().partyANonces[partyA],
+				quoteIds,
+				currentPrices,
+				settleSig.upnlPartyBs,
+				settleSig.upnlPartyA,
+				settleSig.timestamp,
+				getChainId()
+			)
+		);
+		verifyTSSAndGateway(hash, settleSig.sigs, settleSig.gatewaySignature);
+	}
 }

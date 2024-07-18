@@ -149,6 +149,10 @@ interface IViewFacet {
 
 	function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256);
 
+	function settlementCooldown() external view returns (uint256);
+
+	function lastUpnlSettlementTimestamp(address senderPartyB, address targetPartyB, address partyA) external view returns (uint256);
+
 	///////////////////////////////////////////
 
 	function getMuonConfig() external view returns (uint256 upnlValidTime, uint256 priceValidTime);

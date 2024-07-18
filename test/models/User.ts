@@ -13,8 +13,8 @@ import { limitQuoteRequestBuilder, QuoteRequest } from "./requestModels/QuoteReq
 import { runTx } from "../utils/TxUtils"
 import { getDummyLiquidationSig } from "../utils/SignatureUtils"
 import { LiquidationSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
-import { HighLowPriceSigStruct } from "../../src/types/contracts/facets/PartyA/PartyAFacet"
 import { QuoteStructOutput } from "../../src/types/contracts/interfaces/ISymmio";
+import {HighLowPriceSigStruct} from "../../src/types/contracts/facets/ForceActions/ForceActionsFacet";
 
 export class User {
 	constructor(private context: RunContext, private signer: SignerWithAddress) {}
@@ -123,7 +123,7 @@ export class User {
 				userUpnl: await this.getUpnl(),
 			}),
 		)
-		await runTx(this.context.partyAFacet.connect(this.signer).forceClosePosition(id, signature))
+		await runTx(this.context.forceActionsFacet.connect(this.signer).forceClosePosition(id, signature))
 		logger.info(`User::::ForceClosePosition: ${id}`)
 	}
 

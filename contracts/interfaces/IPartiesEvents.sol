@@ -5,6 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "../storages/QuoteStorage.sol";
+import "../storages/MuonStorage.sol";
 
 interface IPartiesEvents {
 	event SendQuote(

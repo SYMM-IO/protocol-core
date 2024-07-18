@@ -151,12 +151,12 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		GlobalAppStorage.layout().affiliateFeeCollector[affiliate] = feeCollector;
 	}
 
-    /// @notice Sets the address of the default fee collector.
-    /// @param feeCollector The address of fee collector.
-    function setDefaultFeeCollector(address feeCollector) external onlyRole(LibAccessibility.SETTER_ROLE) {
-        emit SetDefaultFeeCollector(GlobalAppStorage.layout().defaultFeeCollector, feeCollector);
-        GlobalAppStorage.layout().defaultFeeCollector = feeCollector;
-    }
+	/// @notice Sets the address of the default fee collector.
+	/// @param feeCollector The address of fee collector.
+	function setDefaultFeeCollector(address feeCollector) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		emit SetDefaultFeeCollector(GlobalAppStorage.layout().defaultFeeCollector, feeCollector);
+		GlobalAppStorage.layout().defaultFeeCollector = feeCollector;
+	}
 
 	/// @notice Sets the deallocate debounce time. User can't deallocate more than once in this window
 	/// @param deallocateDebounceTime in seconds.
@@ -371,6 +371,13 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	function setForceCloseGapRatio(uint256 symbolId, uint256 forceCloseGapRatio) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		emit SetForceCloseGapRatio(symbolId, SymbolStorage.layout().forceCloseGapRatio[symbolId], forceCloseGapRatio);
 		SymbolStorage.layout().forceCloseGapRatio[symbolId] = forceCloseGapRatio;
+	}
+
+	/// @notice Sets the cooldown period for settle upnl of positions.
+	/// @param settlementCooldown The new cooldown period, specified in seconds.
+	function setSettlementCooldown(uint256 settlementCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		emit SetSettlementCooldown(MAStorage.layout().settlementCooldown, settlementCooldown);
+		MAStorage.layout().settlementCooldown = settlementCooldown;
 	}
 
 	// Pause State //////////////////////////////////////////////////
