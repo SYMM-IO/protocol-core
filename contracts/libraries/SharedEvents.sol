@@ -16,7 +16,9 @@ library SharedEvents {
         CVA_IN,
         CVA_OUT,
         LF_IN,
-        LF_OUT
+        LF_OUT,
+        FUNDING_FEE_IN,
+        FUNDING_FEE_OUT
     }
 
     event BalanceChangePartyA(address indexed partyA, uint256 amount, BalanceChangeType _type);
