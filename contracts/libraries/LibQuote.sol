@@ -308,7 +308,7 @@ library LibQuote {
 		} else {
 			totalFee = (fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentShortFee);
 		}
-		fee = int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee);
+		fee = int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee) / 1e18;
 	}
 
 	function chargeAccumulatedFundingFee(uint256 quoteId) internal {
