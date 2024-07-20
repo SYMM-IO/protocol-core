@@ -27,8 +27,8 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 
 	/// @notice Set funding rates for a given Symbols.
 	/// @param symbolIds An array of symbol ids.
-	/// @param longFees An array of funding fees for long positions.
-	/// @param shortFees An array of funding fees for short positions.
+	/// @param longFees An array of funding fees for long positions in 18 decimals.
+	/// @param shortFees An array of funding fees for short positions in 18 decimals.
 	function setFundingFee(
 		uint256[] memory symbolIds,
 		int256[] memory longFees,
@@ -41,7 +41,7 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 
 	/// @notice Set funding rates for a given Symbols.
 	/// @param symbolIds An array of symbol ids.
-	/// @param longFees An array of funding fees for long positions.
+	/// @param longFees An array of funding fees for long positions in 18 decimals.
 	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longFees) external whenNotPartyBActionsPaused onlyPartyB {
 		FundingRateFacetImpl.setLongFundingFee(symbolIds, longFees);
 		emit SetLongFundingFee(symbolIds, longFees, msg.sender);
@@ -49,7 +49,7 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 
 	/// @notice Set funding rates for a given Symbols.
 	/// @param symbolIds An array of symbol ids.
-	/// @param shortFees An array of funding fees for short positions.
+	/// @param shortFees An array of funding fees for short positions in 18 decimals.
 	function setShortFundingFee(uint256[] memory symbolIds, int256[] memory shortFees) external whenNotPartyBActionsPaused onlyPartyB {
 		FundingRateFacetImpl.setShortFundingFee(symbolIds, shortFees);
 		emit SetShortFundingFee(symbolIds, shortFees, msg.sender);
