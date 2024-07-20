@@ -308,7 +308,13 @@ library LibQuote {
 		} else {
 			totalFee = (fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentShortFee);
 		}
-		fee = int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee) / 1e18;
+		fee = (int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee)) / 1e18;
+		int256 maxFee = int256(quote.maxFundingRate) * int256(block.timestamp - quote.lastFundingPaymentTimestamp);
+		if (fee > 0) {
+			fee = maxFee > fee ? fee : maxFee;
+		} else {
+			fee = -maxFee < fee ? fee : -maxFee;
+		}
 	}
 
 	function chargeAccumulatedFundingFee(uint256 quoteId) internal {
