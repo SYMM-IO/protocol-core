@@ -73,8 +73,8 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 		address partyB,
 		uint256[] memory quoteIds,
 		PairUpnlSig memory upnlSig
-	) external whenNotPartyBActionsPaused whenNotPartyAActionsPaused notLiquidatedPartyA(partyA) {
+	) external whenNotPartyBActionsPaused whenNotPartyAActionsPaused notLiquidatedPartyA(partyA) notLiquidatedPartyB(partyB, partyA) {
 		FundingRateFacetImpl.chargeAccumulatedFundingFee(partyA, partyB, quoteIds, upnlSig);
-		emit ChargeAccumulatedFundingFee(quoteIds, msg.sender);
+		emit ChargeAccumulatedFundingFee(partyA, partyB, quoteIds, msg.sender);
 	}
 }

@@ -33,6 +33,7 @@ library FundingRateFacetImpl {
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
 				"ChargeFundingFacet: Invalid state"
 			);
+			require(quote.lastFundingPaymentTimestamp == 0, "ChargeFundingFacet: Use accumulated funding fee");
 			epochDuration = SymbolStorage.layout().symbols[quote.symbolId].fundingRateEpochDuration;
 			require(epochDuration > 0, "ChargeFundingFacet: Zero funding epoch duration");
 			windowTime = SymbolStorage.layout().symbols[quote.symbolId].fundingRateWindowTime;

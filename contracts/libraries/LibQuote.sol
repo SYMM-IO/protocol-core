@@ -297,7 +297,7 @@ library LibQuote {
 	function getAccumulatedFundingFee(uint256 quoteId) internal view returns (int256 fee) {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
-		if (fundingFee.epochDuration == 0) {
+		if (fundingFee.epochDuration == 0 || quote.lastFundingPaymentTimestamp == 0) {
 			return 0;
 		}
 		uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
