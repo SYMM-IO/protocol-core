@@ -189,7 +189,9 @@ library PartyBFacetImpl {
 				lastFundingPaymentTimestamp: 0,
 				deadline: quote.deadline,
 				tradingFee: quote.tradingFee,
-				affiliate: quote.affiliate
+				affiliate: quote.affiliate,
+				paidFundingFee: 0,
+				lastFundingTimestamp: 0
 			});
 
 			quoteLayout.quoteIdsOf[quote.partyA].push(currentId);
@@ -217,6 +219,9 @@ library PartyBFacetImpl {
 		// lock with amount of filledAmount
 		accountLayout.lockedBalances[quote.partyA].addQuote(quote);
 		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
+		
+		quote.lastFundingTimestamp = block.timestamp;
+		quote.paidFundingFee = LibQuote.getAccumulatedFundingFee(quoteId);
 
 		LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
 		// check leverage (is in 18 decimals)
