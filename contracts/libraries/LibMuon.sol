@@ -192,6 +192,29 @@ library LibMuon {
 		verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
 	}
 
+	function verifyPairUpnlAndPrices(PairUpnlAndPricesSig memory upnlSig, address partyB, address partyA, uint256[] memory quoteIds) internal view {
+		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+		require(block.timestamp <= upnlSig.timestamp + muonLayout.upnlValidTime, "LibMuon: Expired signature");
+		bytes32 hash = keccak256(
+			abi.encodePacked(
+				muonLayout.muonAppId,
+				upnlSig.reqId,
+				address(this),
+				partyB,
+				partyA,
+				AccountStorage.layout().partyBNonces[partyB][partyA],
+				AccountStorage.layout().partyANonces[partyA],
+				upnlSig.upnlPartyB,
+				upnlSig.upnlPartyA,
+				quoteIds,
+				upnlSig.prices,
+				upnlSig.timestamp,
+				getChainId()
+			)
+		);
+		verifyTSSAndGateway(hash, upnlSig.sigs, upnlSig.gatewaySignature);
+	}
+
 	function verifyPairUpnl(PairUpnlSig memory upnlSig, address partyB, address partyA) internal view {
 		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
 		// == SignatureCheck( ==

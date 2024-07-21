@@ -11,9 +11,9 @@ import "../../libraries/LibSolvency.sol";
 import "../../storages/QuoteStorage.sol";
 
 library ForceActionsFacetImpl {
-    using LockedValuesOps for LockedValues;
+	using LockedValuesOps for LockedValues;
 
-    function forceCancelQuote(uint256 quoteId) internal {
+	function forceCancelQuote(uint256 quoteId) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
@@ -87,19 +87,23 @@ library ForceActionsFacetImpl {
 		AccountStorage.layout().partyANonces[quote.partyA] += 1;
 		AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
 
+		uint256[] memory quoteIds = new uint256[](1);
+		uint256[] memory filledAmounts = new uint256[](1);
+		uint256[] memory closedPrices = new uint256[](1);
+		uint256[] memory marketPrices = new uint256[](1);
+		quoteIds[0] = quoteId;
+		filledAmounts[0] = quote.quantityToClose;
+		closedPrices[0] = closePrice;
+		marketPrices[0] = sig.currentPrice;
 		(int256 partyBAvailableBalance, int256 partyAAvailableBalance) = LibSolvency.getAvailableBalanceAfterClosePosition(
-			quoteId,
-			quote.quantityToClose,
-			closePrice,
-			PairUpnlAndPriceSig({
-				reqId: sig.reqId,
-				timestamp: sig.timestamp,
-				upnlPartyA: sig.upnlPartyA,
-				upnlPartyB: sig.upnlPartyB,
-				price: sig.currentPrice,
-				gatewaySignature: sig.gatewaySignature,
-				sigs: sig.sigs
-			})
+			quoteIds,
+			filledAmounts,
+			closedPrices,
+			marketPrices,
+			sig.upnlPartyB,
+			sig.upnlPartyA,
+			quote.partyB,
+			quote.partyA
 		);
 		require(partyAAvailableBalance >= 0, "PartyAFacet: PartyA will be insolvent");
 		if (partyBAvailableBalance < 0) {

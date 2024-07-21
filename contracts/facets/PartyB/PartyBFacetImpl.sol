@@ -219,7 +219,7 @@ library PartyBFacetImpl {
 		// lock with amount of filledAmount
 		accountLayout.lockedBalances[quote.partyA].addQuote(quote);
 		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
-		
+
 		quote.lastFundingTimestamp = block.timestamp;
 		quote.paidFundingFee = LibQuote.getAccumulatedFundingFee(quoteId);
 
@@ -237,28 +237,28 @@ library PartyBFacetImpl {
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-		require(
-			quote.quoteStatus == QuoteStatus.CLOSE_PENDING || quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
-			"PartyBFacet: Invalid state"
-		);
-		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
-		if (quote.positionType == PositionType.LONG) {
-			require(closedPrice >= quote.requestedClosePrice, "PartyBFacet: Closed price isn't valid");
-		} else {
-			require(closedPrice <= quote.requestedClosePrice, "PartyBFacet: Closed price isn't valid");
-		}
-		if (quote.orderType == OrderType.LIMIT) {
-			require(quote.quantityToClose >= filledAmount, "PartyBFacet: Invalid filledAmount");
-		} else {
-			require(quote.quantityToClose == filledAmount, "PartyBFacet: Invalid filledAmount");
-		}
-
 		LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
-		LibSolvency.isSolventAfterClosePosition(quoteId, filledAmount, closedPrice, upnlSig);
-
+		uint256[] memory quoteIds = new uint256[](1);
+		uint256[] memory filledAmounts = new uint256[](1);
+		uint256[] memory closedPrices = new uint256[](1);
+		uint256[] memory marketPrices = new uint256[](1);
+		quoteIds[0] = quoteId;
+		filledAmounts[0] = filledAmount;
+		closedPrices[0] = closedPrice;
+		marketPrices[0] = upnlSig.price;
+		LibSolvency.isSolventAfterClosePosition(
+			quoteIds,
+			filledAmounts,
+			closedPrices,
+			marketPrices,
+			upnlSig.upnlPartyB,
+			upnlSig.upnlPartyA,
+			quote.partyB,
+			quote.partyA
+		);
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 		accountLayout.partyANonces[quote.partyA] += 1;
-		LibQuote.closeQuote(quote, filledAmount, closedPrice);
+		LibPartyB.fillCloseRequest(quoteId, filledAmount, closedPrice);
 	}
 
 	function acceptCancelCloseRequest(uint256 quoteId) internal {
@@ -285,7 +285,14 @@ library PartyBFacetImpl {
 		uint256 filledAmount = LibQuote.quoteOpenAmount(quote);
 		quote.quantityToClose = filledAmount;
 		quote.requestedClosePrice = upnlSig.price;
-		LibSolvency.isSolventAfterClosePosition(quoteId, filledAmount, upnlSig.price, upnlSig);
+		require(
+			LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnlPartyA, accountLayout.allocatedBalances[quote.partyA], quote.partyA) >= 0,
+			"PartyBFacet: PartyA is insolvent"
+		);
+		require(
+			LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, quote.partyB, quote.partyA) >= 0,
+			"PartyBFacet: PartyB should be solvent"
+		);
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 		accountLayout.partyANonces[quote.partyA] += 1;
 		LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
