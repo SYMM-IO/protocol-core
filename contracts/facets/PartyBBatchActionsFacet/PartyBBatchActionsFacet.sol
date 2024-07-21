@@ -23,9 +23,14 @@ contract PartyBBatchActionsFacet is Accessibility, Pausable, IPartyBBatchActions
 		uint256[] memory closedPrices,
 		PairUpnlAndPricesSig memory upnlSig
 	) external whenNotPartyBActionsPaused {
-		// QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-		// Quote storage quote = quoteLayout.quotes[quoteId];
-		PartyBBatchActionsFacetImpl.fillCloseRequests(quoteIds, filledAmounts, closedPrices, upnlSig);
-		// emit FillCloseRequest(quoteId, quote.partyA, quote.partyB, filledAmount, closedPrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		(QuoteStatus[] memory quoteStatuses, uint256[] memory closeIds) = PartyBBatchActionsFacetImpl.fillCloseRequests(
+			quoteIds,
+			filledAmounts,
+			closedPrices,
+			upnlSig
+		);
+		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
+		emit FillCloseRequests(quoteIds, firstQuote.partyA, firstQuote.partyB, filledAmounts, closedPrices, quoteStatuses, closeIds);
 	}
 }

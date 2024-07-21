@@ -13,18 +13,19 @@ import "../../storages/MuonStorage.sol";
 import "../../storages/AccountStorage.sol";
 
 library PartyBBatchActionsFacetImpl {
-
 	function fillCloseRequests(
 		uint256[] memory quoteIds,
 		uint256[] memory filledAmounts,
 		uint256[] memory closedPrices,
 		PairUpnlAndPricesSig memory upnlSig
-	) internal {
+	) internal returns (QuoteStatus[] memory quoteStatuses, uint256[] memory closeIds) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(
 			quoteIds.length == filledAmounts.length && quoteIds.length == closedPrices.length && quoteIds.length > 0,
 			"PartyBFacet: Invalid length"
 		);
+		quoteStatuses = new QuoteStatus[](quoteIds.length);
+		closeIds = new uint256[](quoteIds.length);
 		Quote storage firstQuote = QuoteStorage.layout().quotes[quoteIds[0]];
 		LibMuon.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
 		LibSolvency.isSolventAfterClosePosition(
@@ -49,7 +50,8 @@ library PartyBBatchActionsFacetImpl {
 			require(!MAStorage.layout().liquidationStatus[quote.partyA], "PartyBFacet: PartyA isn't solvent");
 			require(!MAStorage.layout().partyBLiquidationStatus[quote.partyB][quote.partyA], "PartyBFacet: PartyB isn't solvent");
 			LibPartyB.fillCloseRequest(quoteId, filledAmount, closedPrice);
+			quoteStatuses[i] = quote.quoteStatus;
+			closeIds[i] = QuoteStorage.layout().closeIds[quoteId];
 		}
 	}
-
 }
