@@ -44,4 +44,24 @@ library LibPartyB {
 		}
 		require(isValidPartyB, "PartyBFacet: Sender isn't whitelisted");
 	}
+
+	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice) internal {
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		require(
+			quote.quoteStatus == QuoteStatus.CLOSE_PENDING || quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
+			"PartyBFacet: Invalid state"
+		);
+		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
+		if (quote.positionType == PositionType.LONG) {
+			require(closedPrice >= quote.requestedClosePrice, "PartyBFacet: Closed price isn't valid");
+		} else {
+			require(closedPrice <= quote.requestedClosePrice, "PartyBFacet: Closed price isn't valid");
+		}
+		if (quote.orderType == OrderType.LIMIT) {
+			require(quote.quantityToClose >= filledAmount, "PartyBFacet: Invalid filledAmount");
+		} else {
+			require(quote.quantityToClose == filledAmount, "PartyBFacet: Invalid filledAmount");
+		}
+		LibQuote.closeQuote(quote, filledAmount, closedPrice);
+	}
 }
