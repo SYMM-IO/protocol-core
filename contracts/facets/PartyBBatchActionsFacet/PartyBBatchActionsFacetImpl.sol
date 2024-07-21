@@ -40,15 +40,15 @@ library PartyBBatchActionsFacetImpl {
 		);
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
+		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
+		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
 		for (uint8 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 closedPrice = closedPrices[i];
 			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-			require(quote.partyB == msg.sender);
-			require(firstQuote.partyA == quote.partyA);
-			require(!MAStorage.layout().liquidationStatus[quote.partyA], "PartyBFacet: PartyA isn't solvent");
-			require(!MAStorage.layout().partyBLiquidationStatus[quote.partyB][quote.partyA], "PartyBFacet: PartyB isn't solvent");
+			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be the partyB");
+			require(firstQuote.partyA == quote.partyA, "PartyBFacet: All positions should belong to one partyA");
 			LibPartyB.fillCloseRequest(quoteId, filledAmount, closedPrice);
 			quoteStatuses[i] = quote.quoteStatus;
 			closeIds[i] = QuoteStorage.layout().closeIds[quoteId];
