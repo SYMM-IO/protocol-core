@@ -9,6 +9,14 @@ import "../../utils/Pausable.sol";
 import "./IOracleLessActionsFacet.sol";
 
 contract OracleLessActionsFacet is Accessibility, Pausable, IOracleLessActionsFacet {
+	function bindToPartyB(address partyB) external whenNotPartyAActionsPaused {
+		OracleLessActionsFacetImpl.bindToPartyB(partyB);
+		emit BindToPartyB(msg.sender, partyB);
+	}
+	function unbindFromPartyB(address partyB) external whenNotPartyAActionsPaused {
+		OracleLessActionsFacetImpl.unbindFromPartyB(partyB);
+		emit UnbindFromPartyB(msg.sender, partyB);
+	}
 	/**
 	 * @notice Once a user issues a quote, any PartyB can secure it by providing sufficient funds, based on their estimated profit and loss from opening the position.
 	 * @param quoteIds The ID of the quotes to be locked.
