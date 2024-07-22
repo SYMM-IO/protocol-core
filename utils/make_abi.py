@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
 import re
 
 
@@ -15,6 +15,18 @@ contract_address = "artifacts/contracts/facets"
 facets_dirs = scandir(contract_address)
 
 
+def remove_duplicates(abi_list):
+    unique_abi = []
+    seen = set()
+    for item in abi_list:
+        # Convert the item to a JSON string for hashing
+        item_str = json.dumps(item, sort_keys=True)
+        if item_str not in seen:
+            seen.add(item_str)
+            unique_abi.append(item)
+    return unique_abi
+
+
 def main():
     abi_data = []
     for address in facets_dirs:
@@ -27,8 +39,12 @@ def main():
         with open(file) as f:
             data = json.loads(f.read())
             abi_data += data['abi']
+
+    # Remove duplicates
+    unique_abi_data = remove_duplicates(abi_data)
+
     with open('abi.json', 'w') as f:
-        json.dump(abi_data, f, indent=4)
+        json.dump(unique_abi_data, f, indent=4)
 
 
 if __name__ == '__main__':
