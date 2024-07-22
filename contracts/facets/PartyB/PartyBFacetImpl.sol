@@ -23,22 +23,12 @@ library PartyBFacetImpl {
 
 	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
-		LibPartyB.checkPartyBValidationToLockQuote(quoteId, upnlSig.upnl);
-		quote.statusModifyTimestamp = block.timestamp;
-		quote.quoteStatus = QuoteStatus.LOCKED;
-		quote.partyB = msg.sender;
-		// lock funds for partyB
-		accountLayout.partyBPendingLockedBalances[msg.sender][quote.partyA].addQuote(quote);
-		if (
-			quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].length == 0 && quoteLayout.partyBPositionsCount[msg.sender][quote.partyA] == 0
-		) {
-			accountLayout.boundPartyBCount[quote.partyA] += 1;
-		}
-		quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].push(quote.id);
+		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, quote.partyA);
+		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
+		require(uint256(availableBalance) >= quote.lockedValues.totalForPartyB(), "PartyBFacet: insufficient available balance");
+		LibPartyB.lockQuote(quoteId);
 	}
 
 	function unlockQuote(uint256 quoteId) internal returns (QuoteStatus) {
@@ -59,7 +49,7 @@ library PartyBFacetImpl {
 				quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
 				quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
 			) {
-				accountLayout.boundPartyBCount[quote.partyA] -= 1;
+				accountLayout.connectedPartyBCount[quote.partyA] -= 1;
 			}
 			quote.partyB = address(0);
 			return QuoteStatus.PENDING;

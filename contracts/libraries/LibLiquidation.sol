@@ -88,6 +88,6 @@ library LibLiquidation {
 			emit SharedEvents.BalanceChangePartyA(msg.sender, liquidatorShare, SharedEvents.BalanceChangeType.LF_IN);
 		}
 
-		accountLayout.boundPartyBCount[partyA] -= 1;
+		accountLayout.connectedPartyBCount[partyA] -= 1;
 	}
 }

@@ -250,7 +250,7 @@ library LibQuote {
 			quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
 			quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
 		) {
-			accountLayout.boundPartyBCount[quote.partyA] -= 1;
+			accountLayout.connectedPartyBCount[quote.partyA] -= 1;
 		}
 	}
 
@@ -292,7 +292,7 @@ library LibQuote {
 					quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
 					quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
 				) {
-					accountLayout.boundPartyBCount[quote.partyA] -= 1;
+					accountLayout.connectedPartyBCount[quote.partyA] -= 1;
 				}
 			}
 			quote.quoteStatus = QuoteStatus.EXPIRED;

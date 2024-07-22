@@ -5,7 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "../facets/Account/IAccountFacet.sol";
-import "../facets/control/IControlFacet.sol";
+import "../facets/Control/IControlFacet.sol";
 import "../facets/FundingRate/IFundingRateFacet.sol";
 import "../facets/liquidation/ILiquidationFacet.sol";
 import "../facets/PartyA/IPartyAFacet.sol";
