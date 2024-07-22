@@ -8,7 +8,7 @@ import { pick, randomBigNumber, randomBigNumberRatio } from "../utils/RandomUtil
 import { roundToPrecision, safeDiv } from "../utils/SafeMath"
 import { getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils"
 import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet"
-import { SymbolStructOutput } from "../../src/types/contracts/facets/control/ControlFacet"
+import { SymbolStructOutput } from "../../src/types/contracts/facets/Control/ControlFacet"
 import { Action, actionNamesMap, ActionWrapper, expandActions, userActionsMap } from "./Actions"
 import { OrderType, PositionType, QuoteStatus } from "./Enums"
 import { ManagedError } from "./ManagedError"
