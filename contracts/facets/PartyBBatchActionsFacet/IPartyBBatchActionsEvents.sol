@@ -5,8 +5,11 @@
 pragma solidity >=0.8.18;
 
 import "../../storages/QuoteStorage.sol";
+import "../../interfaces/IPartiesEvents.sol";
 
-interface IPartyBBatchActionsEvents {
+interface IPartyBBatchActionsEvents is IPartiesEvents {
+	event OpenPositions(uint256[] quoteIds, address partyA, address partyB, uint256[] filledAmounts, uint256[] openedPrices);
+
 	event FillCloseRequests(
 		uint256[] quoteIds,
 		address partyA,
@@ -16,6 +19,8 @@ interface IPartyBBatchActionsEvents {
 		QuoteStatus[] quoteStatuses,
 		uint256[] closeIds
 	);
+	event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
+
 	// event EmergencyClosePosition(
 	// 	uint256 quoteId,
 	// 	address partyA,
