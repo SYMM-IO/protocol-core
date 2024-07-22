@@ -33,13 +33,19 @@ library PartyBFacetImpl {
 		quote.partyB = msg.sender;
 		// lock funds for partyB
 		accountLayout.partyBPendingLockedBalances[msg.sender][quote.partyA].addQuote(quote);
+		if (
+			quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].length == 0 && quoteLayout.partyBPositionsCount[msg.sender][quote.partyA] == 0
+		) {
+			accountLayout.boundPartyBCount[quote.partyA] += 1;
+		}
 		quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].push(quote.id);
 	}
 
 	function unlockQuote(uint256 quoteId) internal returns (QuoteStatus) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 
-		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		Quote storage quote = quoteLayout.quotes[quoteId];
 		require(quote.quoteStatus == QuoteStatus.LOCKED, "PartyBFacet: Invalid state");
 		if (block.timestamp > quote.deadline) {
 			QuoteStatus result = LibQuote.expireQuote(quoteId);
@@ -49,6 +55,12 @@ library PartyBFacetImpl {
 			quote.quoteStatus = QuoteStatus.PENDING;
 			accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 			LibQuote.removeFromPartyBPendingQuotes(quote);
+			if (
+				quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
+				quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
+			) {
+				accountLayout.boundPartyBCount[quote.partyA] -= 1;
+			}
 			quote.partyB = address(0);
 			return QuoteStatus.PENDING;
 		}
