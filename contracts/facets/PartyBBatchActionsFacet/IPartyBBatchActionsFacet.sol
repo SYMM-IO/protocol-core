@@ -7,6 +7,13 @@ import "./IPartyBBatchActionsEvents.sol";
 import "../../storages/MuonStorage.sol";
 
 interface IPartyBBatchActionsFacet is IPartyBBatchActionsEvents {
+	function openPositions(
+		uint256[] memory quoteIds,
+		uint256[] memory filledAmounts,
+		uint256[] memory openedPrices,
+		PairUpnlAndPricesSig memory upnlSig
+	) external;
+
 	function fillCloseRequests(
 		uint256[] memory quoteIds,
 		uint256[] memory filledAmounts,

@@ -71,13 +71,7 @@ library LibPartyB {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
 		Quote storage quote = quoteLayout.quotes[quoteId];
-		// require(accountLayout.suspendedAddresses[quote.partyA] == false, "PartyBFacet: PartyA is suspended");
 		require(SymbolStorage.layout().symbols[quote.symbolId].isValid, "PartyBFacet: Symbol is not valid");
-		// require(!accountLayout.suspendedAddresses[msg.sender], "PartyBFacet: Sender is Suspended");
-
-		// require(!appLayout.partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
-		// require(!appLayout.emergencyMode, "PartyBFacet: System is in emergency mode");
-
 		require(quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyBFacet: Invalid state");
 		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
 
@@ -97,13 +91,8 @@ library LibPartyB {
 			require(openedPrice >= quote.requestedOpenPrice, "PartyBFacet: Opened price isn't valid");
 		}
 
-		// LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
-
 		quote.openedPrice = openedPrice;
 		quote.initialOpenedPrice = openedPrice;
-
-		// accountLayout.partyANonces[quote.partyA] += 1;
-		// accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 		quote.statusModifyTimestamp = block.timestamp;
 
 		LibQuote.removeFromPendingQuotes(quote);
@@ -211,9 +200,7 @@ library LibPartyB {
 
 		quote.lastFundingTimestamp = block.timestamp;
 		quote.paidFundingFee = LibQuote.getAccumulatedFundingFee(quoteId);
-
-		// LibSolvency.isSolventAfterOpenPosition(quoteId, filledAmount, upnlSig);
-
+		
 		// check leverage (is in 18 decimals)
 		require(
 			(quote.quantity * quote.openedPrice) / quote.lockedValues.totalForPartyA() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
