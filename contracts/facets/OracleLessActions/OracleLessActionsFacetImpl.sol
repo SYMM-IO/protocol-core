@@ -13,6 +13,34 @@ import "../../storages/MuonStorage.sol";
 import "../../storages/AccountStorage.sol";
 
 library OracleLessActionsFacetImpl {
+	function bindToPartyB(address partyB) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(accountLayout.boundPartyB[msg.sender] == address(0), "OracleLessActionsFacet: PartyA is bounded already");
+		require(MAStorage.layout().partyBStatus[partyB], "OracleLessActionsFacet: Should be partyB");
+		require(accountLayout.connectedPartyBCount[msg.sender] <= 1);
+		if (accountLayout.connectedPartyBCount[msg.sender] == 0) {
+			require(QuoteStorage.layout().partyAPendingQuotes[msg.sender].length == 0, "OracleLessActionsFacet: PartyA has pending quotes");
+		} else {
+			require(
+				QuoteStorage.layout().partyBPendingQuotes[partyB][msg.sender].length > 0 ||
+					QuoteStorage.layout().partyBPositionsCount[partyB][msg.sender] > 0,
+				"OracleLessActionsFacet: PartyA has position with another partyb"
+			);
+		}
+		AccountStorage.layout().boundPartyB[msg.sender] = partyB;
+	}
+
+	function unbindFromPartyB(address partyB) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(accountLayout.boundPartyB[msg.sender] == partyB, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
+		require(
+			QuoteStorage.layout().partyBPendingQuotes[partyB][msg.sender].length == 0 ||
+				QuoteStorage.layout().partyBPositionsCount[partyB][msg.sender] == 0,
+			"OracleLessActionsFacet: PartyA has position with partyB"
+		);
+		AccountStorage.layout().boundPartyB[msg.sender] = address(0);
+	}
+
 	function lockQuotes(uint256[] memory quoteIds) internal {
 		for (uint8 i = 0; i < quoteIds.length; i++) {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
