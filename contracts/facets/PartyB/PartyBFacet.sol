@@ -76,11 +76,10 @@ contract PartyBFacet is Accessibility, Pausable, IPartyBFacet {
 	 */
 	function unlockQuote(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
 		QuoteStatus res = PartyBFacetImpl.unlockQuote(quoteId);
-		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		if (res == QuoteStatus.EXPIRED) {
 			emit ExpireQuoteOpen(res, quoteId);
 		} else if (res == QuoteStatus.PENDING) {
-			emit UnlockQuote(quote.partyB, quoteId, QuoteStatus.PENDING);
+			emit UnlockQuote(msg.sender, quoteId, QuoteStatus.PENDING);
 		}
 	}
 
