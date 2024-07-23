@@ -23,6 +23,8 @@ interface IAccountFacet is IAccountEvents {
 
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external;
 
+	function deferredWithdraw(uint256 amount, address to, SingleUpnlSig memory upnlSig) external;
+
 	function internalTransfer(address user, uint256 amount) external;
 
 		// PartyB
