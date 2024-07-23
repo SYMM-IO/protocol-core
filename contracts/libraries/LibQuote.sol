@@ -246,6 +246,12 @@ library LibQuote {
 			quote.requestedClosePrice = 0;
 			quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
 		}
+		if (
+			quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
+			quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
+		) {
+			accountLayout.connectedPartyBCount[quote.partyA] -= 1;
+		}
 	}
 
 	/**
@@ -282,6 +288,12 @@ library LibQuote {
 			if (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
 				accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 				removeFromPartyBPendingQuotes(quote);
+				if (
+					quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
+					quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
+				) {
+					accountLayout.connectedPartyBCount[quote.partyA] -= 1;
+				}
 			}
 			quote.quoteStatus = QuoteStatus.EXPIRED;
 			result = QuoteStatus.EXPIRED;

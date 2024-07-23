@@ -12,24 +12,14 @@ import "./LibLockedValues.sol";
 
 library LibPartyB {
 	using LockedValuesOps for LockedValues;
-
-	/**
-	 * @notice Checks if the Party B is valid to lock a quote.
-	 * @param quoteId The ID of the quote to be locked.
-	 * @param upnl The unrealized profit and loss of the Party B.
-	 */
-	function checkPartyBValidationToLockQuote(uint256 quoteId, int256 upnl) internal view {
+	function lockQuote(uint256 quoteId) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-		MAStorage.Layout storage maLayout = MAStorage.layout();
-
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		require(quote.quoteStatus == QuoteStatus.PENDING, "PartyBFacet: Invalid state");
 		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
 		require(quoteId <= quoteLayout.lastId, "PartyBFacet: Invalid quoteId");
-		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnl, msg.sender, quote.partyA);
-		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
-		require(uint256(availableBalance) >= quote.lockedValues.totalForPartyB(), "PartyBFacet: insufficient available balance");
-		require(!maLayout.partyBLiquidationStatus[msg.sender][quote.partyA], "PartyBFacet: PartyB isn't solvent");
+		require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][quote.partyA], "PartyBFacet: PartyB isn't solvent");
 		bool isValidPartyB;
 		if (quote.partyBsWhiteList.length == 0) {
 			require(msg.sender != quote.partyA, "PartyBFacet: PartyA can't be partyB too");
@@ -43,6 +33,17 @@ library LibPartyB {
 			}
 		}
 		require(isValidPartyB, "PartyBFacet: Sender isn't whitelisted");
+		quote.statusModifyTimestamp = block.timestamp;
+		quote.quoteStatus = QuoteStatus.LOCKED;
+		quote.partyB = msg.sender;
+		// lock funds for partyB
+		accountLayout.partyBPendingLockedBalances[msg.sender][quote.partyA].addQuote(quote);
+		if (
+			quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].length == 0 && quoteLayout.partyBPositionsCount[msg.sender][quote.partyA] == 0
+		) {
+			accountLayout.connectedPartyBCount[quote.partyA] += 1;
+		}
+		quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].push(quote.id);
 	}
 
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice) internal {
@@ -200,7 +201,7 @@ library LibPartyB {
 
 		quote.lastFundingTimestamp = block.timestamp;
 		quote.paidFundingFee = LibQuote.getAccumulatedFundingFee(quoteId);
-		
+
 		// check leverage (is in 18 decimals)
 		require(
 			(quote.quantity * quote.openedPrice) / quote.lockedValues.totalForPartyA() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,

@@ -56,6 +56,7 @@ library DeferredLiquidationFacetImpl {
             disputed: false,
             liquidationTimestamp: liquidationSig.liquidationTimestamp
         });
+        accountLayout.connectedPartyBCount[partyA] = 0;
         accountLayout.liquidators[partyA].push(msg.sender);
     }
 

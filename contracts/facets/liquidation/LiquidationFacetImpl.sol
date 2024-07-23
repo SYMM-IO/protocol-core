@@ -41,6 +41,7 @@ library LiquidationFacetImpl {
             disputed: false,
             liquidationTimestamp: liquidationSig.timestamp
         });
+        accountLayout.connectedPartyBCount[partyA] = 0;
         accountLayout.liquidators[partyA].push(msg.sender);
     }
 
