@@ -63,6 +63,54 @@ library AccountFacetImpl {
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
 	}
 
+	function deferredWithdraw(uint256 amount, address to, SingleUpnlSig memory upnlSig) internal returns (uint256 currentId) {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(
+			block.timestamp >= accountLayout.withdrawCooldown[msg.sender] + MAStorage.layout().deallocateDebounceTime,
+			"AccountFacet: Too many deallocate in a short window"
+		);
+		require(to != address(0), "AccountFacet: Zero address");
+		require(accountLayout.allocatedBalances[msg.sender] >= amount, "AccountFacet: Insufficient allocated Balance");
+		LibMuon.verifyPartyAUpnl(upnlSig, msg.sender);
+		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
+		require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
+		require(uint256(availableBalance) >= amount, "AccountFacet: partyA will be liquidatable");
+
+		accountLayout.allocatedBalances[msg.sender] -= amount;
+
+		currentId = ++accountLayout.lastdeferredWithdrawId;
+		DeferredWithdraw memory withdrawObject = DeferredWithdraw({
+			id: currentId,
+			amount: amount,
+			user: msg.sender,
+			to: to,
+			timestamp: block.timestamp,
+			status: DeferredWithdrawStatus.INITIATED
+		});
+		accountLayout.deferredWithdraws[currentId] = withdrawObject;
+		accountLayout.deferredWithdrawIds[msg.sender].push(currentId);
+	}
+
+	function claimDeferredWithdraw(uint256 id) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		DeferredWithdraw storage withdrawObject = accountLayout.deferredWithdraws[id];
+		require(id <= accountLayout.lastdeferredWithdrawId, "AccountFacet: Invalid Id");
+		require(withdrawObject.status == DeferredWithdrawStatus.INITIATED, "AccountFacet: Already withdrawn");
+		require(block.timestamp >= MAStorage.layout().deallocateCooldown + withdrawObject.timestamp, "AccountFacet: Cooldown hasn't reached");
+
+		withdrawObject.status = DeferredWithdrawStatus.COMPLETED;
+		uint256 amountIn18Decimals = (withdrawObject.amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
+		IERC20(GlobalAppStorage.layout().collateral).safeTransfer(withdrawObject.to, amountIn18Decimals);
+	}
+
+	function cancelDeferredWithdraw(uint256 id) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		DeferredWithdraw storage withdrawObject = accountLayout.deferredWithdraws[id];
+		require(id <= accountLayout.lastdeferredWithdrawId, "AccountFacet: Invalid Id");
+		require(withdrawObject.status == DeferredWithdrawStatus.INITIATED, "AccountFacet: Already withdrawn");
+		withdrawObject.status = DeferredWithdrawStatus.CANCELED;
+	}
+
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) internal {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
