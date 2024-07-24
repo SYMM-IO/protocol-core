@@ -1,11 +1,10 @@
-import { Builder } from "builder-pattern"
-import { BigNumberish } from "ethers"
+import {Builder} from "builder-pattern"
+import {BigNumberish} from "ethers"
 
-import { PromiseOrValue } from "../../../src/types/common"
-import { SingleUpnlAndPriceSigStruct } from "../../../src/types/contracts/facets/PartyA/PartyAFacet"
-import { decimal, getBlockTimestamp } from "../../utils/Common"
-import { getDummySingleUpnlAndPriceSig } from "../../utils/SignatureUtils"
-import { OrderType, PositionType } from "../Enums"
+import {SingleUpnlAndPriceSigStruct} from "../../../src/types/contracts/facets/PartyA/PartyAFacet"
+import {decimal, getBlockTimestamp} from "../../utils/Common"
+import {getDummySingleUpnlAndPriceSig} from "../../utils/SignatureUtils"
+import {OrderType, PositionType} from "../Enums"
 
 export interface QuoteRequest {
 	partyBWhiteList: string[]
@@ -20,7 +19,7 @@ export interface QuoteRequest {
 	partyBmm: BigNumberish
 	lf: BigNumberish
 	maxFundingRate: BigNumberish
-	deadline: PromiseOrValue<BigNumberish>
+	deadline: Promise<BigNumberish> | BigNumberish
 	upnlSig: Promise<SingleUpnlAndPriceSigStruct>
 }
 
@@ -29,16 +28,16 @@ const limitDefaultQuoteRequest: QuoteRequest = {
 	symbolId: 1,
 	positionType: PositionType.LONG,
 	orderType: OrderType.LIMIT,
-	price: decimal(1),
-	quantity: decimal(100),
-	cva: decimal(22),
-	partyAmm: decimal(75),
-	partyBmm: decimal(40),
-	lf: decimal(3),
-	maxFundingRate: decimal(2, 16),
-	deadline: getBlockTimestamp(500),
+	price: decimal(1n),
+	quantity: decimal(100n),
+	cva: decimal(22n),
+	partyAmm: decimal(75n),
+	partyBmm: decimal(40n),
+	lf: decimal(3n),
+	maxFundingRate: decimal(2n, 16),
+	deadline: getBlockTimestamp(500n),
 	affiliate: "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c", //FIXME find a better way
-	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
+	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1n)),
 }
 
 const marketDefaultQuoteRequest: QuoteRequest = {
@@ -46,16 +45,16 @@ const marketDefaultQuoteRequest: QuoteRequest = {
 	symbolId: 1,
 	positionType: PositionType.LONG,
 	orderType: OrderType.MARKET,
-	price: decimal(1),
-	quantity: decimal(1000),
-	cva: decimal(22),
-	partyAmm: decimal(75),
-	partyBmm: decimal(40),
-	lf: decimal(3),
-	maxFundingRate: decimal(2, 16),
-	deadline: getBlockTimestamp(500),
+	price: decimal(1n),
+	quantity: decimal(1000n),
+	cva: decimal(22n),
+	partyAmm: decimal(75n),
+	partyBmm: decimal(40n),
+	lf: decimal(3n),
+	maxFundingRate: decimal(2n, 16),
+	deadline: getBlockTimestamp(500n),
 	affiliate: "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c", //FIXME find a better way
-	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
+	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1n)),
 }
 
 export const limitQuoteRequestBuilder = () => Builder(limitDefaultQuoteRequest)

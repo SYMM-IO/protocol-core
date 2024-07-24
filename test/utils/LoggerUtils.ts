@@ -1,4 +1,4 @@
-import winston, { format, transports } from "winston"
+import winston, {format, transports} from "winston"
 
 const customLevels = {
 	levels: {
@@ -51,7 +51,7 @@ switch (logLevel) {
 			format: format.combine(
 				format.colorize(),
 				format.timestamp(),
-				format.printf(({ level, message, timestamp }) => {
+				format.printf(({level, message, timestamp}) => {
 					return `${timestamp} ${level}: ${message}`
 				}),
 			),
@@ -63,7 +63,7 @@ switch (logLevel) {
 			format: format.combine(
 				format.colorize(),
 				format.timestamp(),
-				format.printf(({ level, message, timestamp }) => {
+				format.printf(({level, message, timestamp}) => {
 					return `${timestamp} ${level}: ${message}`
 				}),
 			),
@@ -75,7 +75,7 @@ switch (logLevel) {
 			format: format.combine(
 				format.colorize(),
 				format.timestamp(),
-				format.printf(({ level, message, timestamp }) => {
+				format.printf(({level, message, timestamp}) => {
 					return `${timestamp} ${level}: ${message}`
 				}),
 			),
@@ -87,7 +87,7 @@ switch (logLevel) {
 			format: format.combine(
 				format.colorize(),
 				format.timestamp(),
-				format.printf(({ level, message, timestamp }) => {
+				format.printf(({level, message, timestamp}) => {
 					return `${timestamp} ${level}: ${message}`
 				}),
 			),
@@ -99,7 +99,7 @@ switch (logLevel) {
 			format: format.combine(
 				format.colorize(),
 				format.timestamp(),
-				format.printf(({ level, message, timestamp }) => {
+				format.printf(({level, message, timestamp}) => {
 					return `${timestamp} ${level}: ${message}`
 				}),
 			),

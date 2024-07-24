@@ -1,18 +1,17 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {expect} from "chai"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { logger } from "../../utils/LoggerUtils"
-import { QuoteStatus } from "../Enums"
-import { Hedger } from "../Hedger"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {logger} from "../../utils/LoggerUtils"
+import {QuoteStatus} from "../Enums"
+import {Hedger} from "../Hedger"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type CancelCloseRequestValidatorBeforeArg = {
 	user: User
 	hedger: Hedger
-	quoteId: BigNumber
+	quoteId: bigint
 }
 
 export type CancelCloseRequestValidatorBeforeOutput = {
@@ -24,7 +23,7 @@ export type CancelCloseRequestValidatorBeforeOutput = {
 export type CancelCloseRequestValidatorAfterArg = {
 	user: User
 	hedger: Hedger
-	quoteId: BigNumber
+	quoteId: bigint
 	beforeOutput: CancelCloseRequestValidatorBeforeOutput
 }
 

@@ -10,6 +10,6 @@ export const FacetNames = [
 	"FundingRateFacet",
 	"ForceActionsFacet",
 	"SettlementFacet",
-];
+]
 
-export const DEPLOYMENT_LOG_FILE = "deployed.json";
+export const DEPLOYMENT_LOG_FILE = "deployed.json"

@@ -1,13 +1,13 @@
-import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
-import { expect, use } from "chai"
-import { BigNumber, ethers } from "ethers"
+import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
+import {expect} from "chai"
 
-import { initializeFixture } from "./Initialize.fixture"
-import { RunContext } from "./models/RunContext"
-import { User } from "./models/User"
-import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
-import { Hedger } from "./models/Hedger"
-import { decimal, unDecimal } from "./utils/Common"
+import {initializeFixture} from "./Initialize.fixture"
+import {RunContext} from "./models/RunContext"
+import {User} from "./models/User"
+import {getDummySingleUpnlSig} from "./utils/SignatureUtils"
+import {Hedger} from "./models/Hedger"
+import {decimal, unDecimal} from "./utils/Common"
+import {ethers} from "hardhat"
 
 export function shouldBehaveLikeAccountFacet(): void {
 	let context: RunContext, user: User, user2: User, hedger: Hedger
@@ -27,7 +27,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 		it("Should fail on low collateral", async function () {
 			await expect(context.accountFacet.connect(context.signers.user2).deposit("300")).to.be.revertedWith("ERC20: insufficient allowance")
-			await context.collateral.connect(context.signers.user2).approve(context.diamond, ethers.constants.MaxUint256)
+			await context.collateral.connect(context.signers.user2).approve(context.diamond, ethers.MaxUint256)
 			await expect(context.accountFacet.connect(context.signers.user2).deposit("300")).to.be.revertedWith("ERC20: transfer amount exceeds balance")
 		})
 
@@ -139,13 +139,13 @@ export function shouldBehaveLikeAccountFacet(): void {
 			})
 
 			it("Should fail on available balance is lower than zero", async function () {
-				await expect(context.accountFacet.connect(context.signers.user).deallocate("300", await getDummySingleUpnlSig("-350"))).to.be.revertedWith(
+				await expect(context.accountFacet.connect(context.signers.user).deallocate("300", await getDummySingleUpnlSig(-350n))).to.be.revertedWith(
 					"AccountFacet: Available balance is lower than zero",
 				)
 			})
 
 			it("Should fail on partyA becoming liquidatable", async function () {
-				await expect(context.accountFacet.connect(context.signers.user).deallocate("300", await getDummySingleUpnlSig("-50"))).to.be.revertedWith(
+				await expect(context.accountFacet.connect(context.signers.user).deallocate("300", await getDummySingleUpnlSig(-50n))).to.be.revertedWith(
 					"AccountFacet: partyA will be liquidatable",
 				)
 			})
@@ -163,7 +163,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 				await expect(
 					context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
 				).to.be.revertedWith("AccountFacet: Too many deallocate in a short window")
-				await time.increase((await context.viewFacet.getDeallocateDebounceTime()).add(1))
+				await time.increase((await context.viewFacet.getDeallocateDebounceTime()) + 1n)
 				await context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
 				expect(await context.viewFacet.balanceOf(userAddress)).to.equal("50")
 			})
@@ -186,26 +186,26 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 				user = new User(context, context.signers.user)
 				await user.setup()
-				await user.setBalances(decimal(500), decimal(500), decimal(500))
+				await user.setBalances(decimal(500n), decimal(500n), decimal(500n))
 
 				hedger = new Hedger(context, context.signers.hedger)
 				await hedger.setup()
-				await hedger.setBalances(decimal(700), decimal(700))
+				await hedger.setBalances(decimal(700n), decimal(700n))
 
 				const quoteId = await user.sendQuote()
 				const quote = await context.viewFacet.getQuote(quoteId)
 
-				const notional = unDecimal(quote.quantity.mul(quote.requestedOpenPrice))
-				await context.accountFacet.connect(context.signers.hedger).allocateForPartyB(unDecimal(notional.mul(decimal(12, 17))), quote.partyA)
+				const notional = unDecimal(quote.quantity * quote.requestedOpenPrice)
+				await context.accountFacet.connect(context.signers.hedger).allocateForPartyB(unDecimal(notional * decimal(12n, 17)), quote.partyA)
 
-				await context.partyBFacet.connect(context.signers.hedger).lockQuote(quoteId, await getDummySingleUpnlSig(0))
+				await context.partyBFacet.connect(context.signers.hedger).lockQuote(quoteId, await getDummySingleUpnlSig(0n))
 			})
 
 			it("should failed if amount be higher than partyBAllocatedBalances", async () => {
 				await expect(
 					context.accountFacet
 						.connect(context.signers.hedger)
-						.deallocateForPartyB(decimal(210), await user.getAddress(), await getDummySingleUpnlSig()),
+						.deallocateForPartyB(decimal(210n), await user.getAddress(), await getDummySingleUpnlSig()),
 				).to.be.revertedWith("PartyBFacet: Insufficient allocated balance")
 			})
 
@@ -213,7 +213,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 				await expect(
 					context.accountFacet
 						.connect(context.signers.hedger)
-						.deallocateForPartyB(decimal(101), await user.getAddress(), await getDummySingleUpnlSig()),
+						.deallocateForPartyB(decimal(101n), await user.getAddress(), await getDummySingleUpnlSig()),
 				).to.be.revertedWith("PartyBFacet: Will be liquidatable")
 			})
 
@@ -221,40 +221,40 @@ export function shouldBehaveLikeAccountFacet(): void {
 				expect(
 					await context.accountFacet
 						.connect(context.signers.hedger)
-						.deallocateForPartyB(decimal(50), await user.getAddress(), await getDummySingleUpnlSig()),
+						.deallocateForPartyB(decimal(50n), await user.getAddress(), await getDummySingleUpnlSig()),
 				).to.not.reverted
 
 				const newAllocatedBalanceOfPartyB = await context.viewFacet.allocatedBalanceOfPartyB(await hedger.getAddress(), await user.getAddress())
 
-				expect(newAllocatedBalanceOfPartyB).to.be.equal(decimal(120).sub(decimal(50)))
+				expect(newAllocatedBalanceOfPartyB).to.be.equal(decimal(120n) - decimal(50n))
 			})
 		})
 	})
 
 	describe("InternalTransfer", async function () {
-		beforeEach(async()=>{
+		beforeEach(async () => {
 			user2 = new User(context, context.signers.user2)
 			await user2.setup()
 			await user2.setBalances("500")
-	
+
 			hedger = new Hedger(context, context.signers.hedger)
 			await hedger.setup()
 			await hedger.setBalances("500")
-	
+
 			await context.accountFacet.connect(context.signers.user).deposit("300")
 		})
 
-		it('should internal transfer successfully',async()=>{
-			await context.accountFacet.connect(context.signers.user).internalTransfer(await user2.getAddress(),"250")
+		it('should internal transfer successfully', async () => {
+			await context.accountFacet.connect(context.signers.user).internalTransfer(await user2.getAddress(), "250")
 			expect(await context.viewFacet.balanceOf(await user2.getAddress())).to.be.equal('0')
 			expect(await context.viewFacet.allocatedBalanceOfPartyA(await user2.getAddress())).to.be.equal('250')
-			
+
 			expect(await context.viewFacet.balanceOf(await user.getAddress())).to.be.equal('50')
 		})
 
-		it('should fail internal transfer if one of sides be partyB',async()=>{
-			await expect(context.accountFacet.connect(context.signers.user).internalTransfer(await hedger.getAddress(),"250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
-			await expect(context.accountFacet.connect(context.signers.hedger).internalTransfer(await user.getAddress(),"250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
+		it('should fail internal transfer if one of sides be partyB', async () => {
+			await expect(context.accountFacet.connect(context.signers.user).internalTransfer(await hedger.getAddress(), "250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
+			await expect(context.accountFacet.connect(context.signers.hedger).internalTransfer(await user.getAddress(), "250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
 		})
 	})
 }

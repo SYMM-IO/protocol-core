@@ -1,20 +1,19 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers"
-import { expect } from "chai"
-import { BigNumberish } from "ethers"
-import { ethers, upgrades } from "hardhat"
-import { PromiseOrValue } from "../src/types/common"
-import { PairUpnlAndPriceSigStruct } from "../src/types/contracts/interfaces/ISymmio"
-import { initializeFixture } from "./Initialize.fixture"
-import { PositionType, QuoteStatus } from "./models/Enums"
-import { Hedger } from "./models/Hedger"
-import { RunContext } from "./models/RunContext"
-import { User } from "./models/User"
-import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest"
-import { FillCloseRequest, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest"
-import { OpenRequest, marketOpenRequestBuilder } from "./models/requestModels/OpenRequest"
-import { QuoteRequest, limitQuoteRequestBuilder, marketQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
-import { decimal } from "./utils/Common"
-import { getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
+import {expect} from "chai"
+import {AbiCoder, BigNumberish} from "ethers"
+import {ethers, upgrades} from "hardhat"
+import {PairUpnlAndPriceSigStruct} from "../src/types/contracts/interfaces/ISymmio"
+import {initializeFixture} from "./Initialize.fixture"
+import {PositionType, QuoteStatus} from "./models/Enums"
+import {Hedger} from "./models/Hedger"
+import {RunContext} from "./models/RunContext"
+import {User} from "./models/User"
+import {CloseRequest, marketCloseRequestBuilder} from "./models/requestModels/CloseRequest"
+import {FillCloseRequest, marketFillCloseRequestBuilder} from "./models/requestModels/FillCloseRequest"
+import {marketOpenRequestBuilder, OpenRequest} from "./models/requestModels/OpenRequest"
+import {limitQuoteRequestBuilder, marketQuoteRequestBuilder, QuoteRequest} from "./models/requestModels/QuoteRequest"
+import {decimal, PromiseOrValue} from "./utils/Common"
+import {getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig} from "./utils/SignatureUtils"
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
 	return [
@@ -44,13 +43,13 @@ async function getListFormatOfCloseRequest(
 async function getListFormatOfOpenRequest(
 	request: OpenRequest,
 ): Promise<[PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]> {
-	return [request.filledAmount, request.openPrice, await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB)]
+	return [request.filledAmount, request.openPrice, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB))]
 }
 
 async function getListFormatOfFillCloseRequest(
 	request: FillCloseRequest,
 ): Promise<[PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]> {
-	return [request.filledAmount, request.closedPrice, await getDummyPairUpnlAndPriceSig(request.price, request.upnlPartyA, request.upnlPartyB)]
+	return [request.filledAmount, request.closedPrice, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB))]
 }
 
 export function shouldBehaveLikeMultiAccount() {
@@ -67,11 +66,11 @@ export function shouldBehaveLikeMultiAccount() {
 
 		user = new User(context, context.signers.user)
 		await user.setup()
-		await user.setBalances(decimal(10000), decimal(6000), decimal(6000))
+		await user.setBalances(decimal(10000n), decimal(6000n), decimal(6000n))
 
 		hedger = new Hedger(context, context.signers.hedger)
 		await hedger.setup()
-		await hedger.setBalances(decimal(10000), decimal(10000))
+		await hedger.setBalances(decimal(10000n), decimal(10000n))
 
 		const SymmioPartyA = await ethers.getContractFactory("SymmioPartyA")
 		const SymmioPartyB = await ethers.getContractFactory("SymmioPartyB")
@@ -86,14 +85,14 @@ export function shouldBehaveLikeMultiAccount() {
 			initializer: "initialize",
 		})
 
-		multiAccount = await MultiAccount.deployed()
-		symmioPartyB = await SymmioPartyBDeploy.deployed()
+		multiAccount = await MultiAccount.waitForDeployment()
+		symmioPartyB = await SymmioPartyBDeploy.waitForDeployment()
 
-		await context.controlFacet.connect(context.signers.admin).registerPartyB(symmioPartyB.address)
+		await context.controlFacet.connect(context.signers.admin).registerPartyB(await symmioPartyB.getAddress())
 
 		await context.controlFacet
 			.connect(context.signers.admin)
-			.addSymbol("BTCUSDT", decimal(5), decimal(1, 16), decimal(1, 16), decimal(100), 28800, 900)
+			.addSymbol("BTCUSDT", decimal(5n), decimal(1n, 16), decimal(1n, 16), decimal(100n), 28800, 900)
 	})
 
 	describe("Initialization and Settings", function () {
@@ -170,13 +169,13 @@ export function shouldBehaveLikeMultiAccount() {
 				await multiAccount.connect(context.signers.user).addAccount("Test")
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 				user2Address = await context.signers.user2.getAddress()
-				selector = ethers.utils.hexDataSlice("0x40f1310c", 0, 4)
+				selector = ethers.dataSlice("0x40f1310c", 0, 4)
 
-				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510))
+				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
 
-				await context.collateral.connect(context.signers.user).approve(multiAccount.address, ethers.constants.MaxUint256)
+				await context.collateral.connect(context.signers.user).approve(await multiAccount.getAddress(), ethers.MaxUint256)
 
-				await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500))
+				await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500n))
 			})
 			it("should access delegate call to another address", async () => {
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(false)
@@ -203,28 +202,28 @@ export function shouldBehaveLikeMultiAccount() {
 				await multiAccount.connect(context.signers.user).addAccount("Test")
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
-				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(120))
+				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(120n))
 
-				await context.collateral.connect(context.signers.user).approve(multiAccount.address, ethers.constants.MaxUint256)
+				await context.collateral.connect(context.signers.user).approve(await multiAccount.getAddress(), ethers.MaxUint256)
 			})
 
 			it("Should deposit for account", async () => {
 				//partyA
-				await multiAccount.connect(context.signers.user).depositForAccount(partyAAccount, decimal(100))
-				expect(await context.viewFacet.balanceOf(partyAAccount)).to.be.equal(decimal(100))
+				await multiAccount.connect(context.signers.user).depositForAccount(partyAAccount, decimal(100n))
+				expect(await context.viewFacet.balanceOf(partyAAccount)).to.be.equal(decimal(100n))
 			})
 
 			it("Should deposit and allocate for account partyA", async () => {
-				await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(100))
-				expect((await context.viewFacet.balanceInfoOfPartyA(partyAAccount))[0]).to.be.equal(decimal(100))
+				await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(100n))
+				expect((await context.viewFacet.balanceInfoOfPartyA(partyAAccount))[0]).to.be.equal(decimal(100n))
 			})
 
 			it("Should withdraw from account", async () => {
 				//partyA
-				await multiAccount.connect(context.signers.user).depositForAccount(partyAAccount, decimal(100))
-				expect(await context.viewFacet.balanceOf(partyAAccount)).to.be.equal(decimal(100))
-				await multiAccount.connect(context.signers.user).withdrawFromAccount(partyAAccount, decimal(50))
-				expect(await context.viewFacet.balanceOf(partyAAccount)).to.be.equal(decimal(50))
+				await multiAccount.connect(context.signers.user).depositForAccount(partyAAccount, decimal(100n))
+				expect(await context.viewFacet.balanceOf(partyAAccount)).to.be.equal(decimal(100n))
+				await multiAccount.connect(context.signers.user).withdrawFromAccount(partyAAccount, decimal(50n))
+				expect(await context.viewFacet.balanceOf(partyAAccount)).to.be.equal(decimal(50n))
 			})
 		})
 
@@ -237,15 +236,15 @@ export function shouldBehaveLikeMultiAccount() {
 				await multiAccount.connect(context.signers.user).addAccount("Test")
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
-				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510))
+				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
 
-				await context.collateral.connect(context.signers.user).approve(multiAccount.address, ethers.constants.MaxUint256)
+				await context.collateral.connect(context.signers.user).approve(await multiAccount.getAddress(), ethers.MaxUint256)
 
-				await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500))
+				await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500n))
 			})
 
 			it("should prevent unauthorized calls", async function () {
-				const callData = ethers.utils.defaultAbiCoder.encode(["bytes4", "uint256"], [ethers.utils.id("mockFunction(uint256)").slice(0, 10), 123])
+				const callData = AbiCoder.defaultAbiCoder().encode(["bytes4", "uint256"], [ethers.id("mockFunction(uint256)").slice(0, 10), 123])
 				await expect(multiAccount.connect(context.signers.user2)._call(partyAAccount, [callData])).to.be.reverted
 			})
 		})
@@ -259,11 +258,11 @@ export function shouldBehaveLikeMultiAccount() {
 			await multiAccount.connect(context.signers.user).addAccount("Test")
 			partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
-			await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510))
+			await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
 
-			await context.collateral.connect(context.signers.user).approve(multiAccount.address, ethers.constants.MaxUint256)
+			await context.collateral.connect(context.signers.user).approve(await multiAccount.getAddress(), ethers.MaxUint256)
 
-			await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500))
+			await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500n))
 		})
 
 		it("Should be able to send Quotes", async () => {
@@ -280,15 +279,15 @@ export function shouldBehaveLikeMultiAccount() {
 				let quoteRequest2 = marketQuoteRequestBuilder().positionType(PositionType.SHORT).build()
 				let sendQuote2 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest2))
 
-				await context.collateral.connect(context.signers.admin).mint(symmioPartyB.address, decimal(1000000))
+				await context.collateral.connect(context.signers.admin).mint(await symmioPartyB.getAddress(), decimal(1000000n))
 
 				await multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1, sendQuote2])
 
-				await symmioPartyB.connect(context.signers.admin)._approve(context.collateral.address, decimal(10000))
+				await symmioPartyB.connect(context.signers.admin)._approve(await context.collateral.getAddress(), decimal(10000n))
 
-				let deposit = context.accountFacet.interface.encodeFunctionData("deposit", [decimal(10000)])
+				let deposit = context.accountFacet.interface.encodeFunctionData("deposit", [decimal(10000n)])
 
-				let allocate = context.accountFacet.interface.encodeFunctionData("allocateForPartyB", [decimal(10000), partyAAccount])
+				let allocate = context.accountFacet.interface.encodeFunctionData("allocateForPartyB", [decimal(10000n), partyAAccount])
 
 				await symmioPartyB.connect(context.signers.admin)._call([deposit])
 				await symmioPartyB.connect(context.signers.admin)._call([allocate])

@@ -1,7 +1,7 @@
-import { Builder } from "builder-pattern"
-import { BigNumberish } from "ethers"
+import {Builder} from "builder-pattern"
+import {BigNumberish} from "ethers"
 
-import { decimal } from "../../utils/Common"
+import {decimal} from "../../utils/Common"
 
 export interface FillCloseRequest {
 	filledAmount: BigNumberish
@@ -12,19 +12,19 @@ export interface FillCloseRequest {
 }
 
 const limitDefaultFillCloseRequest: FillCloseRequest = {
-	filledAmount: decimal(100),
-	closedPrice: decimal(1),
+	filledAmount: decimal(100n),
+	closedPrice: decimal(1n),
 	upnlPartyA: 0,
 	upnlPartyB: 0,
-	price: decimal(1),
+	price: decimal(1n),
 }
 
 const marketDefaultFillCloseRequest: FillCloseRequest = {
-	filledAmount: decimal(1000),
-	closedPrice: decimal(1),
+	filledAmount: decimal(1000n),
+	closedPrice: decimal(1n),
 	upnlPartyA: 0,
 	upnlPartyB: 0,
-	price: decimal(1),
+	price: decimal(1n),
 }
 
 export const limitFillCloseRequestBuilder = () => Builder(limitDefaultFillCloseRequest)

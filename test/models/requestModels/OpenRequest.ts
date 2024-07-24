@@ -1,7 +1,7 @@
-import { Builder } from "builder-pattern"
-import { BigNumberish } from "ethers"
+import {Builder} from "builder-pattern"
+import {BigNumberish} from "ethers"
 
-import { decimal } from "../../utils/Common"
+import {decimal} from "../../utils/Common"
 
 export interface OpenRequest {
 	filledAmount: BigNumberish
@@ -12,19 +12,19 @@ export interface OpenRequest {
 }
 
 const limitDefaultOpenRequest: OpenRequest = {
-	filledAmount: decimal(100),
-	openPrice: decimal(1),
+	filledAmount: decimal(100n),
+	openPrice: decimal(1n),
 	upnlPartyA: 0,
 	upnlPartyB: 0,
-	price: decimal(9, 17),
+	price: decimal(9n, 17),
 }
 
 const marketDefaultOpenRequest: OpenRequest = {
-	filledAmount: decimal(1000),
-	openPrice: decimal(1),
+	filledAmount: decimal(1000n),
+	openPrice: decimal(1n),
 	upnlPartyA: 0,
 	upnlPartyB: 0,
-	price: decimal(1),
+	price: decimal(1n),
 }
 
 export const limitOpenRequestBuilder = () => Builder(limitDefaultOpenRequest)

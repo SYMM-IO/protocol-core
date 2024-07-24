@@ -1,12 +1,11 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {expect} from "chai"
 
-import { QuoteStatus } from "../Enums"
-import { Hedger } from "../Hedger"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { logger } from "../../utils/LoggerUtils"
-import { TransactionValidator } from "./TransactionValidator"
+import {QuoteStatus} from "../Enums"
+import {Hedger} from "../Hedger"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {logger} from "../../utils/LoggerUtils"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type LockQuoteValidatorBeforeArg = {
 	user: User
@@ -19,7 +18,7 @@ export type LockQuoteValidatorBeforeOutput = {
 export type LockQuoteValidatorAfterArg = {
 	user: User
 	hedger: Hedger
-	quoteId: BigNumber
+	quoteId: bigint
 	beforeOutput: LockQuoteValidatorBeforeOutput
 }
 

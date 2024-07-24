@@ -1,16 +1,16 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers"
-import { Builder } from "builder-pattern"
-import { ethers } from "hardhat"
+import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
+import {Builder} from "builder-pattern"
+import {ethers} from "hardhat"
 
-import { initializeFixture } from "./Initialize.fixture"
-import { OrderType, PositionType } from "./models/Enums"
-import { Hedger } from "./models/Hedger"
-import { RunContext } from "./models/RunContext"
-import { User } from "./models/User"
-import { OpenRequest } from "./models/requestModels/OpenRequest"
-import { QuoteRequest } from "./models/requestModels/QuoteRequest"
-import { decimal } from "./utils/Common"
-import { getDummySingleUpnlAndPriceSig } from "./utils/SignatureUtils"
+import {initializeFixture} from "./Initialize.fixture"
+import {OrderType, PositionType} from "./models/Enums"
+import {Hedger} from "./models/Hedger"
+import {RunContext} from "./models/RunContext"
+import {User} from "./models/User"
+import {OpenRequest} from "./models/requestModels/OpenRequest"
+import {QuoteRequest} from "./models/requestModels/QuoteRequest"
+import {decimal} from "./utils/Common"
+import {getDummySingleUpnlAndPriceSig} from "./utils/SignatureUtils"
 
 export function shouldBehaveLikeSpecificScenario(): void {
 	beforeEach(async function () {
@@ -28,10 +28,10 @@ export function shouldBehaveLikeSpecificScenario(): void {
 		const hSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address)
 		const hedger = new Hedger(context, hSigner)
 		await hedger.setNativeBalance(100n ** 18n)
-		await hedger.setBalances(decimal(50000), decimal(50000))
+		await hedger.setBalances(decimal(50000n), decimal(50000n))
 		await hedger.register()
 
-		let b = decimal(5000)
+		let b = decimal(5000n)
 		await user.setBalances(b, b, b)
 
 		await user.sendQuote(
@@ -43,7 +43,7 @@ export function shouldBehaveLikeSpecificScenario(): void {
 				.cva("14394116573201404621")
 				.lf("8104916153486468905")
 				.price("22207600000000000000000")
-				.upnlSig(getDummySingleUpnlAndPriceSig("20817400000000000000000"))
+				.upnlSig(getDummySingleUpnlAndPriceSig(BigInt("20817400000000000000000")))
 				.maxFundingRate(0)
 				.symbolId(1)
 				.orderType(OrderType.MARKET)
