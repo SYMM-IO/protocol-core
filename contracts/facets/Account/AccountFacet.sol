@@ -12,7 +12,6 @@ import "../../storages/GlobalAppStorage.sol";
 import "../../libraries/SharedEvents.sol";
 
 contract AccountFacet is Accessibility, Pausable, IAccountFacet {
-
 	/// @notice Allows either PartyA or PartyB to deposit collateral.
 	/// @param amount The amount of collateral to be deposited, specified in collateral decimals.
 	function deposit(uint256 amount) external whenNotAccountingPaused {
@@ -71,12 +70,37 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 	}
 
+	/// @notice Allows Party A to distinct withdraw a specified amount of collateral.
+	/// @param amount The precise amount of collateral to be deallocated, specified in 18 decimals.
+	/// @param to The address that the collateral transfers
+	function deferredWithdraw(uint256 amount, address to) external whenNotAccountingPaused notSuspended(msg.sender) notSuspended(to) {
+		AccountFacetImpl.deferredWithdraw(amount, to);
+		emit DeferredWithdraw(msg.sender, to, amount);
+	}
+
+	/// @notice Allows Party A to claim a deferred withdraw.
+	/// @param id The Id of deferred withdraw object
+	function claimDeferredWithdraw(uint256 id) external whenNotAccountingPaused {
+		AccountFacetImpl.claimDeferredWithdraw(id);
+		emit ClaimDeferredWithdraw(id);
+	}
+
+	/// @notice Allows Party A to cancel a deferred withdraw.
+	/// @param id The Id of deferred withdraw object
+	function cancelDeferredWithdraw(uint256 id) external whenNotAccountingPaused {
+		AccountFacetImpl.cancelDeferredWithdraw(id);
+		emit CancelDeferredWithdraw(id);
+	}
+
 	/// @notice Transfers the sender's deposited balance to the user allocated balance.
 	/// @dev The sender and the recipient user cannot be partyB.
 	/// @dev PartyA should not be in the liquidation process.
 	/// @param user The address of the user to whom the amount will be allocated.
 	/// @param amount The amount to transfer and allocate in 18 decimals.
-	function internalTransfer(address user, uint256 amount) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender) notSuspended(user) notLiquidatedPartyA(user){
+	function internalTransfer(
+		address user,
+		uint256 amount
+	) external whenNotInternalTransferPaused notPartyB userNotPartyB(user) notSuspended(msg.sender) notSuspended(user) notLiquidatedPartyA(user) {
 		AccountFacetImpl.internalTransfer(user, amount);
 		emit InternalTransfer(msg.sender, user, AccountStorage.layout().allocatedBalances[user], amount);
 		emit Withdraw(msg.sender, user, ((amount * (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals())) / (10 ** 18)));
@@ -116,7 +140,13 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	/// @param upnlSig The Muon signature for SingleUpnlSig.
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external whenNotPartyBActionsPaused {
 		AccountFacetImpl.transferAllocation(amount, origin, recipient, upnlSig);
-		emit TransferAllocation(amount, origin, AccountStorage.layout().partyBAllocatedBalances[msg.sender][origin], recipient, AccountStorage.layout().partyBAllocatedBalances[msg.sender][recipient]);
+		emit TransferAllocation(
+			amount,
+			origin,
+			AccountStorage.layout().partyBAllocatedBalances[msg.sender][origin],
+			recipient,
+			AccountStorage.layout().partyBAllocatedBalances[msg.sender][recipient]
+		);
 		emit SharedEvents.BalanceChangePartyB(msg.sender, origin, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
