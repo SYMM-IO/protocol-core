@@ -1,30 +1,29 @@
-import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
+import {expect} from "chai"
 
-import { initializeFixture } from "./Initialize.fixture"
-import { PositionType, QuoteStatus } from "./models/Enums"
-import { Hedger } from "./models/Hedger"
-import { RunContext } from "./models/RunContext"
-import { User } from "./models/User"
-import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
-import { LockQuoteValidator } from "./models/validators/LockQuoteValidator"
-import { UnlockQuoteValidator } from "./models/validators/UnlockQuoteValidator"
-import { decimal, pausePartyB } from "./utils/Common"
-import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
-import {QuoteStruct} from "../src/types/contracts/interfaces/ISymmio";
+import {initializeFixture} from "./Initialize.fixture"
+import {PositionType, QuoteStatus} from "./models/Enums"
+import {Hedger} from "./models/Hedger"
+import {RunContext} from "./models/RunContext"
+import {User} from "./models/User"
+import {limitQuoteRequestBuilder} from "./models/requestModels/QuoteRequest"
+import {LockQuoteValidator} from "./models/validators/LockQuoteValidator"
+import {UnlockQuoteValidator} from "./models/validators/UnlockQuoteValidator"
+import {decimal, pausePartyB} from "./utils/Common"
+import {getDummySingleUpnlSig} from "./utils/SignatureUtils"
+import {QuoteStruct} from "../src/types/contracts/interfaces/ISymmio"
 
 export function shouldBehaveLikeLockQuote(): void {
 	let context: RunContext, user: User, hedger: Hedger, hedger2: Hedger
 
 	beforeEach(async function () {
 		context = await loadFixture(initializeFixture)
-		this.user_allocated = decimal(700)
-		this.hedger_allocated = decimal(4000)
+		this.user_allocated = decimal(700n)
+		this.hedger_allocated = decimal(4000n)
 
 		user = new User(context, context.signers.user)
 		await user.setup()
-		await user.setBalances(decimal(2000), decimal(1000), this.user_allocated)
+		await user.setBalances(decimal(2000n), decimal(1000n), this.user_allocated)
 
 		hedger = new Hedger(context, context.signers.hedger)
 		await hedger.setup()
@@ -46,15 +45,15 @@ export function shouldBehaveLikeLockQuote(): void {
 	})
 
 	it("Should fail on invalid quoteId", async function () {
-		await expect(hedger.lockQuote(6, 0, null)).to.be.reverted
+		await expect(hedger.lockQuote(6, 0n, null)).to.be.reverted
 	})
 
 	it("Should fail on low balance", async function () {
-		await expect(hedger.lockQuote(1, 0, null)).to.be.revertedWith("PartyBFacet: insufficient available balance")
+		await expect(hedger.lockQuote(1, 0n, null)).to.be.revertedWith("PartyBFacet: insufficient available balance")
 	})
 
 	it("Should fail on low balance (negative upnl)", async function () {
-		await expect(hedger.lockQuote(1, decimal(-125))).to.be.revertedWith("PartyBFacet: Available balance is lower than zero")
+		await expect(hedger.lockQuote(1, decimal(-125n))).to.be.revertedWith("PartyBFacet: Available balance is lower than zero")
 	})
 
 	it("Should fail on invalid partyB", async function () {
@@ -71,7 +70,7 @@ export function shouldBehaveLikeLockQuote(): void {
 	it("Should fail on liquidated partyA", async function () {
 		await hedger.lockQuote(2)
 		await hedger.openPosition(2)
-		await user.liquidateAndSetSymbolPrices([1], [decimal(200)])
+		await user.liquidateAndSetSymbolPrices([1n], [decimal(200n)])
 		await expect(hedger.lockQuote(1)).to.be.revertedWith("Accessibility: PartyA isn't solvent")
 	})
 
@@ -98,7 +97,7 @@ export function shouldBehaveLikeLockQuote(): void {
 		await validator.after(context, {
 			user: user,
 			hedger: hedger,
-			quoteId: BigNumber.from(1),
+			quoteId: BigInt(1),
 			beforeOutput: beforeOut,
 		})
 	})
@@ -126,11 +125,11 @@ export function shouldBehaveLikeLockQuote(): void {
 
 		it("Should run successfully", async function () {
 			const validator = new UnlockQuoteValidator()
-			const beforeOut = await validator.before(context, { user: user })
+			const beforeOut = await validator.before(context, {user: user})
 			await hedger.unlockQuote(1)
 			await validator.after(context, {
 				user: user,
-				quoteId: BigNumber.from(1),
+				quoteId: BigInt(1),
 				beforeOutput: beforeOut,
 			})
 		})

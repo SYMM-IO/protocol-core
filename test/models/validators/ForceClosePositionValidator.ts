@@ -1,18 +1,17 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
-import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { decimal, getBlockTimestamp, unDecimal } from "../../utils/Common"
-import { logger } from "../../utils/LoggerUtils"
-import { expectToBeApproximately } from "../../utils/SafeMath"
-import { OrderType, PositionType, QuoteStatus } from "../Enums"
-import { Hedger } from "../Hedger"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {expect} from "chai"
+import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {decimal, getBlockTimestamp, unDecimal} from "../../utils/Common"
+import {logger} from "../../utils/LoggerUtils"
+import {expectToBeApproximately} from "../../utils/SafeMath"
+import {OrderType, PositionType, QuoteStatus} from "../Enums"
+import {Hedger} from "../Hedger"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type ForceClosePositionValidatorBeforeArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 	hedger: Hedger
 }
 
@@ -25,14 +24,14 @@ export type ForceClosePositionValidatorBeforeOutput = {
 export type ForceClosePositionValidatorAfterArg = {
 	user: User
 	hedger: Hedger
-	quoteId: BigNumber
+	quoteId: bigint
 	sig: {
-		lowestPrice: BigNumber
-		highestPrice: BigNumber
-		averagePrice: BigNumber
-		currentPrice: BigNumber
-		endTime: BigNumber
-		startTime: BigNumber
+		lowestPrice: bigint
+		highestPrice: bigint
+		averagePrice: bigint
+		currentPrice: bigint
+		endTime: bigint
+		startTime: bigint
 	}
 	beforeOutput: ForceClosePositionValidatorBeforeOutput
 }
@@ -58,55 +57,53 @@ export class ForceClosePositionValidator implements TransactionValidator {
 		const forceCloseSecondCooldown = coolDownsOfMA[1]
 		const forceCloseMinSigPeriod = await context.viewFacet.forceCloseMinSigPeriod()
 		const partyBBalanceInfo = arg.hedger.getBalanceInfo(await arg.user.getAddress())
-		const isPartyBLiquidated = (await partyBBalanceInfo).allocatedBalances == BigNumber.from(0)
+		const isPartyBLiquidated = (await partyBBalanceInfo).allocatedBalances == BigInt(0)
 
-		let closePrice: BigNumber
+		let closePrice: bigint
 
 		expect(newQuote.quoteStatus).to.be.equal(isPartyBLiquidated ? QuoteStatus.CLOSE_PENDING : QuoteStatus.CLOSED)
 		expect(newQuote.orderType).to.be.equal(OrderType.LIMIT)
 		// check the Final ClosePrice (Long and Short)
-		if (newQuote.positionType == PositionType.LONG) {
-			const expectClosePrice = oldQuote.requestedClosePrice.add(oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */))
+		if (newQuote.positionType === BigInt(PositionType.LONG)) {
+			const expectClosePrice = BigInt(oldQuote.requestedClosePrice) + (BigInt(oldQuote.requestedClosePrice) * BigInt(penalty) / BigInt(decimal(1n)))
 
-			closePrice = expectClosePrice > arg.sig.averagePrice ? expectClosePrice : arg.sig.averagePrice
+			closePrice = expectClosePrice > BigInt(arg.sig.averagePrice) ? expectClosePrice : BigInt(arg.sig.averagePrice)
 
-			const expectedAvgClosedPrice = oldQuote.avgClosedPrice
-				.mul(oldQuote.closedAmount)
-				.add(oldQuote.quantityToClose.mul(closePrice))
-				.div(oldQuote.closedAmount.add(oldQuote.quantityToClose))
+			const expectedAvgClosedPrice = (BigInt(oldQuote.avgClosedPrice) * BigInt(oldQuote.closedAmount) +
+					BigInt(oldQuote.quantityToClose) * closePrice) /
+				(BigInt(oldQuote.closedAmount) + BigInt(oldQuote.quantityToClose))
 
-			expectToBeApproximately(newQuote.avgClosedPrice, expectedAvgClosedPrice)
+			expectToBeApproximately(BigInt(newQuote.avgClosedPrice), expectedAvgClosedPrice)
 		} else {
 			//SHORT
-			const expectClosePrice = oldQuote.requestedClosePrice.sub(oldQuote.requestedClosePrice.mul(penalty).div(decimal(1) /* 1e18 */))
+			const expectClosePrice = BigInt(oldQuote.requestedClosePrice) - (BigInt(oldQuote.requestedClosePrice) * BigInt(penalty) / BigInt(decimal(1n)))
 
-			closePrice = expectClosePrice > arg.sig.averagePrice ? arg.sig.averagePrice : expectClosePrice
+			closePrice = expectClosePrice > BigInt(arg.sig.averagePrice) ? BigInt(arg.sig.averagePrice) : expectClosePrice
 
-			const expectedAvgClosedPrice = oldQuote.avgClosedPrice
-				.mul(oldQuote.closedAmount)
-				.add(oldQuote.quantityToClose.mul(closePrice))
-				.div(oldQuote.closedAmount.add(oldQuote.quantityToClose))
+			const expectedAvgClosedPrice = (BigInt(oldQuote.avgClosedPrice) * BigInt(oldQuote.closedAmount) +
+					BigInt(oldQuote.quantityToClose) * closePrice) /
+				(BigInt(oldQuote.closedAmount) + BigInt(oldQuote.quantityToClose))
 
-			expectToBeApproximately(newQuote.avgClosedPrice, expectedAvgClosedPrice)
+			expectToBeApproximately(BigInt(newQuote.avgClosedPrice), expectedAvgClosedPrice)
 		}
-		//check CoolDown(start and End Time)
-		expect(arg.sig.startTime).to.be.least(oldQuote.statusModifyTimestamp.add(forceCloseFirstCooldown))
-		expect(arg.sig.endTime).to.be.most(BigNumber.from(await getBlockTimestamp()).sub(forceCloseSecondCooldown))
+
+// Check CoolDown (start and End Time)
+		expect(BigInt(arg.sig.startTime)).to.be.at.least(BigInt(oldQuote.statusModifyTimestamp) + BigInt(forceCloseFirstCooldown))
+		expect(BigInt(arg.sig.endTime)).to.be.at.most(BigInt(await getBlockTimestamp()) - BigInt(forceCloseSecondCooldown))
 
 		let profit
-		if (newQuote.positionType == PositionType.LONG) {
-			profit = unDecimal(newQuote.avgClosedPrice.sub(newQuote.openedPrice).mul(newQuote.closedAmount))
+		if (newQuote.positionType === BigInt(PositionType.LONG)) {
+			profit = unDecimal((BigInt(newQuote.avgClosedPrice) - BigInt(newQuote.openedPrice)) * BigInt(newQuote.closedAmount))
 		} else {
-			profit = unDecimal(newQuote.openedPrice.sub(newQuote.avgClosedPrice).mul(newQuote.closedAmount))
+			profit = unDecimal((BigInt(newQuote.openedPrice) - BigInt(newQuote.avgClosedPrice)) * BigInt(newQuote.closedAmount))
 		}
 
-		//check partyA balance
+// Check partyA balance
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
-
-		expectToBeApproximately(newBalanceInfoPartyA.allocatedBalances, oldBalanceInfoPartyA.allocatedBalances.add(profit))
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA.toString()).to.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
+		expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + profit)
 
 		// check partyB liquidation
 		if (isPartyBLiquidated) {

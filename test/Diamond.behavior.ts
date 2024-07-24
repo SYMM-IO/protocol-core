@@ -1,10 +1,10 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers"
-import { assert } from "chai"
-import { ethers } from "hardhat"
+import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
+import {assert} from "chai"
+import {ethers} from "hardhat"
 
-import { FacetCutAction, getSelectors } from "../tasks/utils/diamondCut"
-import { initializeFixture } from "./Initialize.fixture"
-import { RunContext } from "./models/RunContext"
+import {FacetCutAction, getSelectors} from "../tasks/utils/diamondCut"
+import {initializeFixture} from "./Initialize.fixture"
+import {RunContext} from "./models/RunContext"
 
 export function shouldBehaveLikeDiamond(): void {
 	const addresses: string[] = []
@@ -26,7 +26,7 @@ export function shouldBehaveLikeDiamond(): void {
 	it("facets should have the right function selectors -- call to facetFunctionSelectors function", async function () {
 		const context: RunContext = this.context
 		// DiamondLoupeFacet
-		selectors = getSelectors(context.diamondLoupeFacet).selectors
+		selectors = getSelectors(context.diamondLoupeFacet as any).selectors
 		result = await context.diamondLoupeFacet.facetFunctionSelectors(addresses[3])
 		assert.sameMembers(result, selectors)
 	})
@@ -34,29 +34,29 @@ export function shouldBehaveLikeDiamond(): void {
 	it("should remove a function from ViewFacet -- getAccountBalance()", async function () {
 		const context: RunContext = this.context
 		const viewFacet = await ethers.getContractFactory("ViewFacet")
-		const selectors = getSelectors(viewFacet).get(["balanceOf(address)"])
+		const selectors = getSelectors(viewFacet as any).get(["balanceOf(address)"])
 		const viewFacetAddress = addresses[8]
 
 		const tx = await context.diamondCutFacet.diamondCut(
 			[
 				{
-					facetAddress: ethers.constants.AddressZero,
+					facetAddress: ethers.ZeroAddress,
 					action: FacetCutAction.Remove,
 					functionSelectors: selectors,
 				},
 			],
-			ethers.constants.AddressZero,
+			ethers.ZeroAddress,
 			"0x",
-			{ gasLimit: 800000 },
+			{gasLimit: 800000},
 		)
 		const receipt = await tx.wait()
 
-		if (!receipt.status) {
+		if (!receipt?.status) {
 			throw new Error(`Diamond upgrade failed: ${tx.hash}`)
 		}
 
 		const result = await context.diamondLoupeFacet.facetFunctionSelectors(viewFacetAddress)
-		assert.sameMembers(result, getSelectors(viewFacet).remove(["balanceOf(address)"]))
+		assert.sameMembers(result, getSelectors(viewFacet as any).remove(["balanceOf(address)"]))
 	})
 
 	it("should add the getAccountBalance() function back", async function () {
@@ -69,20 +69,20 @@ export function shouldBehaveLikeDiamond(): void {
 				{
 					facetAddress: viewFacetAddress,
 					action: FacetCutAction.Add,
-					functionSelectors: getSelectors(viewFacet).get(["balanceOf(address)"]),
+					functionSelectors: getSelectors(viewFacet as any).get(["balanceOf(address)"]),
 				},
 			],
-			ethers.constants.AddressZero,
+			ethers.ZeroAddress,
 			"0x",
-			{ gasLimit: 800000 },
+			{gasLimit: 800000},
 		)
 		const receipt = await tx.wait()
 
-		if (!receipt.status) {
+		if (!receipt?.status) {
 			throw new Error(`Diamond upgrade failed: ${tx.hash}`)
 		}
 
 		const result = await context.diamondLoupeFacet.facetFunctionSelectors(viewFacetAddress)
-		assert.sameMembers(result, getSelectors(viewFacet).selectors)
+		assert.sameMembers(result, getSelectors(viewFacet as any).selectors)
 	})
 }

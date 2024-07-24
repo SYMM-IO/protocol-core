@@ -1,19 +1,21 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { ethers } from "hardhat"
+import {ethers} from "hardhat"
 
 import {
 	AccountFacet,
 	BridgeFacet,
 	ControlFacet,
 	DiamondCutFacet,
-	DiamondLoupeFacet, ForceActionsFacet,
+	DiamondLoupeFacet,
+	ForceActionsFacet,
 	FundingRateFacet,
 	LiquidationFacet,
 	PartyAFacet,
-	PartyBFacet, SettlementFacet,
+	PartyBFacet,
+	SettlementFacet,
 	ViewFacet,
 } from "../../src/types"
-import { TestManager } from "./TestManager"
+import {TestManager} from "./TestManager"
+import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
 
 export class RunContext {
 	accountFacet!: AccountFacet

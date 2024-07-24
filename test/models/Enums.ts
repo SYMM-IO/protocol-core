@@ -43,7 +43,8 @@ export enum Event {
 	LIQUIDATE_PARTYB = "LiquidatePartyB",
 	LIQUIDATE_POSITIONS_PARTYB = "LiquidatePositionsPartyB",
 	FULLY_LIQUIDATED_PARTYB = "FullyLiquidatedPartyB",
-	EXPIRE_QUOTE = "ExpireQuote",
+	EXPIRE_QUOTE_OPEN = "ExpireQuoteOpen",
+	EXPIRE_QUOTE_CLOSE = "ExpireQuoteClose",
 }
 
 export enum LiquidationType {

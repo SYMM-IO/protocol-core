@@ -1,5 +1,7 @@
-import { Fragment, Interface } from "@ethersproject/abi";
-import { Contract, ContractFactory } from "@ethersproject/contracts";
+import {FunctionFragment, Interface} from "@ethersproject/abi"
+import {BaseContract, ContractFactory} from "@ethersproject/contracts"
+import {keccak256} from "@ethersproject/keccak256"
+import {toUtf8Bytes} from "@ethersproject/strings"
 
 export enum FacetCutAction {
 	Add,
@@ -7,48 +9,55 @@ export enum FacetCutAction {
 	Remove,
 }
 
-// Get function selectors from ABI
-export function getSelectors(contract: Contract | ContractFactory) {
-	const signatures = Object.keys(contract.interface.functions);
+function getSighash(functionFragment: FunctionFragment): string {
+	return keccak256(toUtf8Bytes(functionFragment.format())).slice(0, 10)
+}
 
-	const selectors = signatures.reduce((acc, val) => {
-		if (val !== "init(bytes)") {
-			acc.push(contract.interface.getSighash(val));
+export function getSelectors(contract: BaseContract | ContractFactory) {
+	const fragments = Object.values(contract.interface.fragments).filter(
+		(fragment): fragment is FunctionFragment => fragment.type === 'function'
+	)
+
+	const selectors = fragments.reduce((acc, fragment) => {
+		if (fragment.name !== 'init') {
+			acc.push(getSighash(fragment))
 		}
-		return acc;
-	}, [] as string[]);
+		return acc
+	}, [] as string[])
 
 	const remove = (functionNames: string[]) => {
-		return selectors.filter(val => {
+		return selectors.filter(selector => {
 			for (const functionName of functionNames) {
-				if (val === contract.interface.getSighash(functionName)) {
-					return false;
+				const fragment = contract.interface.getFunction(functionName)
+				if (fragment && selector === getSighash(fragment)) {
+					return false
 				}
 			}
-			return true;
-		});
-	};
+			return true
+		})
+	}
 
 	const get = (functionNames: string[]) => {
-		return selectors.filter(val => {
+		return selectors.filter(selector => {
 			for (const functionName of functionNames) {
-				if (val === contract.interface.getSighash(functionName)) {
-					return true;
+				const fragment = contract.interface.getFunction(functionName)
+				if (fragment && selector === getSighash(fragment)) {
+					return true
 				}
 			}
-			return false;
-		});
-	};
+			return false
+		})
+	}
 
 	return {
 		selectors,
 		remove,
 		get,
-	};
+	}
 }
 
-// Get function selector from function signature
 export function getSelector(func: string) {
-	const abiInterface = new Interface([func]);
-	return abiInterface.getSighash(Fragment.from(func));
+	const abiInterface = new Interface([func])
+	const fragment = Object.values(abiInterface.fragments)[0] as FunctionFragment
+	return getSighash(fragment)
 }

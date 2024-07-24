@@ -1,17 +1,17 @@
-import { shouldBehaveLikeClosePosition } from "./ClosePosition.behavior"
-import { shouldBehaveLikeFuzzTest } from "./FuzzTest.behavior"
-import { shouldBehaveLikeDiamond } from "./Diamond.behavior"
-import { shouldBehaveLikeAccountFacet } from "./AccountFacet.behavior"
-import { shouldBehaveLikeSendQuote } from "./SendQuote.behavior"
-import { shouldBehaveLikeLockQuote } from "./LockQuote.behavior"
-import { shouldBehaveLikeOpenPosition } from "./OpenPosition.behavior"
-import { shouldBehaveLikeCancelQuote } from "./CancelQuote.behavior"
-import { shouldBehaveLikeLiquidationFacet } from "./LiquidationFacet.behavior"
-import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior"
-import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
-import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
-import { shouldBehaveLikeMultiAccount } from "./MultiAccount.behavior"
-import { shouldBehaveLikeControlFacet } from "./ControlFacet.behavior"
+import {shouldBehaveLikeClosePosition} from "./ClosePosition.behavior"
+import {shouldBehaveLikeFuzzTest} from "./FuzzTest.behavior"
+import {shouldBehaveLikeDiamond} from "./Diamond.behavior"
+import {shouldBehaveLikeAccountFacet} from "./AccountFacet.behavior"
+import {shouldBehaveLikeSendQuote} from "./SendQuote.behavior"
+import {shouldBehaveLikeLockQuote} from "./LockQuote.behavior"
+import {shouldBehaveLikeOpenPosition} from "./OpenPosition.behavior"
+import {shouldBehaveLikeCancelQuote} from "./CancelQuote.behavior"
+import {shouldBehaveLikeLiquidationFacet} from "./LiquidationFacet.behavior"
+import {shouldBehaveLikeFundingRate} from "./FundingRate.behavior"
+import {shouldBehaveLikeSpecificScenario} from "./SpecificScenario.behavior"
+import {shouldBehaveLikeBridgeFacet} from "./BridgeFacet.behavior"
+import {shouldBehaveLikeMultiAccount} from "./MultiAccount.behavior"
+import {shouldBehaveLikeControlFacet} from "./ControlFacet.behavior"
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == "static") {
@@ -58,7 +58,7 @@ describe("UnitTests", function () {
 		describe("BridgeFacet", async function () {
 			shouldBehaveLikeBridgeFacet()
 		})
-		
+
 		describe("MultiAccount", async function () {
 			shouldBehaveLikeMultiAccount()
 		})

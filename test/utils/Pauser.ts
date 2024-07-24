@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable } from "rxjs"
+import {BehaviorSubject, Observable} from "rxjs"
 
 export function pause<T>(pauser: BehaviorSubject<boolean>) {
 	return (source: Observable<T>) =>
