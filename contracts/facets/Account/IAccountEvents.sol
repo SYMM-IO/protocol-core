@@ -13,4 +13,7 @@ interface IAccountEvents {
 	event AllocateForPartyB(address partyB, address partyA, uint256 amount, uint256 newAllocatedBalance);
 	event DeallocateForPartyB(address partyB, address partyA, uint256 amount, uint256 newAllocatedBalance);
 	event TransferAllocation(uint256 amount, address origin, uint256 originNewAllocatedBalance, address recipient, uint256 recipientNewAllocatedBalance);
+	event DeferredWithdraw(address user, address to, uint256 amount);
+	event ClaimDeferredWithdraw(uint256 id);
+	event CancelDeferredWithdraw(uint256 id);
 }
