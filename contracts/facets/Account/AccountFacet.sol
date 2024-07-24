@@ -70,13 +70,26 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 	}
 
-	/// @notice Allows Party A to direct deallocate a specified amount of collateral.
+	/// @notice Allows Party A to distinct withdraw a specified amount of collateral.
 	/// @param amount The precise amount of collateral to be deallocated, specified in 18 decimals.
-	/// @param upnlSig The Muon signature for SingleUpnlSig.
-	function deferredWithdraw(uint256 amount, address to,  SingleUpnlSig memory upnlSig) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
-		AccountFacetImpl.deferredWithdraw(amount, to,  upnlSig);
-		emit DeallocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
-		emit SharedEvents.BalanceChangePartyA(msg.sender, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
+	/// @param to The address that the collateral transfers
+	function deferredWithdraw(uint256 amount, address to) external whenNotAccountingPaused notSuspended(msg.sender) notSuspended(to) {
+		AccountFacetImpl.deferredWithdraw(amount, to);
+		emit DeferredWithdraw(msg.sender, to, amount);
+	}
+
+	/// @notice Allows Party A to claim a deferred withdraw.
+	/// @param id The Id of deferred withdraw object
+	function claimDeferredWithdraw(uint256 id) external whenNotAccountingPaused {
+		AccountFacetImpl.claimDeferredWithdraw(id);
+		emit ClaimDeferredWithdraw(id);
+	}
+
+	/// @notice Allows Party A to cancel a deferred withdraw.
+	/// @param id The Id of deferred withdraw object
+	function cancelDeferredWithdraw(uint256 id) external whenNotAccountingPaused {
+		AccountFacetImpl.cancelDeferredWithdraw(id);
+		emit CancelDeferredWithdraw(id);
 	}
 
 	/// @notice Transfers the sender's deposited balance to the user allocated balance.
