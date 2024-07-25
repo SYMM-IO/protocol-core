@@ -1,10 +1,31 @@
 import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
-import {assert} from "chai"
+import {assert, expect} from "chai"
 import {ethers} from "hardhat"
 
 import {FacetCutAction, getSelectors} from "../tasks/utils/diamondCut"
 import {initializeFixture} from "./Initialize.fixture"
 import {RunContext} from "./models/RunContext"
+
+function haveSameMembers(array1: any[], array2: any[]) {
+	if (array1.length !== array2.length) {
+		return false
+	}
+
+	const set1 = new Set(array1)
+	const set2 = new Set(array2)
+
+	if (set1.size !== set2.size) {
+		return false
+	}
+
+	for (let item of set1) {
+		if (!set2.has(item)) {
+			return false
+		}
+	}
+
+	return true
+}
 
 export function shouldBehaveLikeDiamond(): void {
 	const addresses: string[] = []
@@ -28,7 +49,7 @@ export function shouldBehaveLikeDiamond(): void {
 		// DiamondLoupeFacet
 		selectors = getSelectors(context.diamondLoupeFacet as any).selectors
 		result = await context.diamondLoupeFacet.facetFunctionSelectors(addresses[3])
-		assert.sameMembers(result, selectors)
+		expect(haveSameMembers(result, selectors)).to.be.true
 	})
 
 	it("should remove a function from ViewFacet -- getAccountBalance()", async function () {
@@ -56,7 +77,7 @@ export function shouldBehaveLikeDiamond(): void {
 		}
 
 		const result = await context.diamondLoupeFacet.facetFunctionSelectors(viewFacetAddress)
-		assert.sameMembers(result, getSelectors(viewFacet as any).remove(["balanceOf(address)"]))
+		expect(haveSameMembers(result, getSelectors(viewFacet as any).remove(["balanceOf(address)"]))).to.be.true
 	})
 
 	it("should add the getAccountBalance() function back", async function () {
@@ -83,6 +104,6 @@ export function shouldBehaveLikeDiamond(): void {
 		}
 
 		const result = await context.diamondLoupeFacet.facetFunctionSelectors(viewFacetAddress)
-		assert.sameMembers(result, getSelectors(viewFacet as any).selectors)
+		expect(haveSameMembers(result, getSelectors(viewFacet as any).selectors)).to.be.true
 	})
 }

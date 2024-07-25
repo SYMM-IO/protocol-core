@@ -104,7 +104,7 @@ export class OpenPositionValidator implements TransactionValidator {
 		expectToBeApproximately(newBalanceInfoPartyA.totalLockedPartyA, oldBalanceInfoPartyA.totalLockedPartyA + partialWithPriceLockedValuesPartyA)
 		if (arg.newQuoteTargetStatus == QuoteStatus.CANCELED) {
 			expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(
-				oldBalanceInfoPartyA.allocatedBalances + (await getTradingFeeForQuotes(context, [arg.newQuoteId!])).toString(),
+				(oldBalanceInfoPartyA.allocatedBalances + (await getTradingFeeForQuotes(context, [arg.newQuoteId!]))).toString(),
 			)
 		} else {
 			expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances.toString())

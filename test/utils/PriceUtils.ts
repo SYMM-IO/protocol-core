@@ -9,7 +9,7 @@ export async function getPrice(): Promise<bigint> {
 }
 
 export function calculateExpectedClosePriceForForceClose(q: QuoteStructOutput, penalty: bigint, isLongPosition: boolean): bigint {
-	const a = (q.requestedClosePrice * penalty) / decimal(1)
+	const a = (q.requestedClosePrice * penalty) / decimal(1n)
 	return isLongPosition ? q.requestedClosePrice + a : q.requestedClosePrice - a
 }
 
