@@ -140,7 +140,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 					const hedgerBalance = await hedger.getBalanceInfo(await user.getAddress())
 					const userBalance = await user.getBalanceInfo()
 					const available = userBalance.allocatedBalances - userBalance.lockedCva
-					const pnl = unDecimal(price - decimal(1n)) * decimal(100n)
+					const pnl = unDecimal((price - decimal(1n)) * decimal(100n))
 					const diff = available - pnl
 					const partyBAfter = hedgerBalance.allocatedBalances + pnl + userBalance.lockedCva
 

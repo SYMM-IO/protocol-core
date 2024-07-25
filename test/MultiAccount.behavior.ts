@@ -89,6 +89,8 @@ export function shouldBehaveLikeMultiAccount() {
 		symmioPartyB = await SymmioPartyBDeploy.waitForDeployment()
 
 		await context.controlFacet.connect(context.signers.admin).registerPartyB(await symmioPartyB.getAddress())
+		await context.controlFacet.connect(context.signers.admin).registerAffiliate(await MultiAccount.getAddress())
+		await context.controlFacet.connect(context.signers.admin).setFeeCollector(await MultiAccount.getAddress(), await hedger.getAddress())
 
 		await context.controlFacet
 			.connect(context.signers.admin)
