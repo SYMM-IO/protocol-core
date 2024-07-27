@@ -103,10 +103,8 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		address partyA,
 		uint256[] memory quoteIds
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
-		(bool disputed, uint256[] memory liquidatedAmounts, uint256[] memory closeIds, bytes memory liquidationId) = LiquidationFacetImpl.liquidatePositionsPartyA(
-			partyA,
-			quoteIds
-		);
+		(bool disputed, uint256[] memory liquidatedAmounts, uint256[] memory closeIds, bytes memory liquidationId) = LiquidationFacetImpl
+			.liquidatePositionsPartyA(partyA, quoteIds);
 		emit LiquidatePositionsPartyA(msg.sender, partyA, quoteIds, liquidatedAmounts, closeIds, liquidationId);
 		if (disputed) {
 			emit LiquidationDisputed(partyA, liquidationId);

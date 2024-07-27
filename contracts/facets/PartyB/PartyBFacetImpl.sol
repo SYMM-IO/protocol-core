@@ -5,7 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "../../libraries/LibLockedValues.sol";
-import "../../libraries/LibMuon.sol";
+import "../../libraries/muon/LibMuonPartyB.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
@@ -24,7 +24,7 @@ library PartyBFacetImpl {
 	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
-		LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
+		LibMuonPartyB.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
 		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, quote.partyA);
 		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
 		require(uint256(availableBalance) >= quote.lockedValues.totalForPartyB(), "PartyBFacet: insufficient available balance");
@@ -89,7 +89,7 @@ library PartyBFacetImpl {
 		require(!accountLayout.suspendedAddresses[msg.sender], "PartyBFacet: Sender is Suspended");
 		require(!appLayout.partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
 		require(!appLayout.emergencyMode, "PartyBFacet: System is in emergency mode");
-		LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+		LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 		accountLayout.partyANonces[quote.partyA] += 1;
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 
@@ -114,7 +114,7 @@ library PartyBFacetImpl {
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-		LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+		LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 		uint256[] memory quoteIds = new uint256[](1);
 		uint256[] memory filledAmounts = new uint256[](1);
 		uint256[] memory closedPrices = new uint256[](1);
@@ -158,7 +158,7 @@ library PartyBFacetImpl {
 			"PartyBFacet: Operation not allowed. Either emergency mode must be active, party B must be in emergency status, or the symbol must be delisted"
 		);
 		require(quote.quoteStatus == QuoteStatus.OPENED || quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyBFacet: Invalid state");
-		LibMuon.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+		LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 		uint256 filledAmount = LibQuote.quoteOpenAmount(quote);
 		quote.quantityToClose = filledAmount;
 		quote.requestedClosePrice = upnlSig.price;

@@ -13,10 +13,12 @@ contract OracleLessActionsFacet is Accessibility, Pausable, IOracleLessActionsFa
 		OracleLessActionsFacetImpl.bindToPartyB(partyB);
 		emit BindToPartyB(msg.sender, partyB);
 	}
+
 	function unbindFromPartyB(address partyB) external whenNotPartyAActionsPaused {
 		OracleLessActionsFacetImpl.unbindFromPartyB(partyB);
 		emit UnbindFromPartyB(msg.sender, partyB);
 	}
+
 	/**
 	 * @notice Once a user issues a quote, any PartyB can secure it by providing sufficient funds, based on their estimated profit and loss from opening the position.
 	 * @param quoteIds The ID of the quotes to be locked.
@@ -25,6 +27,7 @@ contract OracleLessActionsFacet is Accessibility, Pausable, IOracleLessActionsFa
 		OracleLessActionsFacetImpl.lockQuotes(quoteIds);
 		emit LockQuotes(msg.sender, quoteIds);
 	}
+
 	/**
 	 * @notice Opens positions for the specified quotes. The opened position's size can't be excessively small or large.
 	 * 			If it's like 99/100, the leftover will be a minuscule quote that falls below the minimum acceptable quote value.
@@ -69,6 +72,7 @@ contract OracleLessActionsFacet is Accessibility, Pausable, IOracleLessActionsFa
 			}
 		}
 	}
+
 	/**
 	 * @notice Fills the close request for the specified quotes.
 	 * @param quoteIds The ID of the quotes for which the close request is filled.

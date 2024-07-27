@@ -4,7 +4,6 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../libraries/LibMuon.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibPartyB.sol";
 import "../../storages/MAStorage.sol";
@@ -50,6 +49,7 @@ library OracleLessActionsFacetImpl {
 			LibPartyB.lockQuote(quoteIds[i]);
 		}
 	}
+
 	function openPositions(
 		uint256[] memory quoteIds,
 		uint256[] memory filledAmounts,

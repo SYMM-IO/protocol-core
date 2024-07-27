@@ -4,7 +4,7 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../libraries/LibMuon.sol";
+import "../../libraries/muon/LibMuonFundingRate.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibQuote.sol";
 import "../../storages/QuoteStorage.sol";
@@ -13,7 +13,7 @@ import "../../storages/SymbolStorage.sol";
 
 library FundingRateFacetImpl {
 	function chargeFundingRate(address partyA, uint256[] memory quoteIds, int256[] memory rates, PairUpnlSig memory upnlSig) internal {
-		LibMuon.verifyPairUpnl(upnlSig, msg.sender, partyA);
+		LibMuonFundingRate.verifyPairUpnl(upnlSig, msg.sender, partyA);
 		require(quoteIds.length == rates.length && quoteIds.length > 0, "ChargeFundingFacet: Length not match");
 		int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, msg.sender, partyA);
 		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
@@ -141,7 +141,7 @@ library FundingRateFacetImpl {
 	}
 
 	function chargeAccumulatedFundingFee(address partyA, address partyB, uint256[] memory quoteIds, PairUpnlSig memory upnlSig) internal {
-		LibMuon.verifyPairUpnl(upnlSig, partyB, partyA);
+		LibMuonFundingRate.verifyPairUpnl(upnlSig, partyB, partyA);
 		for (uint8 i = 0; i < quoteIds.length; i++) {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
 			require(quote.partyA == partyA, "ChargeFundingFacet: Invalid quote");
