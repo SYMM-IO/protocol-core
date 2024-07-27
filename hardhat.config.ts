@@ -25,6 +25,7 @@ const baseApiKey: string = process.env.BASE_API_KEY || ""
 const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
 const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || ""
 const opBnbApiKey: string = process.env.OPBNB_API_KEY || ""
+const iotaApiKey: string = process.env.IOTA_API_KEY || ""
 
 const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || ""
 
@@ -72,9 +73,14 @@ const config: HardhatUserConfig = {
 			url: "https://zkevm-rpc.com",
 			accounts: [ privateKey ],
 		},
+		iota: {
+			url: "https://json-rpc.evm.iotaledger.net",
+			accounts: [ privateKey ],
+		},
 	},
 	etherscan: {
 		apiKey: {
+			iota:iotaApiKey,
 			fantom: ftmAPIKey,
 			bnb: bnbApiKey,
 			base: baseApiKey,
@@ -107,6 +113,15 @@ const config: HardhatUserConfig = {
 					browserURL: "https://opbnb.bscscan.com",
 				},
 			},
+			{
+				network: "iota",
+				chainId: 8822,
+				urls: {
+					apiURL: "https://explorer.evm.iota.org/api",
+					browserURL: "https://explorer.evm.iota.org"
+				}
+			}
+
 		],
 	},
 	paths: {
