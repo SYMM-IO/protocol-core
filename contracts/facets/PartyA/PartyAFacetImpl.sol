@@ -5,7 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "../../libraries/LibLockedValues.sol";
-import "../../libraries/LibMuon.sol";
+import "../../libraries/muon/LibMuonPartyA.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
@@ -64,7 +64,7 @@ library PartyAFacetImpl {
 			require(partyBsWhiteList[i] != msg.sender, "PartyAFacet: Sender isn't allowed in partyBWhiteList");
 		}
 
-		LibMuon.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
+		LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
 
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");

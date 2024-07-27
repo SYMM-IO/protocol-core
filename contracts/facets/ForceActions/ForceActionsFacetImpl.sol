@@ -4,7 +4,8 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../libraries/LibMuon.sol";
+import "../../libraries/muon/LibMuonForceActions.sol";
+import "../../libraries/muon/LibMuonSettlement.sol";
 import "../../libraries/LibSettlement.sol";
 import "../../libraries/LibLiquidation.sol";
 import "../../libraries/LibSolvency.sol";
@@ -80,9 +81,9 @@ library ForceActionsFacetImpl {
 		if (closePrice == sig.averagePrice)
 			require(sig.endTime - sig.startTime >= maLayout.forceCloseMinSigPeriod, "PartyAFacet: Invalid signature period");
 
-		LibMuon.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
+		LibMuonForceActions.verifyHighLowPrice(sig, quote.partyB, quote.partyA, quote.symbolId);
 		if (updatedPrices.length > 0) {
-			LibMuon.verifySettlement(settlementSig, quote.partyA);
+			LibMuonSettlement.verifySettlement(settlementSig, quote.partyA);
 		}
 		AccountStorage.layout().partyANonces[quote.partyA] += 1;
 		AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;

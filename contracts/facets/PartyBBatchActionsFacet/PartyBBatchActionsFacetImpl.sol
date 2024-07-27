@@ -4,7 +4,7 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../libraries/LibMuon.sol";
+import "../../libraries/muon/LibMuonPartyBBatchActions.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibPartyB.sol";
 import "../../storages/MAStorage.sol";
@@ -32,7 +32,7 @@ library PartyBBatchActionsFacetImpl {
 		require(!appLayout.emergencyMode, "PartyBFacet: System is in emergency mode");
 		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
-		LibMuon.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
+		LibMuonPartyBBatchActions.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
 		currentIds = new uint256[](quoteIds.length);
@@ -70,7 +70,7 @@ library PartyBBatchActionsFacetImpl {
 		quoteStatuses = new QuoteStatus[](quoteIds.length);
 		closeIds = new uint256[](quoteIds.length);
 		Quote storage firstQuote = QuoteStorage.layout().quotes[quoteIds[0]];
-		LibMuon.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
+		LibMuonPartyBBatchActions.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
 		LibSolvency.isSolventAfterClosePosition(
 			quoteIds,
 			filledAmounts,

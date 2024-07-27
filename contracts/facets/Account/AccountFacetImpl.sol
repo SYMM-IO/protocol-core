@@ -10,7 +10,7 @@ import "../../storages/AccountStorage.sol";
 import "../../storages/GlobalAppStorage.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/MuonStorage.sol";
-import "../../libraries/LibMuon.sol";
+import "../../libraries/muon/LibMuonAccount.sol";
 import "../../libraries/LibAccount.sol";
 
 library AccountFacetImpl {
@@ -53,7 +53,7 @@ library AccountFacetImpl {
 			"AccountFacet: Too many deallocate in a short window"
 		);
 		require(accountLayout.allocatedBalances[msg.sender] >= amount, "AccountFacet: Insufficient allocated Balance");
-		LibMuon.verifyPartyAUpnl(upnlSig, msg.sender);
+		LibMuonAccount.verifyPartyAUpnl(upnlSig, msg.sender);
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
 		require(uint256(availableBalance) >= amount, "AccountFacet: partyA will be liquidatable");
@@ -117,7 +117,7 @@ library AccountFacetImpl {
 		require(!MAStorage.layout().liquidationStatus[recipient], "PartyBFacet: Recipient isn't solvent");
 		// deallocate from origin
 		require(accountLayout.partyBAllocatedBalances[msg.sender][origin] >= amount, "PartyBFacet: Insufficient locked balance");
-		LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, origin);
+		LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, origin);
 		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, origin);
 		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
 		require(uint256(availableBalance) >= amount, "PartyBFacet: Will be liquidatable");
@@ -151,7 +151,7 @@ library AccountFacetImpl {
 	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(accountLayout.partyBAllocatedBalances[msg.sender][partyA] >= amount, "PartyBFacet: Insufficient allocated balance");
-		LibMuon.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
+		LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
 		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, partyA);
 		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
 		require(uint256(availableBalance) >= amount, "PartyBFacet: Will be liquidatable");
