@@ -142,22 +142,36 @@ library AccountFacetImpl {
 	function allocateForPartyB(uint256 amount, address partyA) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(accountLayout.balances[msg.sender] >= amount, "PartyBFacet: Insufficient balance");
-		require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][partyA], "PartyBFacet: PartyB isn't solvent");
+		require(accountLayout.balances[msg.sender] >= amount, "AccountFacet: Insufficient balance");
+		require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][partyA], "AccountFacet: PartyB isn't solvent");
 		accountLayout.balances[msg.sender] -= amount;
 		accountLayout.partyBAllocatedBalances[msg.sender][partyA] += amount;
 	}
 
 	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.partyBAllocatedBalances[msg.sender][partyA] >= amount, "PartyBFacet: Insufficient allocated balance");
+		require(accountLayout.partyBAllocatedBalances[msg.sender][partyA] >= amount, "AccountFacet: Insufficient allocated balance");
 		LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
 		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, partyA);
-		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
-		require(uint256(availableBalance) >= amount, "PartyBFacet: Will be liquidatable");
+		require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
+		require(uint256(availableBalance) >= amount, "AccountFacet: Will be liquidatable");
 
 		accountLayout.partyBAllocatedBalances[msg.sender][partyA] -= amount;
 		accountLayout.balances[msg.sender] += amount;
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
+	}
+
+	function depositToEmergencyReserveVault(uint256 amount) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(amount <= accountLayout.balances[msg.sender], "AccountFacet: Insufficient balance");
+		accountLayout.balances[msg.sender] -= amount;
+		accountLayout.emergencyResrveVaultBalances[msg.sender] += amount;
+	}
+
+	function withdrawFromEmergencyReserveVault(uint256 amount) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(amount <= accountLayout.emergencyResrveVaultBalances[msg.sender], "AccountFacet: Insufficient balance");
+		accountLayout.emergencyResrveVaultBalances[msg.sender] -= amount;
+		accountLayout.balances[msg.sender] += amount;
 	}
 }
