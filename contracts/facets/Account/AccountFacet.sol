@@ -150,4 +150,17 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyB(msg.sender, origin, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
+	/// @notice Allows transferring the balance of partyB to emergency reserve vault.
+	/// @param amount The precise amount of collateral to be transferred to emergency reserve vault, specified in 18 decimals.
+	function depositToEmergencyReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.depositToEmergencyReserveVault(amount);
+		emit DepositToEmergencyReserveVault(msg.sender, amount);
+	}
+
+	/// @notice Allows transferring the balance of partyB in emergency reserve vault to balance.
+	/// @param amount The precise amount of collateral to be transferred from emergency reserve vault, specified in 18 decimals.
+	function withdrawFromEmergencyReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.withdrawFromEmergencyReserveVault(amount);
+		emit WithdrawFromEmergencyReserveVault(msg.sender, amount);
+	}
 }

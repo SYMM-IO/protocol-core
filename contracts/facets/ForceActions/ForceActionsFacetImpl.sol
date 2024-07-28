@@ -54,6 +54,7 @@ library ForceActionsFacetImpl {
 		uint256[] memory updatedPrices
 	) internal returns (uint256 closePrice, bool isPartyBLiquidated, int256 upnlPartyB, uint256 partyBAllocatedBalance) {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		require(quote.quoteStatus == QuoteStatus.CLOSE_PENDING, "PartyAFacet: Invalid state");
@@ -85,8 +86,9 @@ library ForceActionsFacetImpl {
 		if (updatedPrices.length > 0) {
 			LibMuonSettlement.verifySettlement(settlementSig, quote.partyA);
 		}
-		AccountStorage.layout().partyANonces[quote.partyA] += 1;
-		AccountStorage.layout().partyBNonces[quote.partyB][quote.partyA] += 1;
+		accountLayout.partyANonces[quote.partyA] += 1;
+		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
+		uint256 reserveAmount = accountLayout.emergencyResrveVaultBalances[quote.partyB];
 
 		uint256[] memory quoteIds = new uint256[](1);
 		uint256[] memory filledAmounts = new uint256[](1);
@@ -107,7 +109,20 @@ library ForceActionsFacetImpl {
 			quote.partyA
 		);
 		require(partyAAvailableBalance >= 0, "PartyAFacet: PartyA will be insolvent");
-		if (partyBAvailableBalance < 0) {
+		if (partyBAvailableBalance >= 0) {
+			if (updatedPrices.length > 0) {
+				LibSettlement.settleUpnl(settlementSig, updatedPrices, msg.sender, true);
+			}
+			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
+		} else if (partyBAvailableBalance + int256(reserveAmount) >= 0) {
+			accountLayout.emergencyResrveVaultBalances[quote.partyB] -= uint256(-partyBAvailableBalance);
+			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += uint256(-partyBAvailableBalance);
+			// TODO: handle events
+			if (updatedPrices.length > 0) {
+				LibSettlement.settleUpnl(settlementSig, updatedPrices, msg.sender, true);
+			}
+			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
+		} else {
 			int256 diff = (int256(quote.quantityToClose) * (int256(closePrice) - int256(sig.currentPrice))) / 1e18;
 			if (quote.positionType == PositionType.LONG) {
 				diff = diff * -1;
@@ -116,11 +131,6 @@ library ForceActionsFacetImpl {
 			isPartyBLiquidated = true;
 			upnlPartyB = sig.upnlPartyB + diff;
 			LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, upnlPartyB, block.timestamp);
-		} else {
-			if (updatedPrices.length > 0) {
-				LibSettlement.settleUpnl(settlementSig, updatedPrices, msg.sender, true);
-			}
-			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		}
 	}
 }
