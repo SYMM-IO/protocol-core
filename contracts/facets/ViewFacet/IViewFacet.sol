@@ -43,7 +43,7 @@ interface IViewFacet {
 
 	function allocatedBalanceOfPartyB(address partyB, address partyA) external view returns (uint256);
 
-	function balanceOfEmergencyReserveVault(address partyB) external view returns (uint256);
+	function balanceOfReserveVault(address partyB) external view returns (uint256);
 
 	function allocatedBalanceOfPartyBs(address partyA, address[] memory partyBs) external view returns (uint256[] memory);
 
