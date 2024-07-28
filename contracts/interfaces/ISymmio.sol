@@ -9,18 +9,22 @@ import "../facets/Control/IControlFacet.sol";
 import "../facets/FundingRate/IFundingRateFacet.sol";
 import "../facets/liquidation/ILiquidationFacet.sol";
 import "../facets/PartyA/IPartyAFacet.sol";
-import "../facets/PartyB/IPartyBFacet.sol";
 import "../facets/Bridge/IBridgeFacet.sol";
 import "../facets/ViewFacet/IViewFacet.sol";
 import "../facets/DiamondCut/IDiamondCut.sol";
 import "../facets/DiamondLoup/IDiamondLoupe.sol";
+import "../facets/PartyBQuoteActions/IPartyBQuoteActionsFacet.sol";
+import "../facets/PartyBPositionActions/IPartyBPositionActionsFacet.sol";
+import "../facets/PartyBBatchActions/IPartyBBatchActionsFacet.sol";
 
 interface ISymmio is
 	IAccountFacet,
 	IControlFacet,
 	IFundingRateFacet,
 	IBridgeFacet,
-	IPartyBFacet,
+    IPartyBQuoteActionsFacet,
+    IPartyBPositionActionsFacet,
+    IPartyBBatchActionsFacet,
 	IPartyAFacet,
 	ILiquidationFacet,
 	IViewFacet,

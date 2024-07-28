@@ -7,11 +7,7 @@ pragma solidity >=0.8.18;
 import "../../storages/QuoteStorage.sol";
 import "../../interfaces/IPartiesEvents.sol";
 
-interface IPartyBEvents is IPartiesEvents {
-	event LockQuote(address partyB, uint256 quoteId);
-	event AllocatePartyB(address partyB, address partyA, uint256 amount);
-	event UnlockQuote(address partyB, uint256 quoteId, QuoteStatus quoteStatus);
-	event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
+interface IPartyBPositionActionsEvents is IPartiesEvents {
 	event OpenPosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 openedPrice);
 	event FillCloseRequest(
 		uint256 quoteId,
