@@ -9,7 +9,7 @@ import "../../libraries/muon/LibMuonPartyB.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
-import "../../libraries/LibPartyB.sol";
+import "../../libraries/LibPartyBPositionsActions.sol";
 import "../../libraries/SharedEvents.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
@@ -18,61 +18,8 @@ import "../../storages/GlobalAppStorage.sol";
 import "../../storages/AccountStorage.sol";
 import "../../storages/SymbolStorage.sol";
 
-library PartyBFacetImpl {
+library PartyBPositionActionsFacetImpl {
 	using LockedValuesOps for LockedValues;
-
-	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) internal {
-		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-		Quote storage quote = quoteLayout.quotes[quoteId];
-		LibMuonPartyB.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
-		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, quote.partyA);
-		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
-		require(uint256(availableBalance) >= quote.lockedValues.totalForPartyB(), "PartyBFacet: insufficient available balance");
-		LibPartyB.lockQuote(quoteId);
-	}
-
-	function unlockQuote(uint256 quoteId) internal returns (QuoteStatus) {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
-
-		Quote storage quote = quoteLayout.quotes[quoteId];
-		require(quote.quoteStatus == QuoteStatus.LOCKED, "PartyBFacet: Invalid state");
-		if (block.timestamp > quote.deadline) {
-			QuoteStatus result = LibQuote.expireQuote(quoteId);
-			return result;
-		} else {
-			quote.statusModifyTimestamp = block.timestamp;
-			quote.quoteStatus = QuoteStatus.PENDING;
-			accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
-			LibQuote.removeFromPartyBPendingQuotes(quote);
-			if (
-				quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
-				quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
-			) {
-				accountLayout.connectedPartyBCount[quote.partyA] -= 1;
-			}
-			quote.partyB = address(0);
-			return QuoteStatus.PENDING;
-		}
-	}
-
-	function acceptCancelRequest(uint256 quoteId) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-
-		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-		require(quote.quoteStatus == QuoteStatus.CANCEL_PENDING, "PartyBFacet: Invalid state");
-		quote.statusModifyTimestamp = block.timestamp;
-		quote.quoteStatus = QuoteStatus.CANCELED;
-		accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
-		accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
-
-		// send trading Fee back to partyA
-		uint256 fee = LibQuote.getTradingFee(quoteId);
-		accountLayout.allocatedBalances[quote.partyA] += fee;
-		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
-
-		LibQuote.removeFromPendingQuotes(quote);
-	}
 
 	function openPosition(
 		uint256 quoteId,
@@ -93,7 +40,7 @@ library PartyBFacetImpl {
 		accountLayout.partyANonces[quote.partyA] += 1;
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 
-		currentId = LibPartyB.openPosition(quoteId, filledAmount, openedPrice);
+		currentId = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);
 		uint256[] memory quoteIds = new uint256[](1);
 		uint256[] memory filledAmounts = new uint256[](1);
 		uint256[] memory marketPrices = new uint256[](1);
@@ -135,7 +82,7 @@ library PartyBFacetImpl {
 		);
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 		accountLayout.partyANonces[quote.partyA] += 1;
-		LibPartyB.fillCloseRequest(quoteId, filledAmount, closedPrice);
+		LibPartyBPositionsActions.fillCloseRequest(quoteId, filledAmount, closedPrice);
 	}
 
 	function acceptCancelCloseRequest(uint256 quoteId) internal {

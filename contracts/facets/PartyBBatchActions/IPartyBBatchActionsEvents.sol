@@ -19,7 +19,6 @@ interface IPartyBBatchActionsEvents is IPartiesEvents {
 		QuoteStatus[] quoteStatuses,
 		uint256[] closeIds
 	);
-	event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
 
 	// event EmergencyClosePosition(
 	// 	uint256 quoteId,

@@ -5,7 +5,8 @@
 pragma solidity >=0.8.18;
 
 import "../../libraries/LibSolvency.sol";
-import "../../libraries/LibPartyB.sol";
+import "../../libraries/LibPartyBPositionsActions.sol";
+import "../../libraries/LibPartyBQuoteActions.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -46,7 +47,7 @@ library OracleLessActionsFacetImpl {
 			require(!MAStorage.layout().liquidationStatus[quote.partyA], "OracleLessActionsFacet: PartyA isn't solvent");
 			require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][quote.partyA], "OracleLessActionsFacet: PartyB isn't solvent");
 			require(AccountStorage.layout().boundPartyB[quote.partyA] == msg.sender, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
-			LibPartyB.lockQuote(quoteIds[i]);
+			LibPartyBQuoteActions.lockQuote(quoteIds[i]);
 		}
 	}
 
@@ -82,7 +83,7 @@ library OracleLessActionsFacetImpl {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 			require(quote.partyB == msg.sender, "OracleLessActionsFacet: Sender should be the partyB");
 			require(firstQuote.partyA == quote.partyA, "OracleLessActionsFacet: All positions should belong to one partyA");
-			currentIds[i] = LibPartyB.openPosition(quoteId, filledAmount, openedPrice);
+			currentIds[i] = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);
 		}
 	}
 
@@ -114,7 +115,7 @@ library OracleLessActionsFacetImpl {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 			require(quote.partyB == msg.sender, "OracleLessActionsFacet: Sender should be the partyB");
 			require(firstQuote.partyA == quote.partyA, "OracleLessActionsFacet: All positions should belong to one partyA");
-			LibPartyB.fillCloseRequest(quoteId, filledAmount, closedPrice);
+			LibPartyBPositionsActions.fillCloseRequest(quoteId, filledAmount, closedPrice);
 			quoteStatuses[i] = quote.quoteStatus;
 			closeIds[i] = QuoteStorage.layout().closeIds[quoteId];
 		}

@@ -9,7 +9,6 @@ import "../../libraries/muon/LibMuonPartyA.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibQuote.sol";
-import "../../libraries/LibPartyB.sol";
 import "../../libraries/LibLiquidation.sol";
 import "../../libraries/LibAccessibility.sol";
 import "../../libraries/SharedEvents.sol";

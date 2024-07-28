@@ -6,7 +6,7 @@ pragma solidity >=0.8.18;
 
 import "../../libraries/muon/LibMuonPartyBBatchActions.sol";
 import "../../libraries/LibSolvency.sol";
-import "../../libraries/LibPartyB.sol";
+import "../../libraries/LibPartyBPositionsActions.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
@@ -43,7 +43,7 @@ library PartyBBatchActionsFacetImpl {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be the partyB");
 			require(firstQuote.partyA == quote.partyA, "PartyBFacet: All positions should belong to one partyA");
-			currentIds[i] = LibPartyB.openPosition(quoteId, filledAmount, openedPrice);
+			currentIds[i] = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);
 		}
 		LibSolvency.isSolventAfterOpenPosition(
 			quoteIds,
@@ -92,7 +92,7 @@ library PartyBBatchActionsFacetImpl {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be the partyB");
 			require(firstQuote.partyA == quote.partyA, "PartyBFacet: All positions should belong to one partyA");
-			LibPartyB.fillCloseRequest(quoteId, filledAmount, closedPrice);
+			LibPartyBPositionsActions.fillCloseRequest(quoteId, filledAmount, closedPrice);
 			quoteStatuses[i] = quote.quoteStatus;
 			closeIds[i] = QuoteStorage.layout().closeIds[quoteId];
 		}

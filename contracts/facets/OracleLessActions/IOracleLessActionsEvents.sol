@@ -21,5 +21,4 @@ interface IOracleLessActionsEvents is IPartiesEvents {
 		QuoteStatus[] quoteStatuses,
 		uint256[] closeIds
 	);
-	event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
 }

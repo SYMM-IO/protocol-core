@@ -8,6 +8,9 @@ import "../storages/QuoteStorage.sol";
 import "../storages/MuonStorage.sol";
 
 interface IPartiesEvents {
+
+	event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
+
 	event SendQuote(
 		address partyA,
 		uint256 quoteId,

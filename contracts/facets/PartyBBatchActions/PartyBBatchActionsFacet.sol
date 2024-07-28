@@ -55,6 +55,7 @@ contract PartyBBatchActionsFacet is Accessibility, Pausable, IPartyBBatchActions
 			}
 		}
 	}
+
 	/**
 	 * @notice Fills the close request for the specified quotes.
 	 * @param quoteIds The ID of the quotes for which the close request is filled.
