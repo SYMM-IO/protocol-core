@@ -45,7 +45,6 @@ library OracleLessActionsFacetImpl {
 		for (uint8 i = 0; i < quoteIds.length; i++) {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
 			require(!MAStorage.layout().liquidationStatus[quote.partyA], "OracleLessActionsFacet: PartyA isn't solvent");
-			require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][quote.partyA], "OracleLessActionsFacet: PartyB isn't solvent");
 			require(AccountStorage.layout().boundPartyB[quote.partyA] == msg.sender, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
 			LibPartyBQuoteActions.lockQuote(quoteIds[i]);
 		}
