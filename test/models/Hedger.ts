@@ -42,18 +42,18 @@ export class Hedger {
 	public async lockQuote(id: BigNumberish, upnl: bigint = 0n, allocateCoefficient: bigint | null = decimal(12n, 17)) {
 		if (allocateCoefficient != null) {
 			const quote = await this.context.viewFacet.getQuote(id)
-			const notional = unDecimal(quote.quantity * quote.requestedOpenPrice)
+			const notional = unDecimal(BigInt(quote.quantity) * quote.requestedOpenPrice)
 			await runTx(
 				this.context.accountFacet.connect(this.signer).allocateForPartyB(unDecimal(notional * BigInt(allocateCoefficient)), quote.partyA)
 			)
 		}
-		await runTx(this.context.partyBFacet.connect(this.signer).lockQuote(id, await getDummySingleUpnlSig(upnl)))
+		await runTx(this.context.partyBQuoteActionsFacet.connect(this.signer).lockQuote(id, await getDummySingleUpnlSig(upnl)))
 
 		logger.info(`Hedger::LockQuote: ${id}`)
 	}
 
 	public async unlockQuote(id: BigNumberish) {
-		await runTx(this.context.partyBFacet.connect(this.signer).unlockQuote(id))
+		await runTx(this.context.partyBQuoteActionsFacet.connect(this.signer).unlockQuote(id))
 		logger.info(`Hedger::UnLockQuote: ${id}`)
 	}
 
@@ -70,7 +70,7 @@ export class Hedger {
 			})
 		)
 		await runTx(
-			this.context.partyBFacet
+			this.context.partyBPositionActionsFacet
 				.connect(this.signer)
 				.openPosition(
 					id,
@@ -102,7 +102,7 @@ export class Hedger {
 	}
 
 	public async acceptCancelRequest(id: BigNumberish) {
-		await runTx(this.context.partyBFacet.connect(this.signer).acceptCancelRequest(id))
+		await runTx(this.context.partyBQuoteActionsFacet.connect(this.signer).acceptCancelRequest(id))
 		logger.info(`Hedger::AcceptCancelRequest: ${id}`)
 	}
 
@@ -119,7 +119,7 @@ export class Hedger {
 			})
 		)
 		await runTx(
-			this.context.partyBFacet
+			this.context.partyBPositionActionsFacet
 				.connect(this.signer)
 				.fillCloseRequest(
 					id,
@@ -137,7 +137,7 @@ export class Hedger {
 	}
 
 	public async acceptCancelCloseRequest(id: BigNumberish) {
-		await runTx(this.context.partyBFacet.connect(this.signer).acceptCancelCloseRequest(id))
+		await runTx(this.context.partyBPositionActionsFacet.connect(this.signer).acceptCancelCloseRequest(id))
 		logger.info(`Hedger::AcceptCancelCloseRequest: ${id}`)
 	}
 
@@ -154,7 +154,7 @@ export class Hedger {
 			})
 		)
 		await runTx(
-			this.context.partyBFacet
+			this.context.partyBPositionActionsFacet
 				.connect(this.signer)
 				.emergencyClosePosition(id, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB)))
 		)
@@ -179,7 +179,7 @@ export class Hedger {
 		for (const pos of openPositions) {
 			const priceDiff = pos.openedPrice - await getPrice()
 			const amount = pos.quantity - pos.closedAmount
-			upnl += unDecimal(amount * priceDiff) * (pos.positionType === BigInt(PositionType.LONG) ? -1n : 1n)
+			upnl += unDecimal(BigInt(amount) * priceDiff) * (pos.positionType === BigInt(PositionType.LONG) ? -1n : 1n)
 		}
 		return upnl
 	}
