@@ -41,7 +41,7 @@ export function shouldBehaveLikeDiamond(): void {
 		for (const address of await context.diamondLoupeFacet.facetAddresses()) {
 			addresses.push(address)
 		}
-		assert.equal(addresses.length, 12)
+		assert.equal(addresses.length, 15)
 	})
 
 	it("facets should have the right function selectors -- call to facetFunctionSelectors function", async function () {

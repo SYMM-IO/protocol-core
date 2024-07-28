@@ -296,7 +296,7 @@ export function shouldBehaveLikeMultiAccount() {
 			})
 
 			it("Should be able to lock Quote", async () => {
-				let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [1, await getDummySingleUpnlSig()])
+				let lockQuote = context.partyBQuoteActionsFacet.interface.encodeFunctionData("lockQuote", [1, await getDummySingleUpnlSig()])
 
 				await expect(symmioPartyB.connect(context.signers.admin)._call([lockQuote])).to.not.be.reverted
 				expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.LOCKED)
@@ -304,14 +304,14 @@ export function shouldBehaveLikeMultiAccount() {
 
 			describe("Open quotes", function () {
 				beforeEach(async () => {
-					let lockQuote = context.partyBFacet.interface.encodeFunctionData("lockQuote", [1, await getDummySingleUpnlSig()])
+					let lockQuote = context.partyBQuoteActionsFacet.interface.encodeFunctionData("lockQuote", [1, await getDummySingleUpnlSig()])
 
 					await symmioPartyB.connect(context.signers.admin)._call([lockQuote])
 				})
 
 				it("Should be able to Open Quote", async () => {
 					let openPosition2 = marketOpenRequestBuilder().build()
-					let openPositionCallData2 = context.partyBFacet.interface.encodeFunctionData("openPosition", [
+					let openPositionCallData2 = context.partyBPositionActionsFacet.interface.encodeFunctionData("openPosition", [
 						1,
 						...(await getListFormatOfOpenRequest(openPosition2)),
 					])
@@ -324,7 +324,7 @@ export function shouldBehaveLikeMultiAccount() {
 					beforeEach(async () => {
 						//! open Position
 						let openPosition2 = marketOpenRequestBuilder().build()
-						let openPositionCallData2 = context.partyBFacet.interface.encodeFunctionData("openPosition", [
+						let openPositionCallData2 = context.partyBPositionActionsFacet.interface.encodeFunctionData("openPosition", [
 							1,
 							...(await getListFormatOfOpenRequest(openPosition2)),
 						])
@@ -352,7 +352,7 @@ export function shouldBehaveLikeMultiAccount() {
 
 						it("Should fill close quote", async () => {
 							let fillCloseRequest = marketFillCloseRequestBuilder().build()
-							let fillCloseRequestCallData = context.partyBFacet.interface.encodeFunctionData("fillCloseRequest", [
+							let fillCloseRequestCallData = context.partyBPositionActionsFacet.interface.encodeFunctionData("fillCloseRequest", [
 								1,
 								...(await getListFormatOfFillCloseRequest(fillCloseRequest)),
 							])

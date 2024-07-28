@@ -4,15 +4,15 @@ export const FacetNames = [
 	"DiamondLoupeFacet",
 	"LiquidationFacet",
 	"PartyAFacet",
-	"PartyBBatchActions",
-	"PartyBPositionsActions",
-	"PartyBQuoteActions",
-	"OracleLessActionsFacet",
+	"PartyBBatchActionsFacet",
 	"BridgeFacet",
 	"ViewFacet",
 	"FundingRateFacet",
 	"ForceActionsFacet",
 	"SettlementFacet",
+	"OracleLessActionsFacet",
+	"PartyBPositionActionsFacet",
+	"PartyBQuoteActionsFacet",
 ]
 
 export const DEPLOYMENT_LOG_FILE = "deployed.json"

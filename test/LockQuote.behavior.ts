@@ -57,7 +57,7 @@ export function shouldBehaveLikeLockQuote(): void {
 	})
 
 	it("Should fail on invalid partyB", async function () {
-		await expect(context.partyBFacet.connect(context.signers.user2).lockQuote(1, await getDummySingleUpnlSig())).to.be.revertedWith(
+		await expect(context.partyBQuoteActionsFacet.connect(context.signers.user2).lockQuote(1, await getDummySingleUpnlSig())).to.be.revertedWith(
 			"Accessibility: Should be partyB",
 		)
 	})

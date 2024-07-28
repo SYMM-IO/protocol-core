@@ -198,7 +198,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 				const notional = unDecimal(quote.quantity * quote.requestedOpenPrice)
 				await context.accountFacet.connect(context.signers.hedger).allocateForPartyB(unDecimal(notional * decimal(12n, 17)), quote.partyA)
 
-				await context.partyBFacet.connect(context.signers.hedger).lockQuote(quoteId, await getDummySingleUpnlSig(0n))
+				await context.partyBQuoteActionsFacet.connect(context.signers.hedger).lockQuote(quoteId, await getDummySingleUpnlSig(0n))
 			})
 
 			it("should failed if amount be higher than partyBAllocatedBalances", async () => {
