@@ -38,7 +38,7 @@ interface IAccountFacet is IAccountEvents {
 
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external;
 
-	function depositToEmergencyReserveVault(uint256 amount) external;
+	function depositToReserveVault(uint256 amount, address partyB) external;
 
-	function withdrawFromEmergencyReserveVault(uint256 amount) external;
+	function withdrawFromReserveVault(uint256 amount) external;
 }

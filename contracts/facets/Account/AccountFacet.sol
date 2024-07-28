@@ -152,15 +152,15 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	}
 	/// @notice Allows transferring the balance of partyB to emergency reserve vault.
 	/// @param amount The precise amount of collateral to be transferred to emergency reserve vault, specified in 18 decimals.
-	function depositToEmergencyReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
-		AccountFacetImpl.depositToEmergencyReserveVault(amount);
-		emit DepositToEmergencyReserveVault(msg.sender, amount);
+	function depositToReserveVault(uint256 amount, address partyB) external whenNotPartyBActionsPaused notSuspended(msg.sender) notSuspended(partyB) {
+		AccountFacetImpl.depositToReserveVault(amount, partyB);
+		emit DepositToReserveVault(msg.sender, partyB, amount);
 	}
 
 	/// @notice Allows transferring the balance of partyB in emergency reserve vault to balance.
 	/// @param amount The precise amount of collateral to be transferred from emergency reserve vault, specified in 18 decimals.
-	function withdrawFromEmergencyReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
-		AccountFacetImpl.withdrawFromEmergencyReserveVault(amount);
-		emit WithdrawFromEmergencyReserveVault(msg.sender, amount);
+	function withdrawFromReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.withdrawFromReserveVault(amount);
+		emit WithdrawFromReserveVault(msg.sender, amount);
 	}
 }

@@ -22,6 +22,6 @@ interface IAccountEvents {
 	event DeferredWithdraw(address user, address to, uint256 amount);
 	event ClaimDeferredWithdraw(uint256 id);
 	event CancelDeferredWithdraw(uint256 id);
-	event DepositToEmergencyReserveVault(address partyB, uint256 amount);
-	event WithdrawFromEmergencyReserveVault(address partyB, uint256 amount);
+	event DepositToReserveVault(address sender, address partyB, uint256 amount);
+	event WithdrawFromReserveVault(address partyB, uint256 amount);
 }
