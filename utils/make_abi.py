@@ -43,7 +43,7 @@ def main():
     # Remove duplicates
     unique_abi_data = remove_duplicates(abi_data)
 
-    with open('abi.json', 'w') as f:
+    with open('abis/symmio.json', 'w') as f:
         json.dump(unique_abi_data, f, indent=4)
 
 
