@@ -82,7 +82,7 @@ library AccountStorage {
 		mapping(uint256 => DeferredWithdraw) deferredWithdraws;
 		mapping(address => uint256[]) deferredWithdrawIds;
 		uint256 lastdeferredWithdrawId;
-		mapping(address => uint256) emergencyResrveVaultBalances;
+		mapping(address => uint256) reserveVault;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

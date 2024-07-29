@@ -144,7 +144,7 @@ contract ViewFacet is IViewFacet {
 	 * @return The balance of Party B vault.
 	 */
 	function balanceOfReserveVault(address partyB) external view returns (uint256) {
-		return AccountStorage.layout().emergencyResrveVaultBalances[partyB];
+		return AccountStorage.layout().reserveVault[partyB];
 	}
 
 	/**

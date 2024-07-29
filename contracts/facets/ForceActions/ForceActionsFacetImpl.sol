@@ -88,7 +88,7 @@ library ForceActionsFacetImpl {
 		}
 		accountLayout.partyANonces[quote.partyA] += 1;
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-		uint256 reserveAmount = accountLayout.emergencyResrveVaultBalances[quote.partyB];
+		uint256 reserveAmount = accountLayout.reserveVault[quote.partyB];
 
 		uint256[] memory quoteIds = new uint256[](1);
 		uint256[] memory filledAmounts = new uint256[](1);
@@ -115,7 +115,7 @@ library ForceActionsFacetImpl {
 			}
 			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		} else if (partyBAvailableBalance + int256(reserveAmount) >= 0) {
-			accountLayout.emergencyResrveVaultBalances[quote.partyB] -= uint256(-partyBAvailableBalance);
+			accountLayout.reserveVault[quote.partyB] -= uint256(-partyBAvailableBalance);
 			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += uint256(-partyBAvailableBalance);
 			// TODO: handle events
 			if (updatedPrices.length > 0) {
