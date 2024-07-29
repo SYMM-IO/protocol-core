@@ -15,15 +15,15 @@ library LibSettlement {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(settleSig.quotesSettlementsData.length == updatedPrices.length, "PartyBFacet: Invalid length");
+		require(settleSig.quotesSettlementsData.length == updatedPrices.length, "LibSettlement: Invalid length");
 		require(
 			LibAccount.partyAAvailableBalanceForLiquidation(settleSig.upnlPartyA, accountLayout.allocatedBalances[partyA], partyA) >= 0,
-			"PartyBFacet: PartyA is insolvent"
+			"LibSettlement: PartyA is insolvent"
 		);
 
 		require(
 			isForceClose || quoteLayout.partyBOpenPositions[msg.sender][partyA].length > 0,
-			"PartyBFacet: Sender should have a position with partyA"
+			"LibSettlement: Sender should have a position with partyA"
 		);
 		accountLayout.partyANonces[partyA] += 1;
 
@@ -33,20 +33,20 @@ library LibSettlement {
 		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
 			QuoteSettlementData memory data = settleSig.quotesSettlementsData[i];
 			Quote storage quote = quoteLayout.quotes[data.quoteId];
-			require(quote.partyA == partyA, "PartyBFacet: PartyA is invalid");
+			require(quote.partyA == partyA, "LibSettlement: PartyA is invalid");
 			require(
 				quote.quoteStatus == QuoteStatus.OPENED ||
 					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
-				"PartyBFacet: Invalid state"
+				"LibSettlement: Invalid state"
 			);
 
 			partyBs[data.partyBUpnlIndex] = quote.partyB;
 
 			if (quote.openedPrice > data.currentPrice) {
-				require(updatedPrices[i] < quote.openedPrice && updatedPrices[i] >= data.currentPrice, "PartyBFacet: Updated price is out of range");
+				require(updatedPrices[i] < quote.openedPrice && updatedPrices[i] >= data.currentPrice, "LibSettlement: Updated price is out of range");
 			} else {
-				require(updatedPrices[i] > quote.openedPrice && updatedPrices[i] <= data.currentPrice, "PartyBFacet: Updated price is out of range");
+				require(updatedPrices[i] > quote.openedPrice && updatedPrices[i] <= data.currentPrice, "LibSettlement: Updated price is out of range");
 			}
 			if (quote.positionType == PositionType.LONG) {
 				settleAmounts[data.partyBUpnlIndex] +=
@@ -66,15 +66,15 @@ library LibSettlement {
 
 			require(
 				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[i], partyB, partyA) >= 0,
-				"PartyBFacet: PartyB should be solvent"
+				"LibSettlement: PartyB should be solvent"
 			);
-			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "PartyBFacet: PartyB is in liquidation process");
+			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "LibSettlement: PartyB is in liquidation process");
 
 			if (!isForceClose && msg.sender != partyB) {
 				require(
 					block.timestamp >=
 						MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] + MAStorage.layout().settlementCooldown,
-					"PartyBFacet: Cooldown should be passed"
+					"LibSettlement: Cooldown should be passed"
 				);
 				MAStorage.layout().lastUpnlSettlementTimestamp[msg.sender][partyB][partyA] = block.timestamp;
 			}
