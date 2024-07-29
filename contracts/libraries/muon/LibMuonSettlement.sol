@@ -14,7 +14,7 @@ library LibMuonSettlement {
 		// == SignatureCheck( ==
 		require(block.timestamp <= settleSig.timestamp + muonLayout.upnlValidTime, "LibMuon: Expired signature");
 		// == ) ==
-		uint256[] memory nonces = new uint256[](settleSig.upnlPartyBs.length);
+		uint256[] memory nonces = new uint256[](settleSig.quotesSettlementsData.length);
 		uint256[] memory quoteIds = new uint256[](settleSig.quotesSettlementsData.length);
 		uint256[] memory currentPrices = new uint256[](settleSig.quotesSettlementsData.length);
 		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {

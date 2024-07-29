@@ -9,6 +9,7 @@ import "../storages/MuonStorage.sol";
 import "../storages/AccountStorage.sol";
 import "./LibQuote.sol";
 import "./LibAccount.sol";
+import "hardhat/console.sol";
 
 library LibSettlement {
 	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA, bool isForceClose) internal {
@@ -40,7 +41,8 @@ library LibSettlement {
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
 				"LibSettlement: Invalid state"
 			);
-
+			require(data.partyBUpnlIndex <= settleSig.upnlPartyBs.length, "LibSettlement: Invalid partyBUpnlIndex in signature");
+			require(partyBs[data.partyBUpnlIndex] == address(0) || partyBs[data.partyBUpnlIndex] == quote.partyB, "LibSettlement: Invalid upnlPartyBs list");
 			partyBs[data.partyBUpnlIndex] = quote.partyB;
 
 			if (quote.openedPrice > data.currentPrice) {

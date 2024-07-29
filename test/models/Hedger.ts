@@ -4,7 +4,7 @@ import {BigNumberish, ethers} from "ethers"
 import {decimal, serializeToJson, unDecimal} from "../utils/Common"
 import {logger} from "../utils/LoggerUtils"
 import {getPrice} from "../utils/PriceUtils"
-import {getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig} from "../utils/SignatureUtils"
+import {getDummyPairUpnlAndPriceSig, getDummySettlementSig, getDummySingleUpnlSig} from "../utils/SignatureUtils"
 import {PositionType} from "./Enums"
 import {RunContext} from "./RunContext"
 import {EmergencyCloseRequest, emergencyCloseRequestBuilder} from "./requestModels/EmergencyCloseRequest"
@@ -13,7 +13,8 @@ import {limitOpenRequestBuilder, OpenRequest} from "./requestModels/OpenRequest"
 import {runTx} from "../utils/TxUtils"
 import {PairUpnlSigStructOutput} from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
 import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
-import {QuoteStructOutput} from "../../src/types/contracts/interfaces/ISymmio"
+import {QuoteStructOutput, SingleUpnlSigStructOutput} from "../../src/types/contracts/interfaces/ISymmio"
+import {SettlementSigStructOutput} from "../../src/types/contracts/facets/Settlement/SettlementFacet"
 
 export class Hedger {
 	constructor(private context: RunContext, private signer: SignerWithAddress) {
@@ -141,6 +142,12 @@ export class Hedger {
 		logger.info(`Hedger::AcceptCancelCloseRequest: ${id}`)
 	}
 
+	public async liquidate(partyA: string, sig: SingleUpnlSigStructOutput | Promise<SingleUpnlSigStructOutput> = getDummySingleUpnlSig()) {
+		let signature = sig instanceof Promise ? await sig : sig
+		await runTx(this.context.liquidationFacet.connect(this.context.signers.liquidator).liquidatePartyB(await this.signer.getAddress(), partyA, signature))
+		logger.info(`Hedger::Liquidator: ${partyA}`)
+	}
+
 	public async emergencyClosePosition(id: BigNumberish, request: EmergencyCloseRequest = emergencyCloseRequestBuilder().build()) {
 		const quote = await this.context.viewFacet.getQuote(id)
 		const user = this.context.manager.getUser(quote.partyA)
@@ -159,6 +166,30 @@ export class Hedger {
 				.emergencyClosePosition(id, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB)))
 		)
 		logger.info(`Hedger::EmergencyClosePosition: ${id}`)
+	}
+
+
+	public async settleUpnl(partyA: string, updatedPrices: bigint[], sig: Promise<SettlementSigStructOutput> | SettlementSigStructOutput = getDummySettlementSig()) {
+		let signature = sig instanceof Promise ? await sig : sig
+
+		const user = this.context.manager.getUser(partyA)
+		logger.detailedDebug(
+			serializeToJson({
+				partyA: partyA,
+				updatedPrices: updatedPrices,
+				sig: sig,
+				userBalanceInfo: await user.getBalanceInfo(),
+				userUpnl: await user.getUpnl(),
+			})
+		)
+		await runTx(
+			this.context.settlementFacet.connect(this.signer).settleUpnl(
+				signature,
+				updatedPrices,
+				partyA
+			)
+		)
+		logger.info(`Hedger::settleUpnl`)
 	}
 
 	public async getAddress() {

@@ -1,11 +1,12 @@
-import {shouldBehaveLikeClosePosition} from "./ClosePosition.behavior"
 import {shouldBehaveLikeFuzzTest} from "./FuzzTest.behavior"
+import {shouldBehaveLikeSettlement} from "./Settlement.behavior"
 import {shouldBehaveLikeDiamond} from "./Diamond.behavior"
 import {shouldBehaveLikeAccountFacet} from "./AccountFacet.behavior"
 import {shouldBehaveLikeSendQuote} from "./SendQuote.behavior"
 import {shouldBehaveLikeLockQuote} from "./LockQuote.behavior"
 import {shouldBehaveLikeOpenPosition} from "./OpenPosition.behavior"
 import {shouldBehaveLikeCancelQuote} from "./CancelQuote.behavior"
+import {shouldBehaveLikeClosePosition} from "./ClosePosition.behavior"
 import {shouldBehaveLikeLiquidationFacet} from "./LiquidationFacet.behavior"
 import {shouldBehaveLikeFundingRate} from "./FundingRate.behavior"
 import {shouldBehaveLikeSpecificScenario} from "./SpecificScenario.behavior"
@@ -65,6 +66,10 @@ describe("UnitTests", function () {
 
 		describe("ControlFacet", async function () {
 			shouldBehaveLikeControlFacet()
+		})
+
+		describe("Settlement", async function () {
+			shouldBehaveLikeSettlement()
 		})
 	} else if (process.env.TEST_MODE == "fuzz") {
 		describe("FuzzTest", async function () {

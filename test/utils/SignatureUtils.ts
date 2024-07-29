@@ -6,6 +6,10 @@ import {PairUpnlSigStructOutput} from "../../src/types/contracts/facets/FundingR
 import {HighLowPriceSigStruct} from "../../src/types/contracts/facets/ForceActions/ForceActionsFacet"
 import {DeferredLiquidationSigStruct} from "../../src/types/contracts/interfaces/ISymmio"
 import {ethers} from "hardhat"
+import {
+	QuoteSettlementDataStructOutput,
+	SettlementSigStructOutput
+} from "../../src/types/contracts/facets/Settlement/ISettlementFacet"
 
 export async function getDummySingleUpnlSig(upnl: bigint = 0n): Promise<SingleUpnlSigStruct> {
 	return {
@@ -93,6 +97,26 @@ export async function getDummyPairUpnlSig(
 		timestamp: BigInt(await getBlockTimestamp()),
 		upnlPartyA: upnlPartyA,
 		upnlPartyB: upnlPartyB,
+		gatewaySignature: ethers.ZeroAddress,
+		sigs: {
+			signature: 0n,
+			owner: ethers.ZeroAddress,
+			nonce: ethers.ZeroAddress,
+		} as any,
+	} as any
+}
+
+export async function getDummySettlementSig(
+	upnlPartyA: bigint = 0n,
+	upnlPartyBs: bigint[] = [],
+	quotesSettlementsData: QuoteSettlementDataStructOutput[] = [],
+): Promise<SettlementSigStructOutput> {
+	return {
+		reqId: "0x",
+		timestamp: BigInt(await getBlockTimestamp()),
+		upnlPartyA: upnlPartyA,
+		upnlPartyBs: upnlPartyBs,
+		quotesSettlementsData: quotesSettlementsData,
 		gatewaySignature: ethers.ZeroAddress,
 		sigs: {
 			signature: 0n,

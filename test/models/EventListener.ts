@@ -67,7 +67,8 @@ export class EventListener {
 
 	constructor(public context: RunContext) {
 		;(context.partyAFacet.runner as any).pollingInterval = 500 // was .provider !
-		;(context.partyBFacet.runner as any).pollingInterval = 500 // was .provider !
+		;(context.partyBPositionActionsFacet.runner as any).pollingInterval = 500 // was .provider !
+		;(context.partyBQuoteActionsFacet.runner as any).pollingInterval = 500 // was .provider !
 
 		context.accountFacet.on(context.accountFacet.filters.Deposit, async (...args) => {
 			let value: DepositEvent.OutputObject = (args[args.length - 1]! as any).args //FIXME: Will probably not work
