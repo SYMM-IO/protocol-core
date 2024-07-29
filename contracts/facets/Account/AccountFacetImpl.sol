@@ -166,13 +166,14 @@ library AccountFacetImpl {
 		require(amount <= accountLayout.balances[msg.sender], "AccountFacet: Insufficient balance");
 		require(MAStorage.layout().partyBStatus[partyB], "AccountFacet: Should be partyB");
 		accountLayout.balances[msg.sender] -= amount;
-		accountLayout.emergencyResrveVaultBalances[partyB] += amount;
+		accountLayout.reserveVault[partyB] += amount;
 	}
 
 	function withdrawFromReserveVault(uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(amount <= accountLayout.emergencyResrveVaultBalances[msg.sender], "AccountFacet: Insufficient balance");
-		accountLayout.emergencyResrveVaultBalances[msg.sender] -= amount;
+		require(amount <= accountLayout.reserveVault[msg.sender], "AccountFacet: Insufficient balance");
+		accountLayout.reserveVault[msg.sender] -= amount;
 		accountLayout.balances[msg.sender] += amount;
+		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
 	}
 }
