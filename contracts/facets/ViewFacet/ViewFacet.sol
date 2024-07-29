@@ -139,6 +139,15 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Returns the balance of Party B emergency reserve vault.
+	 * @param partyB The address of Party B.
+	 * @return The balance of Party B vault.
+	 */
+	function balanceOfReserveVault(address partyB) external view returns (uint256) {
+		return AccountStorage.layout().emergencyResrveVaultBalances[partyB];
+	}
+
+	/**
 	 * @notice Returns the allocated balances of Party Bs for a specific Party A.
 	 * @param partyA The address of Party A.
 	 * @param partyBs The addresses of Party Bs.
