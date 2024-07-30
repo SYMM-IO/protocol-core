@@ -92,7 +92,7 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
         emit SymmioStakeholderUpdated(oldReceiver, symmioReceiver_, oldShare, symmioShare_);
     }
 
-    function setStakeholders(Stakeholder[] calldata newStakeholders) external onlyRole(MANAGER_ROLE) {
+    function setStakeholders(Stakeholder[] memory newStakeholders) external onlyRole(MANAGER_ROLE) {
         // Clear the existing stakeholders list except the first one (Symmio)
         delete stakeholders;
         stakeholders.push(Stakeholder(symmioReceiver, symmioShare));
