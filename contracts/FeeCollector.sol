@@ -37,13 +37,18 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
     address public symmioReceiver;
     uint256 public symmioShare;
     Stakeholder[] public stakeholders;
-    uint256 public totalStakeholderShare;
+    uint256 private totalStakeholderShare;
 
     // Events
     event SymmioAddressUpdated(address indexed oldAddress, address indexed newAddress);
     event SymmioStakeholderUpdated(address indexed oldReceiver, address indexed newReceiver, uint256 oldShare, uint256 newShare);
     event StakeholdersUpdated(Stakeholder[] newStakeholders);
     event FeesClaimed(uint256 amount, address indexed collateralToken);
+
+    // Errors
+    error ZeroAddress();
+    error InvalidShare();
+    error TotalSharesMustEqualOne();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -56,10 +61,8 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
         address symmioReceiver_,
         uint256 symmioShare_
     ) public initializer {
-        require(admin != address(0), "FeeCollector: Zero address");
-        require(symmioAddress_ != address(0), "FeeCollector: Zero address");
-        require(symmioReceiver_ != address(0), "FeeCollector: Zero address");
-        require(symmioShare_ <= 1e18, "FeeCollector: Invalid share");
+        if (admin == address(0) || symmioAddress_ == address(0) || symmioReceiver_ == address(0)) revert ZeroAddress();
+        if (symmioShare_ > 1e18) revert InvalidShare();
 
         __Pausable_init();
         __AccessControl_init();
@@ -72,15 +75,15 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
     }
 
     function setSymmioAddress(address symmioAddress_) external onlyRole(SETTER_ROLE) {
-        require(symmioAddress_ != address(0), "FeeCollector: Zero address");
+        if (symmioAddress_ == address(0)) revert ZeroAddress();
         address oldAddress = symmioAddress;
         symmioAddress = symmioAddress_;
         emit SymmioAddressUpdated(oldAddress, symmioAddress_);
     }
 
     function setSymmioStakeholder(address symmioReceiver_, uint256 symmioShare_) external onlyRole(SETTER_ROLE) {
-        require(symmioReceiver_ != address(0), "FeeCollector: Zero address");
-        require(symmioShare_ <= 1e18, "FeeCollector: Invalid share");
+        if (symmioReceiver_ == address(0)) revert ZeroAddress();
+        if (symmioShare_ > 1e18) revert InvalidShare();
 
         address oldReceiver = symmioReceiver;
         uint256 oldShare = symmioShare;
@@ -92,30 +95,34 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
         emit SymmioStakeholderUpdated(oldReceiver, symmioReceiver_, oldShare, symmioShare_);
     }
 
-    function setStakeholders(Stakeholder[] memory newStakeholders) external onlyRole(MANAGER_ROLE) {
+    function setStakeholders(Stakeholder[] calldata newStakeholders) external onlyRole(MANAGER_ROLE) {
         // Clear the existing stakeholders list except the first one (Symmio)
         delete stakeholders;
         stakeholders.push(Stakeholder(symmioReceiver, symmioShare));
 
         uint256 newTotalStakeholderShare = 0;
-        for (uint256 i = 0; i < newStakeholders.length; i++) {
-            require(newStakeholders[i].receiver != address(0), "FeeCollector: Zero address");
+        uint256 len = newStakeholders.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (newStakeholders[i].receiver == address(0)) revert ZeroAddress();
+
             newTotalStakeholderShare += newStakeholders[i].share;
             stakeholders.push(newStakeholders[i]);
         }
 
-        require(newTotalStakeholderShare + symmioShare == 1e18, "FeeCollector: Total shares must equal 1");
+        if(newTotalStakeholderShare + symmioShare != 1e18) revert TotalSharesMustEqualOne();
 
         totalStakeholderShare = newTotalStakeholderShare;
         emit StakeholdersUpdated(newStakeholders);
     }
 
     function claimFee(uint256 amount) external onlyRole(COLLECTOR_ROLE) whenNotPaused {
-        require(totalStakeholderShare + symmioShare == 1e18, "FeeCollector: Total shares must equal 1");
+        if(totalStakeholderShare + symmioShare != 1e18) revert TotalSharesMustEqualOne();
 
         address collateral = ISymmio(symmioAddress).getCollateral();
         ISymmio(symmioAddress).withdraw(amount);
-        for (uint256 i = 0; i < stakeholders.length; i++) {
+
+        uint256 len = stakeholders.length;
+        for (uint256 i = 0; i < len; i++) {
             IERC20Upgradeable(collateral).safeTransfer(stakeholders[i].receiver, (stakeholders[i].share * amount) / 1e18);
         }
         emit FeesClaimed(amount, collateral);
