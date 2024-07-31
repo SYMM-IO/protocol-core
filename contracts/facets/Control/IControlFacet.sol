@@ -122,4 +122,6 @@ interface IControlFacet is IControlEvents {
 	function addBridge(address bridge) external;
 
 	function removeBridge(address bridge) external;
+
+	function setLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit) external;
 }
