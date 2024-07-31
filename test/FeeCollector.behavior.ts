@@ -73,7 +73,7 @@ describe("FeeCollector", function () {
 
 		it("Should revert if new address is zero", async function () {
 			await expect(feeCollector.connect(setter).setSymmioAddress(ethers.constants.AddressZero))
-				.to.be.revertedWith("FeeCollector: Zero address")
+				.to.be.revertedWithCustomError(feeCollector, "ZeroAddress")
 		})
 	})
 
@@ -93,12 +93,12 @@ describe("FeeCollector", function () {
 
 		it("Should revert if new receiver is zero address", async function () {
 			await expect(feeCollector.connect(setter).setSymmioStakeholder(ethers.constants.AddressZero, symmioShare))
-				.to.be.revertedWith("FeeCollector: Zero address")
+				.to.be.revertedWithCustomError(feeCollector, "ZeroAddress")
 		})
 
 		it("Should revert if new share is greater than 100%", async function () {
 			await expect(feeCollector.connect(setter).setSymmioStakeholder(symmioReceiver.address, ethers.utils.parseEther("1.1")))
-				.to.be.revertedWith("FeeCollector: Invalid share")
+				.to.be.revertedWithCustomError(feeCollector, "InvalidShare")
 		})
 
 		it("Should update stakeholders array", async function () {
@@ -157,7 +157,7 @@ describe("FeeCollector", function () {
 				{receiver: stakeholder1.address, share: ethers.utils.parseEther("0.6")}
 			]
 			await expect(feeCollector.connect(manager).setStakeholders(invalidStakeholders))
-				.to.be.revertedWith("FeeCollector: Total shares must equal 1")
+				.to.be.revertedWithCustomError(feeCollector, "TotalSharesMustEqualOne")
 		})
 	})
 
