@@ -19,13 +19,13 @@ if (!privateKey)
 const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR
 const privateKeyList: string[] = privateKeysStr?.split(",") || []
 
-const ftmAPIKey: string = process.env.FTM_API_KEY || ""
 const bnbApiKey: string = process.env.BNB_API_KEY || ""
 const baseApiKey: string = process.env.BASE_API_KEY || ""
 const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
 const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || ""
 const opBnbApiKey: string = process.env.OPBNB_API_KEY || ""
 const iotaApiKey: string = process.env.IOTA_API_KEY || ""
+const blastApiKey: string = process.env.BLAST_API_KEY || ""
 
 const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || ""
 
@@ -49,12 +49,8 @@ const config: HardhatUserConfig = {
 			allowUnlimitedContractSize: false,
 			accounts: privateKeyList,
 		},
-		fantom: {
-			url: "https://1rpc.io/ftm",
-			accounts: privateKeyList,
-		},
-		bnb: {
-			url: "https://1rpc.io/bnb",
+		bsc: {
+			url: "https://binance.llamarpc.com",
 			accounts: [ privateKey ],
 		},
 		opbnb: {
@@ -77,12 +73,16 @@ const config: HardhatUserConfig = {
 			url: "https://json-rpc.evm.iotaledger.net",
 			accounts: [ privateKey ],
 		},
+		blast: {
+			url: "https://rpc.blast.io",
+			accounts: [ privateKey ],
+		},
 	},
 	etherscan: {
 		apiKey: {
 			iota:iotaApiKey,
-			fantom: ftmAPIKey,
-			bnb: bnbApiKey,
+			blast: blastApiKey,
+			bsc: bnbApiKey,
 			base: baseApiKey,
 			polygon: polygonApiKey,
 			zkEvm: zkEvmApiKey,
@@ -120,8 +120,15 @@ const config: HardhatUserConfig = {
 					apiURL: "https://explorer.evm.iota.org/api",
 					browserURL: "https://explorer.evm.iota.org"
 				}
-			}
-
+			},
+			{
+				network: "blast",
+				chainId: 81457,
+				urls: {
+					apiURL: `https://api.blastscan.io/api?apiKey=${ blastApiKey }`,
+					browserURL: "https://blastscan.io",
+				},
+			},
 		],
 	},
 	paths: {
