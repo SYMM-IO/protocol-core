@@ -8,16 +8,6 @@ import "../../storages/QuoteStorage.sol";
 import "../../interfaces/IPartiesEvents.sol";
 
 interface IPartyBPositionActionsEvents is IPartiesEvents {
-	event OpenPosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 openedPrice);
-	event FillCloseRequest(
-		uint256 quoteId,
-		address partyA,
-		address partyB,
-		uint256 filledAmount,
-		uint256 closedPrice,
-		QuoteStatus quoteStatus,
-		uint256 closeId
-	);
 	event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
 	event EmergencyClosePosition(
 		uint256 quoteId,
