@@ -185,4 +185,6 @@ interface IViewFacet {
 	function getBridgeTransaction(uint256 transactionId) external view returns (BridgeTransaction memory);
 
 	function getNextBridgeTransactionId() external view returns (uint256);
+
+	function getLiquidationInsuranceVaultParams() external view returns (address, uint256);
 }
