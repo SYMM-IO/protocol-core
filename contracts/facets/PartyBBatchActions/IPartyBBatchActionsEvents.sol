@@ -8,25 +8,4 @@ import "../../storages/QuoteStorage.sol";
 import "../../interfaces/IPartiesEvents.sol";
 
 interface IPartyBBatchActionsEvents is IPartiesEvents {
-	event OpenPositions(uint256[] quoteIds, address partyA, address partyB, uint256[] filledAmounts, uint256[] openedPrices);
-
-	event FillCloseRequests(
-		uint256[] quoteIds,
-		address partyA,
-		address partyB,
-		uint256[] filledAmounts,
-		uint256[] closedPrices,
-		QuoteStatus[] quoteStatuses,
-		uint256[] closeIds
-	);
-
-	// event EmergencyClosePosition(
-	// 	uint256 quoteId,
-	// 	address partyA,
-	// 	address partyB,
-	// 	uint256 filledAmount,
-	// 	uint256 closedPrice,
-	// 	QuoteStatus quoteStatus,
-	// 	uint256 closeId
-	// );
 }
