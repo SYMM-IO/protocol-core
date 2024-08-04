@@ -1,10 +1,10 @@
 import "@nomicfoundation/hardhat-chai-matchers"
 import "@nomicfoundation/hardhat-toolbox"
 import "@openzeppelin/hardhat-upgrades"
-import { config as dotenvConfig } from "dotenv"
-import type { HardhatUserConfig } from "hardhat/config"
-import { resolve } from "path"
-import 'solidity-docgen';
+import {config as dotenvConfig} from "dotenv"
+import type {HardhatUserConfig} from "hardhat/config"
+import {resolve} from "path"
+import 'solidity-docgen'
 
 import "./tasks/deploy"
 
@@ -25,6 +25,7 @@ const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
 const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || ""
 const opBnbApiKey: string = process.env.OPBNB_API_KEY || ""
 const iotaApiKey: string = process.env.IOTA_API_KEY || ""
+const modeApiKey: string = process.env.MODE_API_KEY || ""
 const blastApiKey: string = process.env.BLAST_API_KEY || ""
 
 const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || ""
@@ -51,36 +52,41 @@ const config: HardhatUserConfig = {
 		},
 		bsc: {
 			url: "https://binance.llamarpc.com",
-			accounts: [ privateKey ],
+			accounts: [privateKey],
 		},
 		opbnb: {
 			url: "https://opbnb.publicnode.com",
-			accounts: [ privateKey ],
+			accounts: [privateKey],
 		},
 		base: {
 			url: "https://1rpc.io/base",
-			accounts: [ privateKey ],
+			accounts: [privateKey],
 		},
 		polygon: {
 			url: "https://polygon-rpc.com",
-			accounts: [ privateKey ],
+			accounts: [privateKey],
 		},
 		zkEvm: {
 			url: "https://zkevm-rpc.com",
-			accounts: [ privateKey ],
+			accounts: [privateKey],
 		},
 		iota: {
 			url: "https://json-rpc.evm.iotaledger.net",
-			accounts: [ privateKey ],
+			accounts: [privateKey],
 		},
 		blast: {
 			url: "https://rpc.blast.io",
-			accounts: [ privateKey ],
+			accounts: [privateKey],
+		},
+		mode: {
+			url: "https://mainnet.mode.network",
+			accounts: [privateKey],
 		},
 	},
 	etherscan: {
 		apiKey: {
-			iota:iotaApiKey,
+			iota: iotaApiKey,
+			mode: modeApiKey,
 			blast: blastApiKey,
 			bsc: bnbApiKey,
 			base: baseApiKey,
@@ -93,7 +99,7 @@ const config: HardhatUserConfig = {
 				network: "base",
 				chainId: 8453,
 				urls: {
-					apiURL: `https://api.basescan.org/api?apiKey=${ baseApiKey }`,
+					apiURL: `https://api.basescan.org/api?apiKey=${baseApiKey}`,
 					browserURL: "https://basescan.org",
 				},
 			},
@@ -101,7 +107,7 @@ const config: HardhatUserConfig = {
 				network: "zkEvm",
 				chainId: 1101,
 				urls: {
-					apiURL: `https://api-zkevm.polygonscan.com/api?apikey=${ zkEvmApiKey }`,
+					apiURL: `https://api-zkevm.polygonscan.com/api?apikey=${zkEvmApiKey}`,
 					browserURL: "https://zkevm.polygonscan.com",
 				},
 			},
@@ -109,7 +115,7 @@ const config: HardhatUserConfig = {
 				network: "opbnb",
 				chainId: 204,
 				urls: {
-					apiURL: `https://api-opbnb.bscscan.com/api?apikey=${ opBnbApiKey }`,
+					apiURL: `https://api-opbnb.bscscan.com/api?apikey=${opBnbApiKey}`,
 					browserURL: "https://opbnb.bscscan.com",
 				},
 			},
@@ -122,10 +128,18 @@ const config: HardhatUserConfig = {
 				}
 			},
 			{
+				network: "mode",
+				chainId: 34443,
+				urls: {
+					apiURL: "https://explorer.mode.network/api",
+					browserURL: "https://explorer.mode.network"
+				}
+			},
+			{
 				network: "blast",
 				chainId: 81457,
 				urls: {
-					apiURL: `https://api.blastscan.io/api?apiKey=${ blastApiKey }`,
+					apiURL: `https://api.blastscan.io/api?apiKey=${blastApiKey}`,
 					browserURL: "https://blastscan.io",
 				},
 			},
@@ -161,8 +175,8 @@ const config: HardhatUserConfig = {
 	mocha: {
 		timeout: 100000000,
 	},
-	docgen:{
-		pages:'files',
+	docgen: {
+		pages: 'files',
 	}
 }
 
