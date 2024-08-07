@@ -27,6 +27,8 @@ const opBnbApiKey: string = process.env.OPBNB_API_KEY || ""
 const iotaApiKey: string = process.env.IOTA_API_KEY || ""
 const modeApiKey: string = process.env.MODE_API_KEY || ""
 const blastApiKey: string = process.env.BLAST_API_KEY || ""
+const mantleAPIKey: string = process.env.MANTLE_API_KEY || ""
+const mantle2APIKey: string = process.env.MANTLE2_API_KEY || ""
 
 const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || ""
 
@@ -59,7 +61,7 @@ const config: HardhatUserConfig = {
 			accounts: [privateKey],
 		},
 		base: {
-			url: "https://1rpc.io/base",
+			url: "https://base.llamarpc.com",
 			accounts: [privateKey],
 		},
 		polygon: {
@@ -82,6 +84,15 @@ const config: HardhatUserConfig = {
 			url: "https://mainnet.mode.network",
 			accounts: [privateKey],
 		},
+		mantle: {
+			url: "https://mantle.drpc.org",
+			accounts: [privateKey],
+		},
+		mantle2: {
+			url: "https://mantle.drpc.org",
+			accounts: [privateKey],
+		},
+
 	},
 	etherscan: {
 		apiKey: {
@@ -91,6 +102,8 @@ const config: HardhatUserConfig = {
 			bsc: bnbApiKey,
 			base: baseApiKey,
 			polygon: polygonApiKey,
+			mantle: mantleAPIKey,
+			mantle2: mantle2APIKey,
 			zkEvm: zkEvmApiKey,
 			opbnb: opBnbApiKey,
 		},
@@ -142,6 +155,22 @@ const config: HardhatUserConfig = {
 					apiURL: `https://api.blastscan.io/api?apiKey=${blastApiKey}`,
 					browserURL: "https://blastscan.io",
 				},
+			},
+			{
+				network: "mantle",
+				chainId: 5000,
+				urls: {
+					apiURL: "https://explorer.mantle.xyz/api",
+					browserURL: "https://explorer.mantle.xyz"
+				}
+			},
+			{
+				network: "mantle2",
+				chainId: 5000,
+				urls: {
+					apiURL: "https://api.mantlescan.xyz/api",
+					browserURL: "https://mantlescan.xyz"
+				}
 			},
 		],
 	},
