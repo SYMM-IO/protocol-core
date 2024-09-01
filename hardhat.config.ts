@@ -19,6 +19,7 @@ if (!privateKey)
 const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR
 const privateKeyList: string[] = privateKeysStr?.split(",") || []
 
+const arbitrumApiKey: string = process.env.ARBITRUM_API_KEY || ""
 const bnbApiKey: string = process.env.BNB_API_KEY || ""
 const baseApiKey: string = process.env.BASE_API_KEY || ""
 const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
@@ -53,7 +54,7 @@ const config: HardhatUserConfig = {
 			accounts: privateKeyList,
 		},
 		bsc: {
-			url: "https://binance.llamarpc.com",
+			url: "https://rpc.ankr.com/bsc",
 			accounts: [privateKey],
 		},
 		opbnb: {
@@ -92,12 +93,17 @@ const config: HardhatUserConfig = {
 			url: "https://mantle.drpc.org",
 			accounts: [privateKey],
 		},
-
+		arbitrum: {
+			url: "https://arbitrum.llamarpc.com",
+			accounts: [privateKey],
+		},
 	},
 	etherscan: {
 		apiKey: {
+			arbitrumOne: arbitrumApiKey,
 			iota: iotaApiKey,
 			mode: modeApiKey,
+			// mode2: modeApiKey,
 			blast: blastApiKey,
 			bsc: bnbApiKey,
 			base: baseApiKey,
@@ -140,12 +146,20 @@ const config: HardhatUserConfig = {
 					browserURL: "https://explorer.evm.iota.org"
 				}
 			},
+			// {
+			// 	network: "mode",
+			// 	chainId: 34443,
+			// 	urls: {
+			// 		apiURL: "https://explorer.mode.network/api",
+			// 		browserURL: "https://explorer.mode.network"
+			// 	}
+			// },
 			{
 				network: "mode",
 				chainId: 34443,
 				urls: {
-					apiURL: "https://explorer.mode.network/api",
-					browserURL: "https://explorer.mode.network"
+					apiURL: "https://api.routescan.io/v2/network/mainnet/evm/34443/etherscan",
+					browserURL: "https://modescan.io"
 				}
 			},
 			{
