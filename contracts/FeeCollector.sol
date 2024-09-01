@@ -15,6 +15,8 @@ interface ISymmio {
     function withdraw(uint256 amount) external;
 
     function getCollateral() external view returns (address);
+
+    function balanceOf(address user) external view returns (uint256);
 }
 
 contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumerableUpgradeable {
@@ -109,14 +111,18 @@ contract FeeCollector is Initializable, PausableUpgradeable, AccessControlEnumer
             stakeholders.push(newStakeholders[i]);
         }
 
-        if(newTotalStakeholderShare + symmioShare != 1e18) revert TotalSharesMustEqualOne();
+        if (newTotalStakeholderShare + symmioShare != 1e18) revert TotalSharesMustEqualOne();
 
         totalStakeholderShare = newTotalStakeholderShare;
         emit StakeholdersUpdated(newStakeholders);
     }
 
-    function claimFee(uint256 amount) external onlyRole(COLLECTOR_ROLE) whenNotPaused {
-        if(totalStakeholderShare + symmioShare != 1e18) revert TotalSharesMustEqualOne();
+    function claimAllFee() external onlyRole(COLLECTOR_ROLE) whenNotPaused {
+        claimFee(ISymmio(symmioAddress).balanceOf(address(this)));
+    }
+
+    function claimFee(uint256 amount) public onlyRole(COLLECTOR_ROLE) whenNotPaused {
+        if (totalStakeholderShare + symmioShare != 1e18) revert TotalSharesMustEqualOne();
 
         address collateral = ISymmio(symmioAddress).getCollateral();
         ISymmio(symmioAddress).withdraw(amount);

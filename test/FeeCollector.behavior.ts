@@ -185,6 +185,14 @@ describe("FeeCollector", function () {
 			expect(await mockToken.balanceOf(stakeholder2.address)).to.equal(ethers.utils.parseEther("20"))
 		})
 
+		it("Should distribute fees correctly in claimAll", async function () {
+			await feeCollector.connect(collector).claimAllFee()
+
+			expect(await mockToken.balanceOf(symmioReceiver.address)).to.equal(ethers.utils.parseEther("500"))
+			expect(await mockToken.balanceOf(stakeholder1.address)).to.equal(ethers.utils.parseEther("300"))
+			expect(await mockToken.balanceOf(stakeholder2.address)).to.equal(ethers.utils.parseEther("200"))
+		})
+
 		it("Should revert if called by non-collector", async function () {
 			await expect(feeCollector.connect(owner).claimFee(100))
 				.to.be.reverted
