@@ -83,7 +83,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	}
 
 	/**
- * @notice Send a Quote to the protocol. The quote status will be pending.
+	 * @notice Send a Quote to the protocol. The quote status will be pending.
 	 * @param partyBsWhiteList List of party B addresses allowed to act on this quote.
 	 * @param symbolId Each symbol within the system possesses a unique identifier, for instance, BTCUSDT carries its own distinct ID
 	 * @param positionType Can be SHORT or LONG (0 or 1)
@@ -162,8 +162,10 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			result = LibQuote.expireQuote(expiredQuoteIds[i]);
 			if (result == QuoteStatus.OPENED) {
 				emit ExpireQuoteClose(result, expiredQuoteIds[i], QuoteStorage.layout().closeIds[expiredQuoteIds[i]]);
+				emit ExpireQuote(result, expiredQuoteIds[i]); // For backward compatibility, will be removed in future
 			} else {
 				emit ExpireQuoteOpen(result, expiredQuoteIds[i]);
+				emit ExpireQuote(result, expiredQuoteIds[i]); // For backward compatibility, will be removed in future
 			}
 		}
 	}
@@ -182,6 +184,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 
 		if (result == QuoteStatus.EXPIRED) {
 			emit ExpireQuoteOpen(result, quoteId);
+			emit ExpireQuote(result, quoteId); // For backward compatibility, will be removed in future
 		} else if (result == QuoteStatus.CANCELED || result == QuoteStatus.CANCEL_PENDING) {
 			emit RequestToCancelQuote(quote.partyA, quote.partyB, result, quoteId);
 		}
@@ -218,6 +221,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			QuoteStatus.CLOSE_PENDING,
 			quoteLayout.closeIds[quoteId]
 		);
+		emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -230,8 +234,10 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
 		if (result == QuoteStatus.OPENED) {
 			emit ExpireQuoteClose(QuoteStatus.OPENED, quoteId, quoteLayout.closeIds[quoteId]);
+			emit ExpireQuote(QuoteStatus.OPENED, quoteId); // For backward compatibility, will be removed in future
 		} else if (result == QuoteStatus.CANCEL_CLOSE_PENDING) {
 			emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING, quoteLayout.closeIds[quoteId]);
+			emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING); // For backward compatibility, will be removed in future
 		}
 	}
 
@@ -251,6 +257,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	function forceCancelCloseRequest(uint256 quoteId) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
 		PartyAFacetImpl.forceCancelCloseRequest(quoteId);
 		emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
+		emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -270,6 +277,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);
 		} else {
 			emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
+			emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus); // For backward compatibility, will be removed in future
 		}
 	}
 }
