@@ -37,7 +37,7 @@ const limitDefaultQuoteRequest: QuoteRequest = {
 	lf: decimal(3),
 	maxFundingRate: decimal(2, 16),
 	deadline: getBlockTimestamp(500),
-	affiliate: "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE", //FIXME find a better way
+	affiliate: "0x1f10F3Ba7ACB61b2F50B9d6DdCf91a6f787C0E82", //FIXME find a better way
 	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
 }
 
@@ -54,7 +54,7 @@ const marketDefaultQuoteRequest: QuoteRequest = {
 	lf: decimal(3),
 	maxFundingRate: decimal(2, 16),
 	deadline: getBlockTimestamp(500),
-	affiliate: "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE", //FIXME find a better way
+	affiliate: "0x1f10F3Ba7ACB61b2F50B9d6DdCf91a6f787C0E82", //FIXME find a better way
 	upnlSig: getDummySingleUpnlAndPriceSig(decimal(1)),
 }
 
