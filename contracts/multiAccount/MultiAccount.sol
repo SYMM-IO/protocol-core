@@ -219,7 +219,11 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	function innerCall(address account, bytes memory _callData) internal {
 		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
 		emit Call(msg.sender, account, _callData, _success, _resultData);
-		require(_success, "MultiAccount: Error occurred");
+		if (!_success) {
+			assembly {
+				revert(add(_resultData, 32), mload(_resultData))
+			}
+		}
 	}
 
 	/**
