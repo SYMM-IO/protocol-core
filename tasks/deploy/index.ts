@@ -3,3 +3,4 @@ import "./multicall";
 import "./stablecoin";
 import "./multiaccount";
 import "./partyB";
+import "./verify";
