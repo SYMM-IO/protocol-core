@@ -1,124 +1,150 @@
-import { BigNumberish } from "ethers";
+import { BigNumber, BigNumberish } from "ethers"
 
-import {
-  PairUpnlAndPriceSigStruct,
-  SingleUpnlAndPriceSigStruct,
-} from "../../src/types/contracts/facets/PartyA/PartyAFacet";
-import { PairUpnlSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/facets/PartyB/PartyBFacet";
-import {
-  LiquidationSigStruct,
-  QuotePriceSigStruct,
-} from "../../src/types/contracts/facets/liquidation/LiquidationFacet";
-import { getBlockTimestamp } from "./Common";
+import { HighLowPriceSigStruct, SingleUpnlAndPriceSigStruct } from "../../src/types/contracts/facets/PartyA/PartyAFacet"
+import { PairUpnlAndPriceSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/facets/PartyB/PartyBFacet"
+import { LiquidationSigStruct, QuotePriceSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
+import { getBlockTimestamp } from "./Common"
+import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
+import { zeroAddress } from "./Common"
 
 export async function getDummySingleUpnlSig(upnl: BigNumberish = 0): Promise<SingleUpnlSigStruct> {
-  return {
-    reqId: "0x",
-    timestamp: getBlockTimestamp(),
-    upnl: upnl,
-    gatewaySignature: "0x0000000000000000000000000000000000000000",
-    sigs: {
-      signature: "0",
-      owner: "0x0000000000000000000000000000000000000000",
-      nonce: "0x0000000000000000000000000000000000000000",
-    },
-  };
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		upnl: upnl,
+		gatewaySignature: zeroAddress,
+		sigs: {
+			signature: "0",
+			owner: zeroAddress,
+			nonce: zeroAddress,
+		},
+	}
 }
 
 export async function getDummyLiquidationSig(
-  liquidationId: string,
-  upnl: BigNumberish = 0,
-  symbolIds: BigNumberish[],
-  prices: BigNumberish[],
-  totalUnrealizedLoss: BigNumberish): Promise<LiquidationSigStruct> {
-  return {
-    reqId: "0x",
-    timestamp: getBlockTimestamp(),
-    liquidationId: liquidationId,
-    upnl: upnl,
-    totalUnrealizedLoss: totalUnrealizedLoss,
-    prices: prices,
-    symbolIds: symbolIds,
-    gatewaySignature: "0x0000000000000000000000000000000000000000",
-    sigs: {
-      signature: "0",
-      owner: "0x0000000000000000000000000000000000000000",
-      nonce: "0x0000000000000000000000000000000000000000",
-    },
-  };
+	liquidationId: string,
+	upnl: BigNumberish = 0,
+	symbolIds: BigNumberish[],
+	prices: BigNumberish[],
+	totalUnrealizedLoss: BigNumberish,
+	allocatedBalance: BigNumberish,
+): Promise<LiquidationSigStruct> {
+	return {
+		reqId: "0x",
+		timestamp: getBlockTimestamp(),
+		liquidationBlockNumber: 1,
+		liquidationTimestamp: getBlockTimestamp(),
+		liquidationAllocatedBalance: allocatedBalance,
+		liquidationId: liquidationId,
+		upnl: upnl,
+		totalUnrealizedLoss: totalUnrealizedLoss,
+		prices: prices,
+		symbolIds: symbolIds,
+		gatewaySignature: zeroAddress,
+		sigs: {
+			signature: "0",
+			owner: zeroAddress,
+			nonce: zeroAddress,
+		},
+	}
 }
 
-export async function getDummySingleUpnlAndPriceSig(
-  price: BigNumberish = 1,
-  upnl: BigNumberish = 0,
-): Promise<SingleUpnlAndPriceSigStruct> {
-  return {
-    reqId: "0x",
-    timestamp: getBlockTimestamp(),
-    upnl: upnl,
-    gatewaySignature: "0x0000000000000000000000000000000000000000",
-    sigs: {
-      signature: "0",
-      owner: "0x0000000000000000000000000000000000000000",
-      nonce: "0x0000000000000000000000000000000000000000",
-    },
-    price: price,
-  };
+export async function getDummySingleUpnlAndPriceSig(price: BigNumberish = 1, upnl: BigNumberish = 0): Promise<SingleUpnlAndPriceSigStruct> {
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		upnl: upnl,
+		gatewaySignature: zeroAddress,
+		sigs: {
+			signature: "0",
+			owner: zeroAddress,
+			nonce: zeroAddress,
+		},
+		price: price,
+	}
 }
 
 export async function getDummyPairUpnlAndPriceSig(
-  price: BigNumberish = 1,
-  upnlPartyA: BigNumberish = 0,
-  upnlPartyB: BigNumberish = 0,
+	price: BigNumberish = 1,
+	upnlPartyA: BigNumberish = 0,
+	upnlPartyB: BigNumberish = 0,
 ): Promise<PairUpnlAndPriceSigStruct> {
-  return {
-    reqId: "0x",
-    timestamp: getBlockTimestamp(),
-    upnlPartyA: upnlPartyA,
-    upnlPartyB: upnlPartyB,
-    gatewaySignature: "0x0000000000000000000000000000000000000000",
-    sigs: {
-      signature: "0",
-      owner: "0x0000000000000000000000000000000000000000",
-      nonce: "0x0000000000000000000000000000000000000000",
-    },
-    price: price,
-  };
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		upnlPartyA: upnlPartyA,
+		upnlPartyB: upnlPartyB,
+		gatewaySignature: zeroAddress,
+		sigs: {
+			signature: "0",
+			owner: zeroAddress,
+			nonce: zeroAddress,
+		},
+		price: price,
+	}
 }
 
 export async function getDummyPairUpnlSig(
-  upnlPartyA: BigNumberish = 0,
-  upnlPartyB: BigNumberish = 0,
-): Promise<PairUpnlSigStruct> {
-  return {
-    reqId: "0x",
-    timestamp: getBlockTimestamp(),
-    upnlPartyA: upnlPartyA,
-    upnlPartyB: upnlPartyB,
-    gatewaySignature: "0x0000000000000000000000000000000000000000",
-    sigs: {
-      signature: "0",
-      owner: "0x0000000000000000000000000000000000000000",
-      nonce: "0x0000000000000000000000000000000000000000",
-    },
-  };
+	upnlPartyA: BigNumber = BigNumber.from(0),
+	upnlPartyB: BigNumber = BigNumber.from(0),
+): Promise<PairUpnlSigStructOutput> {
+	return {
+		reqId: "0x",
+		timestamp: BigNumber.from(await getBlockTimestamp()),
+		upnlPartyA: upnlPartyA,
+		upnlPartyB: upnlPartyB,
+		gatewaySignature: zeroAddress,
+		sigs: {
+			signature: BigNumber.from(0),
+			owner: zeroAddress,
+			nonce: zeroAddress,
+		} as any,
+	} as any
 }
 
-export async function getDummyQuotesPriceSig(
-  quoteIds: number[],
-  prices: BigNumberish[],
-): Promise<QuotePriceSigStruct> {
-  return {
-    reqId: "0x",
-    timestamp: getBlockTimestamp(),
-    prices: prices,
-    quoteIds: quoteIds,
-    gatewaySignature: "0x0000000000000000000000000000000000000000",
-    sigs: {
-      signature: "0",
-      owner: "0x0000000000000000000000000000000000000000",
-      nonce: "0x0000000000000000000000000000000000000000",
-    },
-  };
+export async function getDummyHighLowPriceSig(
+	startTime: BigNumberish = 0,
+	endTime: BigNumberish = 0,
+	lowest: BigNumberish = 0,
+	highest: BigNumberish = 0,
+	currentPrice: BigNumberish = 0,
+	averagePrice: BigNumberish = 0,
+	symbolId: BigNumberish = 0,
+	upnlPartyB: BigNumberish = 0,
+	upnlPartyA: BigNumberish = 0,
+): Promise<HighLowPriceSigStruct> {
+	return {
+		reqId: "0x",
+		timestamp: getBlockTimestamp(),
+		highest: highest,
+		lowest: lowest,
+		currentPrice: currentPrice,
+		averagePrice: averagePrice,
+		startTime: startTime,
+		endTime: endTime,
+		symbolId: symbolId,
+		upnlPartyB: upnlPartyB,
+		upnlPartyA: upnlPartyA,
+		gatewaySignature: zeroAddress,
+		sigs: {
+			signature: "0",
+			owner: zeroAddress,
+			nonce: zeroAddress,
+		},
+	}
 }
 
+export async function getDummyPriceSig(quoteIds: BigNumberish[] = [], prices: BigNumberish[] = []): Promise<QuotePriceSigStruct> {
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		quoteIds: quoteIds,
+		prices: prices,
+		gatewaySignature: zeroAddress,
+		sigs: {
+			signature: "0",
+			owner: zeroAddress,
+			nonce: zeroAddress,
+		},
+	}
+}

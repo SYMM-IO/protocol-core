@@ -4,10 +4,26 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-interface ISymmio {
-    function depositFor(address account, uint256 amount) external;
+import "../facets/Account/IAccountFacet.sol";
+import "../facets/control/IControlFacet.sol";
+import "../facets/FundingRate/IFundingRateFacet.sol";
+import "../facets/liquidation/ILiquidationFacet.sol";
+import "../facets/PartyA/IPartyAFacet.sol";
+import "../facets/PartyB/IPartyBFacet.sol";
+import "../facets/Bridge/IBridgeFacet.sol";
+import "../facets/ViewFacet/IViewFacet.sol";
+import "../facets/DiamondCut/IDiamondCut.sol";
+import "../facets/DiamondLoup/IDiamondLoupe.sol";
 
-    function withdrawTo(address account, uint256 amount) external;
-
-    function getCollateral() external view returns (address);
-}
+interface ISymmio is
+	IAccountFacet,
+	IControlFacet,
+	IFundingRateFacet,
+	IBridgeFacet,
+	IPartyBFacet,
+	IPartyAFacet,
+	ILiquidationFacet,
+	IViewFacet,
+	IDiamondCut,
+	IDiamondLoupe
+{}

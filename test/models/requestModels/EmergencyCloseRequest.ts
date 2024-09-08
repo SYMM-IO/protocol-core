@@ -1,18 +1,18 @@
-import { Builder } from "builder-pattern";
-import { BigNumberish } from "ethers";
+import { Builder } from "builder-pattern"
+import { BigNumberish } from "ethers"
 
-import { decimal } from "../../utils/Common";
+import { decimal } from "../../utils/Common"
 
 export interface EmergencyCloseRequest {
-  upnlPartyA: BigNumberish;
-  upnlPartyB: BigNumberish;
-  price: BigNumberish;
+	upnlPartyA: BigNumberish
+	upnlPartyB: BigNumberish
+	price: BigNumberish
 }
 
 const defaultEmergencyCloseRequest: EmergencyCloseRequest = {
-  upnlPartyA: 0,
-  upnlPartyB: 0,
-  price: decimal(1),
-};
+	upnlPartyA: 0,
+	upnlPartyB: 0,
+	price: decimal(1),
+}
 
-export const emergencyCloseRequestBuilder = () => Builder(defaultEmergencyCloseRequest);
+export const emergencyCloseRequestBuilder = () => Builder(defaultEmergencyCloseRequest)

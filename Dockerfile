@@ -1,7 +1,7 @@
-# Project: v3-deus
+# Project: symmio
 # Description: -
 
-FROM node
+FROM node:lts
 
 ######################################################################
 # LABELS
@@ -31,11 +31,12 @@ WORKDIR /app
 
 RUN npm install --ignore-scripts
 
-RUN mkdir -p /app/deus
+RUN mkdir -p /app/symmio
 
-COPY . /app/deus
-WORKDIR /app/deus
+COPY . /app/symmio
+WORKDIR /app/symmio
 RUN cp .env.example .env
 RUN ln -s /app/node_modules .
 RUN npm run postinstall
+RUN python3 utils/update_sig_checks.py 1
 RUN ./docker/compile.sh

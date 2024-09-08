@@ -1,36 +1,25 @@
-import { ethers, run, upgrades } from "hardhat";
+import { run } from "hardhat";
+import { Addresses, loadAddresses, saveAddresses } from "./utils/file";
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+	let deployedAddresses: Addresses = loadAddresses();
+	const symmioAddress = deployedAddresses.symmioAddress;
+	const admin = process.env.ADMIN_PUBLIC_KEY;
 
-  console.log("Deploying contracts with the account:", deployer.address);
+	// Run the deploy:symmioPartyB task
+	const contract = await run("deploy:symmioPartyB", {
+		symmioAddress,
+		admin,
+		logData: true,
+	});
 
-  // Deploy SymmioPartyB as upgradeable
-  const SymmioPartyBFactory = await ethers.getContractFactory("SymmioPartyB");
-  const symmioPartyB = await upgrades.deployProxy(SymmioPartyBFactory, [
-    "", "",
-  ], { initializer: "initialize" });
-  await symmioPartyB.deployed();
-
-  const addresses = {
-    proxy: symmioPartyB.address,
-    admin: await upgrades.erc1967.getAdminAddress(symmioPartyB.address),
-    implementation: await upgrades.erc1967.getImplementationAddress(
-      symmioPartyB.address,
-    ),
-  };
-  console.log(addresses);
-
-  await new Promise((r) => setTimeout(r, 15000));
-
-  console.log("Verifying contract...");
-  await run("verify:verify", { address: addresses.implementation });
-  console.log("Contract verified!");
+	deployedAddresses.hedgerProxyAddress = contract.address;
+	saveAddresses(deployedAddresses);
 }
 
 main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+	.then(() => process.exit(0))
+	.catch(error => {
+		console.error(error);
+		process.exit(1);
+	});

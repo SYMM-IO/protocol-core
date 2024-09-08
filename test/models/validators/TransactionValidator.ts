@@ -1,7 +1,7 @@
-import { RunContext } from "../RunContext";
+import { RunContext } from "../RunContext"
 
 export interface TransactionValidator {
-  before(context: RunContext, arg: any): Promise<any>;
+	before(context: RunContext, arg: any): Promise<any>
 
-  after(context: RunContext, beforeOutput: any): Promise<any>;
+	after(context: RunContext, beforeOutput: any): Promise<any>
 }

@@ -5,57 +5,34 @@
 pragma solidity >=0.8.18;
 
 import "../../storages/QuoteStorage.sol";
+import "../../interfaces/IPartiesEvents.sol";
 
-interface IPartyBEvents {
-    event LockQuote(address partyB, uint256 quoteId, QuoteStatus quoteStatus);
-    event AllocatePartyB(address partyB, address partyA, uint256 amount);
-    event UnlockQuote(address partyB, uint256 quoteId, QuoteStatus quoteStatus);
-    event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
-    event OpenPosition(
-        uint256 quoteId,
-        address partyA,
-        address partyB,
-        uint256 filledAmount,
-        uint256 openedPrice,
-        QuoteStatus quoteStatus
-    );
-    event FillCloseRequest(
-        uint256 quoteId,
-        address partyA,
-        address partyB,
-        uint256 filledAmount,
-        uint256 closedPrice,
-        QuoteStatus quoteStatus
-    );
-    event SendQuote(
-        address partyA,
-        uint256 quoteId,
-        address[] partyBsWhiteList,
-        uint256 symbolId,
-        PositionType positionType,
-        OrderType orderType,
-        uint256 price,
-        uint256 marketPrice,
-        uint256 quantity,
-        uint256 cva,
-        uint256 mm,
-        uint256 lf,
-        uint256 maxFundingRate,
-        uint256 deadline,
-        QuoteStatus quoteStatus
-    );
-
-    event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId);
-
-    event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus);
-
-    event EmergencyClosePosition(
-        uint256 quoteId,
-        address partyA,
-        address partyB,
-        uint256 filledAmount,
-        uint256 closedPrice,
-        QuoteStatus quoteStatus
-    );
-    event ChargeFundingRate(address partyB, address partyA, uint256[] quoteIds, int256[] rates);
+interface IPartyBEvents is IPartiesEvents {
+	event LockQuote(address partyB, uint256 quoteId);
+	event AllocatePartyB(address partyB, address partyA, uint256 amount);
+	event UnlockQuote(address partyB, uint256 quoteId, QuoteStatus quoteStatus);
+	event AcceptCancelRequest(uint256 quoteId, QuoteStatus quoteStatus);
+	event OpenPosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 openedPrice);
+	event FillCloseRequest(
+		uint256 quoteId,
+		address partyA,
+		address partyB,
+		uint256 filledAmount,
+		uint256 closedPrice,
+		QuoteStatus quoteStatus,
+		uint256 closeId
+	);
+	event FillCloseRequest(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
+	event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
+	event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
+	event EmergencyClosePosition(
+		uint256 quoteId,
+		address partyA,
+		address partyB,
+		uint256 filledAmount,
+		uint256 closedPrice,
+		QuoteStatus quoteStatus,
+		uint256 closeId
+	);
+	event EmergencyClosePosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 }
