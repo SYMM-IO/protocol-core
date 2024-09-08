@@ -3,7 +3,7 @@ import {ethers, upgrades} from "hardhat"
 import {Contract} from "ethers"
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers"
 
-describe("FeeCollector", function () {
+describe("FeeDistributor", function () {
 	let feeCollector: Contract
 	let mockSymmio: Contract
 	let mockToken: Contract
@@ -35,7 +35,7 @@ describe("FeeCollector", function () {
 		await mockSymmio.setCollateral(mockToken.address)
 
 		// Deploy FeeCollector
-		const FeeCollector = await ethers.getContractFactory("FeeCollector")
+		const FeeCollector = await ethers.getContractFactory("SymmioFeeDistributor")
 		feeCollector = await upgrades.deployProxy(FeeCollector, [
 			admin.address,
 			mockSymmio.address,
@@ -191,6 +191,14 @@ describe("FeeCollector", function () {
 			expect(await mockToken.balanceOf(symmioReceiver.address)).to.equal(ethers.utils.parseEther("500"))
 			expect(await mockToken.balanceOf(stakeholder1.address)).to.equal(ethers.utils.parseEther("300"))
 			expect(await mockToken.balanceOf(stakeholder2.address)).to.equal(ethers.utils.parseEther("200"))
+		})
+
+		it("Should check dryClaimAll", async function () {
+			let data = await feeCollector.connect(collector).dryClaimAllFee()
+
+			expect(data[1][0]).to.equal(ethers.utils.parseEther("500"))
+			expect(data[1][1]).to.equal(ethers.utils.parseEther("300"))
+			expect(data[1][2]).to.equal(ethers.utils.parseEther("200"))
 		})
 
 		it("Should revert if called by non-collector", async function () {
