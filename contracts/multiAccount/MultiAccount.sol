@@ -32,10 +32,20 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses; // account -> target -> selector -> state
 
+	uint256 private _guardCounter;
+
 	// Modifier to check if the sender is the owner of the account
 	modifier onlyOwner(address account, address sender) {
 		require(owners[account] == sender, "MultiAccount: Sender isn't owner of account");
 		_;
+	}
+
+	// Custom modifier for reentrancy protection
+	modifier nonReentrant() {
+		require(_guardCounter == 0, "SymmioPartyB: reentrant call");
+		_guardCounter = 1;
+		_;
+		_guardCounter = 0;
 	}
 
 	/// @custom:oz-upgrades-unsafe-allow constructor
@@ -216,7 +226,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		innerCall(account, _callData);
 	}
 
-	function innerCall(address account, bytes memory _callData) internal {
+	function innerCall(address account, bytes memory _callData) internal nonReentrant {
 		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
 		emit Call(msg.sender, account, _callData, _success, _resultData);
 		if (!_success) {
