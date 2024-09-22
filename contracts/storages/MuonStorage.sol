@@ -116,7 +116,7 @@ struct HighLowPriceSig {
 	SchnorrSign sigs;
 }
 
-struct QuoteSettlementData{
+struct QuoteSettlementData {
 	uint256 quoteId;
 	uint256 currentPrice;
 	uint8 partyBUpnlIndex;

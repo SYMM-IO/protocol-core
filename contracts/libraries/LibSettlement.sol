@@ -12,7 +12,12 @@ import "./LibAccount.sol";
 import "hardhat/console.sol";
 
 library LibSettlement {
-	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA, bool isForceClose) internal returns (uint256[] memory newPartyBsAllocatedBalances) {
+	function settleUpnl(
+		SettlementSig memory settleSig,
+		uint256[] memory updatedPrices,
+		address partyA,
+		bool isForceClose
+	) internal returns (uint256[] memory newPartyBsAllocatedBalances) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
@@ -43,13 +48,22 @@ library LibSettlement {
 				"LibSettlement: Invalid state"
 			);
 			require(data.partyBUpnlIndex <= settleSig.upnlPartyBs.length, "LibSettlement: Invalid partyBUpnlIndex in signature");
-			require(partyBs[data.partyBUpnlIndex] == address(0) || partyBs[data.partyBUpnlIndex] == quote.partyB, "LibSettlement: Invalid upnlPartyBs list");
+			require(
+				partyBs[data.partyBUpnlIndex] == address(0) || partyBs[data.partyBUpnlIndex] == quote.partyB,
+				"LibSettlement: Invalid upnlPartyBs list"
+			);
 			partyBs[data.partyBUpnlIndex] = quote.partyB;
 
 			if (quote.openedPrice > data.currentPrice) {
-				require(updatedPrices[i] < quote.openedPrice && updatedPrices[i] >= data.currentPrice, "LibSettlement: Updated price is out of range");
+				require(
+					updatedPrices[i] < quote.openedPrice && updatedPrices[i] >= data.currentPrice,
+					"LibSettlement: Updated price is out of range"
+				);
 			} else {
-				require(updatedPrices[i] > quote.openedPrice && updatedPrices[i] <= data.currentPrice, "LibSettlement: Updated price is out of range");
+				require(
+					updatedPrices[i] > quote.openedPrice && updatedPrices[i] <= data.currentPrice,
+					"LibSettlement: Updated price is out of range"
+				);
 			}
 			if (quote.positionType == PositionType.LONG) {
 				settleAmounts[data.partyBUpnlIndex] +=

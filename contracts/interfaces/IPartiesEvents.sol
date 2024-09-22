@@ -46,14 +46,7 @@ interface IPartiesEvents {
 		uint256 closeId
 	);
 
-	event FillCloseRequest(
-		uint256 quoteId,
-		address partyA,
-		address partyB,
-		uint256 filledAmount,
-		uint256 closedPrice,
-		QuoteStatus quoteStatus
-	); // For backward compatibility, will be removed in future
+	event FillCloseRequest(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 
 	event LiquidatePartyB(address liquidator, address partyB, address partyA, uint256 partyBAllocatedBalance, int256 upnl);
 }
