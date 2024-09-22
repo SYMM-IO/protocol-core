@@ -10,6 +10,7 @@ import "../../storages/QuoteStorage.sol";
 interface ForceActionsFacetEvents {
 	event ForceCancelQuote(uint256 quoteId, QuoteStatus quoteStatus);
 	event ForceCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
+	event ForceCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 	event ForceClosePosition(
 		uint256 quoteId,
 		address partyA,
@@ -19,4 +20,12 @@ interface ForceActionsFacetEvents {
 		QuoteStatus quoteStatus,
 		uint256 closeId
 	);
+	event ForceClosePosition(
+        uint256 quoteId,
+        address partyA,
+        address partyB,
+        uint256 filledAmount,
+        uint256 closedPrice,
+        QuoteStatus quoteStatus
+    ); // For backward compatibility, will be removed in future
 }

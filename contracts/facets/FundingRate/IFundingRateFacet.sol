@@ -8,9 +8,4 @@ import "../../storages/MuonStorage.sol";
 
 interface IFundingRateFacet is IFundingRateEvents {
 	function chargeFundingRate(address partyA, uint256[] memory quoteIds, int256[] memory rates, PairUpnlSig memory upnlSig) external;
-	function setFundingFee(uint256[] memory symbolIds, int256[] memory longFees, int256[] memory shortFees) external;
-	function setShortFundingFee(uint256[] memory symbolIds, int256[] memory shortFees) external;
-	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longFees) external;
-	function setEpochDurations(uint256[] memory symbolIds, uint256[] memory durations) external;
-	function chargeAccumulatedFundingFee(address partyA, address partyB, uint256[] memory quoteIds, PairUpnlSig memory upnlSig) external;
 }

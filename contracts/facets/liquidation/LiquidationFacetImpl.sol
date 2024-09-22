@@ -45,7 +45,6 @@ library LiquidationFacetImpl {
 			disputed: false,
 			liquidationTimestamp: liquidationSig.timestamp
 		});
-		accountLayout.connectedPartyBCount[partyA] = 0;
 		accountLayout.liquidators[partyA].push(msg.sender);
 	}
 
@@ -74,11 +73,6 @@ library LiquidationFacetImpl {
 		if (accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.NONE) {
 			if (uint256(-availableBalance) < accountLayout.lockedBalances[partyA].lf) {
 				uint256 remainingLf = accountLayout.lockedBalances[partyA].lf - uint256(-availableBalance);
-				uint256 maxProfit = maLayout.maxLiquidationProfitPerPosition * QuoteStorage.layout().partyAPositionsCount[partyA];
-				if (remainingLf > maxProfit) {
-					accountLayout.balances[maLayout.liquidationInsuranceVault] += maxProfit - remainingLf;
-					remainingLf = maxProfit;
-				}
 				accountLayout.liquidationDetails[partyA].liquidationType = LiquidationType.NORMAL;
 				accountLayout.liquidationDetails[partyA].liquidationFee = remainingLf;
 			} else if (uint256(-availableBalance) <= accountLayout.lockedBalances[partyA].lf + accountLayout.lockedBalances[partyA].cva) {

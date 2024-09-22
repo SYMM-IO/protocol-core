@@ -9,6 +9,7 @@ import "../../interfaces/IPartiesEvents.sol";
 
 interface IPartyBPositionActionsEvents is IPartiesEvents {
 	event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
+	event AcceptCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 	event EmergencyClosePosition(
 		uint256 quoteId,
 		address partyA,
@@ -18,4 +19,12 @@ interface IPartyBPositionActionsEvents is IPartiesEvents {
 		QuoteStatus quoteStatus,
 		uint256 closeId
 	);
+	event EmergencyClosePosition(
+		uint256 quoteId,
+		address partyA,
+		address partyB,
+		uint256 filledAmount,
+		uint256 closedPrice,
+		QuoteStatus quoteStatus
+	); // For backward compatibility, will be removed in future
 }

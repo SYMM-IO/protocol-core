@@ -63,51 +63,6 @@ library AccountFacetImpl {
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
 	}
 
-	function deferredWithdraw(uint256 amount, address to) internal returns (uint256 currentId) {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(to != address(0), "AccountFacet: Zero address");
-		require(accountLayout.balances[msg.sender] >= amount, "AccountFacet: Insufficient balance");
-
-		accountLayout.balances[msg.sender] -= amount;
-
-		currentId = ++accountLayout.lastdeferredWithdrawId;
-		DeferredWithdraw memory withdrawObject = DeferredWithdraw({
-			id: currentId,
-			amount: amount,
-			user: msg.sender,
-			to: to,
-			timestamp: block.timestamp,
-			status: DeferredWithdrawStatus.INITIATED
-		});
-		accountLayout.deferredWithdraws[currentId] = withdrawObject;
-		accountLayout.deferredWithdrawIds[msg.sender].push(currentId);
-	}
-
-	function claimDeferredWithdraw(uint256 id) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		DeferredWithdraw storage withdrawObject = accountLayout.deferredWithdraws[id];
-		require(id <= accountLayout.lastdeferredWithdrawId, "AccountFacet: Invalid Id");
-		require(withdrawObject.status == DeferredWithdrawStatus.INITIATED, "AccountFacet: Already withdrawn");
-		require(block.timestamp >= MAStorage.layout().deallocateCooldown + withdrawObject.timestamp, "AccountFacet: Cooldown hasn't reached");
-		require(withdrawObject.user != address(0), "AccountFacet: Zero address");
-		require(!AccountStorage.layout().suspendedAddresses[withdrawObject.to], "AccountFacet: Receiver address is Suspended");
-
-		withdrawObject.status = DeferredWithdrawStatus.COMPLETED;
-		uint256 amountInCollateralDecimals = (withdrawObject.amount * (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals())) / 1e18;
-		IERC20(GlobalAppStorage.layout().collateral).safeTransfer(withdrawObject.to, amountInCollateralDecimals);
-	}
-
-	function cancelDeferredWithdraw(uint256 id) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		DeferredWithdraw storage withdrawObject = accountLayout.deferredWithdraws[id];
-		require(id <= accountLayout.lastdeferredWithdrawId, "AccountFacet: Invalid Id");
-		require(withdrawObject.status == DeferredWithdrawStatus.INITIATED, "AccountFacet: Already withdrawn");
-		require(withdrawObject.user != address(0), "AccountFacet: Zero address");
-		require(!AccountStorage.layout().suspendedAddresses[withdrawObject.user], "AccountFacet: Receiver address is Suspended");
-		withdrawObject.status = DeferredWithdrawStatus.CANCELED;
-		accountLayout.balances[withdrawObject.user] += withdrawObject.amount;
-	}
-
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) internal {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();

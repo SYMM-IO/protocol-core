@@ -77,11 +77,6 @@ library AccountStorage {
 		mapping(address => uint256) partyAReimbursement;
 		// partyA => partyB => SettlementState
 		mapping(address => mapping(address => SettlementState)) settlementStates;
-		mapping(address => uint8) connectedPartyBCount; // partyA => Number of partyBs connected to this partyA
-		mapping(address => address) boundPartyB; // partyA => Address of partyB
-		mapping(uint256 => DeferredWithdraw) deferredWithdraws;
-		mapping(address => uint256[]) deferredWithdrawIds;
-		uint256 lastdeferredWithdrawId;
 		mapping(address => uint256) reserveVault;
 	}
 
