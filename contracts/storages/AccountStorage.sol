@@ -34,21 +34,6 @@ struct LiquidationDetail {
 	uint256 liquidationTimestamp;
 }
 
-struct DeferredWithdraw {
-	uint256 id;
-	uint256 amount;
-	address user;
-	address to;
-	uint256 timestamp;
-	DeferredWithdrawStatus status;
-}
-
-enum DeferredWithdrawStatus {
-	INITIATED,
-	CANCELED,
-	COMPLETED
-}
-
 struct Price {
 	uint256 price;
 	uint256 timestamp;
