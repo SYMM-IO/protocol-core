@@ -5,22 +5,22 @@
 pragma solidity >=0.8.18;
 
 library SharedEvents {
-	enum BalanceChangeType {
-		ALLOCATE,
-		DEALLOCATE,
-		PLATFORM_FEE_IN,
-		PLATFORM_FEE_OUT,
-		REALIZED_PNL_IN,
-		REALIZED_PNL_OUT,
-		CVA_IN,
-		CVA_OUT,
-		LF_IN,
-		LF_OUT,
-		FUNDING_FEE_IN,
-		FUNDING_FEE_OUT
-	}
+    enum BalanceChangeType {
+        ALLOCATE,
+        DEALLOCATE,
+        PLATFORM_FEE_IN,
+        PLATFORM_FEE_OUT,
+        REALIZED_PNL_IN,
+        REALIZED_PNL_OUT,
+        CVA_IN,
+        CVA_OUT,
+        LF_IN,
+        LF_OUT,
+        FUNDING_FEE_IN,
+        FUNDING_FEE_OUT
+    }
 
-	event BalanceChangePartyA(address indexed partyA, uint256 amount, BalanceChangeType _type);
+    event BalanceChangePartyA(address indexed partyA, uint256 amount, BalanceChangeType _type);
 
-	event BalanceChangePartyB(address indexed partyB, address indexed partyA, uint256 amount, BalanceChangeType _type);
+    event BalanceChangePartyB(address indexed partyB, address indexed partyA, uint256 amount, BalanceChangeType _type);
 }
