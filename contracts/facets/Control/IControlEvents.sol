@@ -75,5 +75,4 @@ interface IControlEvents {
 	event DeregisterAffiliate(address affilate);
 	event AddBridge(address bridge);
 	event RemoveBridge(address bridge);
-	event SetLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit);
 }

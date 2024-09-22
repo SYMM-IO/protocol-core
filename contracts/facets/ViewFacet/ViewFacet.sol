@@ -886,13 +886,4 @@ contract ViewFacet is IViewFacet {
 	function getQuoteCloseId(uint256 quoteId) external view returns (uint256) {
 		return QuoteStorage.layout().closeIds[quoteId];
 	}
-
-	/**
-	 * @notice Retrieves the params for liquidation insurance vault.
-	 * @return liquidationInsuranceVault The address of vault.
-	 * @return maxLiquidationProfitPerPosition The max profit from liquidation per position.
-	 */
-	function getLiquidationInsuranceVaultParams() external view returns (address, uint256) {
-		return (MAStorage.layout().liquidationInsuranceVault, MAStorage.layout().maxLiquidationProfitPerPosition);
-	}
 }

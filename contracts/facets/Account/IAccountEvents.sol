@@ -8,10 +8,14 @@ interface IAccountEvents {
 	event Deposit(address sender, address user, uint256 amount);
 	event Withdraw(address sender, address user, uint256 amount);
 	event AllocatePartyA(address user, uint256 amount, uint256 newAllocatedBalance);
+	event AllocatePartyA(address user, uint256 amount); // For backward compatibility, will be removed in future
 	event DeallocatePartyA(address user, uint256 amount, uint256 newAllocatedBalance);
+	event DeallocatePartyA(address user, uint256 amount); // For backward compatibility, will be removed in future
 	event InternalTransfer(address sender, address user, uint256 userNewAllocatedBalance, uint256 amount);
 	event AllocateForPartyB(address partyB, address partyA, uint256 amount, uint256 newAllocatedBalance);
+	event AllocateForPartyB(address partyB, address partyA, uint256 amount); // For backward compatibility, will be removed in future
 	event DeallocateForPartyB(address partyB, address partyA, uint256 amount, uint256 newAllocatedBalance);
+	event DeallocateForPartyB(address partyB, address partyA, uint256 amount); // For backward compatibility, will be removed in future
 	event TransferAllocation(
 		uint256 amount,
 		address origin,
@@ -19,9 +23,7 @@ interface IAccountEvents {
 		address recipient,
 		uint256 recipientNewAllocatedBalance
 	);
-	event DeferredWithdraw(address user, address to, uint256 amount);
-	event ClaimDeferredWithdraw(uint256 id);
-	event CancelDeferredWithdraw(uint256 id);
+	event TransferAllocation(uint256 amount, address origin, address recipient); // For backward compatibility, will be removed in future
 	event DepositToReserveVault(address sender, address partyB, uint256 amount);
 	event WithdrawFromReserveVault(address partyB, uint256 amount);
 }

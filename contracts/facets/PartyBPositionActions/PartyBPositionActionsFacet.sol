@@ -76,6 +76,7 @@ contract PartyBPositionActionsFacet is Accessibility, Pausable, IPartyBPositionA
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		PartyBPositionActionsFacetImpl.fillCloseRequest(quoteId, filledAmount, closedPrice, upnlSig);
 		emit FillCloseRequest(quoteId, quote.partyA, quote.partyB, filledAmount, closedPrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
+		emit FillCloseRequest(quoteId, quote.partyA, quote.partyB, filledAmount, closedPrice, quote.quoteStatus); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -85,6 +86,7 @@ contract PartyBPositionActionsFacet is Accessibility, Pausable, IPartyBPositionA
 	function acceptCancelCloseRequest(uint256 quoteId) external whenNotPartyBActionsPaused onlyPartyBOfQuote(quoteId) notLiquidated(quoteId) {
 		PartyBPositionActionsFacetImpl.acceptCancelCloseRequest(quoteId);
 		emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
+		emit AcceptCancelCloseRequest(quoteId, QuoteStatus.OPENED); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -109,5 +111,13 @@ contract PartyBPositionActionsFacet is Accessibility, Pausable, IPartyBPositionA
 			quote.quoteStatus,
 			quoteLayout.closeIds[quoteId]
 		);
+		emit EmergencyClosePosition(
+			quoteId,
+			quote.partyA,
+			quote.partyB,
+			filledAmount,
+			upnlSig.price,
+			quote.quoteStatus
+		); // For backward compatibility, will be removed in future
 	}
 }

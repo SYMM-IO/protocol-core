@@ -4,13 +4,11 @@ export const FacetNames = [
 	"DiamondLoupeFacet",
 	"LiquidationFacet",
 	"PartyAFacet",
-	"PartyBBatchActionsFacet",
 	"BridgeFacet",
 	"ViewFacet",
 	"FundingRateFacet",
 	"ForceActionsFacet",
 	"SettlementFacet",
-	"OracleLessActionsFacet",
 	"PartyBPositionActionsFacet",
 	"PartyBQuoteActionsFacet",
 ]

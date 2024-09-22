@@ -41,7 +41,7 @@ export function shouldBehaveLikeDiamond(): void {
 		for (const address of await context.diamondLoupeFacet.facetAddresses()) {
 			addresses.push(address)
 		}
-		assert.equal(addresses.length, 15)
+		assert.equal(addresses.length, 13)
 	})
 
 	it("facets should have the right function selectors -- call to facetFunctionSelectors function", async function () {
@@ -56,7 +56,7 @@ export function shouldBehaveLikeDiamond(): void {
 		const context: RunContext = this.context
 		const viewFacet = await ethers.getContractFactory("ViewFacet")
 		const selectors = getSelectors(viewFacet as any).get(["balanceOf(address)"])
-		const viewFacetAddress = addresses[8]
+		const viewFacetAddress = addresses[7]
 
 		const tx = await context.diamondCutFacet.diamondCut(
 			[
@@ -83,7 +83,7 @@ export function shouldBehaveLikeDiamond(): void {
 	it("should add the getAccountBalance() function back", async function () {
 		const context: RunContext = this.context
 		const viewFacet = await ethers.getContractFactory("ViewFacet")
-		const viewFacetAddress = addresses[8]
+		const viewFacetAddress = addresses[7]
 
 		const tx = await context.diamondCutFacet.diamondCut(
 			[

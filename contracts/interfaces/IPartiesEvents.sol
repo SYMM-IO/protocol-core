@@ -28,6 +28,8 @@ interface IPartiesEvents {
 		uint256 deadline
 	);
 
+	event ExpireQuote(QuoteStatus quoteStatus, uint256 quoteId); // For backward compatibility, will be removed in future
+
 	event ExpireQuoteOpen(QuoteStatus quoteStatus, uint256 quoteId);
 
 	event ExpireQuoteClose(QuoteStatus quoteStatus, uint256 quoteId, uint256 closeId);
@@ -43,6 +45,15 @@ interface IPartiesEvents {
 		QuoteStatus quoteStatus,
 		uint256 closeId
 	);
+
+	event FillCloseRequest(
+		uint256 quoteId,
+		address partyA,
+		address partyB,
+		uint256 filledAmount,
+		uint256 closedPrice,
+		QuoteStatus quoteStatus
+	); // For backward compatibility, will be removed in future
 
 	event LiquidatePartyB(address liquidator, address partyB, address partyA, uint256 partyBAllocatedBalance, int256 upnl);
 }

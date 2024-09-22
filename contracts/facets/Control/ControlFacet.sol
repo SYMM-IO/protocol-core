@@ -520,14 +520,4 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit RemoveBridge(bridge);
 		BridgeStorage.layout().bridges[bridge] = false;
 	}
-
-	/// @notice Sets the params for liquidation insurance vault.
-	/// @param insuranceVault The address of the vault.
-	/// @param maxLiquidationProfit The max profit from liquidation per position.
-	function setLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit) external {
-		require(insuranceVault != address(0), "ControlFacet: Zero address");
-		MAStorage.layout().liquidationInsuranceVault = insuranceVault;
-		MAStorage.layout().maxLiquidationProfitPerPosition = maxLiquidationProfit;
-		emit SetLiquidationInsuranceVaultParams(insuranceVault, maxLiquidationProfit);
-	}
 }

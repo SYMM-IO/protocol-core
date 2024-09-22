@@ -206,7 +206,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 					context.accountFacet
 						.connect(context.signers.hedger)
 						.deallocateForPartyB(decimal(210n), await user.getAddress(), await getDummySingleUpnlSig()),
-				).to.be.revertedWith("PartyBFacet: Insufficient allocated balance")
+				).to.be.revertedWith("AccountFacet: Insufficient allocated balance")
 			})
 
 			it("should failed if amount be higher than partyBAllocatedBalances", async () => {
@@ -214,7 +214,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 					context.accountFacet
 						.connect(context.signers.hedger)
 						.deallocateForPartyB(decimal(101n), await user.getAddress(), await getDummySingleUpnlSig()),
-				).to.be.revertedWith("PartyBFacet: Will be liquidatable")
+				).to.be.revertedWith("AccountFacet: Will be liquidatable")
 			})
 
 			it("should deallocate for partyB successfully", async () => {
@@ -250,11 +250,6 @@ export function shouldBehaveLikeAccountFacet(): void {
 			expect(await context.viewFacet.allocatedBalanceOfPartyA(await user2.getAddress())).to.be.equal('250')
 
 			expect(await context.viewFacet.balanceOf(await user.getAddress())).to.be.equal('50')
-		})
-
-		it('should fail internal transfer if one of sides be partyB', async () => {
-			await expect(context.accountFacet.connect(context.signers.user).internalTransfer(await hedger.getAddress(), "250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
-			await expect(context.accountFacet.connect(context.signers.hedger).internalTransfer(await user.getAddress(), "250")).to.be.revertedWith("Accessibility: Shouldn't be partyB")
 		})
 	})
 }

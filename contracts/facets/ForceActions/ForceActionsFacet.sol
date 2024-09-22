@@ -32,6 +32,7 @@ contract ForceActionsFacet is Accessibility, Pausable, IPartiesEvents, IForceAct
     function forceCancelCloseRequest(uint256 quoteId) external notLiquidated(quoteId) whenNotPartyAActionsPaused {
         ForceActionsFacetImpl.forceCancelCloseRequest(quoteId);
         emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED, QuoteStorage.layout().closeIds[quoteId]);
+        emit ForceCancelCloseRequest(quoteId, QuoteStatus.OPENED); // For backward compatibility, will be removed in future
     }
 
     /**
@@ -54,6 +55,7 @@ contract ForceActionsFacet is Accessibility, Pausable, IPartiesEvents, IForceAct
             emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);
         } else {
             emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
+            emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus); // For backward compatibility, will be removed in future
         }
     }
 
@@ -84,6 +86,7 @@ contract ForceActionsFacet is Accessibility, Pausable, IPartiesEvents, IForceAct
         } else {
             emit SettleUpnl(settleSig.quotesSettlementsData, updatedPrices, msg.sender);
             emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
+            emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus); // For backward compatibility, will be removed in future
         }
     }
 }
