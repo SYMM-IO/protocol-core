@@ -8,5 +8,4 @@ import "../../storages/QuoteStorage.sol";
 import "../PartyBPositionActions/IPartyBPositionActionsEvents.sol";
 import "../PartyBQuoteActions/IPartyBQuoteActionsEvents.sol";
 
-interface IPartyBGroupActionsEvents is IPartyBPositionActionsEvents, IPartyBQuoteActionsEvents {
-}
+interface IPartyBGroupActionsEvents is IPartyBPositionActionsEvents, IPartyBQuoteActionsEvents {}

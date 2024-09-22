@@ -111,13 +111,6 @@ contract PartyBPositionActionsFacet is Accessibility, Pausable, IPartyBPositionA
 			quote.quoteStatus,
 			quoteLayout.closeIds[quoteId]
 		);
-		emit EmergencyClosePosition(
-			quoteId,
-			quote.partyA,
-			quote.partyB,
-			filledAmount,
-			upnlSig.price,
-			quote.quoteStatus
-		); // For backward compatibility, will be removed in future
+		emit EmergencyClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, upnlSig.price, quote.quoteStatus); // For backward compatibility, will be removed in future
 	}
 }
