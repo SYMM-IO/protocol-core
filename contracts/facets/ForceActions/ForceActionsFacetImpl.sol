@@ -129,10 +129,10 @@ library ForceActionsFacetImpl {
             if (quote.positionType == PositionType.LONG) {
                 diff = diff * - 1;
             }
-            partyBAllocatedBalance = AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA];
             isPartyBLiquidated = true;
             upnlPartyB = sig.upnlPartyB + diff;
             LibLiquidation.liquidatePartyB(quote.partyB, quote.partyA, upnlPartyB, block.timestamp);
         }
+        partyBAllocatedBalance = AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA];
     }
 }

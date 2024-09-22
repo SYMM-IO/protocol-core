@@ -8,8 +8,12 @@ import "../../libraries/muon/LibMuonSettlement.sol";
 import "../../libraries/LibSettlement.sol";
 
 library SettlementFacetImpl {
-	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA) internal {
+	function settleUpnl(
+		SettlementSig memory settleSig,
+		uint256[] memory updatedPrices,
+		address partyA
+	) internal returns (uint256[] memory newPartyBsAllocatedBalances) {
 		LibMuonSettlement.verifySettlement(settleSig, partyA);
-		LibSettlement.settleUpnl(settleSig, updatedPrices, partyA, false);
+		return LibSettlement.settleUpnl(settleSig, updatedPrices, partyA, false);
 	}
 }
