@@ -81,10 +81,18 @@ contract ForceActionsFacet is Accessibility, Pausable, IPartiesEvents, IForceAct
             settleSig,
             updatedPrices
         );
+        uint256[] memory newPartyBsAllocatedBalances = new uint256[](1);
+        newPartyBsAllocatedBalances[0] = partyBAllocatedBalance;
         if (isPartyBLiquidated) {
             emit LiquidatePartyB(msg.sender, quote.partyB, quote.partyA, partyBAllocatedBalance, upnlPartyB);
         } else {
-            emit SettleUpnl(settleSig.quotesSettlementsData, updatedPrices, msg.sender);
+            emit SettleUpnl(
+                settleSig.quotesSettlementsData,
+                updatedPrices,
+                msg.sender,
+                AccountStorage.layout().allocatedBalances[msg.sender],
+                newPartyBsAllocatedBalances
+            );
             emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus, quoteLayout.closeIds[quoteId]);
             emit ForceClosePosition(quoteId, quote.partyA, quote.partyB, filledAmount, closePrice, quote.quoteStatus); // For backward compatibility, will be removed in future
         }

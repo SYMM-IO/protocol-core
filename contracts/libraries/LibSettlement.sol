@@ -12,7 +12,7 @@ import "./LibAccount.sol";
 import "hardhat/console.sol";
 
 library LibSettlement {
-	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA, bool isForceClose) internal {
+	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA, bool isForceClose) internal returns (uint256[] memory newPartyBsAllocatedBalances) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
@@ -30,6 +30,7 @@ library LibSettlement {
 
 		int256[] memory settleAmounts = new int256[](settleSig.upnlPartyBs.length);
 		address[] memory partyBs = new address[](settleSig.upnlPartyBs.length);
+		newPartyBsAllocatedBalances = new uint256[](settleSig.upnlPartyBs.length);
 
 		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
 			QuoteSettlementData memory data = settleSig.quotesSettlementsData[i];
@@ -65,7 +66,6 @@ library LibSettlement {
 		int256 totalSettlementAmount;
 		for (uint8 i = 0; i < partyBs.length; i++) {
 			address partyB = partyBs[i];
-
 			require(
 				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[i], partyB, partyA) >= 0,
 				"LibSettlement: PartyB should be solvent"
@@ -91,6 +91,7 @@ library LibSettlement {
 				accountLayout.partyBAllocatedBalances[partyB][partyA] += uint256(-settlementAmount);
 				emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(settlementAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 			}
+			newPartyBsAllocatedBalances[i] = accountLayout.partyBAllocatedBalances[partyB][partyA];
 		}
 		if (totalSettlementAmount >= 0) {
 			accountLayout.allocatedBalances[partyA] += uint256(totalSettlementAmount);

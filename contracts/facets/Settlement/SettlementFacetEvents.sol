@@ -7,5 +7,11 @@ pragma solidity >=0.8.18;
 import "../../storages/MuonStorage.sol";
 
 interface SettlementFacetEvents {
-    event SettleUpnl(QuoteSettlementData[] settlementData, uint256[] updatedPrices, address partyA);
+	event SettleUpnl(
+		QuoteSettlementData[] settlementData,
+		uint256[] updatedPrices,
+		address partyA,
+		uint256 newPartyAAllocatedBalance,
+		uint256[] newPartyBsAllocatedBalances
+	);
 }

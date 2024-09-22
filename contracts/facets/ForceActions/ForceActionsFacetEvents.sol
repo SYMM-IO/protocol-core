@@ -20,12 +20,5 @@ interface ForceActionsFacetEvents {
 		QuoteStatus quoteStatus,
 		uint256 closeId
 	);
-	event ForceClosePosition(
-        uint256 quoteId,
-        address partyA,
-        address partyB,
-        uint256 filledAmount,
-        uint256 closedPrice,
-        QuoteStatus quoteStatus
-    ); // For backward compatibility, will be removed in future
+	event ForceClosePosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 }

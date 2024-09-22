@@ -24,7 +24,13 @@ contract SettlementFacet is Accessibility, Pausable, ISettlementFacet {
 		uint256[] memory updatedPrices,
 		address partyA
 	) external whenNotPartyBActionsPaused notLiquidatedPartyA(partyA) {
-		SettlementFacetImpl.settleUpnl(settlementSig, updatedPrices, partyA);
-		emit SettleUpnl(settlementSig.quotesSettlementsData, updatedPrices, partyA);
+		uint256[] memory newPartyBsAllocatedBalances = SettlementFacetImpl.settleUpnl(settlementSig, updatedPrices, partyA);
+		emit SettleUpnl(
+			settlementSig.quotesSettlementsData,
+			updatedPrices,
+			partyA,
+			AccountStorage.layout().allocatedBalances[partyA],
+			newPartyBsAllocatedBalances
+		);
 	}
 }
