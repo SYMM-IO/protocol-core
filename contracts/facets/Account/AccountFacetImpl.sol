@@ -126,7 +126,7 @@ library AccountFacetImpl {
 
 	function withdrawFromReserveVault(uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(amount <= accountLayout.reserveVault[msg.sender], "AccountFacet: Insufficient balance");
+		require(amount > 0 && amount <= accountLayout.reserveVault[msg.sender], "AccountFacet: Insufficient balance");
 		accountLayout.reserveVault[msg.sender] -= amount;
 		accountLayout.balances[msg.sender] += amount;
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;

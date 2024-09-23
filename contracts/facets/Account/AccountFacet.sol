@@ -145,7 +145,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 
 	/// @notice Allows transferring the balance of partyB in emergency reserve vault to balance.
 	/// @param amount The precise amount of collateral to be transferred from emergency reserve vault, specified in 18 decimals.
-	function withdrawFromReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
+	function withdrawFromReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) {
 		AccountFacetImpl.withdrawFromReserveVault(amount);
 		emit WithdrawFromReserveVault(msg.sender, amount);
 	}
