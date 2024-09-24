@@ -15,13 +15,19 @@ import "../facets/DiamondCut/IDiamondCut.sol";
 import "../facets/DiamondLoup/IDiamondLoupe.sol";
 import "../facets/PartyBQuoteActions/IPartyBQuoteActionsFacet.sol";
 import "../facets/PartyBPositionActions/IPartyBPositionActionsFacet.sol";
+import "../facets/PartyBGroupActions/IPartyBGroupActionsFacet.sol";
+import "../facets/ForceActions/IForceActionsFacet.sol";
+import "../facets/Settlement/ISettlementFacet.sol";
 
 interface ISymmio is
 	IAccountFacet,
 	IControlFacet,
 	IFundingRateFacet,
 	IBridgeFacet,
+	ISettlementFacet,
+	IForceActionsFacet,
 	IPartyBQuoteActionsFacet,
+	IPartyBGroupActionsFacet,
 	IPartyBPositionActionsFacet,
 	IPartyAFacet,
 	ILiquidationFacet,
