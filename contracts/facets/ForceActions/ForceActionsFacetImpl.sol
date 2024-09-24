@@ -125,6 +125,10 @@ library ForceActionsFacetImpl {
 			}
 			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		} else {
+			uint256 available = accountLayout.reserveVault[quote.partyB];
+			accountLayout.reserveVault[quote.partyB] = 0;
+			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += available;
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, available, SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 			int256 diff = (int256(quote.quantityToClose) * (int256(closePrice) - int256(sig.currentPrice))) / 1e18;
 			if (quote.positionType == PositionType.LONG) {
 				diff = diff * -1;
