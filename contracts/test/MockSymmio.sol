@@ -26,4 +26,8 @@ contract MockSymmio {
         IERC20(collateral).transferFrom(msg.sender, address(this), amount);
         balances[user] += amount;
     }
+
+    function balanceOf(address user) external view returns (uint256) {
+        return balances[user];
+    }
 }

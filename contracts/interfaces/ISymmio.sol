@@ -34,4 +34,26 @@ interface ISymmio is
 	IViewFacet,
 	IDiamondCut,
 	IDiamondLoupe
-{}
+{
+	// Copied from SharedEvents library
+	enum BalanceChangeType {
+		ALLOCATE,
+		DEALLOCATE,
+		PLATFORM_FEE_IN,
+		PLATFORM_FEE_OUT,
+		REALIZED_PNL_IN,
+		REALIZED_PNL_OUT,
+		CVA_IN,
+		CVA_OUT,
+		LF_IN,
+		LF_OUT,
+		FUNDING_FEE_IN,
+		FUNDING_FEE_OUT
+	}
+
+	// Copied from SharedEvents library
+	event BalanceChangePartyA(address indexed partyA, uint256 amount, BalanceChangeType _type);
+
+	// Copied from SharedEvents library
+	event BalanceChangePartyB(address indexed partyB, address indexed partyA, uint256 amount, BalanceChangeType _type);
+}
