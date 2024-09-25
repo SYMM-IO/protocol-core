@@ -122,8 +122,12 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 			_checkRole(TRUSTED_ROLE, msg.sender);
 		}
 
-		(bool success, ) = destAddress.call{ value: 0 }(callData);
-		require(success, "SymmioPartyB: Execution reverted");
+		(bool _success, bytes memory _resultData) = destAddress.call{ value: 0 }(callData);
+		if (!_success) {
+			assembly {
+				revert(add(_resultData, 32), mload(_resultData))
+			}
+		}
 	}
 
 	/**
