@@ -115,10 +115,15 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
 		for (uint256 i = selector.length; i != 0; i--) {
 			require(
+				revokeProposalTimestamp[account][target][selector[i - 1]] != 0,
+				"MultiAccount: Revoke access not proposed"
+			);
+			require(
 				revokeProposalTimestamp[account][target][selector[i - 1]] + revokeCooldown <= block.timestamp,
 				"MultiAccount: Cooldown not reached"
 			);
 			delegatedAccesses[account][target][selector[i - 1]] = false;
+			revokeProposalTimestamp[account][target][selector[i - 1]] = 0;
 		}
 		emit DelegateAccesses(account, target, selector, false);
 	}
