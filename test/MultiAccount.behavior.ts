@@ -182,14 +182,14 @@ export function shouldBehaveLikeMultiAccount() {
 			it("should access delegate call to another address", async () => {
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(false)
 
-				expect(await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector, true)).to.not.be.reverted
+				expect(await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector)).to.not.be.reverted
 
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
 			})
 			it("should send quote with delegate access", async () => {
 				let quoteRequest1 = limitQuoteRequestBuilder().build()
 				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
-				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector, true)
+				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector)
 				await multiAccount.connect(context.signers.user2)._call(partyAAccount, [sendQuote1])
 				expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
 			})
