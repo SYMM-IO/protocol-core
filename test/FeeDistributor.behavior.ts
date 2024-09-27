@@ -3,7 +3,7 @@ import {ethers, upgrades} from "hardhat"
 import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
 import {MockSymmio, MockToken, SymmioFeeDistributor} from "../src/types"
 
-export async function shouldBehaveLikeFeeDistributor() {
+export function shouldBehaveLikeFeeDistributor() {
 	describe("FeeDistributor", function () {
 		let feeDistributor: SymmioFeeDistributor
 		let mockSymmio: MockSymmio
