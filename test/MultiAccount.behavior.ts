@@ -1,4 +1,4 @@
-import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
+import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
 import {expect} from "chai"
 import {AbiCoder, BigNumberish} from "ethers"
 import {ethers, upgrades} from "hardhat"
@@ -91,6 +91,8 @@ export function shouldBehaveLikeMultiAccount() {
 		await context.controlFacet.connect(context.signers.admin).registerPartyB(await symmioPartyB.getAddress())
 		await context.controlFacet.connect(context.signers.admin).registerAffiliate(await MultiAccount.getAddress())
 		await context.controlFacet.connect(context.signers.admin).setFeeCollector(await MultiAccount.getAddress(), await hedger.getAddress())
+
+		await multiAccount.connect(context.signers.admin).setRevokeCooldown(300);
 
 		await context.controlFacet
 			.connect(context.signers.admin)
@@ -186,6 +188,28 @@ export function shouldBehaveLikeMultiAccount() {
 
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
 			})
+
+			it("should revoke delegate call access to another address", async () => {
+				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(false)
+
+				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector)
+
+				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
+
+				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector]))
+					.to.be.revertedWith("MultiAccount: Revoke access not proposed")
+
+				await multiAccount.connect(context.signers.user).proposeToRevokeAccesses(partyAAccount, user2Address, [selector])
+				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
+
+				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector]))
+					.to.be.revertedWith("MultiAccount: Cooldown not reached")
+
+				await time.increase(301)
+				await multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector])
+				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(false)
+			})
+
 			it("should send quote with delegate access", async () => {
 				let quoteRequest1 = limitQuoteRequestBuilder().build()
 				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
