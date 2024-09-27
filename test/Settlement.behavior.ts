@@ -125,7 +125,7 @@ export function shouldBehaveLikeSettlement(): void {
 	})
 
 	it("Should fail if partyB is in liquidation process", async function () {
-		await hedger.liquidate(await user.getAddress(), getDummySingleUpnlSig(decimal(10000n) * -1n))
+		await hedger.liquidate(await user.getAddress(), await getDummySingleUpnlSig(decimal(10000n) * -1n) as any)
 		await expect(hedger.settleUpnl(await user.getAddress(), [1n], getDummySettlementSig(0n, [0n], [
 			{
 				quoteId: longHedger1,

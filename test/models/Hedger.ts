@@ -32,6 +32,19 @@ export class Hedger {
 		if (depositAmount) await runTx(this.context.accountFacet.connect(this.signer).deposit(depositAmount))
 	}
 
+	public async depositToReserveVault(amount: BigNumberish) {
+		await runTx(this.context.collateral.connect(this.signer).approve(this.context.diamond, ethers.MaxUint256))
+		await runTx(this.context.accountFacet.connect(this.signer).depositToReserveVault(amount, await this.signer.getAddress()))
+	}
+
+	public async withdrawFromReserveVault(amount: BigNumberish) {
+		await runTx(this.context.accountFacet.connect(this.signer).withdrawFromReserveVault(amount))
+	}
+
+	public async balanceOfReserveVault(): Promise<bigint> {
+		return await this.context.viewFacet.connect(this.signer).balanceOfReserveVault(await this.signer.getAddress())
+	}
+
 	public async setNativeBalance(amount: bigint) {
 		await setBalance(this.signer.address, amount)
 	}
@@ -81,6 +94,10 @@ export class Hedger {
 				)
 		)
 		logger.info(`Hedger::OpenPosition: ${id}`)
+	}
+
+	public async getBalance(): Promise<bigint> {
+		return await this.context.viewFacet.balanceOf(await this.getAddress())
 	}
 
 	public async getBalanceInfo(partyA: string): Promise<BalanceInfo> {
@@ -167,7 +184,6 @@ export class Hedger {
 		)
 		logger.info(`Hedger::EmergencyClosePosition: ${id}`)
 	}
-
 
 	public async settleUpnl(partyA: string, updatedPrices: bigint[], sig: Promise<SettlementSigStructOutput> | SettlementSigStructOutput = getDummySettlementSig()) {
 		let signature = sig instanceof Promise ? await sig : sig

@@ -11,7 +11,7 @@ import {limitQuoteRequestBuilder, QuoteRequest} from "./requestModels/QuoteReque
 import {runTx} from "../utils/TxUtils"
 import {getDummyLiquidationSig} from "../utils/SignatureUtils"
 import {LiquidationSigStruct} from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
-import {QuoteStructOutput} from "../../src/types/contracts/interfaces/ISymmio"
+import {QuoteStructOutput, SettlementSigStruct} from "../../src/types/contracts/interfaces/ISymmio"
 import {HighLowPriceSigStruct} from "../../src/types/contracts/facets/ForceActions/ForceActionsFacet"
 import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
 
@@ -137,6 +137,20 @@ export class User {
 		)
 		await runTx(this.context.forceActionsFacet.connect(this.signer).forceClosePosition(id, signature))
 		logger.info(`User::::ForceClosePosition: ${id}`)
+	}
+
+	public async settleAndForceClosePosition(id: BigNumberish, highLowPriceSigStruct: HighLowPriceSigStruct, settleSig: SettlementSigStruct, updatedPrices: bigint[]) {
+		logger.detailedDebug(
+			serializeToJson({
+				highLowPriceSigStruct: highLowPriceSigStruct,
+				settleSig: settleSig,
+				updatedPrices: updatedPrices,
+				userBalanceInfo: await this.getBalanceInfo(),
+				userUpnl: await this.getUpnl(),
+			}),
+		)
+		await runTx(this.context.forceActionsFacet.connect(this.signer).settleAndForceClosePosition(id, highLowPriceSigStruct, settleSig, updatedPrices))
+		logger.info(`User::::SettleAndForceClosePosition: ${id}`)
 	}
 
 	public async requestToCancelCloseRequest(id: BigNumberish) {
