@@ -1,10 +1,13 @@
 import {SingleUpnlAndPriceSigStruct} from "../../src/types/contracts/facets/PartyA/PartyAFacet"
-import {PairUpnlAndPriceSigStruct, SingleUpnlSigStruct} from "../../src/types/contracts/facets/PartyB/PartyBFacet"
 import {QuotePriceSigStruct} from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
 import {getBlockTimestamp} from "./Common"
 import {PairUpnlSigStructOutput} from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
 import {HighLowPriceSigStruct} from "../../src/types/contracts/facets/ForceActions/ForceActionsFacet"
-import {DeferredLiquidationSigStruct} from "../../src/types/contracts/interfaces/ISymmio"
+import {
+	DeferredLiquidationSigStruct,
+	PairUpnlAndPriceSigStruct,
+	SingleUpnlSigStruct
+} from "../../src/types/contracts/interfaces/ISymmio"
 import {ethers} from "hardhat"
 import {
 	QuoteSettlementDataStructOutput,
