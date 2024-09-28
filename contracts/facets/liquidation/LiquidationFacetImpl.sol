@@ -104,7 +104,9 @@ library LiquidationFacetImpl {
                 delete quoteLayout.partyBPendingQuotes[quote.partyB][partyA];
                 accountLayout.partyBPendingLockedBalances[quote.partyB][partyA].makeZero();
             }
-            accountLayout.partyAReimbursement[partyA] += LibQuote.getTradingFee(quote.id);
+            uint256 fee = LibQuote.getTradingFee(quote.id);
+            accountLayout.partyAReimbursement[partyA] += fee;
+            emit SharedEvents.BalanceChangePartyA(partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
             quote.quoteStatus = QuoteStatus.LIQUIDATED_PENDING;
             quote.statusModifyTimestamp = block.timestamp;
             liquidatedAmounts[index] = quote.quantity;
@@ -294,7 +296,6 @@ library LiquidationFacetImpl {
         if (accountLayout.liquidationDetails[partyA].involvedPartyBCounts == 0) {
             emit SharedEvents.BalanceChangePartyA(partyA, accountLayout.allocatedBalances[partyA], SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
             accountLayout.allocatedBalances[partyA] = accountLayout.partyAReimbursement[partyA];
-            emit SharedEvents.BalanceChangePartyA(partyA, accountLayout.partyAReimbursement[partyA], SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
             accountLayout.partyAReimbursement[partyA] = 0;
             accountLayout.lockedBalances[partyA].makeZero();
 
