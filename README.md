@@ -30,7 +30,7 @@ There are also some additional second-layer contracts required by hedgers and fr
    stop-loss bots require the `delegateAccess` feature provided by this contract.
 
 2. **SymmioPartyB**:  
-   This contract enables hedgers to have multiple private keys (PKs) behind their bots.
+   This contract enables hedgers to have multiple private keys behind their bots.
 
 ## Getting Started
 
