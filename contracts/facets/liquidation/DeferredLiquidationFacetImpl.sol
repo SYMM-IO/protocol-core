@@ -39,7 +39,6 @@ library DeferredLiquidationFacetImpl {
 		);
 		if (availableBalance > 0) {
 			accountLayout.allocatedBalances[partyA] -= uint256(availableBalance);
-			emit SharedEvents.BalanceChangePartyA(partyA, uint256(availableBalance), SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
 			accountLayout.partyAReimbursement[partyA] += uint256(availableBalance);
 		}
 
