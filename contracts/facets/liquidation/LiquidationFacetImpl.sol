@@ -267,7 +267,6 @@ library LiquidationFacetImpl {
 
             int256 settleAmount = accountLayout.settlementStates[partyA][partyB].actualAmount;
             accountLayout.partyBAllocatedBalances[partyB][partyA] += accountLayout.settlementStates[partyA][partyB].cva;
-            emit SharedEvents.BalanceChangePartyA(partyA, accountLayout.settlementStates[partyA][partyB].cva, SharedEvents.BalanceChangeType.CVA_OUT);
             emit SharedEvents.BalanceChangePartyB(
                 partyB,
                 partyA,
