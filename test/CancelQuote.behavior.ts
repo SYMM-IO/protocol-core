@@ -187,6 +187,15 @@ export function shouldBehaveLikeCancelQuote(): void {
 					beforeOutput: beforeOut,
 				})
 			})
+
+			it("Should force cancel quote", async function () {
+				await expect(user.forceCancelQuote(1)).to.be.revertedWith("PartyAFacet: Invalid state")
+				await user.requestToCancelQuote(1)
+				await expect(user.forceCancelQuote(1)).to.be.revertedWith("PartyAFacet: Cooldown not reached")
+				await time.increase(300)
+				await user.forceCancelQuote(1)
+				expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.eq(QuoteStatus.CANCELED)
+			})
 		})
 	})
 }

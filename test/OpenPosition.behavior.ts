@@ -238,4 +238,9 @@ export function shouldBehaveLikeOpenPosition(): void {
 			beforeOutput: beforeOut,
 		})
 	})
+
+	it("Should lock and open quote with group actions", async function () {
+		await hedger.lockAndOpenQuote(3)
+		expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.eq(QuoteStatus.OPENED)
+	})
 }

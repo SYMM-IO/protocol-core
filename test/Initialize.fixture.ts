@@ -36,6 +36,12 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("SUSPENDER_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("DISPUTE_ROLE")))
 	context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
 		await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
 	await context.controlFacet
@@ -52,6 +58,9 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet.connect(context.signers.admin).setDeallocateDebounceTime(120)
 	await context.controlFacet.connect(context.signers.admin).setBalanceLimitPerUser(decimal(10000n))
 	await context.controlFacet.connect(context.signers.admin).setForceCloseCooldowns(300, 120)
+	await context.controlFacet.connect(context.signers.admin).setForceCancelCooldown(300)
+	await context.controlFacet.connect(context.signers.admin).setForceCancelCloseCooldown(300)
+	await context.controlFacet.connect(context.signers.admin).setInvalidBridgedAmountsPool(context.signers.feeCollector.getAddress())
 	await context.controlFacet.connect(context.signers.admin).registerPartyB(context.signers.hedger.getAddress())
 	await context.controlFacet.connect(context.signers.admin).registerPartyB(context.signers.hedger2.getAddress())
 	await context.controlFacet.connect(context.signers.admin).registerAffiliate(context.multiAccount)

@@ -71,6 +71,26 @@ export class Hedger {
 		logger.info(`Hedger::UnLockQuote: ${id}`)
 	}
 
+	public async lockAndOpenQuote(id: BigNumberish, allocateCoefficient: bigint | null = decimal(12n, 17), openRequest: OpenRequest = limitOpenRequestBuilder().build()) {
+		if (allocateCoefficient != null) {
+			const quote = await this.context.viewFacet.getQuote(id)
+			const notional = unDecimal(BigInt(quote.quantity) * quote.requestedOpenPrice)
+			await runTx(
+				this.context.accountFacet.connect(this.signer).allocateForPartyB(unDecimal(notional * BigInt(allocateCoefficient)), quote.partyA)
+			)
+		}
+		await runTx(
+			this.context.partyBGroupActionsFacet.connect(this.signer)
+				.lockAndOpenQuote(
+					id,
+					openRequest.filledAmount,
+					openRequest.openPrice,
+					await getDummySingleUpnlSig(BigInt(openRequest.upnlPartyA)),
+					await getDummyPairUpnlAndPriceSig(BigInt(openRequest.price), BigInt(openRequest.upnlPartyA), BigInt(openRequest.upnlPartyB))
+				)
+		)
+	}
+
 	public async openPosition(id: BigNumberish, request: OpenRequest = limitOpenRequestBuilder().build()) {
 		const quote = await this.context.viewFacet.getQuote(id)
 		const user = this.context.manager.getUser(quote.partyA)
