@@ -24,10 +24,10 @@ library LibMuonSettlement {
 		}
 		bytes32 hash = keccak256(
 			abi.encodePacked(
-				"verifySettlement",
 				muonLayout.muonAppId,
 				settleSig.reqId,
 				address(this),
+				"verifySettlement",
 				nonces,
 				AccountStorage.layout().partyANonces[partyA],
 				quoteIds,
