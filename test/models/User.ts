@@ -91,6 +91,30 @@ export class User {
 		logger.info(`User::::RequestToCancelQuote: ${id}`)
 	}
 
+	public async forceCancelQuote(id: BigNumberish) {
+		logger.detailedDebug(
+			serializeToJson({
+				request: "ForceCancelQuote",
+				userBalanceInfo: await this.getBalanceInfo(),
+				userUpnl: await this.getUpnl(),
+			}),
+		)
+		await runTx(this.context.forceActionsFacet.connect(this.signer).forceCancelQuote(id))
+		logger.info(`User::::ForceCancelQuote: ${id}`)
+	}
+
+	public async forceCancelCloseRequest(id: BigNumberish) {
+		logger.detailedDebug(
+			serializeToJson({
+				request: "ForceCancelCloseRequest",
+				userBalanceInfo: await this.getBalanceInfo(),
+				userUpnl: await this.getUpnl(),
+			}),
+		)
+		await runTx(this.context.forceActionsFacet.connect(this.signer).forceCancelCloseRequest(id))
+		logger.info(`User::::ForceCancelCloseRequest: ${id}`)
+	}
+
 	public async getBalanceInfo(): Promise<BalanceInfo> {
 		const b = await this.context.viewFacet.balanceInfoOfPartyA(await this.getAddress())
 		return {

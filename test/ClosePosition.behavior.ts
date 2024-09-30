@@ -553,6 +553,14 @@ export function shouldBehaveLikeClosePosition(): void {
 					beforeOutput: beforeOut,
 				})
 			})
+
+			it("Should force cancel close request", async function () {
+				await expect(user.forceCancelCloseRequest(2)).to.be.revertedWith("PartyAFacet: Invalid state")
+				await expect(user.forceCancelCloseRequest(1)).to.be.revertedWith("PartyAFacet: Cooldown not reached")
+				await time.increase(300)
+				await user.forceCancelCloseRequest(1)
+				expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.eq(QuoteStatus.OPENED)
+			})
 		})
 	})
 }

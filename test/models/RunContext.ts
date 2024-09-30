@@ -9,7 +9,7 @@ import {
 	ForceActionsFacet,
 	FundingRateFacet,
 	LiquidationFacet,
-	PartyAFacet,
+	PartyAFacet, PartyBGroupActionsFacet,
 	PartyBPositionActionsFacet,
 	PartyBQuoteActionsFacet,
 	SettlementFacet,
@@ -24,6 +24,7 @@ export class RunContext {
 	diamondLoupeFacet!: DiamondLoupeFacet
 	partyAFacet!: PartyAFacet
 	partyBQuoteActionsFacet!: PartyBQuoteActionsFacet
+	partyBGroupActionsFacet!: PartyBGroupActionsFacet
 	partyBPositionActionsFacet!: PartyBPositionActionsFacet
 	bridgeFacet!: BridgeFacet
 	viewFacet!: ViewFacet
@@ -80,6 +81,7 @@ export async function createRunContext(diamond: string, collateral: string, mult
 	context.partyAFacet = await ethers.getContractAt("PartyAFacet", diamond)
 	context.partyBQuoteActionsFacet = await ethers.getContractAt("PartyBQuoteActionsFacet", diamond)
 	context.partyBPositionActionsFacet = await ethers.getContractAt("PartyBPositionActionsFacet", diamond)
+	context.partyBGroupActionsFacet = await ethers.getContractAt("PartyBGroupActionsFacet", diamond)
 	context.bridgeFacet = await ethers.getContractAt("BridgeFacet", diamond)
 	context.viewFacet = await ethers.getContractAt("ViewFacet", diamond)
 	context.liquidationFacet = await ethers.getContractAt("LiquidationFacet", diamond)

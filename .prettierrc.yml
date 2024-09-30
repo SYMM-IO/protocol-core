@@ -1,4 +1,4 @@
-arrowParens: avoid
+  arrowParens: avoid
 bracketSpacing: true
 endOfLine: auto
 printWidth: 150

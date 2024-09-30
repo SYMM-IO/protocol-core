@@ -59,6 +59,42 @@ export function shouldBehaveLikeBridgeFacet(): void {
 		})
 	})
 
+	describe("suspend bridge request", () => {
+		beforeEach(async function () {
+			await context.controlFacet.addBridge(await bridge2.getAddress())
+			await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100n), await bridge.getAddress())
+			await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100n), await bridge2.getAddress())
+			await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100n), await bridge.getAddress())
+		})
+
+		it('should suspend successfully', async () => {
+			await expect(context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(10))
+				.to.be.revertedWith("BridgeFacet: Invalid transactionId")
+			await context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(1)
+			expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.eq(BridgeTransactionStatus.SUSPENDED)
+			await time.increase(43250) //12h
+			await context.bridgeFacet.connect(context.signers.bridge2).withdrawReceivedBridgeValue(2)
+			await expect(context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(2))
+				.to.be.revertedWith("BridgeFacet: Invalid status")
+		})
+
+		it('should restore successfully', async () => {
+			let tx = await context.viewFacet.getBridgeTransaction(1)
+
+			await expect(context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(2, tx.amount))
+				.to.be.revertedWith("BridgeFacet: Invalid status")
+
+			await context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(1)
+
+			await expect(context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(1, tx.amount + 1n))
+				.to.be.revertedWith("BridgeFacet: High valid amount")
+
+			await context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(1, tx.amount / 2n)
+			expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.eq(BridgeTransactionStatus.RECEIVED)
+			expect((await context.viewFacet.getBridgeTransaction(1)).amount).to.be.eq(tx.amount / 2n)
+		})
+	})
+
 	describe("withdraw locked amount", () => {
 		beforeEach(async function () {
 			await context.controlFacet.addBridge(await bridge2.getAddress())
