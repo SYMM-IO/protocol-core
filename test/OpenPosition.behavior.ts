@@ -239,8 +239,17 @@ export function shouldBehaveLikeOpenPosition(): void {
 		})
 	})
 
-	it("Should lock and open quote with group actions", async function () {
-		await hedger.lockAndOpenQuote(3)
-		expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.eq(QuoteStatus.OPENED)
+	describe("Group Actions", async function () {
+		it("Should lock and open quote", async function () {
+			await hedger.lockAndOpenQuote(3)
+			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.eq(QuoteStatus.OPENED)
+		})
+
+		it("Should lock and open quote partially", async function () {
+			await hedger.lockAndOpenQuote(3, decimal(12n, 17), limitOpenRequestBuilder()
+				.filledAmount((await context.viewFacet.getQuote(3)).quantity / 2n)
+				.build())
+			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.eq(QuoteStatus.OPENED)
+		})
 	})
 }
