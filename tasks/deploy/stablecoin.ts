@@ -25,7 +25,6 @@ task("deploy:stablecoin", "Deploys the FakeStablecoin")
 			try {
 				deployedData = readData(DEPLOYMENT_LOG_FILE)
 			} catch (err) {
-				console.error(`Could not read existing JSON file: ${err}`)
 			}
 
 			// Append new data
