@@ -15,10 +15,10 @@ task("deploy:feeDistributor", "Deploys the SymmioFeeDistributor")
 		// Deploy SymmioFeeDistributor as upgradeable
 		const factory = await ethers.getContractFactory("SymmioFeeDistributor")
 		const contract = await upgrades.deployProxy(factory, [admin, symmioAddress, symmioShareReceiver, symmioShare], {initializer: "initialize"})
-		await contract.deployed()
+		await contract.waitForDeployment()
 
 		const addresses = {
-			proxy: contract.address,
+			proxy: await contract.getAddress(),
 			admin: await upgrades.erc1967.getAdminAddress(await contract.getAddress()),
 			implementation: await upgrades.erc1967.getImplementationAddress(await contract.getAddress()),
 		}
