@@ -21,7 +21,7 @@ library LibSettlement {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(settleSig.quotesSettlementsData.length == updatedPrices.length, "LibSettlement: Invalid length");
+		require(settleSig.quotesSettlementsData.length > 0 && settleSig.quotesSettlementsData.length == updatedPrices.length, "LibSettlement: Invalid length");
 		require(
 			LibAccount.partyAAvailableBalanceForLiquidation(settleSig.upnlPartyA, accountLayout.allocatedBalances[partyA], partyA) >= 0,
 			"LibSettlement: PartyA is insolvent"
