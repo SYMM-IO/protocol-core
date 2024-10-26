@@ -1,4 +1,5 @@
-import { ethers } from "hardhat"
+import {ethers, run} from "hardhat"
+import {sleep} from "@nomicfoundation/hardhat-verify/internal/utilities"
 
 async function main() {
 	const facetNames = [
@@ -7,17 +8,34 @@ async function main() {
 		"DiamondLoupeFacet",
 		"LiquidationFacet",
 		"PartyAFacet",
-		"PartyBFacet",
+		"BridgeFacet",
 		"ViewFacet",
 		"FundingRateFacet",
+		"ForceActionsFacet",
+		"SettlementFacet",
+		"PartyBPositionActionsFacet",
+		"PartyBQuoteActionsFacet",
+		"PartyBGroupActionsFacet",
 	]
 	for (const facetName of facetNames) {
 		const Facet = await ethers.getContractFactory(facetName)
 		const facet = await Facet.deploy()
 
-		await facet.deployed()
+		await facet.waitForDeployment()
 
-		console.log(`${facetName} deployed: ${facet.address}`)
+		let addr = await facet.getAddress()
+		console.log(`${facetName} deployed: ${addr}`)
+
+		await sleep(10000)
+
+		try {
+			await run("verify:verify", {
+				address: addr,
+				constructorArguments: [],
+			})
+		} catch (e) {
+			console.log("Failed to verify contract", e)
+		}
 	}
 }
 

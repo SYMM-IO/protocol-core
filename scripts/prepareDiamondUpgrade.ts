@@ -7,19 +7,19 @@ import {FacetCutAction, getSelectors} from "../tasks/utils/diamondCut"
 async function main() {
 	const diamondAddress = ""
 	const facetAddresses = new Map<string, string>()
-	facetAddresses.set("AccountFacet", "0x1")
-	facetAddresses.set("ControlFacet", "0x2")
-	facetAddresses.set("DiamondLoupeFacet", "0x3")
-	facetAddresses.set("LiquidationFacet", "0x4")
-	facetAddresses.set("PartyAFacet", "0x5")
-	facetAddresses.set("BridgeFacet", "0x6")
-	facetAddresses.set("ViewFacet", "0x7")
-	facetAddresses.set("FundingRateFacet", "0x8")
-	facetAddresses.set("ForceActionsFacet", "0x9")
-	facetAddresses.set("SettlementFacet", "0x10")
-	facetAddresses.set("PartyBPositionActionsFacet", "0x11")
-	facetAddresses.set("PartyBQuoteActionsFacet", "0x12")
-	facetAddresses.set("PartyBGroupActionsFacet", "0x13")
+	facetAddresses.set("AccountFacet", "")
+	facetAddresses.set("ControlFacet", "")
+	facetAddresses.set("DiamondLoupeFacet", "")
+	facetAddresses.set("LiquidationFacet", "")
+	facetAddresses.set("PartyAFacet", "")
+	facetAddresses.set("BridgeFacet", "")
+	facetAddresses.set("ViewFacet", "")
+	facetAddresses.set("FundingRateFacet", "")
+	facetAddresses.set("ForceActionsFacet", "")
+	facetAddresses.set("SettlementFacet", "")
+	facetAddresses.set("PartyBPositionActionsFacet", "")
+	facetAddresses.set("PartyBQuoteActionsFacet", "")
+	facetAddresses.set("PartyBGroupActionsFacet", "")
 
 	const [deployer] = await ethers.getSigners()
 
@@ -129,16 +129,6 @@ async function main() {
 	}
 
 	console.log(diamondCut)
-
-	// Prepare _init and _calldata (set to zero address and empty bytes for this example)
-	const _init = ethers.ZeroAddress // Updated for ethers v6
-	const _calldata = "0x"
-
-	// Execute the diamondCut function
-	const tx = await diamondCutFacet.diamondCut(diamondCut, _init, _calldata)
-	console.log("Diamond cut tx hash:", tx.hash)
-	const receipt = await tx.wait()
-	console.log("Diamond cut transaction mined:", (await receipt!.getTransaction()).hash)
 }
 
 // Run the main function
