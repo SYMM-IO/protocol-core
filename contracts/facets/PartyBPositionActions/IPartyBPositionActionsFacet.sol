@@ -3,8 +3,8 @@
 // Copyright (c) 2023 Symmetry Labs AG
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
+
 import "./IPartyBPositionActionsEvents.sol";
-import "../../storages/MuonStorage.sol";
 
 interface IPartyBPositionActionsFacet is IPartyBPositionActionsEvents {
 	function openPosition(uint256 quoteId, uint256 filledAmount, uint256 openedPrice, PairUpnlAndPriceSig memory upnlSig) external;

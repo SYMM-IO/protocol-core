@@ -7,11 +7,8 @@ import "./PartyBPositionActionsFacetImpl.sol";
 import "./IPartyBPositionActionsFacet.sol";
 import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
-import "../../storages/MuonStorage.sol";
-import "../Account/AccountFacetImpl.sol";
 
 contract PartyBPositionActionsFacet is Accessibility, Pausable, IPartyBPositionActionsFacet {
-	using LockedValuesOps for LockedValues;
 
 	/**
 	 * @notice Opens a position for the specified quote. The opened position's size can't be excessively small or large.
