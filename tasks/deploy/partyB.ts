@@ -16,7 +16,7 @@ task("deploy:symmioPartyB", "Deploys the SymmioPartyB")
 		// Deploy SymmioPartyB as upgradeable
 		const SymmioPartyBFactory = await ethers.getContractFactory("SymmioPartyB")
 		const symmioPartyB = await upgrades.deployProxy(SymmioPartyBFactory, [admin, symmioAddress], {initializer: "initialize"})
-		await symmioPartyB.deployed()
+		await symmioPartyB.waitForDeployment()
 
 		const addresses = {
 			proxy: symmioPartyB.address,
