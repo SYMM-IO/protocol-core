@@ -63,7 +63,7 @@ task("deploy:diamond", "Deploys the Diamond contract")
 			cut.push({
 				facetAddress: await facet.getAddress(),
 				action: FacetCutAction.Add,
-				functionSelectors: getSelectors(facet as any).selectors,
+				functionSelectors: getSelectors(ethers, facet as any).selectors,
 			})
 
 			deployedFacets.push({
