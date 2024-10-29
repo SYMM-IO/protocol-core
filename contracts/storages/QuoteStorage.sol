@@ -4,8 +4,6 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../libraries/LibLockedValues.sol";
-
 enum PositionType {
 	LONG,
 	SHORT
@@ -28,6 +26,13 @@ enum QuoteStatus {
 	LIQUIDATED, //8
 	EXPIRED, //9
 	LIQUIDATED_PENDING //10
+}
+
+struct LockedValues {
+	uint256 cva;
+	uint256 lf;
+	uint256 partyAmm;
+	uint256 partyBmm;
 }
 
 struct Quote {
