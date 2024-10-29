@@ -80,11 +80,23 @@ export function shouldBehaveLikeSettlement(): void {
 	})
 
 	it("Should fail when when partyA is insolvent", async function () {
-		await expect(hedger.settleUpnl(await user.getAddress(), [], getDummySettlementSig(decimal(600n) * -1n))).to.be.revertedWith("LibSettlement: PartyA is insolvent")
+		await expect(hedger.settleUpnl(await user.getAddress(), [1n], getDummySettlementSig(decimal(600n) * -1n, [0n], [
+			{
+				quoteId: longHedger1User2,
+				currentPrice: 0n,
+				partyBUpnlIndex: 0n
+			} as QuoteSettlementDataStructOutput
+		]))).to.be.revertedWith("LibSettlement: PartyA is insolvent")
 	})
 
 	it("Should fail if sender doesn't have open position with user", async function () {
-		await expect(hedger2.settleUpnl(await user2.getAddress(), [])).to.be.revertedWith("LibSettlement: Sender should have a position with partyA")
+		await expect(hedger2.settleUpnl(await user2.getAddress(), [1n], getDummySettlementSig(decimal(600n) * -1n, [0n], [
+			{
+				quoteId: longHedger1User2,
+				currentPrice: 0n,
+				partyBUpnlIndex: 0n
+			} as QuoteSettlementDataStructOutput
+		]))).to.be.revertedWith("LibSettlement: Sender should have a position with partyA")
 	})
 
 	it("Should fail if one of quotes has different partyA than the one in parameter", async function () {

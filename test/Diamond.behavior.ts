@@ -47,7 +47,7 @@ export function shouldBehaveLikeDiamond(): void {
 	it("facets should have the right function selectors -- call to facetFunctionSelectors function", async function () {
 		const context: RunContext = this.context
 		// DiamondLoupeFacet
-		selectors = getSelectors(context.diamondLoupeFacet as any).selectors
+		selectors = getSelectors(ethers, context.diamondLoupeFacet as any).selectors
 		result = await context.diamondLoupeFacet.facetFunctionSelectors(addresses[3])
 		expect(haveSameMembers(result, selectors)).to.be.true
 	})
@@ -55,7 +55,7 @@ export function shouldBehaveLikeDiamond(): void {
 	it("should remove a function from ViewFacet -- getAccountBalance()", async function () {
 		const context: RunContext = this.context
 		const viewFacet = await ethers.getContractFactory("ViewFacet")
-		const selectors = getSelectors(viewFacet as any).get(["balanceOf(address)"])
+		const selectors = getSelectors(ethers, viewFacet as any).get(["balanceOf(address)"])
 		const viewFacetAddress = addresses[7]
 
 		const tx = await context.diamondCutFacet.diamondCut(
@@ -77,7 +77,7 @@ export function shouldBehaveLikeDiamond(): void {
 		}
 
 		const result = await context.diamondLoupeFacet.facetFunctionSelectors(viewFacetAddress)
-		expect(haveSameMembers(result, getSelectors(viewFacet as any).remove(["balanceOf(address)"]))).to.be.true
+		expect(haveSameMembers(result, getSelectors(ethers, viewFacet as any).remove(["balanceOf(address)"]))).to.be.true
 	})
 
 	it("should add the getAccountBalance() function back", async function () {
@@ -90,7 +90,7 @@ export function shouldBehaveLikeDiamond(): void {
 				{
 					facetAddress: viewFacetAddress,
 					action: FacetCutAction.Add,
-					functionSelectors: getSelectors(viewFacet as any).get(["balanceOf(address)"]),
+					functionSelectors: getSelectors(ethers, viewFacet as any).get(["balanceOf(address)"]),
 				},
 			],
 			ethers.ZeroAddress,
@@ -104,6 +104,6 @@ export function shouldBehaveLikeDiamond(): void {
 		}
 
 		const result = await context.diamondLoupeFacet.facetFunctionSelectors(viewFacetAddress)
-		expect(haveSameMembers(result, getSelectors(viewFacet as any).selectors)).to.be.true
+		expect(haveSameMembers(result, getSelectors(ethers, viewFacet as any).selectors)).to.be.true
 	})
 }
