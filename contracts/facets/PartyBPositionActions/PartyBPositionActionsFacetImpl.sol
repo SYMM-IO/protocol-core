@@ -4,16 +4,10 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../libraries/LibLockedValues.sol";
 import "../../libraries/muon/LibMuonPartyB.sol";
-import "../../libraries/LibAccount.sol";
-import "../../libraries/LibSolvency.sol";
-import "../../libraries/LibQuote.sol";
-import "../../libraries/LibPartyBPositionsActions.sol";
 import "../../libraries/SharedEvents.sol";
-import "../../storages/MAStorage.sol";
-import "../../storages/QuoteStorage.sol";
-import "../../storages/MuonStorage.sol";
+import "../../libraries/LibSolvency.sol";
+import "../../libraries/LibPartyBPositionsActions.sol";
 import "../../storages/GlobalAppStorage.sol";
 import "../../storages/AccountStorage.sol";
 import "../../storages/SymbolStorage.sol";

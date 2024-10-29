@@ -5,10 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "../storages/QuoteStorage.sol";
-import "../storages/MAStorage.sol";
-import "./LibAccount.sol";
 import "./LibQuote.sol";
-import "./LibLockedValues.sol";
 
 library LibPartyBPositionsActions {
 	using LockedValuesOps for LockedValues;
