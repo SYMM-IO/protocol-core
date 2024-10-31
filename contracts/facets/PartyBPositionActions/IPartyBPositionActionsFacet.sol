@@ -3,24 +3,10 @@
 // Copyright (c) 2023 Symmetry Labs AG
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
-import "./IPartyBEvents.sol";
-import "../../storages/MuonStorage.sol";
 
-interface IPartyBFacet is IPartyBEvents {
-	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) external;
+import "./IPartyBPositionActionsEvents.sol";
 
-	function lockAndOpenQuote(
-		uint256 quoteId,
-		uint256 filledAmount,
-		uint256 openedPrice,
-		SingleUpnlSig memory upnlSig,
-		PairUpnlAndPriceSig memory pairUpnlSig
-	) external;
-
-	function unlockQuote(uint256 quoteId) external;
-
-	function acceptCancelRequest(uint256 quoteId) external;
-
+interface IPartyBPositionActionsFacet is IPartyBPositionActionsEvents {
 	function openPosition(uint256 quoteId, uint256 filledAmount, uint256 openedPrice, PairUpnlAndPriceSig memory upnlSig) external;
 
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) external;

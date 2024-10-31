@@ -24,4 +24,6 @@ interface IAccountEvents {
 		uint256 recipientNewAllocatedBalance
 	);
 	event TransferAllocation(uint256 amount, address origin, address recipient); // For backward compatibility, will be removed in future
+	event DepositToReserveVault(address sender, address partyB, uint256 amount);
+	event WithdrawFromReserveVault(address partyB, uint256 amount);
 }

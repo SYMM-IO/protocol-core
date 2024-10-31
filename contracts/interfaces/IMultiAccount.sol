@@ -20,4 +20,6 @@ interface IMultiAccount {
 	event Call(address user, address account, bytes _callData, bool _success, bytes _resultData);
 	event DelegateAccess(address account, address target, bytes4 selector, bool state);
 	event DelegateAccesses(address account, address target, bytes4[] selector, bool state);
+	event ProposeToRevokeAccesses(address account, address target, bytes4[] selector);
+	event SetRevokeCooldown(uint256 oldCooldown, uint256 newCooldown);
 }

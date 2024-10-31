@@ -48,10 +48,4 @@ interface IPartyAFacet is IPartyAEvents {
 	function requestToClosePosition(uint256 quoteId, uint256 closePrice, uint256 quantityToClose, OrderType orderType, uint256 deadline) external;
 
 	function requestToCancelCloseRequest(uint256 quoteId) external;
-
-	function forceCancelQuote(uint256 quoteId) external;
-
-	function forceCancelCloseRequest(uint256 quoteId) external;
-
-	function forceClosePosition(uint256 quoteId, HighLowPriceSig memory sig) external;
 }

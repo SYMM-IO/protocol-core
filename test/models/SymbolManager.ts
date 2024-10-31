@@ -1,5 +1,3 @@
-import { ethers } from "ethers"
-
 interface Symbol {
 	name: any
 	symbol: any
@@ -23,7 +21,7 @@ export let symbolsMock = {
 			price_precision: 1,
 			quantity_precision: 3,
 			is_valid: true,
-			min_acceptable_quote_value: ethers.BigNumber.from("60000000000000000000"),
+			min_acceptable_quote_value: BigInt("60000000000000000000"),
 			min_acceptable_portion_lf: 4000000000000000,
 			trading_fee: 1000000000000000,
 		},
@@ -35,7 +33,7 @@ export let symbolsMock = {
 			price_precision: 2,
 			quantity_precision: 3,
 			is_valid: true,
-			min_acceptable_quote_value: ethers.BigNumber.from("60000000000000000000"),
+			min_acceptable_quote_value: BigInt("60000000000000000000"),
 			min_acceptable_portion_lf: 4000000000000000,
 			trading_fee: 1000000000000000,
 		},
@@ -47,7 +45,7 @@ export let symbolsMock = {
 			price_precision: 2,
 			quantity_precision: 3,
 			is_valid: true,
-			min_acceptable_quote_value: ethers.BigNumber.from("20000000000000000000"),
+			min_acceptable_quote_value: BigInt("20000000000000000000"),
 			min_acceptable_portion_lf: 4000000000000000,
 			trading_fee: 1000000000000000,
 		},
@@ -59,7 +57,7 @@ export let symbolsMock = {
 			price_precision: 4,
 			quantity_precision: 1,
 			is_valid: true,
-			min_acceptable_quote_value: ethers.BigNumber.from("20000000000000000000"),
+			min_acceptable_quote_value: BigInt("20000000000000000000"),
 			min_acceptable_portion_lf: 4000000000000000,
 			trading_fee: 1000000000000000,
 		},
@@ -71,7 +69,7 @@ export let symbolsMock = {
 			price_precision: 3,
 			quantity_precision: 1,
 			is_valid: true,
-			min_acceptable_quote_value: ethers.BigNumber.from("20000000000000000000"),
+			min_acceptable_quote_value: BigInt("20000000000000000000"),
 			min_acceptable_portion_lf: 4000000000000000,
 			trading_fee: 1000000000000000,
 		},
@@ -81,7 +79,8 @@ export let symbolsMock = {
 export class SymbolManager {
 	symbols: Map<number, Symbol> = new Map<number, Symbol>()
 
-	constructor() {}
+	constructor() {
+	}
 
 	public async loadSymbols() {
 		if (process.env.TEST_MODE != "fuzz") return
@@ -89,7 +88,7 @@ export class SymbolManager {
 			// let result = await fetch(`${ process.env.HEDGER_WEB_SERVICE }/contract-symbols`)
 			let jsonResult = symbolsMock
 			for (const symbol of jsonResult["symbols"]) {
-				this.symbols.set(symbol.symbol_id, symbol)
+				this.symbols.set(symbol.symbol_id, symbol as any)
 			}
 		} catch {
 			throw new Error(`Failed to fetch symbols. Is server up and running?`)

@@ -1,60 +1,12 @@
-import { Contract, ContractFactory } from "ethers"
-import { ethers } from "hardhat"
-
-export enum FacetCutAction {
-	Add,
-	Replace,
-	Remove,
-}
-
-// Get function selectors from ABI
-export function getSelectors(contract: Contract | ContractFactory) {
-	const signatures = Object.keys(contract.interface.functions)
-
-	const selectors = signatures.reduce((acc, val) => {
-		if (val !== "init(bytes)") {
-			acc.push(contract.interface.getSighash(val))
-		}
-		return acc
-	}, [] as string[])
-
-	const remove = (functionNames: string[]) => {
-		return selectors.filter(val => {
-			for (const functionName of functionNames) {
-				if (val === contract.interface.getSighash(functionName)) {
-					return false
-				}
-			}
-			return true
-		})
-	}
-
-	const get = (functionNames: string[]) => {
-		return selectors.filter(val => {
-			for (const functionName of functionNames) {
-				if (val === contract.interface.getSighash(functionName)) {
-					return true
-				}
-			}
-			return false
-		})
-	}
-
-	return {
-		selectors,
-		remove,
-		get,
-	}
-}
+import {ethers} from "hardhat"
+import {FacetCutAction, getSelectors} from "../tasks/utils/diamondCut"
 
 async function main() {
 	let addr = ""
 	let facetAddr = ""
 	const diamondCutFacet = await ethers.getContractAt("DiamondCutFacet", addr)
 	const NewFacet = await ethers.getContractFactory("PartyAFacet")
-	const selectors = getSelectors(NewFacet).selectors
-	console.log(selectors)
-	// const selectors = ["0xf09a4016"];
+	const selectors = getSelectors(ethers, NewFacet).selectors
 	await diamondCutFacet.diamondCut(
 		[
 			{
@@ -63,7 +15,7 @@ async function main() {
 				functionSelectors: selectors,
 			},
 		],
-		ethers.constants.AddressZero,
+		ethers.ZeroAddress,
 		"0x",
 	)
 }

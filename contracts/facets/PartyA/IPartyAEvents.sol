@@ -32,17 +32,4 @@ interface IPartyAEvents is IPartiesEvents {
 	); // For backward compatibility, will be removed in future
 	event RequestToCancelCloseRequest(address partyA, address partyB, uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
 	event RequestToCancelCloseRequest(address partyA, address partyB, uint256 quoteId, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
-	event ForceCancelQuote(uint256 quoteId, QuoteStatus quoteStatus);
-	event ForceCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus, uint256 closeId);
-	event ForceCancelCloseRequest(uint256 quoteId, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
-	event ForceClosePosition(
-		uint256 quoteId,
-		address partyA,
-		address partyB,
-		uint256 filledAmount,
-		uint256 closedPrice,
-		QuoteStatus quoteStatus,
-		uint256 closeId
-	);
-	event ForceClosePosition(uint256 quoteId, address partyA, address partyB, uint256 filledAmount, uint256 closedPrice, QuoteStatus quoteStatus); // For backward compatibility, will be removed in future
 }

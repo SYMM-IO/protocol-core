@@ -93,8 +93,7 @@ library LibAccount {
 	 */
 	function partyAAvailableBalanceForLiquidation(int256 upnl, uint256 allocatedBalance, address partyA) internal view returns (int256) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		int256 freeBalance = int256(allocatedBalance) -
-			int256(accountLayout.lockedBalances[partyA].cva + accountLayout.lockedBalances[partyA].lf);
+		int256 freeBalance = int256(allocatedBalance) - int256(accountLayout.lockedBalances[partyA].cva + accountLayout.lockedBalances[partyA].lf);
 		return freeBalance + upnl;
 	}
 

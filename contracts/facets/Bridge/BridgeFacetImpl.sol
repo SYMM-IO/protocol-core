@@ -76,7 +76,7 @@ library BridgeFacetImpl {
 	function suspendBridgeTransaction(uint256 transactionId) internal {
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
-		
+
 		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid status");
 		bridgeTransaction.status = BridgeTransactionStatus.SUSPENDED;

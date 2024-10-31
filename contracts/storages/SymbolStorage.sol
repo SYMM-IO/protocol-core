@@ -22,7 +22,7 @@ library SymbolStorage {
 	struct Layout {
 		mapping(uint256 => Symbol) symbols;
 		uint256 lastId;
-		mapping(uint256 => uint256) forceCloseGapRatio; //symbolId -> forceCloseGapRatio
+		mapping(uint256 => uint256) forceCloseGapRatio; // symbolId -> forceCloseGapRatio
 	}
 
 	function layout() internal pure returns (Layout storage l) {

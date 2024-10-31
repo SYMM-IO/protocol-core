@@ -1,12 +1,11 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {expect} from "chai"
 
-import { QuoteStatus } from "../Enums"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
-import { logger } from "../../utils/LoggerUtils"
-import { zeroAddress } from "../../utils/Common"
+import {QuoteStatus} from "../Enums"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
+import {logger} from "../../utils/LoggerUtils"
+import {ethers} from "hardhat"
 
 export type UnlockQuoteValidatorBeforeArg = {
 	user: User
@@ -18,7 +17,7 @@ export type UnlockQuoteValidatorBeforeOutput = {
 
 export type UnlockQuoteValidatorAfterArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 	beforeOutput: UnlockQuoteValidatorBeforeOutput
 }
 
@@ -39,6 +38,6 @@ export class UnlockQuoteValidator implements TransactionValidator {
 
 		const quote = await context.viewFacet.getQuote(arg.quoteId)
 		expect(quote.quoteStatus).to.be.equal(QuoteStatus.PENDING)
-		expect(quote.partyB).to.be.equal(zeroAddress)
+		expect(quote.partyB).to.be.equal(ethers.ZeroAddress)
 	}
 }

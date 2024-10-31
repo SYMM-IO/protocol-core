@@ -17,10 +17,19 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 	mapping(bytes4 => bool) public restrictedSelectors; // selector -> isRestricted
 	mapping(address => bool) public multicastWhitelist; // contractAddress -> isAllowedForMulticast
+	uint256 private _guardCounter;
 
 	/// @custom:oz-upgrades-unsafe-allow constructor
 	constructor() {
 		_disableInitializers();
+	}
+
+	// Custom modifier for reentrancy protection
+	modifier nonReentrant() {
+		require(_guardCounter == 0, "SymmioPartyB: reentrant call");
+		_guardCounter = 1;
+		_;
+		_guardCounter = 0;
 	}
 
 	/**
@@ -103,7 +112,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	 * @param destAddress The destination address to call.
 	 * @param callData The call data to be used for the call.
 	 */
-	function _executeCall(address destAddress, bytes memory callData) internal {
+	function _executeCall(address destAddress, bytes memory callData) internal nonReentrant {
 		require(destAddress != address(0), "SymmioPartyB: Invalid address");
 		require(callData.length >= 4, "SymmioPartyB: Invalid call data");
 

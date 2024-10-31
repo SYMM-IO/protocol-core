@@ -1,29 +1,28 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
-import { BridgeTransactionStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { logger } from "../../utils/LoggerUtils"
-import { BridgeTransactionStatus } from "../Enums"
-import { RunContext } from "../RunContext"
-import { User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {expect} from "chai"
+import {BridgeTransactionStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {logger} from "../../utils/LoggerUtils"
+import {BridgeTransactionStatus} from "../Enums"
+import {RunContext} from "../RunContext"
+import {User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type TransferToBridgeValidatorBeforeArg = {
 	bridge: string
 	user: User
-	transactionId: BigNumber
+	transactionId: bigint
 }
 
 export type TransferToBridgeValidatorBeforeOutput = {
 	bridge: string
-	depositBalancePartyA: BigNumber
-	depositBalanceBridge: BigNumber
+	depositBalancePartyA: bigint
+	depositBalanceBridge: bigint
 	transaction: BridgeTransactionStructOutput
 }
 
 export type TransferToBridgeValidatorAfterArg = {
 	user: User
-	amount: BigNumber
-	transactionId: BigNumber
+	amount: bigint
+	transactionId: bigint
 	beforeOutput: TransferToBridgeValidatorBeforeOutput
 }
 
@@ -51,7 +50,7 @@ export class TransferToBridgeValidator implements TransactionValidator {
 
 		//check partyA balance
 		const newDepositBalancePartyA = await context.viewFacet.balanceOf(await arg.user.getAddress())
-		expect(arg.beforeOutput.depositBalancePartyA).to.be.equal(newDepositBalancePartyA.add(arg.amount))
+		expect(arg.beforeOutput.depositBalancePartyA).to.be.equal(newDepositBalancePartyA + arg.amount)
 
 		//check bridge balance
 		const newDepositBalanceBridge = await context.viewFacet.balanceOf(arg.beforeOutput.bridge)

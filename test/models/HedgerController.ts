@@ -1,32 +1,43 @@
-import { Builder } from "builder-pattern"
+import {Builder} from "builder-pattern"
 // @ts-ignore
 import * as randomExt from "random-ext"
-import { concatMap, filter, from } from "rxjs"
+import {concatMap, filter, from} from "rxjs"
 
-import { QuoteStructOutput, SymbolStructOutput } from "../../src/types/contracts/facets/ViewFacet"
-import { checkStatus, getQuoteMinLeftQuantityForFill, getQuoteQuantity, getTotalLockedValuesForQuoteIds } from "../utils/Common"
-import { logger } from "../utils/LoggerUtils"
-import { getPrice } from "../utils/PriceUtils"
-import { pick, randomBigNumber } from "../utils/RandomUtils"
-import { safeDiv } from "../utils/SafeMath"
-import { Action, actionNamesMap, ActionWrapper, expandActions, hedgerActionsMap } from "./Actions"
-import { OrderType, QuoteStatus } from "./Enums"
-import { Hedger } from "./Hedger"
-import { RunContext } from "./RunContext"
-import { TestManager } from "./TestManager"
-import { FillCloseRequest } from "./requestModels/FillCloseRequest"
-import { OpenRequest } from "./requestModels/OpenRequest"
-import { AcceptCancelCloseRequestValidator, AcceptCancelCloseRequestValidatorBeforeOutput } from "./validators/AcceptCancelCloseRequestValidator"
-import { AcceptCancelRequestValidator, AcceptCancelRequestValidatorBeforeOutput } from "./validators/AcceptCancelRequestValidator"
-import { FillCloseRequestValidator, FillCloseRequestValidatorBeforeOutput } from "./validators/FillCloseRequestValidator"
-import { LockQuoteValidator, LockQuoteValidatorBeforeOutput } from "./validators/LockQuoteValidator"
-import { OpenPositionValidator, OpenPositionValidatorBeforeOutput } from "./validators/OpenPositionValidator"
-import { UnlockQuoteValidator, UnlockQuoteValidatorBeforeOutput } from "./validators/UnlockQuoteValidator"
-import { QuoteCheckpoint } from "./quoteCheckpoint"
-import { zeroAddress } from "../utils/Common"
+import {
+	checkStatus,
+	getQuoteMinLeftQuantityForFill,
+	getQuoteQuantity,
+	getTotalLockedValuesForQuoteIds
+} from "../utils/Common"
+import {logger} from "../utils/LoggerUtils"
+import {getPrice} from "../utils/PriceUtils"
+import {pick, randomBigNumber} from "../utils/RandomUtils"
+import {safeDiv} from "../utils/SafeMath"
+import {Action, actionNamesMap, ActionWrapper, expandActions, hedgerActionsMap} from "./Actions"
+import {OrderType, QuoteStatus} from "./Enums"
+import {Hedger} from "./Hedger"
+import {RunContext} from "./RunContext"
+import {TestManager} from "./TestManager"
+import {FillCloseRequest} from "./requestModels/FillCloseRequest"
+import {OpenRequest} from "./requestModels/OpenRequest"
+import {
+	AcceptCancelCloseRequestValidator,
+	AcceptCancelCloseRequestValidatorBeforeOutput
+} from "./validators/AcceptCancelCloseRequestValidator"
+import {
+	AcceptCancelRequestValidator,
+	AcceptCancelRequestValidatorBeforeOutput
+} from "./validators/AcceptCancelRequestValidator"
+import {FillCloseRequestValidator, FillCloseRequestValidatorBeforeOutput} from "./validators/FillCloseRequestValidator"
+import {LockQuoteValidator, LockQuoteValidatorBeforeOutput} from "./validators/LockQuoteValidator"
+import {OpenPositionValidator, OpenPositionValidatorBeforeOutput} from "./validators/OpenPositionValidator"
+import {UnlockQuoteValidator, UnlockQuoteValidatorBeforeOutput} from "./validators/UnlockQuoteValidator"
+import {QuoteCheckpoint} from "./quoteCheckpoint"
+import {ethers} from "hardhat"
+import {QuoteStructOutput, SymbolStructOutput} from "../../src/types/contracts/interfaces/ISymmio"
 
 export class HedgerController {
-	private context: RunContext
+	private readonly context: RunContext
 
 	constructor(private manager: TestManager, private hedger: Hedger, private checkpoint: QuoteCheckpoint) {
 		this.context = manager.context
@@ -41,7 +52,7 @@ export class HedgerController {
 					.getQueueObservable(status)
 					.pipe(
 						concatMap(qId => from(this.context.viewFacet.getQuote(qId))),
-						filter(quote => quote.quoteStatus == status && (quote.partyB == zeroAddress || quote.partyB == userAddress)),
+						filter(quote => quote.quoteStatus == BigInt(status) && (quote.partyB == ethers.ZeroAddress || quote.partyB == userAddress)),
 					)
 					.subscribe(async quote => {
 						this.manager.actionsLoop.next({
@@ -171,14 +182,14 @@ export class HedgerController {
 				let fillAmount = undefined
 				let partially = false
 				const symbol: SymbolStructOutput = await this.context.viewFacet.getSymbol(quote.symbolId)
-				if (quote.orderType == OrderType.LIMIT) {
+				if (quote.orderType == BigInt(OrderType.LIMIT)) {
 					const locked = await getTotalLockedValuesForQuoteIds(this.context, [quote.id])
-					const minQuantity = safeDiv(symbol.minAcceptableQuoteValue.mul(quantity), locked)
-					const max = quantity.sub(minQuantity)
-					if (max.gt(minQuantity)) {
-						const partialQuantity = randomBigNumber(quantity.sub(minQuantity), minQuantity)
+					const minQuantity = safeDiv(symbol.minAcceptableQuoteValue * quantity, locked)
+					const max = quantity - minQuantity
+					if (max > minQuantity) {
+						const partialQuantity = randomBigNumber(quantity - minQuantity, minQuantity)
 						fillAmount = randomExt.pick([partialQuantity, quantity])
-						partially = fillAmount.eq(partialQuantity)
+						partially = fillAmount === partialQuantity
 					} else {
 						fillAmount = quantity
 					}
@@ -188,7 +199,7 @@ export class HedgerController {
 				const price = await getPrice()
 				const partyAUpnl = await this.manager.getUser(quote.partyA).getUpnl()
 				const partyBUpnl = await this.hedger.getUpnl(quote.partyA)
-				const openPrice = quote.orderType == OrderType.LIMIT ? quote.requestedOpenPrice : quote.marketPrice //FIXME: Can we do anything else?
+				const openPrice = quote.orderType == BigInt(OrderType.LIMIT) ? quote.requestedOpenPrice : quote.marketPrice //FIXME: Can we do anything else?
 
 				const user = this.manager.getUser(quote.partyA)
 				let before: OpenPositionValidatorBeforeOutput
@@ -225,9 +236,9 @@ export class HedgerController {
 				let fillAmount = undefined
 				const symbol: SymbolStructOutput = await this.context.viewFacet.getSymbol(quote.symbolId)
 				const minLeftQuantity = await getQuoteMinLeftQuantityForFill(this.manager.context, quote.id)
-				if (quote.orderType == OrderType.LIMIT) {
-					const maxFillAmount = quote.quantityToClose.sub(minLeftQuantity)
-					if (maxFillAmount.gt(0)) {
+				if (quote.orderType === BigInt(OrderType.LIMIT)) {
+					const maxFillAmount = quote.quantityToClose - minLeftQuantity
+					if (maxFillAmount > 0n) {
 						const partialQuantity = randomBigNumber(maxFillAmount)
 						fillAmount = randomExt.pick([partialQuantity, quote.quantityToClose])
 					} else {

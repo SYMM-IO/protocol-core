@@ -1,18 +1,17 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {expect} from "chai"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { getTotalPartyALockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common"
-import { logger } from "../../utils/LoggerUtils"
-import { expectToBeApproximately } from "../../utils/SafeMath"
-import { QuoteStatus } from "../Enums"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {getTotalPartyALockedValuesForQuotes, getTradingFeeForQuotes} from "../../utils/Common"
+import {logger} from "../../utils/LoggerUtils"
+import {expectToBeApproximately} from "../../utils/SafeMath"
+import {QuoteStatus} from "../Enums"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type AcceptCancelRequestValidatorBeforeArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 }
 
 export type AcceptCancelRequestValidatorBeforeOutput = {
@@ -22,7 +21,7 @@ export type AcceptCancelRequestValidatorBeforeOutput = {
 
 export type AcceptCancelRequestValidatorAfterArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 	beforeOutput: AcceptCancelRequestValidatorBeforeOutput
 }
 
@@ -48,9 +47,21 @@ export class AcceptCancelRequestValidator implements TransactionValidator {
 
 		const lockedValues = await getTotalPartyALockedValuesForQuotes([oldQuote])
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString())
-		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
-		let tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
-		expectToBeApproximately(newBalanceInfoPartyA.allocatedBalances, oldBalanceInfoPartyA.allocatedBalances.add(tradingFee))
+		// Assert changes in totalPendingLockedPartyA
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.equal(
+			oldBalanceInfoPartyA.totalPendingLockedPartyA - lockedValues
+		)
+
+		// Assert no changes in totalLockedPartyA
+		expect(newBalanceInfoPartyA.totalLockedPartyA).to.equal(
+			oldBalanceInfoPartyA.totalLockedPartyA
+		)
+
+		// Calculate and assert changes in allocatedBalances
+		const tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
+		expectToBeApproximately(
+			newBalanceInfoPartyA.allocatedBalances,
+			oldBalanceInfoPartyA.allocatedBalances + tradingFee
+		)
 	}
 }
