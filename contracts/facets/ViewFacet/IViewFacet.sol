@@ -43,6 +43,8 @@ interface IViewFacet {
 
 	function allocatedBalanceOfPartyB(address partyB, address partyA) external view returns (uint256);
 
+	function balanceOfReserveVault(address partyB) external view returns (uint256);
+
 	function allocatedBalanceOfPartyBs(address partyA, address[] memory partyBs) external view returns (uint256[] memory);
 
 	function withdrawCooldownOf(address user) external view returns (uint256);
@@ -148,6 +150,10 @@ interface IViewFacet {
 	function partyBLiquidationTimestamp(address partyB, address partyA) external view returns (uint256);
 
 	function coolDownsOfMA() external view returns (uint256, uint256, uint256, uint256);
+
+	function settlementCooldown() external view returns (uint256);
+
+	function lastUpnlSettlementTimestamp(address senderPartyB, address targetPartyB, address partyA) external view returns (uint256);
 
 	///////////////////////////////////////////
 

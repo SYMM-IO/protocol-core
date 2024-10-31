@@ -6,7 +6,7 @@ pragma solidity >=0.8.18;
 
 import "../../libraries/LibLockedValues.sol";
 import "../../libraries/LibQuote.sol";
-import "../../libraries/LibMuon.sol";
+import "../../libraries/muon/LibMuon.sol";
 import "../../storages/AccountStorage.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
@@ -136,6 +136,15 @@ contract ViewFacet is IViewFacet {
 	 */
 	function allocatedBalanceOfPartyB(address partyB, address partyA) external view returns (uint256) {
 		return AccountStorage.layout().partyBAllocatedBalances[partyB][partyA];
+	}
+
+	/**
+	 * @notice Returns the balance of Party B emergency reserve vault.
+	 * @param partyB The address of Party B.
+	 * @return The balance of Party B vault.
+	 */
+	function balanceOfReserveVault(address partyB) external view returns (uint256) {
+		return AccountStorage.layout().reserveVault[partyB];
 	}
 
 	/**
@@ -380,7 +389,7 @@ contract ViewFacet is IViewFacet {
 		return QuoteStorage.layout().partyAPositionsCount[partyA];
 	}
 
-		/**
+	/**
 	 * @notice Returns an array of bridge transactions associated with a bridge.
 	 * @param bridge The address of bridge.
 	 * @param start The starting index.
@@ -739,6 +748,25 @@ contract ViewFacet is IViewFacet {
 	 */
 	function deallocateCooldown() external view returns (uint256) {
 		return MAStorage.layout().deallocateCooldown;
+	}
+
+	/**
+	 * @notice Returns the settlementCooldown.
+	 * @return settlementCooldown The settlement cooldown.
+	 */
+	function settlementCooldown() external view returns (uint256) {
+		return MAStorage.layout().settlementCooldown;
+	}
+
+	/**
+	 * @notice Returns the lastUpnlSettlementTimestamp.
+	 * @param senderPartyB Address of sender partyB
+	 * @param targetPartyB Address of target partyB
+	 * @param partyA address of partyA
+	 * @return lastUpnlSettlementTimestamp The last upnl settlement timestamp.
+	 */
+	function lastUpnlSettlementTimestamp(address senderPartyB, address targetPartyB, address partyA) external view returns (uint256) {
+		return MAStorage.layout().lastUpnlSettlementTimestamp[senderPartyB][targetPartyB][partyA];
 	}
 
 	/**

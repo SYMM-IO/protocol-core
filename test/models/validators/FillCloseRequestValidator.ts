@@ -1,19 +1,17 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
-
-import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal } from "../../utils/Common"
-import { logger } from "../../utils/LoggerUtils"
-import { expectToBeApproximately } from "../../utils/SafeMath"
-import { PositionType, QuoteStatus } from "../Enums"
-import { Hedger } from "../Hedger"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {expect} from "chai"
+import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal} from "../../utils/Common"
+import {logger} from "../../utils/LoggerUtils"
+import {expectToBeApproximately} from "../../utils/SafeMath"
+import {PositionType, QuoteStatus} from "../Enums"
+import {Hedger} from "../Hedger"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type FillCloseRequestValidatorBeforeArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 	hedger: Hedger
 }
 
@@ -26,9 +24,9 @@ export type FillCloseRequestValidatorBeforeOutput = {
 export type FillCloseRequestValidatorAfterArg = {
 	user: User
 	hedger: Hedger
-	quoteId: BigNumber
-	closePrice: BigNumber
-	fillAmount: BigNumber
+	quoteId: bigint
+	closePrice: bigint
+	fillAmount: bigint
 	beforeOutput: FillCloseRequestValidatorBeforeOutput
 }
 
@@ -44,25 +42,25 @@ export class FillCloseRequestValidator implements TransactionValidator {
 
 	async after(context: RunContext, arg: FillCloseRequestValidatorAfterArg) {
 		logger.debug("After FillCloseRequestValidator...")
-		// Check Quote
+// Check Quote
 		const newQuote = await context.viewFacet.getQuote(arg.quoteId)
 		const oldQuote = arg.beforeOutput.quote
-		const zeroToClose = newQuote.quantityToClose.eq(0)
-		const isFullyClosed = newQuote.quantity.eq(newQuote.closedAmount)
+		const zeroToClose = newQuote.quantityToClose === 0n
+		const isFullyClosed = newQuote.quantity === newQuote.closedAmount
 
 		if (isFullyClosed) {
-			expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSED)
-		} else if (zeroToClose || newQuote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING) {
-			expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.OPENED)
+			expect(newQuote.quoteStatus).to.equal(QuoteStatus.CLOSED)
+		} else if (zeroToClose || newQuote.quoteStatus === BigInt(QuoteStatus.CANCEL_CLOSE_PENDING)) {
+			expect(newQuote.quoteStatus).to.equal(QuoteStatus.OPENED)
 		} else {
-			expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING)
+			expect(newQuote.quoteStatus).to.equal(QuoteStatus.CLOSE_PENDING)
 		}
 
-		expect(newQuote.closedAmount).to.be.equal(oldQuote.closedAmount.add(arg.fillAmount))
+		expect(newQuote.closedAmount.toString()).to.equal((BigInt(oldQuote.closedAmount) + BigInt(arg.fillAmount)).toString())
 
-		// TODO: Sometimes fillCloseRequest has Error
+// TODO: Sometimes fillCloseRequest has Error
 
-		expect(newQuote.quantityToClose).to.be.equal(oldQuote.quantityToClose.sub(arg.fillAmount))
+		expect(newQuote.quantityToClose.toString()).to.equal((BigInt(oldQuote.quantityToClose) - BigInt(arg.fillAmount)).toString())
 
 		const oldLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([oldQuote])
 		const newLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([newQuote])
@@ -71,29 +69,30 @@ export class FillCloseRequestValidator implements TransactionValidator {
 		const newLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([newQuote])
 
 		let profit
-		if (newQuote.positionType == PositionType.LONG) {
-			profit = unDecimal(arg.closePrice.sub(newQuote.openedPrice).mul(arg.fillAmount))
+		if (newQuote.positionType === BigInt(PositionType.LONG)) {
+			profit = unDecimal((BigInt(arg.closePrice) - BigInt(newQuote.openedPrice)) * BigInt(arg.fillAmount))
 		} else {
-			profit = unDecimal(newQuote.openedPrice.sub(arg.closePrice).mul(arg.fillAmount))
+			profit = unDecimal((BigInt(newQuote.openedPrice) - BigInt(arg.closePrice)) * BigInt(arg.fillAmount))
 		}
 
-		let returnedLockedValuesPartyA = oldLockedValuesPartyA.mul(arg.fillAmount).div(oldQuote.quantity)
-		let returnedLockedValuesPartyB = oldLockedValuesPartyB.mul(arg.fillAmount).div(oldQuote.quantity)
+		const returnedLockedValuesPartyA = (BigInt(oldLockedValuesPartyA) * BigInt(arg.fillAmount)) / BigInt(oldQuote.quantity)
+		const returnedLockedValuesPartyB = (BigInt(oldLockedValuesPartyB) * BigInt(arg.fillAmount)) / BigInt(oldQuote.quantity)
 
-		// Check Balances partyA
+// Check Balances partyA
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
-		expectToBeApproximately(newBalanceInfoPartyA.totalLockedPartyA, oldBalanceInfoPartyA.totalLockedPartyA.sub(returnedLockedValuesPartyA))
-		expectToBeApproximately(newBalanceInfoPartyA.allocatedBalances, oldBalanceInfoPartyA.allocatedBalances.add(profit))
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA.toString()).to.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
+		expectToBeApproximately(BigInt(newBalanceInfoPartyA.totalLockedPartyA), BigInt(oldBalanceInfoPartyA.totalLockedPartyA) - returnedLockedValuesPartyA)
+		expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + profit)
 
-		// Check Balances partyB
+// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())
 		const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB
 
-		expect(newBalanceInfoPartyB.totalPendingLockedPartyB).to.be.equal(oldBalanceInfoPartyB.totalPendingLockedPartyB.toString())
-		expectToBeApproximately(newBalanceInfoPartyB.totalLockedPartyB, oldBalanceInfoPartyB.totalLockedPartyB.sub(returnedLockedValuesPartyB))
-		expectToBeApproximately(newBalanceInfoPartyB.allocatedBalances, oldBalanceInfoPartyB.allocatedBalances.sub(profit))
+		expect(newBalanceInfoPartyB.totalPendingLockedPartyB.toString()).to.equal(oldBalanceInfoPartyB.totalPendingLockedPartyB.toString())
+		expectToBeApproximately(BigInt(newBalanceInfoPartyB.totalLockedPartyB), BigInt(oldBalanceInfoPartyB.totalLockedPartyB) - returnedLockedValuesPartyB)
+		expectToBeApproximately(BigInt(newBalanceInfoPartyB.allocatedBalances), BigInt(oldBalanceInfoPartyB.allocatedBalances) - profit)
+
 	}
 }

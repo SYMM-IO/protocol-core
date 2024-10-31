@@ -1,18 +1,17 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {expect} from "chai"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { logger } from "../../utils/LoggerUtils"
-import { QuoteStatus } from "../Enums"
-import { Hedger } from "../Hedger"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {logger} from "../../utils/LoggerUtils"
+import {QuoteStatus} from "../Enums"
+import {Hedger} from "../Hedger"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type AcceptCancelCloseRequestValidatorBeforeArg = {
 	user: User
 	hedger: Hedger
-	quoteId: BigNumber
+	quoteId: bigint
 }
 
 export type AcceptCancelCloseRequestValidatorBeforeOutput = {
@@ -24,7 +23,7 @@ export type AcceptCancelCloseRequestValidatorBeforeOutput = {
 export type AcceptCancelCloseRequestValidatorAfterArg = {
 	user: User
 	hedger: Hedger
-	quoteId: BigNumber
+	quoteId: bigint
 	beforeOutput: AcceptCancelCloseRequestValidatorBeforeOutput
 }
 
@@ -44,7 +43,7 @@ export class AcceptCancelCloseRequestValidator implements TransactionValidator {
 		const newQuote = await context.viewFacet.getQuote(arg.quoteId)
 		const oldQuote = arg.beforeOutput.quote
 		expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.OPENED)
-		expect(newQuote.quantityToClose).to.be.equal(BigNumber.from(0).toString())
+		expect(newQuote.quantityToClose).to.be.equal(0n)
 
 		// Check Balances partyA
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()

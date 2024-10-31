@@ -1,18 +1,17 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {expect} from "chai"
 
-import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { getTotalPartyALockedValuesForQuotes, getTradingFeeForQuotes } from "../../utils/Common"
-import { logger } from "../../utils/LoggerUtils"
-import { expectToBeApproximately } from "../../utils/SafeMath"
-import { QuoteStatus } from "../Enums"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {getTotalPartyALockedValuesForQuotes, getTradingFeeForQuotes} from "../../utils/Common"
+import {logger} from "../../utils/LoggerUtils"
+import {expectToBeApproximately} from "../../utils/SafeMath"
+import {QuoteStatus} from "../Enums"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type CancelQuoteValidatorBeforeArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 }
 
 export type CancelQuoteValidatorBeforeOutput = {
@@ -22,7 +21,7 @@ export type CancelQuoteValidatorBeforeOutput = {
 
 export type CancelQuoteValidatorAfterArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 	targetStatus?: QuoteStatus.CANCELED | QuoteStatus.EXPIRED
 	beforeOutput: CancelQuoteValidatorBeforeOutput
 }
@@ -45,7 +44,7 @@ export class CancelQuoteValidator implements TransactionValidator {
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
 
-		if (oldQuote.quoteStatus == QuoteStatus.LOCKED) {
+		if (oldQuote.quoteStatus == BigInt(QuoteStatus.LOCKED)) {
 			expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CANCEL_PENDING)
 			expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
 			expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
@@ -56,9 +55,10 @@ export class CancelQuoteValidator implements TransactionValidator {
 
 		const lockedValues = await getTotalPartyALockedValuesForQuotes([oldQuote])
 
-		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.sub(lockedValues).toString())
-		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
-		let tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
-		expectToBeApproximately(newBalanceInfoPartyA.allocatedBalances, oldBalanceInfoPartyA.allocatedBalances.add(tradingFee))
+		expect(newBalanceInfoPartyA.totalPendingLockedPartyA.toString()).to.equal((oldBalanceInfoPartyA.totalPendingLockedPartyA - lockedValues).toString())
+		expect(newBalanceInfoPartyA.totalLockedPartyA.toString()).to.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
+		const tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
+		expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + BigInt(tradingFee))
+
 	}
 }

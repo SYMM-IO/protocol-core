@@ -53,6 +53,17 @@ struct PairUpnlAndPriceSig {
 	SchnorrSign sigs;
 }
 
+struct PairUpnlAndPricesSig {
+	bytes reqId;
+	uint256 timestamp;
+	int256 upnlPartyA;
+	int256 upnlPartyB;
+	uint256[] symbolIds;
+	uint256[] prices;
+	bytes gatewaySignature;
+	SchnorrSign sigs;
+}
+
 struct DeferredLiquidationSig {
 	bytes reqId; // Unique identifier for the liquidation request
 	uint256 timestamp; // Timestamp when the liquidation signature was created
@@ -101,6 +112,22 @@ struct HighLowPriceSig {
 	int256 upnlPartyB;
 	int256 upnlPartyA;
 	uint256 currentPrice;
+	bytes gatewaySignature;
+	SchnorrSign sigs;
+}
+
+struct QuoteSettlementData {
+	uint256 quoteId;
+	uint256 currentPrice;
+	uint8 partyBUpnlIndex;
+}
+
+struct SettlementSig {
+	bytes reqId;
+	uint256 timestamp;
+	QuoteSettlementData[] quotesSettlementsData;
+	int256[] upnlPartyBs;
+	int256 upnlPartyA;
 	bytes gatewaySignature;
 	SchnorrSign sigs;
 }

@@ -1,7 +1,7 @@
-import "./diamond";
-import "./multicall";
-import "./stablecoin";
-import "./multiaccount";
-import "./feeDistributor";
-import "./partyB";
-import "./verify";
+import "./diamond"
+import "./multicall"
+import "./stablecoin"
+import "./multiaccount"
+import "./partyB"
+import "./feeDistributor"
+import "./verify"
