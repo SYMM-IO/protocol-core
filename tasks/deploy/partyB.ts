@@ -19,7 +19,7 @@ task("deploy:symmioPartyB", "Deploys the SymmioPartyB")
 		await symmioPartyB.waitForDeployment()
 
 		const addresses = {
-			proxy: symmioPartyB.address,
+			proxy: await symmioPartyB.getAddress(),
 			admin: await upgrades.erc1967.getAdminAddress(await symmioPartyB.getAddress()),
 			implementation: await upgrades.erc1967.getImplementationAddress(await symmioPartyB.getAddress()),
 		}

@@ -70,9 +70,9 @@ export async function initialize(): Promise<RunContext> {
 	await runTx(context.controlFacet.connect(context.signers.admin).setFeeCollector(context.multiAccount, context.signers.feeCollector.address))
 
 	let output: Addresses = loadAddresses()
-	output.collateralAddress = collateral.address
-	output.symmioAddress = diamond.address
-	output.MulticallAddress = multicall?.address
+	output.collateralAddress = await collateral.getAddress()
+	output.symmioAddress = await diamond.getAddress()
+	output.MulticallAddress = await multicall?.getAddress()
 	saveAddresses(output)
 	return context
 }
