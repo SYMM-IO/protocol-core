@@ -1,12 +1,11 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
+import {expect} from "chai"
 
-import { getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes } from "../../utils/Common"
-import { logger } from "../../utils/LoggerUtils"
-import { QuoteStatus } from "../Enums"
-import { RunContext } from "../RunContext"
-import { BalanceInfo, User } from "../User"
-import { TransactionValidator } from "./TransactionValidator"
+import {getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes} from "../../utils/Common"
+import {logger} from "../../utils/LoggerUtils"
+import {QuoteStatus} from "../Enums"
+import {RunContext} from "../RunContext"
+import {BalanceInfo, User} from "../User"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type SendQuoteValidatorBeforeArg = {
 	user: User
@@ -18,7 +17,7 @@ export type SendQuoteValidatorBeforeOutput = {
 
 export type SendQuoteValidatorAfterArg = {
 	user: User
-	quoteId: BigNumber
+	quoteId: bigint
 	beforeOutput: SendQuoteValidatorBeforeOutput
 }
 
@@ -36,9 +35,9 @@ export class SendQuoteValidator implements TransactionValidator {
 		const oldBalanceInfo = arg.beforeOutput.balanceInfoPartyA
 
 		expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
-			oldBalanceInfo.totalPendingLockedPartyA.add(await getTotalLockedValuesForQuoteIds(context, [arg.quoteId])).toString(),
+			(oldBalanceInfo.totalPendingLockedPartyA + await getTotalLockedValuesForQuoteIds(context, [arg.quoteId])).toString(),
 		)
-		expect(newBalanceInfo.allocatedBalances).to.be.equal(oldBalanceInfo.allocatedBalances.sub(await getTradingFeeForQuotes(context, [arg.quoteId])))
+		expect(newBalanceInfo.allocatedBalances).to.be.equal((oldBalanceInfo.allocatedBalances - await getTradingFeeForQuotes(context, [arg.quoteId])))
 		expect((await context.viewFacet.getQuote(arg.quoteId)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
 	}
 }

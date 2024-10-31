@@ -1,15 +1,13 @@
-import { BigNumber } from "ethers"
-
 export class BalanceInfo {
-	public balance: BigNumber
-	public allocated: BigNumber
-	public pendingLocked: BigNumber
-	public locked: BigNumber
+	public balance: bigint
+	public allocated: bigint
+	public pendingLocked: bigint
+	public locked: bigint
 
 	constructor() {
-		this.balance = BigNumber.from(0)
-		this.allocated = BigNumber.from(0)
-		this.pendingLocked = BigNumber.from(0)
-		this.locked = BigNumber.from(0)
+		this.balance = 0n
+		this.allocated = 0n
+		this.pendingLocked = 0n
+		this.locked = 0n
 	}
 }

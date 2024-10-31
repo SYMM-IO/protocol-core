@@ -1,19 +1,19 @@
-import { BigNumber, utils } from "ethers"
-
-import { decimal, unDecimal } from "./Common"
+import {decimal, unDecimal} from "./Common"
+import {ethers} from "ethers"
 
 export function pick(array: any[]): any {
 	return array[Math.floor(Math.random() * array.length)]
 }
 
-export function randomBigNumber(max: BigNumber, min?: BigNumber): BigNumber {
-	if (min == null) return BigNumber.from(utils.randomBytes(32)).mod(max)
-	const diff = max.sub(min!)
-	return min!.add(randomBigNumber(diff))
+export function randomBigNumber(max: bigint, min?: bigint): bigint {
+	if (min == null) return BigInt(ethers.randomBytes(32).toString()) % max
+	const diff = max - min
+	return min + randomBigNumber(diff)
 }
 
-export function randomBigNumberRatio(value: BigNumber, max: number, min?: number): BigNumber {
+export function randomBigNumberRatio(value: bigint, max: number, min?: number): bigint {
 	return unDecimal(
-		value.mul(randomBigNumber(decimal(Number(max.toFixed(4)) * 10000, 14), min != null ? decimal(Number(min.toFixed(4)) * 10000, 14) : undefined)),
+		value * randomBigNumber(decimal(BigInt(Math.floor(max * 10000)), 14), min != null ? decimal(BigInt(Math.floor(min * 10000)), 14) : undefined),
 	)
 }
+

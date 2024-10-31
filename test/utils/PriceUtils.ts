@@ -1,19 +1,18 @@
-import { BigNumber } from "ethers"
-import { QuoteStructOutput } from "../../src/types/contracts/interfaces/ISymmio"
-import { decimal } from "./Common"
-import { randomBigNumber } from "./RandomUtils"
+import {QuoteStructOutput} from "../../src/types/contracts/interfaces/ISymmio"
+import {decimal} from "./Common"
+import {randomBigNumber} from "./RandomUtils"
 
-export async function getPrice() {
-	const def = BigNumber.from(200000).mul(10).pow(18)
-	if (process.env.TEST_MODE != "fuzz") return def
-	return randomBigNumber(BigNumber.from("110000000000000000000"), BigNumber.from("100000000000000000000"))
+export async function getPrice(): Promise<bigint> {
+	const def = 200000n * 10n ** 18n
+	if (process.env.TEST_MODE !== "fuzz") return def
+	return randomBigNumber(110000000000000000000n, 100000000000000000000n)
 }
 
-export function calculateExpectedClosePriceForForceClose(q: QuoteStructOutput, penalty: BigNumber, isLongPosition: boolean): BigNumber {
-	const a = q.requestedClosePrice.mul(penalty).div(decimal(1))
-	return isLongPosition ? q.requestedClosePrice.add(a) : q.requestedClosePrice.sub(a)
+export function calculateExpectedClosePriceForForceClose(q: QuoteStructOutput, penalty: bigint, isLongPosition: boolean): bigint {
+	const a = (q.requestedClosePrice * penalty) / decimal(1n)
+	return isLongPosition ? q.requestedClosePrice + a : q.requestedClosePrice - a
 }
 
-export function calculateExpectedAvgPriceForForceClose(q: QuoteStructOutput, expectedClosePrice: BigNumber): BigNumber {
-	return q.avgClosedPrice.mul(q.closedAmount).add(q.quantityToClose.mul(expectedClosePrice)).div(q.closedAmount.add(q.quantityToClose))
+export function calculateExpectedAvgPriceForForceClose(q: QuoteStructOutput, expectedClosePrice: bigint): bigint {
+	return ((q.avgClosedPrice * q.closedAmount) + (q.quantityToClose * expectedClosePrice)) / (q.closedAmount + q.quantityToClose)
 }

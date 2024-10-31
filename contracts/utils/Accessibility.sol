@@ -44,7 +44,12 @@ abstract contract Accessibility {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		require(!MAStorage.layout().liquidationStatus[quote.partyA], "Accessibility: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[quote.partyB][quote.partyA], "Accessibility: PartyB isn't solvent");
-		require(quote.quoteStatus != QuoteStatus.LIQUIDATED && quote.quoteStatus != QuoteStatus.CLOSED, "Accessibility: Invalid state");
+		require(
+			quote.quoteStatus != QuoteStatus.LIQUIDATED &&
+				quote.quoteStatus != QuoteStatus.LIQUIDATED_PENDING &&
+				quote.quoteStatus != QuoteStatus.CLOSED,
+			"Accessibility: Invalid state"
+		);
 		_;
 	}
 

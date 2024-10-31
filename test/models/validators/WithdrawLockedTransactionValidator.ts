@@ -1,24 +1,23 @@
-import { expect } from "chai"
-import { BigNumber } from "ethers"
-import { BridgeTransactionStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { logger } from "../../utils/LoggerUtils"
-import { BridgeTransactionStatus } from "../Enums"
-import { RunContext } from "../RunContext"
-import { TransactionValidator } from "./TransactionValidator"
+import {expect} from "chai"
+import {BridgeTransactionStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
+import {logger} from "../../utils/LoggerUtils"
+import {BridgeTransactionStatus} from "../Enums"
+import {RunContext} from "../RunContext"
+import {TransactionValidator} from "./TransactionValidator"
 
 export type WithdrawLockedTransactionValidatorBeforeArg = {
 	bridge: string
-	transactionId: BigNumber
+	transactionId: bigint
 }
 
 export type WithdrawLockedTransactionValidatorBeforeOutput = {
 	bridge: string
-	depositBalanceBridge: BigNumber
+	depositBalanceBridge: bigint
 	transaction: BridgeTransactionStructOutput
 }
 
 export type WithdrawLockedTransactionValidatorAfterArg = {
-	transactionId: BigNumber
+	transactionId: bigint
 	beforeOutput: WithdrawLockedTransactionValidatorBeforeOutput
 }
 

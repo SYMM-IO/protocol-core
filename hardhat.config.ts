@@ -54,7 +54,7 @@ const config: HardhatUserConfig = {
 			accounts: privateKeyList,
 		},
 		bsc: {
-			url: "https://rpc.ankr.com/bsc",
+			url: "https://binance.llamarpc.com",
 			accounts: [privateKey],
 		},
 		opbnb: {
@@ -108,8 +108,8 @@ const config: HardhatUserConfig = {
 			bsc: bnbApiKey,
 			base: baseApiKey,
 			polygon: polygonApiKey,
-			mantle: mantleAPIKey,
-			mantle2: mantle2APIKey,
+			// mantle: mantleAPIKey,
+			mantle: mantle2APIKey,
 			zkEvm: zkEvmApiKey,
 			opbnb: opBnbApiKey,
 		},
@@ -170,16 +170,16 @@ const config: HardhatUserConfig = {
 					browserURL: "https://blastscan.io",
 				},
 			},
+			// {
+			// 	network: "mantle",
+			// 	chainId: 5000,
+			// 	urls: {
+			// 		apiURL: "https://explorer.mantle.xyz/api",
+			// 		browserURL: "https://explorer.mantle.xyz"
+			// 	}
+			// },
 			{
 				network: "mantle",
-				chainId: 5000,
-				urls: {
-					apiURL: "https://explorer.mantle.xyz/api",
-					browserURL: "https://explorer.mantle.xyz"
-				}
-			},
-			{
-				network: "mantle2",
 				chainId: 5000,
 				urls: {
 					apiURL: "https://api.mantlescan.xyz/api",
@@ -213,13 +213,10 @@ const config: HardhatUserConfig = {
 	},
 	typechain: {
 		outDir: "src/types",
-		target: "ethers-v5",
+		target: "ethers-v6",
 	},
 	mocha: {
 		timeout: 100000000,
-	},
-	docgen: {
-		pages: 'files',
 	}
 }
 

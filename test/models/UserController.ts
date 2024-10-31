@@ -1,30 +1,40 @@
-import { Builder } from "builder-pattern"
-import { concatMap, filter, from } from "rxjs"
+import {Builder} from "builder-pattern"
+import {concatMap, filter, from} from "rxjs"
 
-import { checkStatus, decimal, getBlockTimestamp, getQuoteMinLeftQuantityForClose, getSymbols, min, unDecimal } from "../utils/Common"
-import { logger } from "../utils/LoggerUtils"
-import { getPrice } from "../utils/PriceUtils"
-import { pick, randomBigNumber, randomBigNumberRatio } from "../utils/RandomUtils"
-import { roundToPrecision, safeDiv } from "../utils/SafeMath"
-import { getDummySingleUpnlAndPriceSig } from "../utils/SignatureUtils"
-import { QuoteStructOutput } from "../../src/types/contracts/facets/ViewFacet"
-import { SymbolStructOutput } from "../../src/types/contracts/facets/control/ControlFacet"
-import { Action, actionNamesMap, ActionWrapper, expandActions, userActionsMap } from "./Actions"
-import { OrderType, PositionType, QuoteStatus } from "./Enums"
-import { ManagedError } from "./ManagedError"
-import { RunContext } from "./RunContext"
-import { TestManager } from "./TestManager"
-import { User } from "./User"
-import { CloseRequest } from "./requestModels/CloseRequest"
-import { QuoteRequest } from "./requestModels/QuoteRequest"
-import { CancelCloseRequestValidator, CancelCloseRequestValidatorBeforeOutput } from "./validators/CancelCloseRequestValidator"
-import { CancelQuoteValidator, CancelQuoteValidatorBeforeOutput } from "./validators/CancelQuoteValidator"
-import { CloseRequestValidator, CloseRequestValidatorBeforeOutput } from "./validators/CloseRequestValidator"
-import { BigNumber } from "ethers"
-import { QuoteCheckpoint } from "./quoteCheckpoint"
+import {
+	checkStatus,
+	decimal,
+	getBlockTimestamp,
+	getQuoteMinLeftQuantityForClose,
+	getSymbols,
+	min,
+	unDecimal
+} from "../utils/Common"
+import {logger} from "../utils/LoggerUtils"
+import {getPrice} from "../utils/PriceUtils"
+import {pick, randomBigNumber, randomBigNumberRatio} from "../utils/RandomUtils"
+import {roundToPrecision, safeDiv} from "../utils/SafeMath"
+import {getDummySingleUpnlAndPriceSig} from "../utils/SignatureUtils"
+import {SymbolStructOutput} from "../../src/types/contracts/facets/Control/ControlFacet"
+import {Action, actionNamesMap, ActionWrapper, expandActions, userActionsMap} from "./Actions"
+import {OrderType, PositionType, QuoteStatus} from "./Enums"
+import {ManagedError} from "./ManagedError"
+import {RunContext} from "./RunContext"
+import {TestManager} from "./TestManager"
+import {User} from "./User"
+import {CloseRequest} from "./requestModels/CloseRequest"
+import {QuoteRequest} from "./requestModels/QuoteRequest"
+import {
+	CancelCloseRequestValidator,
+	CancelCloseRequestValidatorBeforeOutput
+} from "./validators/CancelCloseRequestValidator"
+import {CancelQuoteValidator, CancelQuoteValidatorBeforeOutput} from "./validators/CancelQuoteValidator"
+import {CloseRequestValidator, CloseRequestValidatorBeforeOutput} from "./validators/CloseRequestValidator"
+import {QuoteCheckpoint} from "./quoteCheckpoint"
+import {QuoteStructOutput} from "../../src/types/contracts/interfaces/ISymmio"
 
 export class UserController {
-	private context: RunContext
+	private readonly context: RunContext
 
 	constructor(private manager: TestManager, private user: User, private checkpoint: QuoteCheckpoint) {
 		this.context = manager.context
@@ -39,7 +49,7 @@ export class UserController {
 					.getQueueObservable(status)
 					.pipe(
 						concatMap(qId => from(this.manager.context.viewFacet.getQuote(qId))),
-						filter(quote => quote.quoteStatus == status && quote.partyA == userAddress),
+						filter(quote => quote.quoteStatus == BigInt(status) && quote.partyA == userAddress),
 					)
 					.subscribe(quote => {
 						this.manager.actionsLoop.next({
@@ -70,49 +80,50 @@ export class UserController {
 		}
 	}
 
-	public async sendQuote(maxLockedAmountForQuote = decimal(100)): Promise<void> {
-		if (this.manager.getPauseState()) throw new Error("This method is not allowed when state is paused")
+	public async sendQuote(maxLockedAmountForQuote = decimal(100n)): Promise<void> {
+		if (await this.manager.getPauseState()) throw new Error("This method is not allowed when state is paused")
 
-		if ((await this.context.viewFacet.getPartyAPendingQuotes(this.user.getAddress())).length >= 10) throw new ManagedError("Too many open quotes")
+		const pendingQuotes = await this.context.viewFacet.getPartyAPendingQuotes(this.user.getAddress())
+		if (pendingQuotes.length >= 10) throw new ManagedError("Too many open quotes")
 
 		const orderType = pick([OrderType.MARKET, OrderType.LIMIT])
 		const positionType = pick([PositionType.SHORT, PositionType.LONG])
 		const symbol: SymbolStructOutput = pick(await getSymbols(this.manager.context))
-		let symbolQP = this.manager.symbolManager.getSymbolQuantityPrecision(symbol.symbolId.toNumber())
-		let symbolPP = this.manager.symbolManager.getSymbolPricePrecision(symbol.symbolId.toNumber())
+		let symbolQP = this.manager.symbolManager.getSymbolQuantityPrecision(Number(symbol.symbolId))
+		let symbolPP = this.manager.symbolManager.getSymbolPricePrecision(Number(symbol.symbolId))
 		const price = await getPrice()
 		const upnl = await this.user.getUpnl()
 		const availableForQuote = await this.user.getAvailableBalanceForQuote(upnl)
-		if (availableForQuote.lt(symbol.minAcceptableQuoteValue)) throw new ManagedError("Insufficient funds available")
+		if (availableForQuote < symbol.minAcceptableQuoteValue) throw new ManagedError("Insufficient funds available")
 
 		const lockedAmount = randomBigNumber(min(availableForQuote, maxLockedAmountForQuote), symbol.minAcceptableQuoteValue)
-		const lf = randomBigNumber(unDecimal(lockedAmount.mul(decimal(5, 17))), unDecimal(lockedAmount.mul(symbol.minAcceptablePortionLF)))
-		const cva = randomBigNumberRatio(lockedAmount.sub(lf), 0.2)
-		const mm = lockedAmount.sub(lf).sub(cva)
+		const lf = randomBigNumber(unDecimal(lockedAmount * decimal(5n, 17)), unDecimal(lockedAmount * symbol.minAcceptablePortionLF))
+		const cva = randomBigNumberRatio(lockedAmount - lf, 0.2)
+		const mm = lockedAmount - lf - cva
 
 		let requestPrice =
 			orderType == OrderType.MARKET
-				? price.add(randomBigNumberRatio(price, 0.1).mul(positionType == PositionType.LONG ? 1 : -1))
-				: price.add(randomBigNumberRatio(price, 0.1).mul(positionType == PositionType.SHORT ? 1 : -1))
+				? price + randomBigNumberRatio(price, 0.1) * (positionType == PositionType.LONG ? 1n : -1n)
+				: price + randomBigNumberRatio(price, 0.1) * (positionType == PositionType.SHORT ? 1n : -1n)
 		requestPrice = roundToPrecision(requestPrice, symbolPP)
 
 		let notionalPrice =
-			orderType == OrderType.MARKET ? price : price.add(randomBigNumberRatio(price, 0.1).mul(positionType == PositionType.SHORT ? 1 : -1))
+			orderType == OrderType.MARKET ? price : price + randomBigNumberRatio(price, 0.1) * (positionType == PositionType.SHORT ? 1n : -1n)
 		notionalPrice = roundToPrecision(notionalPrice, symbolPP)
 
-		const leverage = safeDiv(symbol.maxLeverage.mul(9), BigNumber.from(10)) //10% safe margin
+		const leverage = safeDiv(symbol.maxLeverage * 9n, 10n) //10% safe margin
 		let quantity
 		try {
-			quantity = roundToPrecision(safeDiv(lockedAmount.mul(leverage), price), symbolQP)
+			quantity = roundToPrecision(safeDiv(lockedAmount * leverage, price), symbolQP)
 		} catch (ex) {
 			throw new ManagedError("Random data lead to invalid quote... This request will be rejected")
 		}
-		const notional = unDecimal(quantity.mul(notionalPrice))
-		const tradingFee = unDecimal(symbol.tradingFee.mul(notional))
+		const notional = unDecimal(quantity * notionalPrice)
+		const tradingFee = unDecimal(symbol.tradingFee * notional)
 
-		if (availableForQuote.sub(tradingFee).lt(symbol.minAcceptableQuoteValue)) throw new ManagedError("Insufficient funds available for tradingFee")
+		if (availableForQuote - tradingFee < symbol.minAcceptableQuoteValue) throw new ManagedError("Insufficient funds available for tradingFee")
 
-		if (availableForQuote.sub(tradingFee).lt(lockedAmount))
+		if (availableForQuote - tradingFee < lockedAmount)
 			throw new ManagedError("Random data lead to invalid quote... This request will be rejected")
 
 		const id = await this.user.sendQuote(
@@ -120,21 +131,21 @@ export class UserController {
 				.partyBWhiteList([])
 				.quantity(quantity)
 				.partyAmm(mm)
-				.partyBmm(mm.div(2))
+				.partyBmm(mm / 2n)
 				.cva(cva)
 				.lf(lf)
 				.symbolId(symbol.symbolId)
 				.positionType(positionType)
 				.orderType(orderType)
-				.deadline(1722889307)
+				.deadline(1722889307n)
 				.price(requestPrice)
 				.upnlSig(getDummySingleUpnlAndPriceSig(price, upnl))
-				.maxFundingRate(0)
+				.maxFundingRate(0n)
 				.build(),
 		)
 		console.log((await this.context.viewFacet.getQuote(id)).deadline)
 
-		if (randomBigNumber(BigNumber.from(100), BigNumber.from(1)) <= BigNumber.from(110)) {
+		if (randomBigNumber(100n, 1n) <= 110n) {
 			this.checkpoint.addBlockedQuotes(id)
 		}
 	}
@@ -169,18 +180,18 @@ export class UserController {
 			}
 			case Action.CLOSE_REQUEST: {
 				let symbol = await this.context.viewFacet.getSymbol(quote.symbolId)
-				let symbolQP = this.manager.symbolManager.getSymbolQuantityPrecision(symbol.symbolId.toNumber())
-				let symbolPP = this.manager.symbolManager.getSymbolPricePrecision(symbol.symbolId.toNumber())
+				let symbolQP = this.manager.symbolManager.getSymbolQuantityPrecision(Number(symbol.symbolId))
+				let symbolPP = this.manager.symbolManager.getSymbolPricePrecision(Number(symbol.symbolId))
 
-				let quantityToClose
-				const openAmount = quote.quantity.sub(quote.closedAmount)
+				let quantityToClose: bigint
+				const openAmount = quote.quantity - quote.closedAmount
 				const minLeftQuantity = await getQuoteMinLeftQuantityForClose(this.manager.context, quote.id)
-				let maxValidClose = openAmount.sub(minLeftQuantity)
-				if (maxValidClose.lte("0")) {
+				let maxValidClose = openAmount - minLeftQuantity
+				if (maxValidClose <= 0n) {
 					quantityToClose = openAmount
 				} else {
 					quantityToClose = roundToPrecision(randomBigNumber(maxValidClose), symbolQP)
-					if (quantityToClose.gt(maxValidClose) || quantityToClose.lt(minLeftQuantity)) {
+					if (quantityToClose > maxValidClose || quantityToClose < minLeftQuantity) {
 						quantityToClose = openAmount
 					}
 				}
@@ -189,9 +200,9 @@ export class UserController {
 				const price = await getPrice()
 				const hedger = this.manager.getHedger(quote.partyB)
 
-				const closePrice = roundToPrecision(price.add(randomBigNumberRatio(price, 0.05).mul(pick([1, -1]))), symbolPP)
+				const closePrice = roundToPrecision(price + randomBigNumberRatio(price, 0.05) * BigInt(pick([1, -1])), symbolPP)
 
-				let before: CloseRequestValidatorBeforeOutput
+				let before: CloseRequestValidatorBeforeOutput | undefined
 				if (validate) {
 					this.manager.setPauseState(true)
 					before = await (validator as CloseRequestValidator).before(this.context, {
@@ -206,7 +217,7 @@ export class UserController {
 					Builder<CloseRequest>()
 						.quantityToClose(quantityToClose)
 						.orderType(orderType)
-						.deadline(getBlockTimestamp(100000))
+						.deadline(getBlockTimestamp(100000n))
 						.upnl(await this.user.getUpnl())
 						.closePrice(closePrice)
 						.price(price)

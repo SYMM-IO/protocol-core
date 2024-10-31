@@ -1,5 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { ethers } from "hardhat"
+import {ethers} from "hardhat"
 
 import {
 	AccountFacet,
@@ -7,25 +6,33 @@ import {
 	ControlFacet,
 	DiamondCutFacet,
 	DiamondLoupeFacet,
+	ForceActionsFacet,
 	FundingRateFacet,
 	LiquidationFacet,
-	PartyAFacet,
-	PartyBFacet,
+	PartyAFacet, PartyBGroupActionsFacet,
+	PartyBPositionActionsFacet,
+	PartyBQuoteActionsFacet,
+	SettlementFacet,
 	ViewFacet,
 } from "../../src/types"
-import { TestManager } from "./TestManager"
+import {TestManager} from "./TestManager"
+import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
 
 export class RunContext {
 	accountFacet!: AccountFacet
 	diamondCutFacet!: DiamondCutFacet
 	diamondLoupeFacet!: DiamondLoupeFacet
 	partyAFacet!: PartyAFacet
-	partyBFacet!: PartyBFacet
+	partyBQuoteActionsFacet!: PartyBQuoteActionsFacet
+	partyBGroupActionsFacet!: PartyBGroupActionsFacet
+	partyBPositionActionsFacet!: PartyBPositionActionsFacet
 	bridgeFacet!: BridgeFacet
 	viewFacet!: ViewFacet
 	liquidationFacet!: LiquidationFacet
 	controlFacet!: ControlFacet
 	fundingRateFacet!: FundingRateFacet
+	settlementFacet!: SettlementFacet
+	forceActionsFacet!: ForceActionsFacet
 	signers!: {
 		admin: SignerWithAddress
 		user: SignerWithAddress
@@ -72,12 +79,16 @@ export async function createRunContext(diamond: string, collateral: string, mult
 	context.diamondCutFacet = await ethers.getContractAt("DiamondCutFacet", diamond)
 	context.diamondLoupeFacet = await ethers.getContractAt("DiamondLoupeFacet", diamond)
 	context.partyAFacet = await ethers.getContractAt("PartyAFacet", diamond)
-	context.partyBFacet = await ethers.getContractAt("PartyBFacet", diamond)
+	context.partyBQuoteActionsFacet = await ethers.getContractAt("PartyBQuoteActionsFacet", diamond)
+	context.partyBPositionActionsFacet = await ethers.getContractAt("PartyBPositionActionsFacet", diamond)
+	context.partyBGroupActionsFacet = await ethers.getContractAt("PartyBGroupActionsFacet", diamond)
 	context.bridgeFacet = await ethers.getContractAt("BridgeFacet", diamond)
 	context.viewFacet = await ethers.getContractAt("ViewFacet", diamond)
 	context.liquidationFacet = await ethers.getContractAt("LiquidationFacet", diamond)
 	context.controlFacet = await ethers.getContractAt("ControlFacet", diamond)
 	context.fundingRateFacet = await ethers.getContractAt("FundingRateFacet", diamond)
+	context.settlementFacet = await ethers.getContractAt("SettlementFacet", diamond)
+	context.forceActionsFacet = await ethers.getContractAt("ForceActionsFacet", diamond)
 
 	context.manager = new TestManager(context, onlyInitialize)
 	if (!onlyInitialize) await context.manager.start()
