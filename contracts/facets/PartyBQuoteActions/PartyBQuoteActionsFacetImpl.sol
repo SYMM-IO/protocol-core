@@ -44,6 +44,12 @@ library PartyBQuoteActionsFacetImpl {
 			quote.quoteStatus = QuoteStatus.PENDING;
 			accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 			LibQuote.removeFromPartyBPendingQuotes(quote);
+			if (
+				quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
+				quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
+			) {
+				accountLayout.connectedPartyBCount[quote.partyA] -= 1;
+			}
 			quote.partyB = address(0);
 			return QuoteStatus.PENDING;
 		}

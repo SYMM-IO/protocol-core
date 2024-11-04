@@ -38,6 +38,11 @@ library LibPartyBQuoteActions {
 		quote.partyB = msg.sender;
 		// lock funds for partyB
 		accountLayout.partyBPendingLockedBalances[msg.sender][quote.partyA].addQuote(quote);
+		if (
+			quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].length == 0 && quoteLayout.partyBPositionsCount[msg.sender][quote.partyA] == 0
+		) {
+			accountLayout.connectedPartyBCount[quote.partyA] += 1;
+		}
 		quoteLayout.partyBPendingQuotes[msg.sender][quote.partyA].push(quote.id);
 	}
 }

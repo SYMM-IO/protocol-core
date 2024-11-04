@@ -47,7 +47,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function allocate(uint256 amount) external whenNotAccountingPaused notSuspended(msg.sender) notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.allocate(amount);
 		emit AllocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
-		emit AllocatePartyA(msg.sender, amount); // For backward compatibility, will be removed in future
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
@@ -59,7 +58,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		AccountFacetImpl.allocate(amountWith18Decimals);
 		emit Deposit(msg.sender, msg.sender, amount);
 		emit AllocatePartyA(msg.sender, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]);
-		emit AllocatePartyA(msg.sender, amountWith18Decimals); // For backward compatibility, will be removed in future
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
@@ -69,8 +67,29 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.deallocate(amount, upnlSig);
 		emit DeallocatePartyA(msg.sender, amount, AccountStorage.layout().allocatedBalances[msg.sender]);
-		emit DeallocatePartyA(msg.sender, amount); // For backward compatibility, will be removed in future
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
+	}
+
+	/// @notice Allows Party A to distinct withdraw a specified amount of collateral.
+	/// @param amount The precise amount of collateral to be deallocated, specified in 18 decimals.
+	/// @param to The address that the collateral transfers
+	function deferredWithdraw(uint256 amount, address to) external whenNotAccountingPaused notSuspended(msg.sender) notSuspended(to) {
+		AccountFacetImpl.deferredWithdraw(amount, to);
+		emit DeferredWithdraw(msg.sender, to, amount);
+	}
+
+	/// @notice Allows Party A to claim a deferred withdraw.
+	/// @param id The Id of deferred withdraw object
+	function claimDeferredWithdraw(uint256 id) external whenNotAccountingPaused {
+		AccountFacetImpl.claimDeferredWithdraw(id);
+		emit ClaimDeferredWithdraw(id);
+	}
+
+	/// @notice Allows Party A to cancel a deferred withdraw.
+	/// @param id The Id of deferred withdraw object
+	function cancelDeferredWithdraw(uint256 id) external whenNotAccountingPaused {
+		AccountFacetImpl.cancelDeferredWithdraw(id);
+		emit CancelDeferredWithdraw(id);
 	}
 
 	/// @notice Transfers the sender's deposited balance to the user allocated balance.
@@ -86,7 +105,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit InternalTransfer(msg.sender, user, AccountStorage.layout().allocatedBalances[user], amount);
 		emit Withdraw(msg.sender, user, ((amount * (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals())) / (10 ** 18)));
 		emit AllocatePartyA(user, amount, AccountStorage.layout().allocatedBalances[user]);
-		emit AllocatePartyA(user, amount); // For backward compatibility, will be removed in future
 		emit SharedEvents.BalanceChangePartyA(user, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
@@ -97,7 +115,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function allocateForPartyB(uint256 amount, address partyA) public whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
 		AccountFacetImpl.allocateForPartyB(amount, partyA);
 		emit AllocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
-		emit AllocateForPartyB(msg.sender, partyA, amount); // For backward compatibility, will be removed in future
 		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
@@ -113,7 +130,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	) external whenNotPartyBActionsPaused notLiquidatedPartyB(msg.sender, partyA) notSuspended(msg.sender) notLiquidatedPartyA(partyA) onlyPartyB {
 		AccountFacetImpl.deallocateForPartyB(amount, partyA, upnlSig);
 		emit DeallocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
-		emit DeallocateForPartyB(msg.sender, partyA, amount); // For backward compatibility, will be removed in future
 		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 	}
 
@@ -131,7 +147,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 			recipient,
 			AccountStorage.layout().partyBAllocatedBalances[msg.sender][recipient]
 		);
-		emit TransferAllocation(amount, origin, recipient); // For backward compatibility, will be removed in future
 		emit SharedEvents.BalanceChangePartyB(msg.sender, origin, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}

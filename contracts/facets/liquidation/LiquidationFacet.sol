@@ -30,13 +30,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 			liquidationSig.totalUnrealizedLoss,
 			liquidationSig.liquidationId
 		);
-		emit LiquidatePartyA(
-			msg.sender,
-			partyA,
-			AccountStorage.layout().allocatedBalances[partyA],
-			liquidationSig.upnl,
-			liquidationSig.totalUnrealizedLoss
-		); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -51,7 +44,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		LiquidationFacetImpl.setSymbolsPrice(partyA, liquidationSig);
 		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices, liquidationSig.liquidationId);
-		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -89,7 +81,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		DeferredLiquidationFacetImpl.deferredSetSymbolsPrice(partyA, liquidationSig);
 		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices, liquidationSig.liquidationId);
-		emit SetSymbolsPrices(msg.sender, partyA, liquidationSig.symbolIds, liquidationSig.prices); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -101,7 +92,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		uint256[] memory pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
 		(uint256[] memory liquidatedAmounts, bytes memory liquidationId) = LiquidationFacetImpl.liquidatePendingPositionsPartyA(partyA);
 		emit LiquidatePendingPositionsPartyA(msg.sender, partyA, pendingQuotes, liquidatedAmounts, liquidationId);
-		emit LiquidatePendingPositionsPartyA(msg.sender, partyA); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -116,10 +106,8 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		(bool disputed, uint256[] memory liquidatedAmounts, uint256[] memory closeIds, bytes memory liquidationId) = LiquidationFacetImpl
 			.liquidatePositionsPartyA(partyA, quoteIds);
 		emit LiquidatePositionsPartyA(msg.sender, partyA, quoteIds, liquidatedAmounts, closeIds, liquidationId);
-		emit LiquidatePositionsPartyA(msg.sender, partyA, quoteIds); // For backward compatibility, will be removed in future
 		if (disputed) {
 			emit LiquidationDisputed(partyA, liquidationId);
-			emit LiquidationDisputed(partyA); // For backward compatibility, will be removed in future
 		}
 	}
 
@@ -131,10 +119,8 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	function settlePartyALiquidation(address partyA, address[] memory partyBs) external whenNotLiquidationPaused {
 		(int256[] memory settleAmounts, bytes memory liquidationId) = LiquidationFacetImpl.settlePartyALiquidation(partyA, partyBs);
 		emit SettlePartyALiquidation(partyA, partyBs, settleAmounts, liquidationId);
-		emit SettlePartyALiquidation(partyA, partyBs, settleAmounts); // For backward compatibility, will be removed in future
 		if (MAStorage.layout().liquidationStatus[partyA] == false) {
 			emit FullyLiquidatedPartyA(partyA, liquidationId);
-			emit FullyLiquidatedPartyA(partyA); // For backward compatibility, will be removed in future
 		}
 	}
 
@@ -153,7 +139,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	) external onlyRole(LibAccessibility.DISPUTE_ROLE) {
 		bytes memory liquidationId = LiquidationFacetImpl.resolveLiquidationDispute(partyA, partyBs, amounts, disputed);
 		emit ResolveLiquidationDispute(partyA, partyBs, amounts, disputed, liquidationId);
-		emit ResolveLiquidationDispute(partyA, partyBs, amounts, disputed); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -184,7 +169,6 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.LIQUIDATOR_ROLE) {
 		(uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = LiquidationFacetImpl.liquidatePositionsPartyB(partyB, partyA, priceSig);
 		emit LiquidatePositionsPartyB(msg.sender, partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
-		emit LiquidatePositionsPartyB(msg.sender, partyB, partyA, priceSig.quoteIds); // For backward compatibility, will be removed in future
 		if (QuoteStorage.layout().partyBPositionsCount[partyB][partyA] == 0) {
 			emit FullyLiquidatedPartyB(partyB, partyA);
 		}

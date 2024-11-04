@@ -82,7 +82,6 @@ interface IControlFacet is IControlEvents {
 	function setInvalidBridgedAmountsPool(address pool) external;
 
 	function setSettlementCooldown(uint256 settlementCooldown) external;
-
 	// Pause State
 	function setFeeCollector(address affiliate, address feeCollector) external;
 
@@ -123,4 +122,6 @@ interface IControlFacet is IControlEvents {
 	function addBridge(address bridge) external;
 
 	function removeBridge(address bridge) external;
+
+	function setLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit) external;
 }
