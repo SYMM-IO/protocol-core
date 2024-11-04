@@ -165,12 +165,11 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			} else {
 				emit ExpireQuoteOpen(result, expiredQuoteIds[i]);
 			}
-			emit ExpireQuote(result, expiredQuoteIds[i]); // For backward compatibility, will be removed in future
 		}
 	}
 
 	/**
-     * @notice Requests to cancel the specified quote. Two scenarios can occur:
+	 * @notice Requests to cancel the specified quote. Two scenarios can occur:
 			If the quote has not yet been locked, it will be immediately canceled.
 			For a locked quote, the outcome depends on PartyB's decision to either accept the cancellation request or to proceed with opening the position, disregarding the request. 
 			If PartyB agrees to cancel, the quote will no longer be accessible for others to interact with. 
@@ -183,7 +182,6 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 
 		if (result == QuoteStatus.EXPIRED) {
 			emit ExpireQuoteOpen(result, quoteId);
-			emit ExpireQuote(result, quoteId); // For backward compatibility, will be removed in future
 		} else if (result == QuoteStatus.CANCELED || result == QuoteStatus.CANCEL_PENDING) {
 			emit RequestToCancelQuote(quote.partyA, quote.partyB, result, quoteId);
 		}
@@ -220,7 +218,6 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			QuoteStatus.CLOSE_PENDING,
 			quoteLayout.closeIds[quoteId]
 		);
-		emit RequestToClosePosition(quote.partyA, quote.partyB, quoteId, closePrice, quantityToClose, orderType, deadline, QuoteStatus.CLOSE_PENDING); // For backward compatibility, will be removed in future
 	}
 
 	/**
@@ -233,10 +230,8 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		QuoteStatus result = PartyAFacetImpl.requestToCancelCloseRequest(quoteId);
 		if (result == QuoteStatus.OPENED) {
 			emit ExpireQuoteClose(QuoteStatus.OPENED, quoteId, quoteLayout.closeIds[quoteId]);
-			emit ExpireQuote(QuoteStatus.OPENED, quoteId); // For backward compatibility, will be removed in future
 		} else if (result == QuoteStatus.CANCEL_CLOSE_PENDING) {
 			emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING, quoteLayout.closeIds[quoteId]);
-			emit RequestToCancelCloseRequest(quote.partyA, quote.partyB, quoteId, QuoteStatus.CANCEL_CLOSE_PENDING); // For backward compatibility, will be removed in future
 		}
 	}
 }

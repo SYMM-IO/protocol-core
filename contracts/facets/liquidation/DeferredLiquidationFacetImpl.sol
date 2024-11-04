@@ -56,6 +56,7 @@ library DeferredLiquidationFacetImpl {
 			disputed: false,
 			liquidationTimestamp: liquidationSig.liquidationTimestamp
 		});
+		accountLayout.connectedPartyBCount[partyA] = 0;
 		accountLayout.liquidators[partyA].push(msg.sender);
 	}
 
@@ -80,16 +81,21 @@ library DeferredLiquidationFacetImpl {
 		);
 
 		if (detail.liquidationType == LiquidationType.NONE) {
-			if (uint256(- availableBalance) < accountLayout.lockedBalances[partyA].lf) {
-				uint256 remainingLf = accountLayout.lockedBalances[partyA].lf - uint256(- availableBalance);
+			if (uint256(-availableBalance) < accountLayout.lockedBalances[partyA].lf) {
+				uint256 remainingLf = accountLayout.lockedBalances[partyA].lf - uint256(-availableBalance);
+				uint256 maxProfit = maLayout.maxLiquidationProfitPerPosition * QuoteStorage.layout().partyAPositionsCount[partyA];
+				if (remainingLf > maxProfit) {
+					accountLayout.balances[maLayout.liquidationInsuranceVault] += maxProfit - remainingLf;
+					remainingLf = maxProfit;
+				}
 				detail.liquidationType = LiquidationType.NORMAL;
 				detail.liquidationFee = remainingLf;
-			} else if (uint256(- availableBalance) <= accountLayout.lockedBalances[partyA].lf + accountLayout.lockedBalances[partyA].cva) {
-				uint256 deficit = uint256(- availableBalance) - accountLayout.lockedBalances[partyA].lf;
+			} else if (uint256(-availableBalance) <= accountLayout.lockedBalances[partyA].lf + accountLayout.lockedBalances[partyA].cva) {
+				uint256 deficit = uint256(-availableBalance) - accountLayout.lockedBalances[partyA].lf;
 				detail.liquidationType = LiquidationType.LATE;
 				detail.deficit = deficit;
 			} else {
-				uint256 deficit = uint256(- availableBalance) - accountLayout.lockedBalances[partyA].lf - accountLayout.lockedBalances[partyA].cva;
+				uint256 deficit = uint256(-availableBalance) - accountLayout.lockedBalances[partyA].lf - accountLayout.lockedBalances[partyA].cva;
 				detail.liquidationType = LiquidationType.OVERDUE;
 				detail.deficit = deficit;
 			}

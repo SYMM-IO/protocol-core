@@ -204,6 +204,8 @@ library LibQuote {
 			);
 		}
 
+		chargeAccumulatedFundingFee(quote.id);
+
 		(bool hasMadeProfit, uint256 pnl) = LibQuote.getValueOfQuoteForPartyA(closedPrice, filledAmount, quote);
 
 		if (hasMadeProfit) {
@@ -244,6 +246,12 @@ library LibQuote {
 			quote.requestedClosePrice = 0;
 			quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
 		}
+		if (
+			quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
+			quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
+		) {
+			accountLayout.connectedPartyBCount[quote.partyA] -= 1;
+		}
 	}
 
 	/**
@@ -280,6 +288,12 @@ library LibQuote {
 			if (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
 				accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 				removeFromPartyBPendingQuotes(quote);
+				if (
+					quoteLayout.partyBPendingQuotes[quote.partyB][quote.partyA].length == 0 &&
+					quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] == 0
+				) {
+					accountLayout.connectedPartyBCount[quote.partyA] -= 1;
+				}
 			}
 			quote.quoteStatus = QuoteStatus.EXPIRED;
 			result = QuoteStatus.EXPIRED;
@@ -289,6 +303,50 @@ library LibQuote {
 			quote.quantityToClose = 0;
 			quote.quoteStatus = QuoteStatus.OPENED;
 			result = QuoteStatus.OPENED;
+		}
+	}
+
+	function getAccumulatedFundingFee(uint256 quoteId) internal view returns (int256 fee) {
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
+		if (fundingFee.epochDuration == 0 || quote.lastFundingPaymentTimestamp == 0) {
+			return 0;
+		}
+		uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
+			fundingFee.epochDuration;
+		int256 totalFee;
+		if (quote.positionType == PositionType.LONG) {
+			totalFee = (fundingFee.accumulatedLongFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentLongFee);
+		} else {
+			totalFee = (fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentShortFee);
+		}
+		fee = (int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee)) / 1e18;
+		// TODO: fix this bug
+		int256 maxFee = int256(quote.maxFundingRate) * int256(block.timestamp - quote.lastFundingPaymentTimestamp);
+		if (fee > 0) {
+			fee = maxFee > fee ? fee : maxFee;
+		} else {
+			fee = -maxFee < fee ? fee : -maxFee;
+		}
+	}
+
+	function chargeAccumulatedFundingFee(uint256 quoteId) internal {
+		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+		int256 fee = getAccumulatedFundingFee(quoteId);
+		if (fee > 0) {
+			AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA] -= uint256(fee);
+			AccountStorage.layout().allocatedBalances[quote.partyA] += uint256(fee);
+			quote.lastFundingPaymentTimestamp = block.timestamp;
+			quote.paidFundingFee += fee;
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, uint256(fee), SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, uint256(fee), SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
+		} else if (fee < 0) {
+			AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA] += uint256(-fee);
+			AccountStorage.layout().allocatedBalances[quote.partyA] -= uint256(-fee);
+			quote.lastFundingPaymentTimestamp = block.timestamp;
+			quote.paidFundingFee += fee;
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, uint256(-fee), SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, uint256(-fee), SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
 		}
 	}
 }

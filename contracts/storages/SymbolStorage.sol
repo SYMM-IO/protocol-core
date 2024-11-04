@@ -16,6 +16,15 @@ struct Symbol {
 	uint256 fundingRateWindowTime;
 }
 
+struct FundingFee {
+	int256 currentLongFee;
+	int256 currentShortFee;
+	int256 accumulatedLongFee;
+	int256 accumulatedShortFee;
+	uint256 epochs;
+	uint256 epochDuration;
+}
+
 library SymbolStorage {
 	bytes32 internal constant SYMBOL_STORAGE_SLOT = keccak256("diamond.standard.storage.symbol");
 
@@ -23,6 +32,7 @@ library SymbolStorage {
 		mapping(uint256 => Symbol) symbols;
 		uint256 lastId;
 		mapping(uint256 => uint256) forceCloseGapRatio; // symbolId -> forceCloseGapRatio
+		mapping(uint256 => mapping(address => FundingFee)) fundingFees; // SymbolId -> PartyB Address -> Funding Fee
 	}
 
 	function layout() internal pure returns (Layout storage l) {

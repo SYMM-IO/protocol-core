@@ -58,6 +58,10 @@ library PartyAFacetImpl {
 			"PartyAFacet: LF is not enough"
 		);
 
+		if (accountLayout.boundPartyB[msg.sender] != address(0)) {
+			require(partyBsWhiteList.length == 1 && partyBsWhiteList[0] == accountLayout.boundPartyB[msg.sender], "PartyAFacet: PartyA is bounded");
+		}
+
 		require(lockedValues.totalForPartyA() >= symbolLayout.symbols[symbolId].minAcceptableQuoteValue, "PartyAFacet: Quote value is low");
 		for (uint8 i = 0; i < partyBsWhiteList.length; i++) {
 			require(partyBsWhiteList[i] != msg.sender, "PartyAFacet: Sender isn't allowed in partyBWhiteList");
@@ -106,7 +110,9 @@ library PartyAFacetImpl {
 			lastFundingPaymentTimestamp: 0,
 			deadline: deadline,
 			tradingFee: symbolLayout.symbols[symbolId].tradingFee,
-			affiliate: affiliate
+			affiliate: affiliate,
+			paidFundingFee: 0,
+			lastFundingTimestamp: 0
 		});
 		quoteLayout.quoteIdsOf[msg.sender].push(currentId);
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
