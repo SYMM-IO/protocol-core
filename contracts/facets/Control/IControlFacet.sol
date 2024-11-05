@@ -11,6 +11,8 @@ import "../../storages/MuonStorage.sol";
 interface IControlFacet is IControlEvents {
 	function transferOwnership(address owner) external;
 
+	function acceptOwnership() external;
+
 	function setAdmin(address user) external;
 
 	function grantRole(address user, bytes32 role) external;

@@ -21,7 +21,13 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @param owner The address of the new owner.
 	function transferOwnership(address owner) external onlyOwner {
 		require(owner != address(0), "ControlFacet: Zero address");
-		LibDiamond.setContractOwner(owner);
+		LibDiamond.transferOwnership(owner);
+	}
+
+	/// @notice Accept ownership of the contract.
+	/// @dev This function can only be called by the pending owner of the contract.
+	function acceptOwnership() external {
+		LibDiamond.acceptOwnership();
 	}
 
 	/// @notice Grants admin role to a specified user.

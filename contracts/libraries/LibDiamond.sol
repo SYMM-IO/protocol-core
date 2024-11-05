@@ -25,6 +25,8 @@ library LibDiamond {
 		mapping(bytes4 => bool) supportedInterfaces;
 		// owner of the contract
 		address contractOwner;
+		// address of new Owner
+		address pendingOwner;
 	}
 
 	function diamondStorage() internal pure returns (DiamondStorage storage ds) {
@@ -35,12 +37,28 @@ library LibDiamond {
 	}
 
 	event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+	event OwnershipTransferStarted(address indexed currentOwner, address indexed pendingOwner);
 
 	function setContractOwner(address _newOwner) internal {
 		DiamondStorage storage ds = diamondStorage();
 		address previousOwner = ds.contractOwner;
 		ds.contractOwner = _newOwner;
 		emit OwnershipTransferred(previousOwner, _newOwner);
+	}
+
+	function transferOwnership(address _newOwner) internal {
+		DiamondStorage storage ds = diamondStorage();
+		ds.pendingOwner = _newOwner;
+		emit OwnershipTransferStarted(ds.contractOwner, _newOwner);
+	}
+
+	function acceptOwnership() internal {
+		DiamondStorage storage ds = diamondStorage();
+		require(msg.sender == ds.pendingOwner, "LibDiamond: Sender should be the pendingOwner");
+		address previousOwner = ds.contractOwner;
+		ds.contractOwner = ds.pendingOwner;
+		ds.pendingOwner = address(0);
+		emit OwnershipTransferred(previousOwner, ds.contractOwner);
 	}
 
 	function contractOwner() internal view returns (address contractOwner_) {

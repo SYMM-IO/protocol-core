@@ -14,11 +14,27 @@ import "../../storages/GlobalAppStorage.sol";
 import "../../storages/SymbolStorage.sol";
 import "../../storages/MuonStorage.sol";
 import "../../libraries/LibLockedValues.sol";
+import "../../libraries/LibDiamond.sol";
 import "../../storages/BridgeStorage.sol";
 import "./IViewFacet.sol";
 
 contract ViewFacet is IViewFacet {
 	using LockedValuesOps for LockedValues;
+	/**
+	 * @notice Returns the pending owner of the diamond.
+	 * @return The address of the pendingOwner.
+	 */
+	function pendingOwner() external view virtual returns (address) {
+        return LibDiamond.diamondStorage().pendingOwner;
+    }
+
+	/**
+	 * @notice Returns the owner of the diamond.
+	 * @return The address of the owner.
+	 */
+	function owner() external view virtual returns (address) {
+        return LibDiamond.diamondStorage().contractOwner;
+    }
 
 	/**
 	 * @notice Returns the balance of the specified user.

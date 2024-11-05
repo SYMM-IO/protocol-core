@@ -20,6 +20,10 @@ interface IViewFacet {
 		uint256 bitmap;
 	}
 
+	function pendingOwner() external view returns (address);
+
+	function owner() external view returns (address);
+
 	// Account
 	function balanceOf(address user) external view returns (uint256);
 
