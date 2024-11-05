@@ -9,6 +9,8 @@ import "../../storages/MuonStorage.sol";
 interface IOracleLessActionsFacet is IOracleLessActionsEvents {
 	function bindToPartyB(address partyB) external;
 
+	function scheduleUnbindingFromPartyB(address partyB) external;
+
 	function unbindFromPartyB(address partyB) external;
 
 	function lockQuotes(uint256[] memory quoteIds) external;

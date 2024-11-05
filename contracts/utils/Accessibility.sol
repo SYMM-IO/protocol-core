@@ -71,7 +71,7 @@ abstract contract Accessibility {
 	}
 
 	modifier isBounded(address partyB, address partyA) {
-		require(AccountStorage.layout().boundPartyB[partyA] == partyB, "Accessibility: PartyB is not bounded to this partyA");
+		require(AccountStorage.layout().bindState[partyA].partyB == partyB, "Accessibility: PartyB is not bounded to this partyA");
 		_;
 	}
 }

@@ -775,6 +775,14 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Returns the unbindCooldown.
+	 * @return unbindCooldown The unbind cooldown.
+	 */
+	function unbindCooldown() external view returns (uint256) {
+		return MAStorage.layout().unbindCooldown;
+	}
+
+	/**
 	 * @notice Returns the lastUpnlSettlementTimestamp.
 	 * @param senderPartyB Address of sender partyB
 	 * @param targetPartyB Address of target partyB

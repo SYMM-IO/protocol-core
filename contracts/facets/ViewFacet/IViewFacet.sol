@@ -157,6 +157,8 @@ interface IViewFacet {
 
 	function settlementCooldown() external view returns (uint256);
 
+	function unbindCooldown() external view returns (uint256);
+
 	function lastUpnlSettlementTimestamp(address senderPartyB, address targetPartyB, address partyA) external view returns (uint256);
 
 	///////////////////////////////////////////

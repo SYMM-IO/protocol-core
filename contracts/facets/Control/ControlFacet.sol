@@ -386,6 +386,14 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		MAStorage.layout().settlementCooldown = settlementCooldown;
 	}
 
+	/// @notice Sets the cooldown period for unbinding.
+	/// @param unbindCooldown The new cooldown period, specified in seconds.
+	function setUnbindCooldown(uint256 unbindCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		emit SetUnbindCooldown(MAStorage.layout().unbindCooldown, unbindCooldown);
+		MAStorage.layout().unbindCooldown = unbindCooldown;
+	}
+
+
 	// Pause State //////////////////////////////////////////////////
 
 	/// @notice Pauses global operations.
