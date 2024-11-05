@@ -33,6 +33,7 @@ library MAStorage {
 		mapping(address => mapping(address => mapping(address => uint256))) lastUpnlSettlementTimestamp; // subject partyB => object partyB => partyA => timestamp
 		address liquidationInsuranceVault;
 		uint256 maxLiquidationProfitPerPosition;
+		uint256 unbindCooldown;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

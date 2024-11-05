@@ -9,6 +9,7 @@ import "../../interfaces/IPartiesEvents.sol";
 
 interface IOracleLessActionsEvents is IPartiesEvents {
 	event BindToPartyB(address partyA, address partyB);
+	event ScheduleUnbindingFromPartyB(address partyA, address partyB, uint256 timestamp);
 	event UnbindFromPartyB(address partyA, address partyB);
 	event OpenPositions(uint256[] quoteIds, address partyA, address partyB, uint256[] filledAmounts, uint256[] openedPrices);
 	event LockQuotes(address partyB, uint256[] quoteIds);

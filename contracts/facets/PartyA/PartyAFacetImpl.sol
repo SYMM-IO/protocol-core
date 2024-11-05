@@ -58,8 +58,12 @@ library PartyAFacetImpl {
 			"PartyAFacet: LF is not enough"
 		);
 
-		if (accountLayout.boundPartyB[msg.sender] != address(0)) {
-			require(partyBsWhiteList.length == 1 && partyBsWhiteList[0] == accountLayout.boundPartyB[msg.sender], "PartyAFacet: PartyA is bounded");
+		if (accountLayout.bindState[msg.sender].partyB != address(0)) {
+			require(partyBsWhiteList.length == 1 && partyBsWhiteList[0] == accountLayout.bindState[msg.sender].partyB, "PartyAFacet: PartyA is bounded");
+			if (accountLayout.bindState[msg.sender].status == BindStatus.UNBIND_PENDING) {
+				accountLayout.bindState[msg.sender].status = BindStatus.BINDED;
+				accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
+			}
 		}
 
 		require(lockedValues.totalForPartyA() >= symbolLayout.symbols[symbolId].minAcceptableQuoteValue, "PartyAFacet: Quote value is low");

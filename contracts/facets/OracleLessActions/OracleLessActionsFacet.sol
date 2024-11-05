@@ -9,11 +9,28 @@ import "../../utils/Pausable.sol";
 import "./IOracleLessActionsFacet.sol";
 
 contract OracleLessActionsFacet is Accessibility, Pausable, IOracleLessActionsFacet {
+	/**
+	 * @notice Party A can bind their address to a specific Party B, allowing them to interact exclusively with this Party B from that point onward.
+	 * @param partyB The address of partyB.
+	 */
 	function bindToPartyB(address partyB) external whenNotPartyAActionsPaused {
 		OracleLessActionsFacetImpl.bindToPartyB(partyB);
 		emit BindToPartyB(msg.sender, partyB);
 	}
 
+	/**
+	 * @notice Party A can schedule a request to unbind their address from Party B.
+	 * @param partyB The address of partyB.
+	 */
+	function scheduleUnbindingFromPartyB(address partyB) external whenNotPartyAActionsPaused {
+		OracleLessActionsFacetImpl.scheduleUnbindingFromPartyB(partyB);
+		emit ScheduleUnbindingFromPartyB(msg.sender, partyB, block.timestamp);
+	}
+
+	/**
+	 * @notice Party A can unbind their address from Party B after scheduling the action and completing a cooldown period.
+	 * @param partyB The address of partyB.
+	 */
 	function unbindFromPartyB(address partyB) external whenNotPartyAActionsPaused {
 		OracleLessActionsFacetImpl.unbindFromPartyB(partyB);
 		emit UnbindFromPartyB(msg.sender, partyB);

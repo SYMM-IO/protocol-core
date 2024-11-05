@@ -15,7 +15,7 @@ import "../../storages/AccountStorage.sol";
 library OracleLessActionsFacetImpl {
 	function bindToPartyB(address partyB) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.boundPartyB[msg.sender] == address(0), "OracleLessActionsFacet: PartyA is bounded already");
+		require(accountLayout.bindState[msg.sender].partyB == address(0), "OracleLessActionsFacet: PartyA is bounded already");
 		require(MAStorage.layout().partyBStatus[partyB], "OracleLessActionsFacet: Should be partyB");
 		require(accountLayout.connectedPartyBCount[msg.sender] <= 1);
 		if (accountLayout.connectedPartyBCount[msg.sender] == 0) {
@@ -27,25 +27,41 @@ library OracleLessActionsFacetImpl {
 				"OracleLessActionsFacet: PartyA has position with another partyb"
 			);
 		}
-		AccountStorage.layout().boundPartyB[msg.sender] = partyB;
+		accountLayout.bindState[msg.sender] = BindState(BindStatus.BINDED, partyB, block.timestamp);
 	}
 
-	function unbindFromPartyB(address partyB) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.boundPartyB[msg.sender] == partyB, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
+	function scheduleUnbindingFromPartyB(address partyB) internal {
+		BindState storage bindState = AccountStorage.layout().bindState[msg.sender];
+		require(bindState.partyB == partyB, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
 		require(
 			QuoteStorage.layout().partyBPendingQuotes[partyB][msg.sender].length == 0 ||
 				QuoteStorage.layout().partyBPositionsCount[partyB][msg.sender] == 0,
 			"OracleLessActionsFacet: PartyA has position with partyB"
 		);
-		AccountStorage.layout().boundPartyB[msg.sender] = address(0);
+		bindState.status = BindStatus.UNBIND_PENDING;
+		bindState.modifyTimestamp = block.timestamp;
+	}
+
+	function unbindFromPartyB(address partyB) internal {
+		BindState storage bindState = AccountStorage.layout().bindState[msg.sender];
+		require(bindState.partyB == partyB, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
+		require(
+			QuoteStorage.layout().partyBPendingQuotes[partyB][msg.sender].length == 0 ||
+				QuoteStorage.layout().partyBPositionsCount[partyB][msg.sender] == 0,
+			"OracleLessActionsFacet: PartyA has position with partyB"
+		);
+		require(bindState.status == BindStatus.UNBIND_PENDING, "OracleLessActionsFacet: Unbind should be scheduled first");
+		require(block.timestamp >= bindState.modifyTimestamp + MAStorage.layout().unbindCooldown, "OracleLessActionsFacet: Cooldown hasn't reached");
+		bindState.status = BindStatus.UNBINDED;
+		bindState.modifyTimestamp = block.timestamp;
+		bindState.partyB = address(0);
 	}
 
 	function lockQuotes(uint256[] memory quoteIds) internal {
 		for (uint8 i = 0; i < quoteIds.length; i++) {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
 			require(!MAStorage.layout().liquidationStatus[quote.partyA], "OracleLessActionsFacet: PartyA isn't solvent");
-			require(AccountStorage.layout().boundPartyB[quote.partyA] == msg.sender, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
+			require(AccountStorage.layout().bindState[quote.partyA].partyB == msg.sender, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
 			LibPartyBQuoteActions.lockQuote(quoteIds[i]);
 		}
 	}
@@ -69,7 +85,7 @@ library OracleLessActionsFacetImpl {
 		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "OracleLessActionsFacet: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "OracleLessActionsFacet: PartyB isn't solvent");
 		require(
-			AccountStorage.layout().boundPartyB[firstQuote.partyA] == firstQuote.partyB,
+			AccountStorage.layout().bindState[firstQuote.partyA].partyB == firstQuote.partyB,
 			"OracleLessActionsFacet: PartyB is not bounded to this partyA"
 		);
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
@@ -104,7 +120,7 @@ library OracleLessActionsFacetImpl {
 		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "OracleLessActionsFacet: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "OracleLessActionsFacet: PartyB isn't solvent");
 		require(
-			AccountStorage.layout().boundPartyB[firstQuote.partyA] == firstQuote.partyB,
+			AccountStorage.layout().bindState[firstQuote.partyA].partyB == firstQuote.partyB,
 			"OracleLessActionsFacet: PartyB is not bounded to this partyA"
 		);
 		for (uint8 i = 0; i < quoteIds.length; i++) {

@@ -49,6 +49,18 @@ enum DeferredWithdrawStatus {
 	COMPLETED
 }
 
+struct BindState {
+	BindStatus status;
+	address partyB;
+	uint256 modifyTimestamp;
+}
+
+enum BindStatus {
+	UNBINDED,
+	BINDED,
+	UNBIND_PENDING
+}
+
 struct Price {
 	uint256 price;
 	uint256 timestamp;
@@ -79,7 +91,7 @@ library AccountStorage {
 		mapping(address => mapping(address => SettlementState)) settlementStates;
 		mapping(address => uint256) reserveVault;
 		mapping(address => uint8) connectedPartyBCount; // partyA => Number of partyBs connected to this partyA
-		mapping(address => address) boundPartyB; // partyA => Address of partyB
+		mapping(address => BindState) bindState;
 		mapping(uint256 => DeferredWithdraw) deferredWithdraws;
 		mapping(address => uint256[]) deferredWithdrawIds;
 		uint256 lastdeferredWithdrawId;
