@@ -1,4 +1,5 @@
-import {ethers} from "hardhat"
+import {ethers, run} from "hardhat"
+
 
 async function main() {
 	const facetName = ""
@@ -8,6 +9,10 @@ async function main() {
 	await facet.waitForDeployment()
 
 	console.log(`${facetName} deployed: ${await facet.getAddress()}`)
+	await run("verify:verify", {
+		address: await facet.getAddress(),
+		constructorArguments: [],
+	})
 }
 
 // We recommend this pattern to be able to use async/await everywhere

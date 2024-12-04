@@ -4,9 +4,9 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "./IPartyBGroupActionsEvents.sol";
+import "../PartyBQuoteActions/IPartyBQuoteActionsEvents.sol";
 
-interface IPartyBGroupActionsFacet is IPartyBGroupActionsEvents {
+interface IPartyBGroupActionsFacet is IPartyBQuoteActionsEvents {
 	function lockAndOpenQuote(
 		uint256 quoteId,
 		uint256 filledAmount,
