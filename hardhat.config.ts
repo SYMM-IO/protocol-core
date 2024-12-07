@@ -44,9 +44,10 @@ const config: HardhatUserConfig = {
 	networks: {
 		hardhat: {
 			// forking: {
-			//   url: "",
+			//   url: "https://rpc.ankr.com/bsc",
+			//   blockNumber:23352000
 			// },
-			allowUnlimitedContractSize: false,
+			// allowUnlimitedContractSize: false,
 		},
 		docker: {
 			url: hardhatDockerUrl,
