@@ -1,20 +1,19 @@
 import "@nomicfoundation/hardhat-chai-matchers"
 import "@nomicfoundation/hardhat-toolbox"
 import "@openzeppelin/hardhat-upgrades"
-import {config as dotenvConfig} from "dotenv"
-import type {HardhatUserConfig} from "hardhat/config"
-import {resolve} from "path"
-import 'solidity-docgen'
+import { config as dotenvConfig } from "dotenv"
+import type { HardhatUserConfig } from "hardhat/config"
+import { resolve } from "path"
+import "solidity-docgen"
 
 import "./tasks/deploy"
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env"
-dotenvConfig({path: resolve(__dirname, dotenvConfigPath)})
+dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) })
 
 // Ensure that we have all the environment variables we need.
 const privateKey: string | undefined = process.env.PRIVATE_KEY
-if (!privateKey)
-	throw new Error("Please set your PRIVATE_KEY in a .env file")
+if (!privateKey) throw new Error("Please set your PRIVATE_KEY in a .env file")
 
 const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR
 const privateKeyList: string[] = privateKeysStr?.split(",") || []
@@ -43,11 +42,12 @@ const config: HardhatUserConfig = {
 	},
 	networks: {
 		hardhat: {
-			// forking: {
-			//   url: "https://rpc.ankr.com/bsc",
-			//   blockNumber:23352000
-			// },
-			// allowUnlimitedContractSize: false,
+			forking: {
+				url: "",
+				blockNumber: 0,
+				enabled: true,
+			},
+			allowUnlimitedContractSize: true,
 		},
 		docker: {
 			url: hardhatDockerUrl,
@@ -144,8 +144,8 @@ const config: HardhatUserConfig = {
 				chainId: 8822,
 				urls: {
 					apiURL: "https://explorer.evm.iota.org/api",
-					browserURL: "https://explorer.evm.iota.org"
-				}
+					browserURL: "https://explorer.evm.iota.org",
+				},
 			},
 			// {
 			// 	network: "mode",
@@ -160,8 +160,8 @@ const config: HardhatUserConfig = {
 				chainId: 34443,
 				urls: {
 					apiURL: "https://api.routescan.io/v2/network/mainnet/evm/34443/etherscan",
-					browserURL: "https://modescan.io"
-				}
+					browserURL: "https://modescan.io",
+				},
 			},
 			{
 				network: "blast",
@@ -184,8 +184,8 @@ const config: HardhatUserConfig = {
 				chainId: 5000,
 				urls: {
 					apiURL: "https://api.mantlescan.xyz/api",
-					browserURL: "https://mantlescan.xyz"
-				}
+					browserURL: "https://mantlescan.xyz",
+				},
 			},
 		],
 	},
@@ -218,7 +218,7 @@ const config: HardhatUserConfig = {
 	},
 	mocha: {
 		timeout: 100000000,
-	}
+	},
 }
 
 export default config

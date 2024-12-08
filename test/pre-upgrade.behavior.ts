@@ -1,40 +1,73 @@
 import { ethers, network } from "hardhat"
-import { DiamondCutFacet, DiamondCutFacet__factory, ViewFacet, ViewFacet__factory } from "../src/types"
+import * as helpers from "@nomicfoundation/hardhat-network-helpers"
+import { BridgeFacet, DiamondCutFacet, ViewFacet } from "../src/types"
+import { UpgradeMockData } from "./upgradeMock"
+import { ZeroAddress } from "ethers"
+import { expect } from "chai"
+import { SymbolStructOutput } from "../src/types/contracts/interfaces/ISymmio"
+import _ from "lodash"
 
 export function shouldBehaveLikePreUpgradeTest() {
-
-	const diamondAddress = "0x9A9F48888600FC9c05f11E03Eab575EBB2Fc2c8f"
+	const diamondAddress = "0x91Cf2D8Ed503EC52768999aA6D8DBeA6e52dbe43"
 	let diamondCut: DiamondCutFacet
 	let viewFacet: ViewFacet
 
+	interface State {
+		nextQuoteId: string
+		bridgeTransaction: string
+		internalTransferPaused: boolean
+		settlementCooldown: string
+		symbol: SymbolStructOutput
+	}
+
+	let preUpgradeState: State
+	let postUpgradeState: State
+
 	beforeEach(async function () {
-		diamondCut = DiamondCutFacet__factory.connect(diamondAddress, ethers.provider)
-		viewFacet = ViewFacet__factory.connect(diamondAddress, ethers.provider)
+		await helpers.mine()
+
+		diamondCut = await ethers.getContractAt("DiamondCutFacet", diamondAddress)
+		viewFacet = await ethers.getContractAt("ViewFacet", diamondAddress)
 	})
 
-	it("should get data from viewFacet", async function () {
-		const v = await viewFacet.getNextQuoteId()
-		// state.set("getNextQuoteId", {
-		// 	old: v.toString(),
-		// })
+	async function captureState(): Promise<State> {
+		const nextQuoteId = (await viewFacet.getNextQuoteId()).toString()
+		const bridgeTransaction = (await viewFacet.getNextBridgeTransactionId()).toString()
+		const internalTransferPaused = (await viewFacet.pauseState()).internalTransferPaused
+		const settlementCooldown = (await viewFacet.getDeallocateDebounceTime()).toString()
+		const symbol = await viewFacet.getSymbol(10)
 
-		// // TODO ::: connect to admin
-		// await diamondCut.diamondCut(
-		// 	[
-		// 		{
-		// 			facetAddress: "",
-		// 			action: "",
-		// 			functionSelectors: [""],
-		// 		},
-		// 	],
-		// 	ethers.ZeroAddress,
-		// 	"0x",
-		// )
+		return {
+			nextQuoteId,
+			bridgeTransaction,
+			internalTransferPaused,
+			settlementCooldown,
+			symbol,
+		}
+	}
 
-		// const z = await viewFacet.getNextQuoteId()
+	function compareStates(pre: State, post: State) {
+		Object.keys(pre).forEach(key => {
+			const preValue = pre[key as keyof State]
+			const postValue = post[key as keyof State]
 
-		// state.set("getNextQuoteId", {
-		// 	old: z.toString(),
-		// })
+			if (typeof preValue === "object" && typeof postValue === "object") {
+				expect(_.isEqual(preValue, postValue)).to.be.true
+			} else {
+				expect(preValue).to.equal(postValue)
+			}
+		})
+	}
+
+	it("should verify contract states before and after upgrade", async function () {
+		preUpgradeState = await captureState()
+
+		await diamondCut.diamondCut(UpgradeMockData, ZeroAddress, "0x")
+
+		postUpgradeState = await captureState()
+
+		compareStates(preUpgradeState, postUpgradeState)
 	})
+
+	it("should deposit correctly", async function () {})
 }

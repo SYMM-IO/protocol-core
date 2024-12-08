@@ -76,6 +76,7 @@
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
   },
   "dependencies": {
-    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.8"
+    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.8",
+    "lodash": "^4.17.21"
   }
 }
