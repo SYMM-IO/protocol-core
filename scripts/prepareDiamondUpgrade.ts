@@ -4,7 +4,7 @@ import { FacetCutAction, getSelectors } from "../tasks/utils/diamondCut"
 
 // Main function
 export async function main() {
-	const diamondAddress = "0x91Cf2D8Ed503EC52768999aA6D8DBeA6e52dbe43"
+	const diamondAddress = ""
 	const facetAddresses = new Map<string, string>()
 	facetAddresses.set("AccountFacet", "")
 	facetAddresses.set("ControlFacet", "")
