@@ -1,73 +1,81 @@
-import { ethers, network } from "hardhat"
+import { ethers } from "hardhat"
 import * as helpers from "@nomicfoundation/hardhat-network-helpers"
-import { BridgeFacet, DiamondCutFacet, ViewFacet } from "../src/types"
+import { DiamondCutFacet, ViewFacet } from "../src/types"
 import { UpgradeMockData } from "./upgradeMock"
 import { ZeroAddress } from "ethers"
 import { expect } from "chai"
-import { SymbolStructOutput } from "../src/types/contracts/interfaces/ISymmio"
+import { QuoteStructOutput, SymbolStructOutput } from "../src/types/contracts/interfaces/ISymmio"
 import _ from "lodash"
+import { decimal } from "./utils/Common"
+
+const DIAMOND_ADDRESS = "0x91Cf2D8Ed503EC52768999aA6D8DBeA6e52dbe43"
+const MAIN_MULTISIG = "0x5146C35725d9b8F11A84ebD4a3abe9845698Ada9"
+
+interface State {
+	nextQuoteId: string
+	bridgeTransaction: string
+	internalTransferPaused: boolean
+	settlementCooldown: string
+	symbol: SymbolStructOutput
+	quote: QuoteStructOutput
+}
 
 export function shouldBehaveLikePreUpgradeTest() {
-	const diamondAddress = "0x91Cf2D8Ed503EC52768999aA6D8DBeA6e52dbe43"
 	let diamondCut: DiamondCutFacet
 	let viewFacet: ViewFacet
-
-	interface State {
-		nextQuoteId: string
-		bridgeTransaction: string
-		internalTransferPaused: boolean
-		settlementCooldown: string
-		symbol: SymbolStructOutput
-	}
 
 	let preUpgradeState: State
 	let postUpgradeState: State
 
-	beforeEach(async function () {
+	before(async function () {
 		await helpers.mine()
-
-		diamondCut = await ethers.getContractAt("DiamondCutFacet", diamondAddress)
-		viewFacet = await ethers.getContractAt("ViewFacet", diamondAddress)
 	})
 
-	async function captureState(): Promise<State> {
-		const nextQuoteId = (await viewFacet.getNextQuoteId()).toString()
-		const bridgeTransaction = (await viewFacet.getNextBridgeTransactionId()).toString()
-		const internalTransferPaused = (await viewFacet.pauseState()).internalTransferPaused
-		const settlementCooldown = (await viewFacet.getDeallocateDebounceTime()).toString()
-		const symbol = await viewFacet.getSymbol(10)
+	beforeEach(async function () {
+		diamondCut = await ethers.getContractAt("DiamondCutFacet", DIAMOND_ADDRESS)
+		viewFacet = await ethers.getContractAt("ViewFacet", DIAMOND_ADDRESS)
+	})
 
+	async function captureContractState(): Promise<State> {
 		return {
-			nextQuoteId,
-			bridgeTransaction,
-			internalTransferPaused,
-			settlementCooldown,
-			symbol,
+			nextQuoteId: (await viewFacet.getNextQuoteId()).toString(),
+			bridgeTransaction: (await viewFacet.getNextBridgeTransactionId()).toString(),
+			internalTransferPaused: (await viewFacet.pauseState()).internalTransferPaused,
+			settlementCooldown: (await viewFacet.getDeallocateDebounceTime()).toString(),
+			symbol: await viewFacet.getSymbol(10),
+			quote: await viewFacet.getQuote(100)
 		}
 	}
 
-	function compareStates(pre: State, post: State) {
+	function assertStatesAreEqual(pre: State, post: State) {
 		Object.keys(pre).forEach(key => {
 			const preValue = pre[key as keyof State]
+
 			const postValue = post[key as keyof State]
 
-			if (typeof preValue === "object" && typeof postValue === "object") {
-				expect(_.isEqual(preValue, postValue)).to.be.true
+			if (_.isObject(preValue) && _.isObject(postValue)) {
+				expect(_.isEqual(preValue, postValue), `${key} mismatch`).to.be.true
 			} else {
-				expect(preValue).to.equal(postValue)
+				expect(preValue, `${key} mismatch`).to.equal(postValue)
 			}
 		})
 	}
 
 	it("should verify contract states before and after upgrade", async function () {
-		preUpgradeState = await captureState()
+		// Capture pre-upgrade state
+		preUpgradeState = await captureContractState()
 
-		await diamondCut.diamondCut(UpgradeMockData, ZeroAddress, "0x")
+		// Impersonate multisig wallet and fund it
+		const impersonatedSigner = await ethers.getImpersonatedSigner(MAIN_MULTISIG)
+		await helpers.setBalance(MAIN_MULTISIG, decimal(1n))
 
-		postUpgradeState = await captureState()
+		// Perform upgrade
+		await diamondCut.connect(impersonatedSigner).diamondCut(UpgradeMockData, ZeroAddress, "0x")
 
-		compareStates(preUpgradeState, postUpgradeState)
+		// Capture post-upgrade state
+		postUpgradeState = await captureContractState()
+
+		// Assert states are equal
+		assertStatesAreEqual(preUpgradeState, postUpgradeState)
 	})
-
-	it("should deposit correctly", async function () {})
 }
