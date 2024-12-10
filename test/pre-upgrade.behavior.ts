@@ -1,15 +1,16 @@
 import { ethers } from "hardhat"
 import * as helpers from "@nomicfoundation/hardhat-network-helpers"
 import { DiamondCutFacet, ViewFacet } from "../src/types"
-import { UpgradeMockData } from "./upgradeMock"
 import { ZeroAddress } from "ethers"
 import { expect } from "chai"
 import { QuoteStructOutput, SymbolStructOutput } from "../src/types/contracts/interfaces/ISymmio"
 import _ from "lodash"
 import { decimal } from "./utils/Common"
+import * as prepareDiamondUpgrade from "../scripts/prepareDiamondUpgrade"
+import { FacetCutAction } from "../tasks/utils/diamondCut"
 
-const DIAMOND_ADDRESS = "0x91Cf2D8Ed503EC52768999aA6D8DBeA6e52dbe43"
-const MAIN_MULTISIG = "0x5146C35725d9b8F11A84ebD4a3abe9845698Ada9"
+const DIAMOND_ADDRESS = ""
+const OWNER = ""
 
 interface State {
 	nextQuoteId: string
@@ -27,8 +28,15 @@ export function shouldBehaveLikePreUpgradeTest() {
 	let preUpgradeState: State
 	let postUpgradeState: State
 
+	let DiamondCutFacetUpdate: {
+		facetAddress: string
+		action: FacetCutAction
+		functionSelectors: string[]
+	}[]
+
 	before(async function () {
 		await helpers.mine()
+		DiamondCutFacetUpdate = await prepareDiamondUpgrade.main()
 	})
 
 	beforeEach(async function () {
@@ -43,7 +51,7 @@ export function shouldBehaveLikePreUpgradeTest() {
 			internalTransferPaused: (await viewFacet.pauseState()).internalTransferPaused,
 			settlementCooldown: (await viewFacet.getDeallocateDebounceTime()).toString(),
 			symbol: await viewFacet.getSymbol(10),
-			quote: await viewFacet.getQuote(100)
+			quote: await viewFacet.getQuote(100),
 		}
 	}
 
@@ -66,11 +74,11 @@ export function shouldBehaveLikePreUpgradeTest() {
 		preUpgradeState = await captureContractState()
 
 		// Impersonate multisig wallet and fund it
-		const impersonatedSigner = await ethers.getImpersonatedSigner(MAIN_MULTISIG)
-		await helpers.setBalance(MAIN_MULTISIG, decimal(1n))
+		const impersonatedSigner = await ethers.getImpersonatedSigner(OWNER)
+		await helpers.setBalance(OWNER, decimal(1n))
 
 		// Perform upgrade
-		await diamondCut.connect(impersonatedSigner).diamondCut(UpgradeMockData, ZeroAddress, "0x")
+		await diamondCut.connect(impersonatedSigner).diamondCut(DiamondCutFacetUpdate, ZeroAddress, "0x")
 
 		// Capture post-upgrade state
 		postUpgradeState = await captureContractState()

@@ -1,11 +1,10 @@
-import {ethers} from "hardhat"
-import {FacetNames} from "../tasks/deploy/constants"
-import {FacetCutAction, getSelectors} from "../tasks/utils/diamondCut"
-
+import { ethers } from "hardhat"
+import { FacetNames } from "../tasks/deploy/constants"
+import { FacetCutAction, getSelectors } from "../tasks/utils/diamondCut"
 
 // Main function
-async function main() {
-	const diamondAddress = ""
+export async function main() {
+	const diamondAddress = "0x91Cf2D8Ed503EC52768999aA6D8DBeA6e52dbe43"
 	const facetAddresses = new Map<string, string>()
 	facetAddresses.set("AccountFacet", "")
 	facetAddresses.set("ControlFacet", "")
@@ -23,14 +22,8 @@ async function main() {
 
 	const [deployer] = await ethers.getSigners()
 
-	const diamondCutFacet = await ethers.getContractAt(
-		"DiamondCutFacet",
-		diamondAddress,
-		deployer
-	)
-
 	const newFacets: {
-		[facetName: string]: { address: string; selectors: string[] };
+		[facetName: string]: { address: string; selectors: string[] }
 	} = {}
 	for (const facetName of FacetNames) {
 		const facetFactory = await ethers.getContractFactory(facetName)
@@ -42,11 +35,7 @@ async function main() {
 	}
 
 	// Get current facets and their selectors from the diamond
-	const diamondLoupeFacet = await ethers.getContractAt(
-		"DiamondLoupeFacet",
-		diamondAddress,
-		deployer
-	)
+	const diamondLoupeFacet = await ethers.getContractAt("DiamondLoupeFacet", diamondAddress, deployer)
 
 	const facets = await diamondLoupeFacet.facets()
 
@@ -71,7 +60,7 @@ async function main() {
 
 	// Determine actions for each selector
 	const actions: {
-		[selector: string]: { action: FacetCutAction; facetAddress: string };
+		[selector: string]: { action: FacetCutAction; facetAddress: string }
 	} = {}
 
 	// Process selectors to determine add, replace, or remove
@@ -103,7 +92,7 @@ async function main() {
 
 	// Group selectors by facetAddress and action
 	const facetCutsMap: {
-		[key: string]: { facetAddress: string; action: FacetCutAction; selectors: string[] };
+		[key: string]: { facetAddress: string; action: FacetCutAction; selectors: string[] }
 	} = {}
 
 	for (const [selector, info] of Object.entries(actions)) {
@@ -129,12 +118,14 @@ async function main() {
 	}
 
 	console.log(diamondCut)
+
+	return diamondCut
 }
 
 // Run the main function
 main()
-	.then(() => process.exit(0))
-	.catch((error) => {
+	.then()
+	.catch(error => {
 		console.error(error)
 		process.exit(1)
 	})
