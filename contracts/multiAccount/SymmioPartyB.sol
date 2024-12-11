@@ -9,6 +9,10 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgrad
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 
+interface ISymmio {
+	function getNextQuoteId() external view returns (uint256);
+}
+
 contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumerableUpgradeable {
 	bytes32 public constant TRUSTED_ROLE = keccak256("TRUSTED_ROLE");
 	address public symmioAddress;
@@ -18,6 +22,19 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	mapping(bytes4 => bool) public restrictedSelectors; // selector -> isRestricted
 	mapping(address => bool) public multicastWhitelist; // contractAddress -> isAllowedForMulticast
 	uint256 private _guardCounter;
+
+	/**
+	 * @notice Config for batched operation specifying how to handle the quote ID
+	 * @param needsQuoteId Whether this call needs quote ID injection
+	 * @param createsQuote Whether this call creates a quote (sendQuote)
+	 * @param quoteIdOffset Where to inject the quote ID in the calldata
+	 */
+	struct SequencedCallConfig {
+		bytes callData;
+		bool needsQuoteId;
+		bool createsQuote;
+		uint256 quoteIdOffset;
+	}
 
 	/// @custom:oz-upgrades-unsafe-allow constructor
 	constructor() {
@@ -131,8 +148,12 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 			_checkRole(TRUSTED_ROLE, msg.sender);
 		}
 
-		(bool success, ) = destAddress.call{ value: 0 }(callData);
-		require(success, "SymmioPartyB: Execution reverted");
+		(bool _success, bytes memory _resultData) = destAddress.call{ value: 0 }(callData);
+		if (!_success) {
+			assembly {
+				revert(add(_resultData, 32), mload(_resultData))
+			}
+		}
 	}
 
 	/**
@@ -152,6 +173,61 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 		require(destAddresses.length == _callDatas.length, "SymmioPartyB: Array length mismatch");
 
 		for (uint8 i; i < _callDatas.length; i++) _executeCall(destAddresses[i], _callDatas[i]);
+	}
+
+	/**
+	 * @notice Executes a sequence of calls with quote ID injection where needed
+	 * @param _configs Array of configs specifying which calls need quote ID injection
+	 */
+	function sequencedCall(SequencedCallConfig[] calldata _configs) external whenNotPaused nonReentrant {
+		require(_configs.length > 0, "SymmioPartyB: Empty calls");
+
+		uint256 quoteId;
+		bool hasQuoteId;
+
+		for (uint256 i = 0; i < _configs.length; i++) {
+			SequencedCallConfig memory config = _configs[i];
+
+			if (config.needsQuoteId) {
+				require(hasQuoteId, "SymmioPartyB: QuoteId not yet available");
+
+				bytes memory modifiedCallData = _injectQuoteId(config.callData, quoteId, config.quoteIdOffset);
+
+				_executeCall(symmioAddress, modifiedCallData);
+			} else {
+				_executeCall(symmioAddress, config.callData);
+
+				if (config.createsQuote) {
+					quoteId = ISymmio(symmioAddress).getNextQuoteId() - 1;
+					hasQuoteId = true;
+				}
+			}
+		}
+	}
+
+	/**
+	 * @notice Injects quote ID into calldata at specified offset
+	 * @param originalCall Original calldata
+	 * @param quoteId Quote ID to inject
+	 * @param offset Offset where to inject quote ID
+	 */
+	function _injectQuoteId(bytes memory originalCall, uint256 quoteId, uint256 offset) internal pure returns (bytes memory) {
+		require(offset + 32 <= originalCall.length, "SymmioPartyB: Invalid offset");
+
+		bytes memory modifiedCall = bytes(originalCall);
+
+		// Convert quoteId to bytes32
+		bytes32 quoteIdBytes = bytes32(quoteId);
+
+		// Inject the quote ID at the specified offset
+		assembly {
+			// Calculate the position in memory where we need to write
+			let pos := add(add(modifiedCall, 32), offset)
+			// Write the quoteId bytes32 value
+			mstore(pos, quoteIdBytes)
+		}
+
+		return modifiedCall;
 	}
 
 	/**
