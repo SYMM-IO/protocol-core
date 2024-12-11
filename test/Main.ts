@@ -17,6 +17,7 @@ import {shouldBehaveLikeBridgeFacet} from "./BridgeFacet.behavior"
 import {shouldBehaveLikeMultiAccount} from "./MultiAccount.behavior"
 import {shouldBehaveLikeControlFacet} from "./ControlFacet.behavior"
 import {shouldBehaveLikeSettlement} from "./Settlement.behavior"
+import { shouldBehaveLikePreUpgradeTest } from "./pre-upgrade.behavior"
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == "static") {
@@ -95,7 +96,12 @@ describe("UnitTests", function () {
 		describe("FuzzTest", async function () {
 			shouldBehaveLikeFuzzTest()
 		})
-	} else {
+	} else if (process.env.TEST_MODE == "pre-upgrade") {
+		describe("pre-upgrade test", async function () {
+			shouldBehaveLikePreUpgradeTest()
+		})
+	}
+	 else {
 		throw new Error("Invalid TEST_MODE property. should be static or fuzz")
 	}
 })
