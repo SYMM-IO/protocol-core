@@ -1,23 +1,23 @@
-import {shouldBehaveLikeFuzzTest} from "./FuzzTest.behavior"
-import {shouldBehaveLikeSettleAndForceClosePosition} from "./SettleAndForceClosePosition.behavior"
-import {shouldBehaveLikeFeeDistributor} from "./FeeDistributor.behavior"
-import {shouldBehaveLikeDiamond} from "./Diamond.behavior"
-import {shouldBehaveLikeAccountFacet} from "./AccountFacet.behavior"
-import {shouldBehaveLikeSendQuote} from "./SendQuote.behavior"
-import {shouldBehaveLikeLockQuote} from "./LockQuote.behavior"
-import {shouldBehaveLikeOpenPosition} from "./OpenPosition.behavior"
-import {shouldBehaveLikeCancelQuote} from "./CancelQuote.behavior"
-import {shouldBehaveLikeClosePosition} from "./ClosePosition.behavior"
-import {shouldBehaveLikeEmergencyClosePosition} from "./EmergencyClosePosition.behavior"
-import {shouldBehaveLikeForceClosePosition} from "./ForceClosePosition.behavior"
-import {shouldBehaveLikeLiquidationFacet} from "./LiquidationFacet.behavior"
-import {shouldBehaveLikeFundingRate} from "./FundingRate.behavior"
-import {shouldBehaveLikeSpecificScenario} from "./SpecificScenario.behavior"
-import {shouldBehaveLikeBridgeFacet} from "./BridgeFacet.behavior"
-import {shouldBehaveLikeMultiAccount} from "./MultiAccount.behavior"
-import {shouldBehaveLikeControlFacet} from "./ControlFacet.behavior"
-import {shouldBehaveLikeSettlement} from "./Settlement.behavior"
-import { shouldBehaveLikePreUpgradeTest } from "./pre-upgrade.behavior"
+import { shouldBehaveLikeFuzzTest } from "./FuzzTest.behavior"
+import { shouldBehaveLikeSettleAndForceClosePosition } from "./SettleAndForceClosePosition.behavior"
+import { shouldBehaveLikeFeeDistributor } from "./FeeDistributor.behavior"
+import { shouldBehaveLikeDiamond } from "./Diamond.behavior"
+import { shouldBehaveLikeAccountFacet } from "./AccountFacet.behavior"
+import { shouldBehaveLikeSendQuote } from "./SendQuote.behavior"
+import { shouldBehaveLikeLockQuote } from "./LockQuote.behavior"
+import { shouldBehaveLikeOpenPosition } from "./OpenPosition.behavior"
+import { shouldBehaveLikeCancelQuote } from "./CancelQuote.behavior"
+import { shouldBehaveLikeClosePosition } from "./ClosePosition.behavior"
+import { shouldBehaveLikeEmergencyClosePosition } from "./EmergencyClosePosition.behavior"
+import { shouldBehaveLikeForceClosePosition } from "./ForceClosePosition.behavior"
+import { shouldBehaveLikeLiquidationFacet } from "./LiquidationFacet.behavior"
+import { shouldBehaveLikeFundingRate } from "./FundingRate.behavior"
+import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
+import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
+import { shouldBehaveLikeMultiAccount } from "./MultiAccount.behavior"
+import { shouldBehaveLikeControlFacet } from "./ControlFacet.behavior"
+import { shouldBehaveLikeSettlement } from "./Settlement.behavior"
+import { shouldBehaveLikePreUpgradeTest } from "./PreUpgrade.behavior"
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == "static") {
@@ -100,8 +100,7 @@ describe("UnitTests", function () {
 		describe("pre-upgrade test", async function () {
 			shouldBehaveLikePreUpgradeTest()
 		})
-	}
-	 else {
+	} else {
 		throw new Error("Invalid TEST_MODE property. should be static or fuzz")
 	}
 })

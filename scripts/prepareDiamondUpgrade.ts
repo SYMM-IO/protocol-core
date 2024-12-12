@@ -1,130 +1,48 @@
-import { ethers } from "hardhat"
-import { FacetNames } from "../tasks/deploy/constants"
-import { FacetCutAction, getSelectors } from "../tasks/utils/diamondCut"
+import { generateDiamondCut } from "./utils/diamondUtils"
 
-// Main function
-export async function main() {
-	const diamondAddress = ""
-	const facetAddresses = new Map<string, string>()
-	facetAddresses.set("AccountFacet", "")
-	facetAddresses.set("ControlFacet", "")
-	facetAddresses.set("DiamondLoupeFacet", "")
-	facetAddresses.set("LiquidationFacet", "")
-	facetAddresses.set("PartyAFacet", "")
-	facetAddresses.set("BridgeFacet", "")
-	facetAddresses.set("ViewFacet", "")
-	facetAddresses.set("FundingRateFacet", "")
-	facetAddresses.set("ForceActionsFacet", "")
-	facetAddresses.set("SettlementFacet", "")
-	facetAddresses.set("PartyBPositionActionsFacet", "")
-	facetAddresses.set("PartyBQuoteActionsFacet", "")
-	facetAddresses.set("PartyBGroupActionsFacet", "")
-
-	const [deployer] = await ethers.getSigners()
-
-	const newFacets: {
-		[facetName: string]: { address: string; selectors: string[] }
-	} = {}
-	for (const facetName of FacetNames) {
-		const facetFactory = await ethers.getContractFactory(facetName)
-		const selectors = getSelectors(ethers, facetFactory).selectors
-		newFacets[facetName] = {
-			address: facetAddresses.get(facetName)!,
-			selectors: selectors,
-		}
+async function main() {
+	const config = {
+		diamondAddress: "",
+		facets: [
+			{ name: "AccountFacet", address: "" },
+			{ name: "ControlFacet", address: "" },
+			{ name: "LiquidationFacet", address: "" },
+			{ name: "PartyAFacet", address: "" },
+			{ name: "BridgeFacet", address: "" },
+			{ name: "ViewFacet", address: "" },
+			{ name: "FundingRateFacet", address: "" },
+			{ name: "ForceActionsFacet", address: "" },
+			{ name: "SettlementFacet", address: "" },
+			{ name: "PartyBPositionActionsFacet", address: "" },
+			{ name: "PartyBQuoteActionsFacet", address: "" },
+			{ name: "PartyBGroupActionsFacet", address: "" },
+		],
+		ignoreSelectors: {
+			adding: [
+				"0x56129889", // forceClosePosition(new)
+				"0x3bc98be1", // settleAndForceClosePosition
+			],
+			removing: [
+				"0x1f931c1c", // diamondCut
+				"0xea4f9efd", // forceClosePosition(old)
+			],
+			replacing: [
+				"0xcdffacc6", // facetAddress
+				"0x52ef6b2c", // facetAddress
+				"0xadfca15e", // facetFunctionSelectors
+				"0x7a0ed627", // facets
+				"0x01ffc9a7", // supportsInterface
+			],
+		},
 	}
 
-	// Get current facets and their selectors from the diamond
-	const diamondLoupeFacet = await ethers.getContractAt("DiamondLoupeFacet", diamondAddress, deployer)
-
-	const facets = await diamondLoupeFacet.facets()
-
-	// Build a map of current selectors to facet addresses
-	const currentSelectors: { [selector: string]: string } = {}
-	for (const facet of facets) {
-		const facetAddress = facet.facetAddress
-		for (const selector of facet.functionSelectors) {
-			currentSelectors[selector] = facetAddress
-		}
-	}
-
-	// Build new selectors mapping
-	const newSelectorsMapping: { [selector: string]: string } = {}
-	for (const [facetName, facetInfo] of Object.entries(newFacets)) {
-		const facetAddress = facetInfo.address
-		const selectors = facetInfo.selectors
-		for (const selector of selectors) {
-			newSelectorsMapping[selector] = facetAddress
-		}
-	}
-
-	// Determine actions for each selector
-	const actions: {
-		[selector: string]: { action: FacetCutAction; facetAddress: string }
-	} = {}
-
-	// Process selectors to determine add, replace, or remove
-	for (const selector in currentSelectors) {
-		if (newSelectorsMapping[selector]) {
-			// Selector is in both current and new: Replace
-			actions[selector] = {
-				action: FacetCutAction.Replace,
-				facetAddress: newSelectorsMapping[selector],
-			}
-			// Remove from newSelectorsMapping to prevent duplicate processing
-			delete newSelectorsMapping[selector]
-		} else {
-			// Selector only in current: Remove
-			actions[selector] = {
-				action: FacetCutAction.Remove,
-				facetAddress: ethers.ZeroAddress,
-			}
-		}
-	}
-
-	// Remaining selectors in newSelectorsMapping are additions
-	for (const selector in newSelectorsMapping) {
-		actions[selector] = {
-			action: FacetCutAction.Add,
-			facetAddress: newSelectorsMapping[selector],
-		}
-	}
-
-	// Group selectors by facetAddress and action
-	const facetCutsMap: {
-		[key: string]: { facetAddress: string; action: FacetCutAction; selectors: string[] }
-	} = {}
-
-	for (const [selector, info] of Object.entries(actions)) {
-		const key = `${info.facetAddress}-${info.action}`
-		if (!facetCutsMap[key]) {
-			facetCutsMap[key] = {
-				facetAddress: info.facetAddress,
-				action: info.action,
-				selectors: [],
-			}
-		}
-		facetCutsMap[key].selectors.push(selector)
-	}
-
-	// Prepare the _diamondCut parameter
-	const diamondCut = []
-	for (const facetCut of Object.values(facetCutsMap)) {
-		diamondCut.push({
-			facetAddress: facetCut.facetAddress,
-			action: facetCut.action,
-			functionSelectors: facetCut.selectors,
-		})
-	}
-
+	const diamondCut = await generateDiamondCut(config)
+	console.log("\nDiamond Cut:")
 	console.log(diamondCut)
-
-	return diamondCut
 }
 
-// Run the main function
 main()
-	.then()
+	.then(() => process.exit(0))
 	.catch(error => {
 		console.error(error)
 		process.exit(1)
