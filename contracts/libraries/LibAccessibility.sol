@@ -18,6 +18,7 @@ library LibAccessibility {
 	bytes32 public constant SUSPENDER_ROLE = keccak256("SUSPENDER_ROLE");
 	bytes32 public constant DISPUTE_ROLE = keccak256("DISPUTE_ROLE");
 	bytes32 public constant AFFILIATE_MANAGER_ROLE = keccak256("AFFILIATE_MANAGER_ROLE");
+	bytes32 public constant PARTYB_LIQUIDATOR_ROLE = keccak256("PARTYB_LIQUIDATOR_ROLE");
 
 	/**
 	 * @notice Checks if a user has a specific role.

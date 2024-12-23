@@ -212,14 +212,17 @@ library LiquidationFacetImpl {
 			quoteLayout.partyAPositionsCount[partyA] -= 1;
 			quoteLayout.partyBPositionsCount[quote.partyB][partyA] -= 1;
 
+			
 			if (quoteLayout.partyBPositionsCount[quote.partyB][partyA] == 0) {
 				int256 settleAmount = accountLayout.settlementStates[partyA][quote.partyB].expectedAmount;
 				if (settleAmount < 0) {
 					accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl += settleAmount;
 				} else {
+					
 					if (accountLayout.partyBAllocatedBalances[quote.partyB][partyA] >= uint256(settleAmount)) {
 						accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl += settleAmount;
 					} else {
+						// TODO: reserve
 						accountLayout.liquidationDetails[partyA].partyAAccumulatedUpnl += int256(
 							accountLayout.partyBAllocatedBalances[quote.partyB][partyA]
 						);
@@ -287,6 +290,7 @@ library LiquidationFacetImpl {
 				emit SharedEvents.BalanceChangePartyB(partyB, partyA, uint256(-settleAmount), SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 				settleAmounts[i] = settleAmount;
 			} else {
+				// TODO: reserve
 				if (accountLayout.partyBAllocatedBalances[partyB][partyA] >= uint256(settleAmount)) {
 					accountLayout.partyBAllocatedBalances[partyB][partyA] -= uint256(settleAmount);
 					settleAmounts[i] = settleAmount;
