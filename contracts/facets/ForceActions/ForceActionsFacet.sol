@@ -4,9 +4,6 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../libraries/LibAccessibility.sol";
-import "../../storages/QuoteStorage.sol";
-import "../../storages/MuonStorage.sol";
 import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
 import "../../interfaces/IPartiesEvents.sol";

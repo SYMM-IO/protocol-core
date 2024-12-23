@@ -14,7 +14,6 @@ import "../../storages/GlobalAppStorage.sol";
 import "../../storages/SymbolStorage.sol";
 import "../../storages/MuonStorage.sol";
 import "../../libraries/LibLockedValues.sol";
-import "../../libraries/LibDiamond.sol";
 import "../../storages/BridgeStorage.sol";
 import "./IViewFacet.sol";
 

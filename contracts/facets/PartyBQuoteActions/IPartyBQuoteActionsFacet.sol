@@ -5,7 +5,6 @@
 pragma solidity >=0.8.18;
 
 import "./IPartyBQuoteActionsEvents.sol";
-import "../../storages/MuonStorage.sol";
 
 interface IPartyBQuoteActionsFacet is IPartyBQuoteActionsEvents {
 	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) external;

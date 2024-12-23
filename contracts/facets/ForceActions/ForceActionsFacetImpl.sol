@@ -10,7 +10,6 @@ import "../../libraries/LibSettlement.sol";
 import "../../libraries/LibLiquidation.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../storages/QuoteStorage.sol";
-import "../Settlement/SettlementFacetEvents.sol";
 
 library ForceActionsFacetImpl {
 	using LockedValuesOps for LockedValues;

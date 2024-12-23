@@ -6,7 +6,6 @@ pragma solidity >=0.8.18;
 import "./PartyBQuoteActionsFacetImpl.sol";
 import "../../utils/Accessibility.sol";
 import "../../utils/Pausable.sol";
-import "../../storages/MuonStorage.sol";
 import "./IPartyBQuoteActionsFacet.sol";
 
 contract PartyBQuoteActionsFacet is Accessibility, Pausable, IPartyBQuoteActionsFacet {

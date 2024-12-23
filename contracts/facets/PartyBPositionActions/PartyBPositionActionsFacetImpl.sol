@@ -5,12 +5,8 @@
 pragma solidity >=0.8.18;
 
 import "../../libraries/muon/LibMuonPartyB.sol";
-import "../../libraries/SharedEvents.sol";
 import "../../libraries/LibSolvency.sol";
 import "../../libraries/LibPartyBPositionsActions.sol";
-import "../../storages/GlobalAppStorage.sol";
-import "../../storages/AccountStorage.sol";
-import "../../storages/SymbolStorage.sol";
 
 library PartyBPositionActionsFacetImpl {
 	using LockedValuesOps for LockedValues;
