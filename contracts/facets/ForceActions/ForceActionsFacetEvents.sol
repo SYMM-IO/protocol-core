@@ -4,7 +4,6 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../storages/MuonStorage.sol";
 import "../../storages/QuoteStorage.sol";
 
 interface ForceActionsFacetEvents {

@@ -10,7 +10,6 @@ import "../../libraries/LibPartyBQuoteActions.sol";
 import "../../storages/MAStorage.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
-import "../../storages/AccountStorage.sol";
 
 library OracleLessActionsFacetImpl {
 	function bindToPartyB(address partyB) internal {
