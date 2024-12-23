@@ -37,6 +37,11 @@ library LibSolvency {
 			AccountStorage.layout().allocatedBalances[partyA],
 			partyA
 		);
+
+		// TODO: reserve
+		uint256 reserveAmount = AccountStorage.layout().reserveVault[partyB];
+		partyBAvailableBalance += int256(reserveAmount);
+		
 		for (uint8 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
@@ -165,7 +170,10 @@ library LibSolvency {
 			partyB,
 			partyA
 		);
-
+		// TODO: reserve
+		uint256 reserveAmount = AccountStorage.layout().reserveVault[partyB];
+		partyBAvailableBalance += int256(reserveAmount);
+		
 		require(partyBAvailableBalance >= 0 && partyAAvailableBalance >= 0, "LibSolvency: Available balance is lower than zero");
 		return true;
 	}
