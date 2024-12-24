@@ -9,7 +9,6 @@ import "../storages/MuonStorage.sol";
 import "../storages/AccountStorage.sol";
 import "./LibQuote.sol";
 import "./LibAccount.sol";
-import "hardhat/console.sol";
 
 library LibSettlement {
 	function settleUpnl(
