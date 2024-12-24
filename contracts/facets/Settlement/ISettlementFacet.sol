@@ -9,4 +9,13 @@ import "./SettlementFacetEvents.sol";
 
 interface ISettlementFacet is SettlementFacetEvents {
 	function settleUpnl(SettlementSig memory settleSig, uint256[] memory updatedPrices, address partyA) external;
+	function settleUpnlAndFillCloseRequests(
+		SettlementSig memory settleSig,
+		uint256[] memory updatedPrices,
+		address partyA,
+		uint256[] memory quoteIds,
+		uint256[] memory filledAmounts,
+		uint256[] memory closedPrices,
+		PairUpnlAndPricesSig memory upnlSig
+	) external;
 }

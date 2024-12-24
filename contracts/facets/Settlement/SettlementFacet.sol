@@ -33,4 +33,37 @@ contract SettlementFacet is Accessibility, Pausable, ISettlementFacet {
 			newPartyBsAllocatedBalances
 		);
 	}
+
+	function settleUpnlAndFillCloseRequests(
+		SettlementSig memory settleSig,
+		uint256[] memory updatedPrices,
+		address partyA,
+		uint256[] memory quoteIds,
+		uint256[] memory filledAmounts,
+		uint256[] memory closedPrices,
+		PairUpnlAndPricesSig memory upnlSig
+	) external whenNotPartyBActionsPaused onlyPartyB notLiquidatedPartyA(partyA) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		(uint256[] memory newPartyBsAllocatedBalances, QuoteStatus[] memory quoteStatuses, uint256[] memory closeIds) = SettlementFacetImpl
+			.settleUpnlAndFillCloseRequests(settleSig, updatedPrices, partyA, quoteIds, filledAmounts, closedPrices, upnlSig);
+		emit SettleUpnl(
+			settleSig.quotesSettlementsData,
+			updatedPrices,
+			partyA,
+			AccountStorage.layout().allocatedBalances[partyA],
+			newPartyBsAllocatedBalances
+		);
+		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
+		for (uint8 i = 0; i < quoteIds.length; i++) {
+			emit FillCloseRequest(
+				quoteIds[i],
+				firstQuote.partyA,
+				firstQuote.partyB,
+				filledAmounts[i],
+				closedPrices[i],
+				quoteStatuses[i],
+				closeIds[i]
+			);
+		}
+	}
 }

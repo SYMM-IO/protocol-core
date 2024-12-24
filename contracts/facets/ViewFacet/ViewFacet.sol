@@ -6,6 +6,7 @@ pragma solidity >=0.8.18;
 
 import "../../libraries/LibLockedValues.sol";
 import "../../libraries/LibQuote.sol";
+import "../../libraries/LibDiamond.sol";
 import "../../libraries/muon/LibMuon.sol";
 import "../../storages/AccountStorage.sol";
 import "../../storages/MAStorage.sol";
