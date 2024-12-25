@@ -173,7 +173,28 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 		}
 
 		if (selector == IMultiAccount._call.selector) {
+			// Make sure we have enough space to read the offset (first 4 bytes = selector, next 32 bytes = offset)
 			require(callData.length >= 68, "SymmioPartyB: Invalid MultiAccount call data");
+
+			/*
+			 * The layout for IMultiAccount._call(bytes[] calldata callData) typically is:
+			 *   0x00:  function selector
+			 *   0x04:  offset to the dynamic bytes[] array
+			 *   0x24:  length of callData array
+			 *   0x44:  offset of first element
+			 *   ...
+			 *
+			 * We only want to allow a single call inside that array. So read the array length and require it == 1.
+			 */
+			uint256 multiAccountCallsLength;
+			assembly {
+				// read the offset to the callData array in the IMultiAccount._call arguments
+				let callsOffset := mload(add(callData, 36))
+				// read the length of the array (bytes[]), located at that offset
+				multiAccountCallsLength := mload(add(add(callData, 36), callsOffset))
+			}
+
+			require(multiAccountCallsLength == 1, "SymmioPartyB: MultiAccount _call must contain exactly one sub-call in sequencedCall");
 
 			bytes memory innerCallData;
 			assembly {
