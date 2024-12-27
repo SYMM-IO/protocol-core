@@ -17,8 +17,8 @@ import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
 import { shouldBehaveLikeMultiAccount } from "./MultiAccount.behavior"
 import { shouldBehaveLikeControlFacet } from "./ControlFacet.behavior"
 import { shouldBehaveLikeSettlement } from "./Settlement.behavior"
-import { shouldBehaveLikePreUpgradeTest } from "./pre-upgrade.behavior"
 import { TestMode } from "../hardhat.config"
+import { shouldBehaveLikePreUpgradeTest } from "./PreUpgrade.behavior"
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == TestMode.STATIC) {
