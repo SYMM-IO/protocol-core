@@ -1,19 +1,20 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {expect} from "chai"
-import {AbiCoder, BigNumberish} from "ethers"
-import {ethers, upgrades} from "hardhat"
-import {PairUpnlAndPriceSigStruct} from "../src/types/contracts/interfaces/ISymmio"
-import {initializeFixture} from "./Initialize.fixture"
-import {PositionType, QuoteStatus} from "./models/Enums"
-import {Hedger} from "./models/Hedger"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {CloseRequest, marketCloseRequestBuilder} from "./models/requestModels/CloseRequest"
-import {FillCloseRequest, marketFillCloseRequestBuilder} from "./models/requestModels/FillCloseRequest"
-import {marketOpenRequestBuilder, OpenRequest} from "./models/requestModels/OpenRequest"
-import {limitQuoteRequestBuilder, marketQuoteRequestBuilder, QuoteRequest} from "./models/requestModels/QuoteRequest"
-import {decimal, PromiseOrValue} from "./utils/Common"
-import {getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig} from "./utils/SignatureUtils"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
+import { AbiCoder, AddressLike, BigNumberish, BytesLike } from "ethers"
+import { ethers, upgrades } from "hardhat"
+import { PairUpnlAndPriceSigStruct } from "../src/types/contracts/interfaces/ISymmio"
+import { initializeFixture } from "./Initialize.fixture"
+import { PositionType, QuoteStatus } from "./models/Enums"
+import { Hedger } from "./models/Hedger"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest"
+import { FillCloseRequest, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest"
+import { marketOpenRequestBuilder, OpenRequest } from "./models/requestModels/OpenRequest"
+import { limitQuoteRequestBuilder, marketQuoteRequestBuilder, QuoteRequest } from "./models/requestModels/QuoteRequest"
+import { decimal, PromiseOrValue } from "./utils/Common"
+import { getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import { MultiAccount, SymmioPartyB } from "../src/types"
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
 	return [
@@ -43,22 +44,30 @@ async function getListFormatOfCloseRequest(
 async function getListFormatOfOpenRequest(
 	request: OpenRequest,
 ): Promise<[PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]> {
-	return [request.filledAmount, request.openPrice, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB))]
+	return [
+		request.filledAmount,
+		request.openPrice,
+		await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB)),
+	]
 }
 
 async function getListFormatOfFillCloseRequest(
 	request: FillCloseRequest,
 ): Promise<[PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]> {
-	return [request.filledAmount, request.closedPrice, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB))]
+	return [
+		request.filledAmount,
+		request.closedPrice,
+		await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB)),
+	]
 }
 
 export function shouldBehaveLikeMultiAccount() {
-	let multiAccount: any
+	let multiAccount: MultiAccount
 	let context: RunContext
 	let user: User
 	let hedger: Hedger
 	let symmioAddress: any
-	let symmioPartyB: any
+	let symmioPartyB: SymmioPartyB
 
 	beforeEach(async () => {
 		context = await loadFixture(initializeFixture)
@@ -85,14 +94,14 @@ export function shouldBehaveLikeMultiAccount() {
 			initializer: "initialize",
 		})
 
-		multiAccount = await MultiAccount.waitForDeployment()
-		symmioPartyB = await SymmioPartyBDeploy.waitForDeployment()
+		multiAccount = (await MultiAccount.waitForDeployment()) as unknown as MultiAccount
+		symmioPartyB = (await SymmioPartyBDeploy.waitForDeployment()) as unknown as SymmioPartyB
 
 		await context.controlFacet.connect(context.signers.admin).registerPartyB(await symmioPartyB.getAddress())
 		await context.controlFacet.connect(context.signers.admin).registerAffiliate(await MultiAccount.getAddress())
 		await context.controlFacet.connect(context.signers.admin).setFeeCollector(await MultiAccount.getAddress(), await hedger.getAddress())
 
-		await multiAccount.connect(context.signers.admin).setRevokeCooldown(300);
+		await multiAccount.connect(context.signers.admin).setRevokeCooldown(300)
 
 		await context.controlFacet
 			.connect(context.signers.admin)
@@ -196,14 +205,16 @@ export function shouldBehaveLikeMultiAccount() {
 
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
 
-				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector]))
-					.to.be.revertedWith("MultiAccount: Revoke access not proposed")
+				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector])).to.be.revertedWith(
+					"MultiAccount: Revoke access not proposed",
+				)
 
 				await multiAccount.connect(context.signers.user).proposeToRevokeAccesses(partyAAccount, user2Address, [selector])
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
 
-				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector]))
-					.to.be.revertedWith("MultiAccount: Cooldown not reached")
+				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector])).to.be.revertedWith(
+					"MultiAccount: Cooldown not reached",
+				)
 
 				await time.increase(301)
 				await multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector])
@@ -275,6 +286,7 @@ export function shouldBehaveLikeMultiAccount() {
 			})
 		})
 	})
+
 	describe("send new quote", function () {
 		let partyAAccount: any
 
@@ -389,4 +401,78 @@ export function shouldBehaveLikeMultiAccount() {
 			})
 		})
 	})
+
+	describe("sequencedCall", function () {
+		let partyAAccount: AddressLike
+		let sendQuoteSelector: BytesLike
+		let lockQuoteSelector: BytesLike
+		beforeEach(async () => {
+			const userAddress = await context.signers.user.getAddress()
+
+			await multiAccount.connect(context.signers.user).addAccount("Test")
+			partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
+			sendQuoteSelector = ethers.dataSlice("0x40f1310c", 0, 4)
+			lockQuoteSelector = ethers.dataSlice("0xca6b88de", 0, 4)
+
+			await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
+
+			await context.collateral.connect(context.signers.user).approve(await multiAccount.getAddress(), ethers.MaxUint256)
+
+			await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(500n))
+		})
+
+		it("should createsQuote and sendQuote successfully", async () => {
+			let quoteRequest1 = limitQuoteRequestBuilder().build()
+			await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, await symmioPartyB.getAddress(), sendQuoteSelector)
+			let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
+			let callData = multiAccount.interface.encodeFunctionData("_call", [partyAAccount, [sendQuote1]])
+			const configs: SymmioPartyB.SequencedCallConfigStruct[] = [
+				{
+					callData: callData,
+					createsQuote: true,
+					needsQuoteId: false,
+					destAddress: await multiAccount.getAddress(),
+				},
+			]
+
+			await symmioPartyB.setMulticastWhitelist(await multiAccount.getAddress(), true)
+			await symmioPartyB.sequencedCall(configs)
+			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
+		})
+
+		it("should lockQuote successfully", async () => {
+			let quoteRequest = limitQuoteRequestBuilder().build()
+
+			await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, await symmioPartyB.getAddress(), sendQuoteSelector)
+			await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, await symmioPartyB.getAddress(), lockQuoteSelector)
+
+			let sendQuote = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest))
+			let lockQuote = context.partyBQuoteActionsFacet.interface.encodeFunctionData("lockQuote", ["10000000000000", await getDummySingleUpnlSig()])
+
+			let sendQuoteCallData = multiAccount.interface.encodeFunctionData("_call", [partyAAccount, [sendQuote]])
+			let lockQuotwCallData = multiAccount.interface.encodeFunctionData("_call", [partyAAccount, [lockQuote]])
+			
+			const configs: SymmioPartyB.SequencedCallConfigStruct[] = [
+				{
+					callData: sendQuoteCallData,
+					createsQuote: true,
+					needsQuoteId: false,
+					destAddress: await multiAccount.getAddress(),
+				},
+				{
+					callData: lockQuotwCallData,
+					createsQuote: false,
+					needsQuoteId: true,
+					destAddress: await multiAccount.getAddress(),
+				},
+			]
+
+			await symmioPartyB.setMulticastWhitelist(await multiAccount.getAddress(), true)
+			await symmioPartyB.sequencedCall(configs)
+			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
+		})
+	})
 }
+
+
+//0xca6b88de
