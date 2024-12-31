@@ -164,4 +164,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		AccountFacetImpl.withdrawFromReserveVault(amount);
 		emit WithdrawFromReserveVault(msg.sender, amount);
 	}
+
+	// TODO: add new functions to transfer between reserveVault and allocatedBalances
 }

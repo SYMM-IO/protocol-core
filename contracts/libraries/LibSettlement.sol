@@ -9,7 +9,6 @@ import "../storages/MuonStorage.sol";
 import "../storages/AccountStorage.sol";
 import "./LibQuote.sol";
 import "./LibAccount.sol";
-import "hardhat/console.sol";
 
 library LibSettlement {
 	function settleUpnl(
@@ -80,9 +79,8 @@ library LibSettlement {
 		int256 totalSettlementAmount;
 		for (uint8 i = 0; i < partyBs.length; i++) {
 			address partyB = partyBs[i];
-			// TODO: reserve
 			require(
-				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[i], partyB, partyA) + int256(accountLayout.reserveVault[partyB]) >= 0,
+				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[i], partyB, partyA) >= 0,
 				"LibSettlement: PartyB should be solvent"
 			);
 			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "LibSettlement: PartyB is in liquidation process");
