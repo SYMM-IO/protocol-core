@@ -27,6 +27,11 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit Deposit(msg.sender, user, amount);
 	}
 
+	function securedDepositFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.SECURED_DEPOSITOR_ROLE) {
+		AccountFacetImpl.securedDepositFor(user, amount);
+		emit Deposit(msg.sender, user, amount);
+	}
+
 	/// @notice Allows either PartyA or PartyB to withdraw a specified amount of collateral, provided that the withdrawal cooldown period has elapsed.
 	/// @param amount The precise amount of collateral to be withdrawn, specified in collateral decimals.
 	function withdraw(uint256 amount) external whenNotAccountingPaused notSuspended(msg.sender) {
@@ -166,4 +171,24 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	}
 
 	// TODO: add new functions to transfer between reserveVault and allocatedBalances
+	function allocateFromReserveVault(
+		address partyA,
+		uint256 amount
+	) external whenNotPartyBActionsPaused notSuspended(msg.sender) notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
+		AccountFacetImpl.allocateFromReserveVault(partyA, amount);
+		emit WithdrawFromReserveVault(msg.sender, amount);
+		emit AllocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
+		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.ALLOCATE);
+	}
+
+	function deallocateToReserveVault(
+		address partyA,
+		uint256 amount,
+		SingleUpnlSig memory upnlSig
+	) external whenNotPartyBActionsPaused notSuspended(msg.sender) notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
+		AccountFacetImpl.deallocateToReserveVault(partyA, amount, upnlSig);
+		emit DepositToReserveVault(msg.sender, msg.sender, amount);
+		emit DeallocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
+		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
+	}
 }

@@ -23,6 +23,10 @@ library AccountFacetImpl {
 		AccountStorage.layout().balances[user] += amountWith18Decimals;
 	}
 
+	function securedDepositFor(address user, uint256 amount) internal {
+		AccountStorage.layout().balances[user] += amount;
+	}
+
 	function withdraw(address user, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
@@ -175,5 +179,24 @@ library AccountFacetImpl {
 		accountLayout.reserveVault[msg.sender] -= amount;
 		accountLayout.balances[msg.sender] += amount;
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
+	}
+
+	function allocateFromReserveVault(address partyA, uint256 amount) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(amount > 0 && amount <= accountLayout.reserveVault[msg.sender], "AccountFacet: Insufficient balance");
+		accountLayout.reserveVault[msg.sender] -= amount;
+		accountLayout.partyBAllocatedBalances[msg.sender][partyA] += amount;
+	}
+
+	function deallocateToReserveVault(address partyA, uint256 amount, SingleUpnlSig memory upnlSig) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(accountLayout.partyBAllocatedBalances[msg.sender][partyA] >= amount, "AccountFacet: Insufficient allocated balance");
+		LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
+		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, partyA);
+		require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
+		require(uint256(availableBalance) >= amount, "AccountFacet: Will be liquidatable");
+
+		accountLayout.partyBAllocatedBalances[msg.sender][partyA] -= amount;
+		accountLayout.reserveVault[msg.sender] += amount;
 	}
 }
