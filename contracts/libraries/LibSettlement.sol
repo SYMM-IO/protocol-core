@@ -36,7 +36,7 @@ library LibSettlement {
 		address[] memory partyBs = new address[](settleSig.upnlPartyBs.length);
 		newPartyBsAllocatedBalances = new uint256[](settleSig.upnlPartyBs.length);
 
-		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
+		for (uint256 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
 			QuoteSettlementData memory data = settleSig.quotesSettlementsData[i];
 			Quote storage quote = quoteLayout.quotes[data.quoteId];
 			require(quote.partyA == partyA, "LibSettlement: PartyA is invalid");
@@ -77,7 +77,7 @@ library LibSettlement {
 		}
 
 		int256 totalSettlementAmount;
-		for (uint8 i = 0; i < partyBs.length; i++) {
+		for (uint256 i = 0; i < partyBs.length; i++) {
 			address partyB = partyBs[i];
 			require(
 				LibAccount.partyBAvailableBalanceForLiquidation(settleSig.upnlPartyBs[i], partyB, partyA) >= 0,

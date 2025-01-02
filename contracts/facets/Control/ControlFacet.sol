@@ -228,7 +228,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @notice Adds multiple symbols in one call.
 	/// @param symbols An array of Symbol structs containing details of each symbol to be added.
 	function addSymbols(Symbol[] memory symbols) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
-		for (uint8 i; i < symbols.length; i++) {
+		for (uint256 i; i < symbols.length; i++) {
 			addSymbol(
 				symbols[i].name,
 				symbols[i].minAcceptableQuoteValue,
@@ -514,7 +514,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @param partyBs The addresses of Party B users.
 	/// @param status The emergency status to be set.
 	function setPartyBEmergencyStatus(address[] memory partyBs, bool status) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
-		for (uint8 i; i < partyBs.length; i++) {
+		for (uint256 i; i < partyBs.length; i++) {
 			require(partyBs[i] != address(0), "ControlFacet: Zero address");
 			GlobalAppStorage.layout().partyBEmergencyStatus[partyBs[i]] = status;
 			emit SetPartyBEmergencyStatus(partyBs[i], status);

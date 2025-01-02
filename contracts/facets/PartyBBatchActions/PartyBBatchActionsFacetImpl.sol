@@ -36,7 +36,7 @@ library PartyBBatchActionsFacetImpl {
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
 		currentIds = new uint256[](quoteIds.length);
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 openedPrice = openedPrices[i];
@@ -85,7 +85,7 @@ library PartyBBatchActionsFacetImpl {
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
 		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 closedPrice = closedPrices[i];

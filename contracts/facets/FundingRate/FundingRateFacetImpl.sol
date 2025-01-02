@@ -82,7 +82,7 @@ library FundingRateFacetImpl {
 
 	function setEpochDuration(uint256[] memory symbolIds, uint256[] memory durations, address partyB) internal {
 		require(symbolIds.length == durations.length, "ChargeFundingFacet: Invalid length");
-		for (uint8 i = 0; i < symbolIds.length; i++) {
+		for (uint256 i = 0; i < symbolIds.length; i++) {
 			require(durations[i] > 0, "ChargeFundingFacet: Zero epoch duration");
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][partyB];
 			require(fundingFee.epochDuration > 0, "ChargeFundingFacet: Zero epoch duration");
@@ -109,7 +109,7 @@ library FundingRateFacetImpl {
 			symbolIds.length == longFees.length && longFees.length == shortFees.length && symbolIds.length == marketPrices.length,
 			"ChargeFundingFacet: Invalid length"
 		);
-		for (uint8 i = 0; i < symbolIds.length; i++) {
+		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 			require(fundingFee.epochDuration > 0, "ChargeFundingFacet: Zero epoch duration");
 			uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
@@ -133,7 +133,7 @@ library FundingRateFacetImpl {
 	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longFees, int256[] memory marketPrices) internal {
 		require(symbolIds.length == longFees.length && symbolIds.length == marketPrices.length, "ChargeFundingFacet: Invalid length");
 		int256[] memory shortFees = new int256[](longFees.length);
-		for (uint8 i = 0; i < symbolIds.length; i++) {
+		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 			shortFees[i] = (fundingFee.currentShortFee * 1e18) / marketPrices[i];
 		}
@@ -143,7 +143,7 @@ library FundingRateFacetImpl {
 	function setShortFundingFee(uint256[] memory symbolIds, int256[] memory shortFees, int256[] memory marketPrices) internal {
 		require(symbolIds.length == shortFees.length && symbolIds.length == marketPrices.length, "ChargeFundingFacet: Invalid length");
 		int256[] memory longFees = new int256[](shortFees.length);
-		for (uint8 i = 0; i < symbolIds.length; i++) {
+		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 			longFees[i] = (fundingFee.currentLongFee * 1e18) / marketPrices[i];
 		}
@@ -152,7 +152,7 @@ library FundingRateFacetImpl {
 
 	function chargeAccumulatedFundingFee(address partyA, address partyB, uint256[] memory quoteIds, PairUpnlSig memory upnlSig) internal {
 		LibMuonFundingRate.verifyPairUpnl(upnlSig, partyB, partyA);
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
 			require(quote.partyA == partyA, "ChargeFundingFacet: Invalid quote");
 			require(quote.partyB == partyB, "ChargeFundingFacet: Sender isn't partyB of quote");

@@ -57,7 +57,7 @@ library OracleLessActionsFacetImpl {
 	}
 
 	function lockQuotes(uint256[] memory quoteIds) internal {
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
 			require(!MAStorage.layout().liquidationStatus[quote.partyA], "OracleLessActionsFacet: PartyA isn't solvent");
 			require(AccountStorage.layout().bindState[quote.partyA].partyB == msg.sender, "OracleLessActionsFacet: PartyB is not bounded to this partyA");
@@ -90,7 +90,7 @@ library OracleLessActionsFacetImpl {
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
 		currentIds = new uint256[](quoteIds.length);
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 openedPrice = openedPrices[i];
@@ -122,7 +122,7 @@ library OracleLessActionsFacetImpl {
 			AccountStorage.layout().bindState[firstQuote.partyA].partyB == firstQuote.partyB,
 			"OracleLessActionsFacet: PartyB is not bounded to this partyA"
 		);
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 closedPrice = closedPrices[i];
