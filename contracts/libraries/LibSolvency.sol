@@ -37,7 +37,7 @@ library LibSolvency {
 			AccountStorage.layout().allocatedBalances[partyA],
 			partyA
 		);
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 marketPrice = marketPrices[i];
@@ -97,7 +97,7 @@ library LibSolvency {
 			AccountStorage.layout().allocatedBalances[partyA],
 			partyA
 		);
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 closedPrice = closedPrices[i];

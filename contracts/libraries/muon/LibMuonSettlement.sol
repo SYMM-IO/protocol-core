@@ -16,7 +16,7 @@ library LibMuonSettlement {
 		// == ) ==
 		bytes memory encodedData;
 		uint256[] memory nonces = new uint256[](settleSig.quotesSettlementsData.length);
-		for (uint8 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
+		for (uint256 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
 			nonces[i] = AccountStorage.layout().partyBNonces[QuoteStorage.layout().quotes[settleSig.quotesSettlementsData[i].quoteId].partyB][partyA];
 			encodedData = abi.encodePacked(
 				encodedData,  // Append the previously encoded data

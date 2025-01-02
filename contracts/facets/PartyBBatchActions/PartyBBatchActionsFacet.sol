@@ -27,7 +27,7 @@ contract PartyBBatchActionsFacet is Accessibility, Pausable, IPartyBBatchActions
 	) external whenNotPartyBActionsPaused {
 		uint256[] memory newIds = PartyBBatchActionsFacetImpl.openPositions(quoteIds, filledAmounts, openedPrices, upnlSig);
 		Quote storage firstQuote = QuoteStorage.layout().quotes[quoteIds[0]];
-		for (uint8 i = 0; i < newIds.length; i++) {
+		for (uint256 i = 0; i < newIds.length; i++) {
 			emit OpenPosition(quoteIds[i], firstQuote.partyA, firstQuote.partyB, filledAmounts[i], openedPrices[i]);
 			if (newIds[i] != 0) {
 				Quote storage newQuote = QuoteStorage.layout().quotes[newIds[i]];
@@ -78,7 +78,7 @@ contract PartyBBatchActionsFacet is Accessibility, Pausable, IPartyBBatchActions
 			upnlSig
 		);
 		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
-		for (uint8 i = 0; i < quoteIds.length; i++) {
+		for (uint256 i = 0; i < quoteIds.length; i++) {
 			emit FillCloseRequest(quoteIds[i], firstQuote.partyA, firstQuote.partyB, filledAmounts[i], closedPrices[i], quoteStatuses[i], closeIds[i]);
 		}
 	}

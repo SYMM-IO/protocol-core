@@ -25,7 +25,7 @@ library LibPartyBQuoteActions {
 			require(msg.sender != quote.partyA, "PartyBFacet: PartyA can't be partyB too");
 			isValidPartyB = true;
 		} else {
-			for (uint8 index = 0; index < quote.partyBsWhiteList.length; index++) {
+			for (uint256 index = 0; index < quote.partyBsWhiteList.length; index++) {
 				if (msg.sender == quote.partyBsWhiteList[index]) {
 					isValidPartyB = true;
 					break;

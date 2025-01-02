@@ -62,7 +62,7 @@ contract OracleLessActionsFacet is Accessibility, Pausable, IOracleLessActionsFa
 		uint256[] memory newIds = OracleLessActionsFacetImpl.openPositions(quoteIds, filledAmounts, openedPrices);
 		Quote storage firstQuote = QuoteStorage.layout().quotes[quoteIds[0]];
 		emit OpenPositions(quoteIds, firstQuote.partyA, firstQuote.partyB, filledAmounts, openedPrices);
-		for (uint8 i = 0; i < newIds.length; i++) {
+		for (uint256 i = 0; i < newIds.length; i++) {
 			if (newIds[i] != 0) {
 				Quote storage newQuote = QuoteStorage.layout().quotes[newIds[i]];
 				if (newQuote.quoteStatus == QuoteStatus.PENDING) {

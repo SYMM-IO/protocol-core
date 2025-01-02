@@ -54,7 +54,7 @@ contract SettlementFacet is Accessibility, Pausable, ISettlementFacet {
 	// 		newPartyBsAllocatedBalances
 	// 	);
 	// 	Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
-	// 	for (uint8 i = 0; i < quoteIds.length; i++) {
+	// 	for (uint256 i = 0; i < quoteIds.length; i++) {
 	// 		emit FillCloseRequest(
 	// 			quoteIds[i],
 	// 			firstQuote.partyA,

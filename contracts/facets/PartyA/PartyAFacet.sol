@@ -158,7 +158,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	 */
 	function expireQuote(uint256[] memory expiredQuoteIds) external whenNotPartyAActionsPaused {
 		QuoteStatus result;
-		for (uint8 i; i < expiredQuoteIds.length; i++) {
+		for (uint256 i; i < expiredQuoteIds.length; i++) {
 			result = LibQuote.expireQuote(expiredQuoteIds[i]);
 			if (result == QuoteStatus.OPENED) {
 				emit ExpireQuoteClose(result, expiredQuoteIds[i], QuoteStorage.layout().closeIds[expiredQuoteIds[i]]);
