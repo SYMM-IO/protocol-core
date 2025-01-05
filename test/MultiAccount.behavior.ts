@@ -482,10 +482,45 @@ export function shouldBehaveLikeMultiAccount() {
 					needsQuoteId: true,
 					destAddress: context.diamond,
 				},
+				{
+					callData: sendQuoteCallData,
+					createsQuote: true,
+					needsQuoteId: false,
+					destAddress: await multiAccount.getAddress(),
+				},
+				{
+					callData: approveData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.collateral,
+				},
+				{
+					callData: depositData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.diamond,
+				},
+				{
+					callData: allocateData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.diamond,
+				},
+				{
+					callData: lockQuoteData,
+					createsQuote: false,
+					needsQuoteId: true,
+					destAddress: context.diamond,
+				},
+				{
+					callData: openPositionData,
+					createsQuote: false,
+					needsQuoteId: true,
+					destAddress: context.diamond,
+				},
 			]
 			await symmioPartyB.sequencedCall(configs)
 			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
-			await symmioPartyB.sequencedCall(configs)
 			expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
 		})
 	})
