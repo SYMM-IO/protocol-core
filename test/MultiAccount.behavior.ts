@@ -522,6 +522,9 @@ export function shouldBehaveLikeMultiAccount() {
 			await symmioPartyB.sequencedCall(configs)
 			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
 			expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
+			await symmioPartyB.sequencedCall(configs)
+			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
+			expect((await context.viewFacet.getQuote(4)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
 		})
 	})
 }
