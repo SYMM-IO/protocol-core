@@ -120,7 +120,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 	/// @dev Executes a single contract call with security checks
 	/// @param destAddress Target contract address
 	/// @param callData Function call data
-	function _executeCall(address destAddress, bytes memory callData) internal nonReentrant {
+	function _executeCall(address destAddress, bytes memory callData) internal {
 		require(destAddress != address(0), "SymmioPartyB: Invalid address");
 		require(callData.length >= 4, "SymmioPartyB: Invalid call data");
 
@@ -149,14 +149,14 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 
 	/// @notice Executes multiple calls to Symmio protocol
 	/// @param _callDatas Array of function call data
-	function _call(bytes[] calldata _callDatas) external whenNotPaused {
+	function _call(bytes[] calldata _callDatas) external whenNotPaused nonReentrant {
 		for (uint8 i; i < _callDatas.length; i++) _executeCall(symmioAddress, _callDatas[i]);
 	}
 
 	/// @notice Executes multiple calls to different contracts
 	/// @param destAddresses Array of target addresses
 	/// @param _callDatas Array of function call data
-	function _multicastCall(address[] calldata destAddresses, bytes[] calldata _callDatas) external whenNotPaused {
+	function _multicastCall(address[] calldata destAddresses, bytes[] calldata _callDatas) external whenNotPaused nonReentrant {
 		require(destAddresses.length == _callDatas.length, "SymmioPartyB: Array length mismatch");
 		for (uint8 i; i < _callDatas.length; i++) _executeCall(destAddresses[i], _callDatas[i]);
 	}
@@ -169,41 +169,28 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 		require(callData.length >= 4, "SymmioPartyB: Invalid call data");
 
 		assembly {
-			selector := mload(add(callData, 0x20))
+			selector := mload(add(callData, 32))
 		}
-
 		if (selector == IMultiAccount._call.selector) {
-			// Make sure we have enough space to read the offset (first 4 bytes = selector, next 32 bytes = offset)
 			require(callData.length >= 68, "SymmioPartyB: Invalid MultiAccount call data");
-
-			/*
-			 * The layout for IMultiAccount._call(bytes[] calldata callData) typically is:
-			 *   0x00:  function selector
-			 *   0x04:  offset to the dynamic bytes[] array
-			 *   0x24:  length of callData array
-			 *   0x44:  offset of first element
-			 *   ...
-			 *
-			 * We only want to allow a single call inside that array. So read the array length and require it == 1.
-			 */
 			uint256 multiAccountCallsLength;
+			uint256 callsOffset;
 			assembly {
-				// read the offset to the callData array in the IMultiAccount._call arguments
-				let callsOffset := mload(add(callData, 36))
-				// read the length of the array (bytes[]), located at that offset
-				multiAccountCallsLength := mload(add(add(callData, 36), callsOffset))
+				// Read the pointer to the dynamic array:
+				callsOffset := mload(add(callData, 68)) // 4 for selector and 32 for the address parameter of _call and again 32 to go end of cell
+				// Read the length of the bytes[] array:
+				multiAccountCallsLength := mload(add(callData, add(36, callsOffset))) // 4 for the selector and 32 for going to end of offset
 			}
-
-			require(multiAccountCallsLength == 1, "SymmioPartyB: MultiAccount _call must contain exactly one sub-call in sequencedCall");
+			require(multiAccountCallsLength == 1, "SymmioPartyB: Must contain exactly one sub-call");
 
 			bytes memory innerCallData;
+			uint256 firstElemOffset;
 			assembly {
-				let bytesOffset := mload(add(callData, 36))
-				innerCallData := add(callData, add(36, bytesOffset))
-				selector := mload(add(innerCallData, 0x20))
+				firstElemOffset := mload(add(callData, add(68, callsOffset)))
+				innerCallData := add(callData, add(132, firstElemOffset))
+				selector := mload(add(innerCallData, 32))
 			}
 		}
-
 		offset = selectorsQuoteOffset[selector];
 		require(offset != 0, "SymmioPartyB: Offset not set for selector");
 	}
@@ -227,7 +214,7 @@ contract SymmioPartyB is Initializable, PausableUpgradeable, AccessControlEnumer
 			} else {
 				_executeCall(config.destAddress, config.callData);
 				if (config.createsQuote) {
-					quoteId = ISymmio(symmioAddress).getNextQuoteId() - 1;
+					quoteId = ISymmio(symmioAddress).getNextQuoteId();
 					hasQuoteId = true;
 				}
 			}
