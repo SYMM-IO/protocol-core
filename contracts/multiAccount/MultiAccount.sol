@@ -70,11 +70,13 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @param account The address of the account.
 	 * @param target The address of the target contract.
 	 * @param selector The function selector.
+	 * @param state The state indicating whether access is granted or revoked.
 	 */
-	function delegateAccess(address account, address target, bytes4 selector) external onlyOwner(account, msg.sender) {
+	function delegateAccess(address account, address target, bytes4 selector, bool state) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
-		emit DelegateAccess(account, target, selector, true);
-		delegatedAccesses[account][target][selector] = true;
+		require(state, "MultiAccount: Invalid state");
+		emit DelegateAccess(account, target, selector, state);
+		delegatedAccesses[account][target][selector] = state;
 	}
 
 	/**
@@ -82,13 +84,15 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @param account The address of the account.
 	 * @param target The address of the target contract.
 	 * @param selector An array of function selectors.
+	 * @param state The state indicating whether access is granted or revoked.
 	 */
-	function delegateAccesses(address account, address target, bytes4[] memory selector) external onlyOwner(account, msg.sender) {
+	function delegateAccesses(address account, address target, bytes4[] memory selector, bool state) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
+		require(state, "MultiAccount: Invalid state");
 		for (uint256 i = selector.length; i != 0; i--) {
-			delegatedAccesses[account][target][selector[i - 1]] = true;
+			delegatedAccesses[account][target][selector[i - 1]] = state;
 		}
-		emit DelegateAccesses(account, target, selector, true);
+		emit DelegateAccesses(account, target, selector, state);
 	}
 
 	/**
@@ -114,10 +118,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	function revokeAccesses(address account, address target, bytes4[] memory selector) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
 		for (uint256 i = selector.length; i != 0; i--) {
-			require(
-				revokeProposalTimestamp[account][target][selector[i - 1]] != 0,
-				"MultiAccount: Revoke access not proposed"
-			);
+			require(revokeProposalTimestamp[account][target][selector[i - 1]] != 0, "MultiAccount: Revoke access not proposed");
 			require(
 				revokeProposalTimestamp[account][target][selector[i - 1]] + revokeCooldown <= block.timestamp,
 				"MultiAccount: Cooldown not reached"
@@ -135,6 +136,15 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
 		emit SetAccountImplementation(accountImplementation, accountImplementation_);
 		accountImplementation = accountImplementation_;
+	}
+
+	/**
+	 * @dev Sets the Admin for the accounts.
+	 * @param admin The Address of the new accounts admin.
+	 */
+	function setAccountsAdmin(address admin) external onlyRole(SETTER_ROLE) {
+		emit SetAccountsAdmin(accountsAdmin, admin);
+		accountsAdmin = admin;
 	}
 
 	/**
