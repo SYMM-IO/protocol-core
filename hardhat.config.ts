@@ -29,6 +29,7 @@ const modeApiKey: string = process.env.MODE_API_KEY || ""
 const blastApiKey: string = process.env.BLAST_API_KEY || ""
 const mantleAPIKey: string = process.env.MANTLE_API_KEY || ""
 const mantle2APIKey: string = process.env.MANTLE2_API_KEY || ""
+const beraAPIKey: string = process.env.BERA_API_KEY || ""
 
 const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || ""
 
@@ -46,7 +47,7 @@ const config: HardhatUserConfig = {
 				url: "https://base-mainnet.infura.io/v3/{API_KEY}",
 				blockNumber: 23478537,
 			},
-			loggingEnabled:false,
+			loggingEnabled: false,
 			allowUnlimitedContractSize: false,
 		},
 		docker: {
@@ -55,7 +56,7 @@ const config: HardhatUserConfig = {
 			accounts: privateKeyList,
 		},
 		bsc: {
-			url: "https://binance.llamarpc.com",
+			url: "https://bscrpc.com",
 			accounts: [privateKey],
 		},
 		opbnb: {
@@ -63,7 +64,7 @@ const config: HardhatUserConfig = {
 			accounts: [privateKey],
 		},
 		base: {
-			url: "https://base.llamarpc.com",
+			url: "https://virtual.base.rpc.tenderly.co/b0a4916f-040f-46c4-970d-a3c95d04ee02",
 			accounts: [privateKey],
 		},
 		polygon: {
@@ -98,6 +99,10 @@ const config: HardhatUserConfig = {
 			url: "https://arbitrum.llamarpc.com",
 			accounts: [privateKey],
 		},
+		bera: {
+			url: "https://rpc.berachain.com",
+			accounts: [privateKey],
+		},
 	},
 	etherscan: {
 		apiKey: {
@@ -113,8 +118,25 @@ const config: HardhatUserConfig = {
 			mantle: mantle2APIKey,
 			zkEvm: zkEvmApiKey,
 			opbnb: opBnbApiKey,
+			bera: beraAPIKey,
 		},
 		customChains: [
+			// {
+			// 	network: "bera",
+			// 	chainId: 80094,
+			// 	urls: {
+			// 		apiURL: `https://api.berascan.com/api?apiKey=${beraAPIKey}`,
+			// 		browserURL: "https://berascan.com",
+			// 	},
+			// },
+			{
+				network: "bera",
+				chainId: 80094,
+				urls: {
+					apiURL: "https://api.routescan.io/v2/network/mainnet/evm/80094/etherscan",
+					browserURL: "https://beratrail.io",
+				},
+			},
 			{
 				network: "base",
 				chainId: 8453,
