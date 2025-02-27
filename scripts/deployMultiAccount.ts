@@ -13,7 +13,7 @@ async function main() {
 		logData: true,
 	});
 
-	deployedAddresses.multiAccountAddress = contract.address;
+	deployedAddresses.multiAccountAddress = await contract.getAddress();
 	saveAddresses(deployedAddresses);
 }
 
