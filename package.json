@@ -72,5 +72,8 @@
     "postinstall": "DOTENV_CONFIG_PATH=./.env yarn typechain",
     "test": "hardhat test",
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }
