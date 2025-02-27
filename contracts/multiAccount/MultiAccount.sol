@@ -27,6 +27,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	address public accountsAdmin; // Admin address for the accounts
 	address public symmioAddress; // Address of the Symmio platform
+	address public externalAccountWithdrawManagerAddress; // Address of ExternalAccountWithdrawManager contract
 	uint256 public saltCounter; // Counter for generating unique addresses with create2
 	bytes public accountImplementation;
 
@@ -40,6 +41,12 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		require(owners[account] == sender, "MultiAccount: Sender isn't owner of account");
 		_;
 	}
+	
+    // Modifier to allow access only to the contract owner or the ExternalAccountWithdrawManager contract.
+	modifier onlyWithdrawAuthorized() {
+        require(msg.sender == owner || msg.sender == externalAccountWithdrawManagerAddress, "Not authorized");
+        _;
+    }
 
 	/// @custom:oz-upgrades-unsafe-allow constructor
 	constructor() {
@@ -330,4 +337,24 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		}
 		return userAccounts;
 	}
+
+	/**
+     * @notice Sets the allowed contract address that can invoke function calls.
+     * @dev Can only be called by the contract owner.
+     * @param _allowedContract The address of the contract to be allowed.
+     */
+    function setExternalAccountWithdrawManagerAddress(address _contractAddress) external {
+        require(msg.sender == owner, "Only owner can set ExternalAccountWithdrawManager contract address");
+        allowedContract = _contractAddress;
+    }
+
+	/**
+     * @notice external wrapper for `_call` with withdraw authorization checks.
+     * @dev Only the contract owner or the ExternalAccountWithdrawManager can execute this function.
+     * @param account The address of the account to execute the calls on behalf of.
+	 * @param _callDatas An array of call data to execute.
+     */
+    function _withdrawCall(address account, bytes[] memory _callDatas) public onlyWithdrawAuthorized {
+        _call(account, _callDatas);
+    }
 }
