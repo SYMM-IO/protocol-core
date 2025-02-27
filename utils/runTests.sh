@@ -1,5 +1,5 @@
 #!/bin/bash
 
-python utils/update_sig_checks.py 1
+python3 utils/update_sig_checks.py 1
 npx hardhat test
-python utils/update_sig_checks.py 0
+python3 utils/update_sig_checks.py 0
