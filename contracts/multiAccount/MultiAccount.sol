@@ -27,9 +27,9 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	address public accountsAdmin; // Admin address for the accounts
 	address public symmioAddress; // Address of the Symmio platform
-	address public externalAccountWithdrawManagerAddress; // Address of ExternalAccountWithdrawManager contract
 	uint256 public saltCounter; // Counter for generating unique addresses with create2
 	bytes public accountImplementation;
+	address public externalAccountWithdrawManagerAddress; // Address of ExternalAccountWithdrawManager contract
 
 	mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses; // account -> target -> selector -> state
 
@@ -44,7 +44,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	
     // Modifier to allow access only to the contract owner or the ExternalAccountWithdrawManager contract.
 	modifier onlyWithdrawAuthorized() {
-        require(msg.sender == owner || msg.sender == externalAccountWithdrawManagerAddress, "Not authorized");
+        require(msg.sender == owner || msg.sender == externalAccountWithdrawManagerAddress, "MultiAccount: Not authorized");
         _;
     }
 
@@ -339,13 +339,12 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-     * @notice Sets the allowed contract address that can invoke function calls.
-     * @dev Can only be called by the contract owner.
-     * @param _allowedContract The address of the contract to be allowed.
+     * @notice Sets the ExternalAccountWithdrawManager contract address that can invoke function calls.
+     * @param _contractAddress The address of the contract to be allowed.
      */
-    function setExternalAccountWithdrawManagerAddress(address _contractAddress) external {
-        require(msg.sender == owner, "Only owner can set ExternalAccountWithdrawManager contract address");
-        allowedContract = _contractAddress;
+    function setExternalAccountWithdrawManagerAddress(address _contractAddress) external onlyRole(SETTER_ROLE) {
+		emit SetExternalAccountWithdrawManagerAddress(externalAccountWithdrawManagerAddress, _contractAddress);
+        externalAccountWithdrawManagerAddress = _contractAddress;
     }
 
 	/**
