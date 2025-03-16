@@ -44,7 +44,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	
     // Modifier to allow access only to the contract owner or the ExternalAccountWithdrawManager contract.
 	modifier onlyWithdrawAuthorized() {
-        require(msg.sender == owner || msg.sender == externalAccountWithdrawManagerAddress, "MultiAccount: Not authorized");
+        require(msg.sender == externalAccountWithdrawManagerAddress, "MultiAccount: Not authorized");
         _;
     }
 
