@@ -26,11 +26,20 @@ async function main() {
 		console.log(`Admin configuration completed. Assigned admin: ${config.admin}`);
 	}
 
-	if (config.roles) {
-		for (const { roleUser, role } of config.roles) {
+	if (config.grantRoles) {
+		for (const { roleUser, role } of config.grantRoles) {
 			if (roleUser && role) {
 				await controlFacet.connect(owner).grantRole(roleUser, role);
 				console.log(`Role granted successfully. User: ${roleUser}, Role: ${role}`);
+			}
+		}
+	}
+
+	if (config.revokeRoles) {
+		for (const { roleUser, role } of config.revokeRoles) {
+			if (roleUser && role) {
+				await controlFacet.connect(owner).revokeRole(roleUser, role);
+				console.log(`Role revoked successfully. User: ${roleUser}, Role: ${role}`);
 			}
 		}
 	}

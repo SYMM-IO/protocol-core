@@ -1,6 +1,16 @@
 {
   "admin": "0xabCDeF0123456789AbcdEf0123456789aBCDEF01",
-  "roles": [
+  "grantRoles": [
+    {
+      "roleUser": "0x0123456789abcDEF0123456789abCDef01234567",
+      "role": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+    },
+    {
+      "roleUser": "0x456789AbcDeF0123456789AbCdEF0123456789AB",
+      "role": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+    }
+  ],
+  "revokeRoles": [
     {
       "roleUser": "0x0123456789abcDEF0123456789abCDef01234567",
       "role": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
