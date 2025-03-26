@@ -25,6 +25,7 @@ const baseApiKey: string = process.env.BASE_API_KEY || ""
 const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
 const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || ""
 const opBnbApiKey: string = process.env.OPBNB_API_KEY || ""
+const sonicApiKey: string = process.env.SONIC_API_KEY || ""
 const iotaApiKey: string = process.env.IOTA_API_KEY || ""
 const modeApiKey: string = process.env.MODE_API_KEY || ""
 const blastApiKey: string = process.env.BLAST_API_KEY || ""
@@ -97,6 +98,10 @@ const config: HardhatUserConfig = {
 			url: "https://arbitrum.llamarpc.com",
 			accounts: [privateKey],
 		},
+		sonic: {
+			url: "https://rpc.soniclabs.com",
+			accounts: [privateKey],
+		},
 	},
 	etherscan: {
 		apiKey: {
@@ -112,16 +117,9 @@ const config: HardhatUserConfig = {
 			mantle: mantle2APIKey,
 			zkEvm: zkEvmApiKey,
 			opbnb: opBnbApiKey,
+			sonic: sonicApiKey,
 		},
 		customChains: [
-			{
-				network: "base",
-				chainId: 8453,
-				urls: {
-					apiURL: `https://api.basescan.org/api?apiKey=${baseApiKey}`,
-					browserURL: "https://basescan.org",
-				},
-			},
 			{
 				network: "zkEvm",
 				chainId: 1101,
@@ -184,6 +182,14 @@ const config: HardhatUserConfig = {
 				urls: {
 					apiURL: "https://api.mantlescan.xyz/api",
 					browserURL: "https://mantlescan.xyz"
+				}
+			},
+			{
+				network: "sonic",
+				chainId: 146,
+				urls: {
+					apiURL: "https://api.sonicscan.org/api",
+					browserURL: "https://sonicscan.org"
 				}
 			},
 		],
