@@ -1,6 +1,4 @@
-import {ethers} from "hardhat"
-import {FacetNames} from "../tasks/deploy/constants"
-import {FacetCutAction, getSelectors} from "../tasks/utils/diamondCut"
+import { generateDiamondCut } from "./utils/diamondUtils"
 
 async function main() {
 
@@ -156,10 +154,9 @@ async function main() {
 	console.log(diamondCut)
 }
 
-// Run the main function
 main()
 	.then(() => process.exit(0))
-	.catch((error) => {
+	.catch(error => {
 		console.error(error)
 		process.exit(1)
 	})
