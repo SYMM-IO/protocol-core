@@ -1,0 +1,93 @@
+{
+  "admin": "0xabCDeF0123456789AbcdEf0123456789aBCDEF01",
+  "grantRoles": [
+    {
+      "roleUser": "0x0123456789abcDEF0123456789abCDef01234567",
+      "role": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+    },
+    {
+      "roleUser": "0x456789AbcDeF0123456789AbCdEF0123456789AB",
+      "role": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+    }
+  ],
+  "revokeRoles": [
+    {
+      "roleUser": "0x0123456789abcDEF0123456789abCDef01234567",
+      "role": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+    },
+    {
+      "roleUser": "0x456789AbcDeF0123456789AbCdEF0123456789AB",
+      "role": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+    }
+  ],
+  "partyBs": [
+    "0x9876543210AbCDef9876543210ABCdEf98765432",
+    "0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD"
+  ],
+  "affiliates": [
+    {
+      "affiliate": "0xAbc123AbC123Abc123aBc123abC123ABC123ABc1",
+      "feeCollector": "0x123aBc123AbC123AbC123ABC123aBC123ABC123a"
+    },
+    {
+      "affiliate": "0x789Abc789aBc789abc789abC789ABC789abC789A",
+      "feeCollector": "0x1234567890AbcdEF1234567890aBcdef12345678"
+    }
+  ],
+  "muon": {
+    "upnlValidTime": 3600,
+    "priceValidTime": 3600,
+    "muonAppId": 123,
+    "validGateway": "0x9876543210AbCDef9876543210ABCdEf98765432",
+    "publicKey": {
+      "x": "0x1234567890AbcdEF1234567890aBcdef12345678",
+      "parity": 2
+    }
+  },
+  "collateral": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+  "pendingQuotesValidLength": 5,
+  "defaultFeeCollector": "0x789Abc789aBc789abc789abC789ABC789abC789A",
+  "deallocateDebounceTime": 300,
+  "invalidBridgedAmountsPool": "0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD",
+  "symbols": [
+    {
+      "symbolId": 1,
+      "name": "BTC",
+      "isValid": true,
+      "minAcceptableQuoteValue": 1000,
+      "minAcceptablePortionLF": 10,
+      "tradingFee": 100,
+      "maxLeverage": 10,
+      "fundingRateEpochDuration": 86400,
+      "fundingRateWindowTime": 3600,
+      "forceCloseGapRatio": 2
+    },
+    {
+      "symbolId": 2,
+      "name": "ETH",
+      "isValid": true,
+      "minAcceptableQuoteValue": 500,
+      "minAcceptablePortionLF": 5,
+      "tradingFee": 50,
+      "maxLeverage": 5,
+      "fundingRateEpochDuration": 86400,
+      "fundingRateWindowTime": 3600,
+      "forceCloseGapRatio": 3
+    }
+  ],
+  "deallocateCooldown": 3600,
+  "forceCancelCooldown": 1800,
+  "forceCloseFirstCooldown": 1200,
+  "forceCloseSecondCooldown": 600,
+  "forceClosePricePenalty": 5,
+  "forceCloseMinSigPeriod": 600,
+  "forceCancelCloseCooldown": 300,
+  "liquidatorShare": 20,
+  "settlementCooldown": 600,
+  "liquidationTimeout": 300,
+  "balanceLimitPerUser": 1000000,
+  "bridges": [
+    "0x1234567890AbcdEF1234567890aBcdef12345678",
+    "0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD"
+  ]
+}
