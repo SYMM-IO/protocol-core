@@ -1,14 +1,14 @@
 import json
 
+from multicallable import Multicallable
 from web3 import Web3
 
 rpc = ""
-max_symbol_id = 100
+max_symbol_id = 1000
 contract_address = ""
 
 w3 = Web3(Web3.HTTPProvider(rpc))
-
-contract = w3.eth.contract(address=w3.to_checksum_address(contract_address), abi=json.loads('''[
+contract = Multicallable(w3.to_checksum_address(contract_address), json.loads('''[
     {
         "inputs": [
             {
@@ -63,25 +63,20 @@ contract = w3.eth.contract(address=w3.to_checksum_address(contract_address), abi
         "stateMutability": "view",
         "type": "function"
     }
-]'''))
+]'''), w3)
 
-# Fetch symbols from the contract
-symbols = contract.functions.getSymbols(0, max_symbol_id).call()
+symbols = contract.getSymbols([(0, max_symbol_id)]).call(n=max_symbol_id // 200 + 1, progress_bar=True)[0]
 
-# Convert symbols into the desired JSON format
 symbols_json = []
 symbol_names = []
-for symbol in symbols:
+symbol_ids = [symbol[0] for symbol in symbols]
+
+force_close_gap_ratios = contract.forceCloseGapRatio(symbol_ids).call(n=len(symbols) // 200 + 1, progress_bar=True)
+for symbol, force_close_data in zip(symbols, force_close_gap_ratios):
     if not symbol[2] or symbol[1].endswith("BYBIT") or symbol[1] in symbol_names:
         continue
-    try:
-        force_close_gap_ratio = contract.functions.forceCloseGapRatio(symbol[0]).call()
-        force_close_data = force_close_gap_ratio
-        print(f"Fetched forceCloseGapRatio for symbolId {symbol[0]}")
-    except Exception as e:
-        print(f"Error fetching forceCloseGapRatio for symbolId {symbol[0]}: {e}")
-        force_close_data = 0  # Default value in case of failure
-    symbol_dict = {
+    symbol_names.append(symbol[1])
+    symbols_json.append({
         "symbolId": symbol[0],
         "name": symbol[1],
         "isValid": symbol[2],
@@ -92,9 +87,6 @@ for symbol in symbols:
         "fundingRateEpochDuration": symbol[7],
         "fundingRateWindowTime": symbol[8],
         "forceCloseGapRatio": force_close_data
-    }
-    symbols_json.append(symbol_dict)
-    symbol_names.append(symbol[1])
+    })
 
-# Print the formatted JSON output
 print(json.dumps(symbols_json, indent=2))
