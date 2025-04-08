@@ -223,14 +223,15 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @param symbols An array of Symbol structs containing details of each symbol to be added.
 	function addSymbols(Symbol[] memory symbols) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
 		for (uint8 i; i < symbols.length; i++) {
+			Symbol memory s = symbols[i];
 			addSymbol(
-				symbols[i].name,
-				symbols[i].minAcceptableQuoteValue,
-				symbols[i].minAcceptablePortionLF,
-				symbols[i].tradingFee,
-				symbols[i].maxLeverage,
-				symbols[i].fundingRateEpochDuration,
-				symbols[i].fundingRateWindowTime
+				s.name,
+				s.minAcceptableQuoteValue,
+				s.minAcceptablePortionLF,
+				s.tradingFee,
+				s.maxLeverage,
+				s.fundingRateEpochDuration,
+				s.fundingRateWindowTime
 			);
 		}
 	}
