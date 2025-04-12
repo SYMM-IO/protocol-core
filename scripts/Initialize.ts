@@ -1,13 +1,13 @@
-import {ethers, run} from "hardhat"
+import { ethers, run } from "hardhat"
 
-import {createRunContext, RunContext} from "../test/models/RunContext"
-import {decimal} from "../test/utils/Common"
-import {runTx} from "../test/utils/TxUtils"
-import {ControlFacet} from "../src/types"
-import {symbolsMock} from "../test/models/SymbolManager"
-import {Addresses, loadAddresses, saveAddresses} from "./utils/file"
-import {toUtf8Bytes} from "ethers"
-import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
+import { createRunContext, RunContext } from "../test/models/RunContext"
+import { decimal } from "../test/utils/Common"
+import { runTx } from "../test/utils/TxUtils"
+import { ControlFacet } from "../src/types"
+import { symbolsMock } from "../test/models/SymbolManager"
+import { Addresses, loadAddresses, saveAddresses } from "./utils/file"
+import { toUtf8Bytes } from "ethers"
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
 
 export async function initialize(): Promise<RunContext> {
 	let collateral = await run("deploy:stablecoin")
@@ -20,14 +20,25 @@ export async function initialize(): Promise<RunContext> {
 
 	const multiAccount = await run("deploy:multiAccount", {
 		symmioAddress: await diamond.getAddress(),
-		admin: process.env.ADMIN_PUBLIC_KEY
+		admin: process.env.ADMIN_PUBLIC_KEY,
+	})
+	const nextQuoteIdVerifier = await run("deploy:next-quote-id-verifier", {
+		symmioAddress: await diamond.getAddress(),
+		logData: false,
 	})
 	let context = await createRunContext(await diamond.getAddress(), await collateral.getAddress(), await multiAccount.getAddress(), undefined, true)
 
 	await runTx(context.controlFacet.connect(context.signers.admin).setAdmin(context.signers.admin.getAddress()))
 	await runTx(context.controlFacet.connect(context.signers.admin).setCollateral(await context.collateral.getAddress()))
 	await runTx(
-		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("SYMBOL_MANAGER_ROLE"))),
+		context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("SYMBOL_MANAGER_ROLE"))),
+	)
+	await runTx(
+		context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("MUON_SETTER_ROLE"))),
 	)
 	await runTx(
 		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("SETTER_ROLE"))),
@@ -36,19 +47,29 @@ export async function initialize(): Promise<RunContext> {
 		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("PAUSER_ROLE"))),
 	)
 	await runTx(
-		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE"))),
+		context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE"))),
 	)
 	await runTx(
-		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
+		context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
 	)
 	await runTx(
-		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
+		context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
 	)
 	await runTx(
-		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.user.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
+		context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.user.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
 	)
 	await runTx(
-		context.controlFacet.connect(context.signers.admin).grantRole(context.signers.user2.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
+		context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.user2.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE"))),
 	)
 	const addSymbolAsync = async (controlFacet: ControlFacet, adminSigner: SignerWithAddress, sym: any) => {
 		await runTx(
@@ -58,8 +79,7 @@ export async function initialize(): Promise<RunContext> {
 		)
 	}
 
-	for (const sym of symbolsMock.symbols)
-		await addSymbolAsync(context.controlFacet, context.signers.admin, sym)
+	for (const sym of symbolsMock.symbols) await addSymbolAsync(context.controlFacet, context.signers.admin, sym)
 
 	await runTx(context.controlFacet.connect(context.signers.admin).setPendingQuotesValidLength(100))
 	await runTx(context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1n, 17)))
@@ -73,6 +93,7 @@ export async function initialize(): Promise<RunContext> {
 	output.collateralAddress = await collateral.getAddress()
 	output.symmioAddress = await diamond.getAddress()
 	output.MulticallAddress = await multicall?.getAddress()
+	output.nextQuoteIdVerifierAddress = await nextQuoteIdVerifier?.getAddress()
 	saveAddresses(output)
 	return context
 }

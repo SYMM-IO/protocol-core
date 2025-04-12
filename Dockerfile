@@ -11,6 +11,7 @@ ARG COMMIT_TIMESTAMP
 ARG COMMIT_AUTHOR
 ARG BUILD_APPLICATION
 ARG BUILD_DATE
+ARG VERIFY_MUON_SIG
 
 LABEL org.vcs.CommitId=${COMMIT_ID}
 LABEL org.vcs.CommitTimestamp=${COMMIT_TIMESTAMP}
@@ -38,5 +39,5 @@ WORKDIR /app/symmio
 RUN cp .env.example .env
 RUN ln -s /app/node_modules .
 RUN npm run postinstall
-RUN python3 utils/update_sig_checks.py 1
+RUN if [ "$VERIFY_MUON_SIG" != "true" ] ; then python3 utils/update_sig_checks.py 1 ; fi
 RUN ./docker/compile.sh
