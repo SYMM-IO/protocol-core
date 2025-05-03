@@ -18,6 +18,20 @@ import { SingleUpnlAndPriceSig } from "../storages/MuonStorage.sol";
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
 	using SafeERC20Upgradeable for IERC20Upgradeable;
 
+	bytes4 constant SELECTOR_SEND_QUOTE_WITH_AFFILIATE =
+		bytes4(
+			keccak256(
+				"sendQuoteWithAffiliate(address[],uint256,uint8,uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,(bytes,uint256,int256,uint256,bytes,(uint256,address,address)))"
+			)
+		);
+
+	bytes4 constant SELECTOR_SEND_QUOTE =
+		bytes4(
+			keccak256(
+				"sendQuote(address[],uint256,uint8,uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,(bytes,uint256,int256,uint256,bytes,(uint256,address,address)))"
+			)
+		);
+
 	bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 	bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
@@ -283,12 +297,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	function innerCall(address account, bytes memory _callData) internal {
-		bytes4 _selector;
-		assembly {
-			_selector := mload(add(_callData, 0x20))
-		}
-
-		address expectedPartyB = decodePartyBFromInput(_callData, _selector);
+		address expectedPartyB = decodePartyBFromInput(_callData);
 		if (expectedPartyB != address(0)) {
 			require(accountToWhitelistedPartyB[account] == expectedPartyB, "Unauthorized partyB");
 		}
@@ -361,9 +370,13 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @param selector The function selector of the method being called.
 	 * @return The PartyB address extracted from the input data.
 	 */
-	function decodePartyBFromInput(bytes memory data, bytes4 selector) view internal returns (address) {
+	function decodePartyBFromInput(bytes memory data) internal view returns (address) {
 		bytes memory args;
+		bytes4 _selector;
+
 		assembly {
+			_selector := mload(add(_callData, 0x20))
+
 			// Allocate memory for the args slice
 			let len := mload(data)
 			let newLen := sub(len, 4)
@@ -381,14 +394,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 			}
 		}
 
-		if (
-			selector ==
-			bytes4(
-				keccak256(
-					"sendQuote(address[],uint256,uint8,uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,(bytes,uint256,int256,uint256,bytes,(uint256,address,address)))"
-				)
-			)
-		) {
+		if (_selector == SELECTOR_SEND_QUOTE) {
 			(address[] memory partyBsWhitelist, , , , , , , , , , , , ) = abi.decode(
 				args,
 				(address[], uint256, uint8, uint8, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, SingleUpnlAndPriceSig)
@@ -396,14 +402,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 			require(partyBsWhitelist.length == 1, "Only one PartyB must be whitelisted");
 			return partyBsWhitelist[0];
-		} else if (
-			selector ==
-			bytes4(
-				keccak256(
-					"sendQuoteWithAffiliate(address[],uint256,uint8,uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,(bytes,uint256,int256,uint256,bytes,(uint256,address,address)))"
-				)
-			)
-		) {
+		} else if (_selector == SELECTOR_SEND_QUOTE_WITH_AFFILIATE) {
 			(address[] memory partyBsWhitelist, , , , , , , , , , , , , ) = abi.decode(
 				args,
 				(
