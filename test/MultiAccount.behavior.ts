@@ -404,37 +404,37 @@ export function shouldBehaveLikeMultiAccount() {
 						])
 						await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2])
 					})
-					// it("request to close position", async () => {
-					// 	let closeRequest1 = marketCloseRequestBuilder().build()
-					// 	let closeRequestCallData1 = context.partyAFacet.interface.encodeFunctionData(
-					// 		"requestToClosePosition",
-					// 		await getListFormatOfCloseRequest(closeRequest1),
-					// 	)
-					// 	await multiAccount.connect(context.signers.user)._call(partyAAccount, [closeRequestCallData1])
+					it("request to close position", async () => {
+						let closeRequest1 = marketCloseRequestBuilder().build()
+						let closeRequestCallData1 = context.partyAFacet.interface.encodeFunctionData(
+							"requestToClosePosition",
+							await getListFormatOfCloseRequest(closeRequest1),
+						)
+						await multiAccount.connect(context.signers.user)._call(partyAAccount, [closeRequestCallData1])
 
-					// 	expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING)
-					// })
-					// describe("Request to fill close", function () {
-					// 	beforeEach(async () => {
-					// 		let closeRequest = marketCloseRequestBuilder().build()
-					// 		let closeRequestCallData = context.partyAFacet.interface.encodeFunctionData("requestToClosePosition", [
-					// 			1,
-					// 			...(await getListFormatOfCloseRequest(closeRequest)),
-					// 		])
-					// 		await multiAccount.connect(context.signers.user)._call(partyAAccount, [closeRequestCallData])
-					// 	})
+						expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING)
+					})
+					describe("Request to fill close", function () {
+						beforeEach(async () => {
+							let closeRequest = marketCloseRequestBuilder().build()
+							let closeRequestCallData = context.partyAFacet.interface.encodeFunctionData("requestToClosePosition", [
+								1,
+								...(await getListFormatOfCloseRequest(closeRequest)),
+							])
+							await multiAccount.connect(context.signers.user)._call(partyAAccount, [closeRequestCallData])
+						})
 
-					// 	it("Should fill close quote", async () => {
-					// 		let fillCloseRequest = marketFillCloseRequestBuilder().build()
-					// 		let fillCloseRequestCallData = context.partyBPositionActionsFacet.interface.encodeFunctionData("fillCloseRequest", [
-					// 			1,
-					// 			...(await getListFormatOfFillCloseRequest(fillCloseRequest)),
-					// 		])
-					// 		await symmioPartyB.connect(context.signers.admin)._call([fillCloseRequestCallData])
+						it("Should fill close quote", async () => {
+							let fillCloseRequest = marketFillCloseRequestBuilder().build()
+							let fillCloseRequestCallData = context.partyBPositionActionsFacet.interface.encodeFunctionData("fillCloseRequest", [
+								1,
+								...(await getListFormatOfFillCloseRequest(fillCloseRequest)),
+							])
+							await symmioPartyB.connect(context.signers.admin)._call([fillCloseRequestCallData])
 
-					// 		expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.CLOSED)
-					// 	})
-					// })
+							expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.CLOSED)
+						})
+					})
 				})
 			})
 		})

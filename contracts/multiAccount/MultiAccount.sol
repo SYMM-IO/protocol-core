@@ -172,7 +172,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	/**
 	 * @dev Internal function to deploy a new party A account contract.
-	 * @return account The address of the nepartyBsWhitelisty deployed account contract.
+	 * @return account The address of the newly deployed account contract.
 	 */
 	function _deployPartyA() internal returns (address account) {
 		bytes32 salt = keccak256(abi.encodePacked("MultiAccount_", saltCounter));
