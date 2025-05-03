@@ -101,21 +101,21 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 	 * @param deadline The user should set a deadline for their request. If no PartyB takes action on the quote within this timeframe, the request will expire
 	 * @param upnlSig The Muon signature for user upnl and symbol price
 	 */
-	function sendQuote(
-		address[] memory partyBsWhiteList,
-		uint256 symbolId,
-		PositionType positionType,
-		OrderType orderType,
-		uint256 price,
-		uint256 quantity,
-		uint256 cva,
-		uint256 lf,
-		uint256 partyAmm,
-		uint256 partyBmm,
-		uint256 maxFundingRate,
-		uint256 deadline,
-		SingleUpnlAndPriceSig memory upnlSig
-	) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
+		function sendQuote(
+			address[] memory partyBsWhiteList,
+			uint256 symbolId,
+			PositionType positionType,
+			OrderType orderType,
+			uint256 price,
+			uint256 quantity,
+			uint256 cva,
+			uint256 lf,
+			uint256 partyAmm,
+			uint256 partyBmm,
+			uint256 maxFundingRate,
+			uint256 deadline,
+			SingleUpnlAndPriceSig memory upnlSig
+		) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
 		uint256 quoteId = PartyAFacetImpl.sendQuote(
 			partyBsWhiteList,
 			symbolId,
