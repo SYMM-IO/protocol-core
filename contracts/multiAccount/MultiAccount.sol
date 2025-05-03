@@ -367,7 +367,6 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * It requires that only one PartyB address is whitelisted in the `partyBsWhitelist` array.
 	 *
 	 * @param data The input data (abi encoded) passed to the contract.
-	 * @param selector The function selector of the method being called.
 	 * @return The PartyB address extracted from the input data.
 	 */
 	function decodePartyBFromInput(bytes memory data) internal view returns (address) {
@@ -375,7 +374,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		bytes4 _selector;
 
 		assembly {
-			_selector := mload(add(_callData, 0x20))
+			_selector := mload(add(data, 0x20))
 
 			// Allocate memory for the args slice
 			let len := mload(data)
