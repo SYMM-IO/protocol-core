@@ -39,8 +39,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	uint256 public revokeCooldown;
 	mapping(address => mapping(address => mapping(bytes4 => uint256))) public revokeProposalTimestamp; // account -> target -> selector -> timestamp
 
-	// Mapping to track the whitelisted PartyB addresses for each user.
-	// This is used to ensure that only the correct PartyB address is authorized for the caller.
+	// Mapping to track the bounded PartyB addresses for each user.
 	mapping(address => address) accountToPartyBBinding;
 
 	// Modifier to check if the sender is the owner of the account
@@ -139,7 +138,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	/**
 	 * @dev Sets the implementation contract for the account.
-	 * @param accountImplementation_ The bytecodes of the new implementation contract.
+	 * @param accountImplementation_ The byteCodes of the new implementation contract.
 	 */
 	function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
 		emit SetAccountImplementation(accountImplementation, accountImplementation_);
@@ -217,21 +216,27 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	//////////////////////////////// Account Management ////////////////////////////////////
 
-	/**
-	 * @dev Adds a new account for the caller with the specified name.
-	 * @param name The name of the new account.
-	 */
-	function addAccount(string memory name, address whitelistedPartyB) external whenNotPaused {
-		address account = _deployPartyA();
-		indexOfAccount[account] = accounts[msg.sender].length;
-		accounts[msg.sender].push(Account(account, name));
-		owners[account] = msg.sender;
-
-		emit AddAccount(msg.sender, account, name);
+	function _addAccount(address user, string memory name) internal returns (address account) {
+		account = _deployPartyA();
+		indexOfAccount[account] = accounts[user].length;
+		accounts[user].push(Account(account, name));
+		owners[account] = user;
+		emit AddAccount(user, account, name);
 	}
 
-	function bindToPartyB(address account, address whitelistedPartyB) external whenNotPaused {
+	/**
+	 * @dev Adds a new account for the caller with the specified name.
+	 */
+	function addAccount(string memory name) external whenNotPaused {
+		_addAccount(msg.sender, name);
+	}
+
+	/**
+	 * @dev Adds a new account for the caller and binds it to a PartyB address in one step.
+	 */
+	function addAccountWithBinding(string memory name, address whitelistedPartyB) external whenNotPaused {
 		require(whitelistedPartyB != address(0), "Zero Address");
+		address account = _addAccount(msg.sender, name);
 		accountToPartyBBinding[account] = whitelistedPartyB;
 		emit BindToPartyB(msg.sender, account, whitelistedPartyB);
 	}
