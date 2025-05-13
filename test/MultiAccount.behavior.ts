@@ -1,19 +1,20 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {expect} from "chai"
-import {AbiCoder, BigNumberish} from "ethers"
-import {ethers, upgrades} from "hardhat"
-import {PairUpnlAndPriceSigStruct} from "../src/types/contracts/interfaces/ISymmio"
-import {initializeFixture} from "./Initialize.fixture"
-import {PositionType, QuoteStatus} from "./models/Enums"
-import {Hedger} from "./models/Hedger"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {CloseRequest, marketCloseRequestBuilder} from "./models/requestModels/CloseRequest"
-import {FillCloseRequest, marketFillCloseRequestBuilder} from "./models/requestModels/FillCloseRequest"
-import {marketOpenRequestBuilder, OpenRequest} from "./models/requestModels/OpenRequest"
-import {limitQuoteRequestBuilder, marketQuoteRequestBuilder, QuoteRequest} from "./models/requestModels/QuoteRequest"
-import {decimal, PromiseOrValue} from "./utils/Common"
-import {getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig} from "./utils/SignatureUtils"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
+import { AbiCoder, BigNumberish, ZeroAddress } from "ethers"
+import { ethers, upgrades } from "hardhat"
+import { PairUpnlAndPriceSigStruct } from "../src/types/contracts/interfaces/ISymmio"
+import { initializeFixture } from "./Initialize.fixture"
+import { PositionType, QuoteStatus } from "./models/Enums"
+import { Hedger } from "./models/Hedger"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest"
+import { FillCloseRequest, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest"
+import { marketOpenRequestBuilder, OpenRequest } from "./models/requestModels/OpenRequest"
+import { limitQuoteRequestBuilder, marketQuoteRequestBuilder, QuoteRequest } from "./models/requestModels/QuoteRequest"
+import { decimal, PromiseOrValue } from "./utils/Common"
+import { getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import { MultiAccount } from "../src/types"
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
 	return [
@@ -43,17 +44,25 @@ async function getListFormatOfCloseRequest(
 async function getListFormatOfOpenRequest(
 	request: OpenRequest,
 ): Promise<[PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]> {
-	return [request.filledAmount, request.openPrice, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB))]
+	return [
+		request.filledAmount,
+		request.openPrice,
+		await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB)),
+	]
 }
 
 async function getListFormatOfFillCloseRequest(
 	request: FillCloseRequest,
 ): Promise<[PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>, PairUpnlAndPriceSigStruct]> {
-	return [request.filledAmount, request.closedPrice, await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB))]
+	return [
+		request.filledAmount,
+		request.closedPrice,
+		await getDummyPairUpnlAndPriceSig(BigInt(request.price), BigInt(request.upnlPartyA), BigInt(request.upnlPartyB)),
+	]
 }
 
 export function shouldBehaveLikeMultiAccount() {
-	let multiAccount: any
+	let multiAccount: MultiAccount
 	let context: RunContext
 	let user: User
 	let hedger: Hedger
@@ -85,14 +94,14 @@ export function shouldBehaveLikeMultiAccount() {
 			initializer: "initialize",
 		})
 
-		multiAccount = await MultiAccount.waitForDeployment()
+		multiAccount = (await MultiAccount.waitForDeployment()) as unknown as MultiAccount
 		symmioPartyB = await SymmioPartyBDeploy.waitForDeployment()
 
 		await context.controlFacet.connect(context.signers.admin).registerPartyB(await symmioPartyB.getAddress())
 		await context.controlFacet.connect(context.signers.admin).registerAffiliate(await MultiAccount.getAddress())
 		await context.controlFacet.connect(context.signers.admin).setFeeCollector(await MultiAccount.getAddress(), await hedger.getAddress())
 
-		await multiAccount.connect(context.signers.admin).setRevokeCooldown(300);
+		await multiAccount.connect(context.signers.admin).setRevokeCooldown(300)
 
 		await context.controlFacet
 			.connect(context.signers.admin)
@@ -143,7 +152,7 @@ export function shouldBehaveLikeMultiAccount() {
 
 				expect(await multiAccount.getAccountsLength(userAddress)).to.be.equal(0)
 
-				await multiAccount.connect(context.signers.user).addAccount("Test")
+				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
 
 				expect(await multiAccount.getAccountsLength(userAddress)).to.be.equal(1)
 				let createdAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0]
@@ -151,9 +160,13 @@ export function shouldBehaveLikeMultiAccount() {
 				expect(await multiAccount.owners(createdAccount.accountAddress)).to.be.equal(userAddress)
 			})
 
+			it("Should unable to create account with zero address as whitelisted partyB", async function () {
+				await expect(multiAccount.connect(context.signers.user).addAccount("Test", ZeroAddress)).to.be.reverted
+			})
+
 			it("Should edit account name", async function () {
 				const userAddress = await context.signers.user.getAddress()
-				await expect(multiAccount.connect(context.signers.user).addAccount("Test")).to.not.be.reverted
+				await expect(multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)).to.not.be.reverted
 
 				let createdAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0]
 				await expect(multiAccount.connect(context.signers.user2).editAccountName(createdAccount.accountAddress, "Renamed")).to.be.reverted
@@ -164,13 +177,13 @@ export function shouldBehaveLikeMultiAccount() {
 		})
 
 		describe("delegatedAccesses", function () {
-			let partyAAccount: any
-			let selector: any
-			let user2Address: any
+			let partyAAccount: string
+			let selector: string
+			let user2Address: string
 			beforeEach(async () => {
 				const userAddress = await context.signers.user.getAddress()
 
-				await multiAccount.connect(context.signers.user).addAccount("Test")
+				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 				user2Address = await context.signers.user2.getAddress()
 				selector = ethers.dataSlice("0x40f1310c", 0, 4)
@@ -184,7 +197,7 @@ export function shouldBehaveLikeMultiAccount() {
 			it("should access delegate call to another address", async () => {
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(false)
 
-				expect(await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector)).to.not.be.reverted
+				expect(await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector, true)).to.not.be.reverted
 
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
 			})
@@ -192,18 +205,20 @@ export function shouldBehaveLikeMultiAccount() {
 			it("should revoke delegate call access to another address", async () => {
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(false)
 
-				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector)
+				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector, true)
 
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
 
-				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector]))
-					.to.be.revertedWith("MultiAccount: Revoke access not proposed")
+				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector])).to.be.revertedWith(
+					"MultiAccount: Revoke access not proposed",
+				)
 
 				await multiAccount.connect(context.signers.user).proposeToRevokeAccesses(partyAAccount, user2Address, [selector])
 				expect(await multiAccount.delegatedAccesses(partyAAccount, user2Address, selector)).to.be.equal(true)
 
-				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector]))
-					.to.be.revertedWith("MultiAccount: Cooldown not reached")
+				await expect(multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector])).to.be.revertedWith(
+					"MultiAccount: Cooldown not reached",
+				)
 
 				await time.increase(301)
 				await multiAccount.connect(context.signers.user).revokeAccesses(partyAAccount, user2Address, [selector])
@@ -211,9 +226,9 @@ export function shouldBehaveLikeMultiAccount() {
 			})
 
 			it("should send quote with delegate access", async () => {
-				let quoteRequest1 = limitQuoteRequestBuilder().build()
+				let quoteRequest1 = limitQuoteRequestBuilder().partyBWhiteList([context.signers.hedger.address]).build()
 				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
-				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector)
+				await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, user2Address, selector, true)
 				await multiAccount.connect(context.signers.user2)._call(partyAAccount, [sendQuote1])
 				expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
 			})
@@ -225,7 +240,7 @@ export function shouldBehaveLikeMultiAccount() {
 			beforeEach(async function () {
 				const userAddress = await context.signers.user.getAddress()
 
-				await multiAccount.connect(context.signers.user).addAccount("Test")
+				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
 				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(120n))
@@ -254,12 +269,12 @@ export function shouldBehaveLikeMultiAccount() {
 		})
 
 		describe("Method calling", function () {
-			let partyAAccount: any
+			let partyAAccount: string
 
 			beforeEach(async function () {
 				const userAddress = await context.signers.user.getAddress()
 
-				await multiAccount.connect(context.signers.user).addAccount("Test")
+				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
 				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
@@ -273,6 +288,37 @@ export function shouldBehaveLikeMultiAccount() {
 				const callData = AbiCoder.defaultAbiCoder().encode(["bytes4", "uint256"], [ethers.id("mockFunction(uint256)").slice(0, 10), 123])
 				await expect(multiAccount.connect(context.signers.user2)._call(partyAAccount, [callData])).to.be.reverted
 			})
+
+			describe("", async () => {
+				beforeEach(async () => {})
+
+				it("should fail if partyB in args is more than one", async function () {
+					let quoteRequest1 = limitQuoteRequestBuilder().partyBWhiteList([context.signers.hedger.address, context.signers.hedger2.address]).build()
+					let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
+						"sendQuoteWithAffiliate",
+						await getListFormatOfQuoteRequest(quoteRequest1),
+					)
+					await expect(multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1])).to.be.reverted
+				})
+
+				it("should fail if partyB in args is address(0)", async function () {
+					let quoteRequest1 = limitQuoteRequestBuilder().partyBWhiteList([ZeroAddress]).build()
+					let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
+						"sendQuoteWithAffiliate",
+						await getListFormatOfQuoteRequest(quoteRequest1),
+					)
+					await expect(multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1])).to.be.reverted
+				})
+
+				it("should fail if partyB in args is not same as whitelisted partyB in account definition", async function () {
+					let quoteRequest1 = limitQuoteRequestBuilder().partyBWhiteList([context.signers.hedger.address]).build()
+					let sendQuote1 = context.partyAFacet.interface.encodeFunctionData(
+						"sendQuoteWithAffiliate",
+						await getListFormatOfQuoteRequest(quoteRequest1),
+					)
+					await expect(multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1])).to.be.reverted
+				})
+			})
 		})
 	})
 	describe("send new quote", function () {
@@ -281,7 +327,7 @@ export function shouldBehaveLikeMultiAccount() {
 		beforeEach(async function () {
 			const userAddress = await context.signers.user.getAddress()
 
-			await multiAccount.connect(context.signers.user).addAccount("Test")
+			await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
 			partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
 			await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
@@ -292,7 +338,7 @@ export function shouldBehaveLikeMultiAccount() {
 		})
 
 		it("Should be able to send Quotes", async () => {
-			let quoteRequest1 = limitQuoteRequestBuilder().build()
+			let quoteRequest1 = limitQuoteRequestBuilder().partyBWhiteList([context.signers.hedger.address]).build()
 			let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
 			await multiAccount.connect(context.signers.user)._call(partyAAccount, [sendQuote1])
 			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
@@ -300,9 +346,9 @@ export function shouldBehaveLikeMultiAccount() {
 
 		describe("Locking quotes", function () {
 			beforeEach(async () => {
-				let quoteRequest1 = marketQuoteRequestBuilder().build()
+				let quoteRequest1 = marketQuoteRequestBuilder().partyBWhiteList([context.signers.hedger.address]).build()
 				let sendQuote1 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest1))
-				let quoteRequest2 = marketQuoteRequestBuilder().positionType(PositionType.SHORT).build()
+				let quoteRequest2 = marketQuoteRequestBuilder().partyBWhiteList([context.signers.hedger.address]).positionType(PositionType.SHORT).build()
 				let sendQuote2 = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest2))
 
 				await context.collateral.connect(context.signers.admin).mint(await symmioPartyB.getAddress(), decimal(1000000n))
@@ -337,7 +383,9 @@ export function shouldBehaveLikeMultiAccount() {
 					let openPosition2 = marketOpenRequestBuilder().build()
 					let openPositionCallData2 = context.partyBPositionActionsFacet.interface.encodeFunctionData("openPosition", [
 						1,
-						...(await getListFormatOfOpenRequest(openPosition2)),
+						openPosition2.filledAmount,
+						openPosition2.openPrice,
+						await getDummyPairUpnlAndPriceSig(BigInt(openPosition2.price), BigInt(openPosition2.upnlPartyA), BigInt(openPosition2.upnlPartyB)),
 					])
 					await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2])
 
@@ -350,16 +398,18 @@ export function shouldBehaveLikeMultiAccount() {
 						let openPosition2 = marketOpenRequestBuilder().build()
 						let openPositionCallData2 = context.partyBPositionActionsFacet.interface.encodeFunctionData("openPosition", [
 							1,
-							...(await getListFormatOfOpenRequest(openPosition2)),
+							openPosition2.filledAmount,
+							openPosition2.openPrice,
+							await getDummyPairUpnlAndPriceSig(BigInt(openPosition2.price), BigInt(openPosition2.upnlPartyA), BigInt(openPosition2.upnlPartyB)),
 						])
 						await symmioPartyB.connect(context.signers.admin)._call([openPositionCallData2])
 					})
 					it("request to close position", async () => {
 						let closeRequest1 = marketCloseRequestBuilder().build()
-						let closeRequestCallData1 = context.partyAFacet.interface.encodeFunctionData("requestToClosePosition", [
-							1,
-							...(await getListFormatOfCloseRequest(closeRequest1)),
-						])
+						let closeRequestCallData1 = context.partyAFacet.interface.encodeFunctionData(
+							"requestToClosePosition",
+							await getListFormatOfCloseRequest(closeRequest1),
+						)
 						await multiAccount.connect(context.signers.user)._call(partyAAccount, [closeRequestCallData1])
 
 						expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING)

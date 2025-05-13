@@ -13,9 +13,13 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/ISymmio.sol";
 import "../interfaces/ISymmioPartyA.sol";
 import "../interfaces/IMultiAccount.sol";
+import { SingleUpnlAndPriceSig } from "../storages/MuonStorage.sol";
 
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
 	using SafeERC20Upgradeable for IERC20Upgradeable;
+
+	bytes4 constant SELECTOR_SEND_QUOTE = 0x7f2755b2;
+	bytes4 constant SELECTOR_SEND_QUOTE_WITH_AFFILIATE = 0x40f1310c;
 
 	bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -34,6 +38,10 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	uint256 public revokeCooldown;
 	mapping(address => mapping(address => mapping(bytes4 => uint256))) public revokeProposalTimestamp; // account -> target -> selector -> timestamp
+
+	// Mapping to track the whitelisted PartyB addresses for each user.
+	// This is used to ensure that only the correct PartyB address is authorized for the caller.
+	mapping(address => address) accountToPartyBBinding;
 
 	// Modifier to check if the sender is the owner of the account
 	modifier onlyOwner(address account, address sender) {
@@ -213,12 +221,19 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @dev Adds a new account for the caller with the specified name.
 	 * @param name The name of the new account.
 	 */
-	function addAccount(string memory name) external whenNotPaused {
+	function addAccount(string memory name, address whitelistedPartyB) external whenNotPaused {
 		address account = _deployPartyA();
 		indexOfAccount[account] = accounts[msg.sender].length;
 		accounts[msg.sender].push(Account(account, name));
 		owners[account] = msg.sender;
+
 		emit AddAccount(msg.sender, account, name);
+	}
+
+	function bindToPartyB(address account, address whitelistedPartyB) external whenNotPaused {
+		require(whitelistedPartyB != address(0), "Zero Address");
+		accountToPartyBBinding[account] = whitelistedPartyB;
+		emit BindToPartyB(msg.sender, account, whitelistedPartyB);
 	}
 
 	/**
@@ -274,6 +289,12 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	function innerCall(address account, bytes memory _callData) internal {
+		address boundPartyB = accountToPartyBBinding[account];
+		if (boundPartyB != address(0)) {
+			address expectedPartyB = decodePartyBFromInput(_callData);
+			require(expectedPartyB == address(0) || boundPartyB == expectedPartyB, "Unauthorized partyB");
+		}
+
 		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
 		emit Call(msg.sender, account, _callData, _success, _resultData);
 		if (!_success) {
@@ -329,5 +350,75 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 			userAccounts[i - start] = accounts[user][i];
 		}
 		return userAccounts;
+	}
+
+	/**
+	 * @dev Decodes the PartyB address from the input data based on the provided function selector.
+	 * This function checks the selector to determine the function being called and extracts the PartyB address
+	 * from the respective encoded arguments.
+	 *
+	 * It requires that only one PartyB address is whitelisted in the `partyBsWhitelist` array.
+	 *
+	 * @param data The input data (abi encoded) passed to the contract.
+	 * @return The PartyB address extracted from the input data.
+	 */
+	function decodePartyBFromInput(bytes memory data) internal view returns (address) {
+		bytes memory args;
+		bytes4 _selector;
+
+		assembly {
+			_selector := mload(add(data, 0x20))
+
+			// Allocate memory for the args slice
+			let len := mload(data)
+			let newLen := sub(len, 4)
+			args := mload(0x40) // free memory pointer
+			mstore(0x40, add(args, add(newLen, 0x20))) // move free memory pointer
+			mstore(args, newLen) // set length
+
+			// Copy data from `data + 4` to `args + 32`
+			for {
+				let i := 0
+			} lt(i, newLen) {
+				i := add(i, 32)
+			} {
+				mstore(add(args, add(0x20, i)), mload(add(data, add(0x24, i))))
+			}
+		}
+
+		if (_selector == SELECTOR_SEND_QUOTE) {
+			(address[] memory partyBsWhitelist, , , , , , , , , , , , ) = abi.decode(
+				args,
+				(address[], uint256, uint8, uint8, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, SingleUpnlAndPriceSig)
+			);
+
+			require(partyBsWhitelist.length == 1, "Only one PartyB must be whitelisted");
+			return partyBsWhitelist[0];
+		} else if (_selector == SELECTOR_SEND_QUOTE_WITH_AFFILIATE) {
+			(address[] memory partyBsWhitelist, , , , , , , , , , , , , ) = abi.decode(
+				args,
+				(
+					address[],
+					uint256,
+					uint8,
+					uint8,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					address,
+					SingleUpnlAndPriceSig
+				)
+			);
+
+			require(partyBsWhitelist.length == 1, "Only one PartyB must be whitelisted");
+			return partyBsWhitelist[0];
+		} else {
+			return address(0);
+		}
 	}
 }
