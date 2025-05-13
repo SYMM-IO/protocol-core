@@ -18,19 +18,8 @@ import { SingleUpnlAndPriceSig } from "../storages/MuonStorage.sol";
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
 	using SafeERC20Upgradeable for IERC20Upgradeable;
 
-	bytes4 constant SELECTOR_SEND_QUOTE_WITH_AFFILIATE =
-		bytes4(
-			keccak256(
-				"sendQuoteWithAffiliate(address[],uint256,uint8,uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,(bytes,uint256,int256,uint256,bytes,(uint256,address,address)))"
-			)
-		);
-
-	bytes4 constant SELECTOR_SEND_QUOTE =
-		bytes4(
-			keccak256(
-				"sendQuote(address[],uint256,uint8,uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,(bytes,uint256,int256,uint256,bytes,(uint256,address,address)))"
-			)
-		);
+	bytes4 constant SELECTOR_SEND_QUOTE = 0x7f2755b2;
+	bytes4 constant SELECTOR_SEND_QUOTE_WITH_AFFILIATE = 0x40f1310c;
 
 	bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -52,7 +41,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	// Mapping to track the whitelisted PartyB addresses for each user.
 	// This is used to ensure that only the correct PartyB address is authorized for the caller.
-	mapping(address => address) accountToWhitelistedPartyB;
+	mapping(address => address) accountToPartyBBinding;
 
 	// Modifier to check if the sender is the owner of the account
 	modifier onlyOwner(address account, address sender) {
@@ -238,10 +227,13 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		accounts[msg.sender].push(Account(account, name));
 		owners[account] = msg.sender;
 
-		require(whitelistedPartyB != address(0), "Zero Address");
-		accountToWhitelistedPartyB[account] = whitelistedPartyB;
-
 		emit AddAccount(msg.sender, account, name);
+	}
+
+	function bindToPartyB(address account, address whitelistedPartyB) external whenNotPaused {
+		require(whitelistedPartyB != address(0), "Zero Address");
+		accountToPartyBBinding[account] = whitelistedPartyB;
+		emit BindToPartyB(msg.sender, account, whitelistedPartyB);
 	}
 
 	/**
@@ -297,9 +289,10 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	function innerCall(address account, bytes memory _callData) internal {
-		address expectedPartyB = decodePartyBFromInput(_callData);
-		if (expectedPartyB != address(0)) {
-			require(accountToWhitelistedPartyB[account] == expectedPartyB, "Unauthorized partyB");
+		address boundPartyB = accountToPartyBBinding[account];
+		if (boundPartyB != address(0)) {
+			address expectedPartyB = decodePartyBFromInput(_callData);
+			require(expectedPartyB == address(0) || boundPartyB == expectedPartyB, "Unauthorized partyB");
 		}
 
 		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
