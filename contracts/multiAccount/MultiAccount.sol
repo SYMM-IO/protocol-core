@@ -234,11 +234,11 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	/**
 	 * @dev Adds a new account for the caller and binds it to a PartyB address in one step.
 	 */
-	function addAccountWithBinding(string memory name, address whitelistedPartyB) external whenNotPaused {
-		require(whitelistedPartyB != address(0), "Zero Address");
+	function addAccountWithBinding(string memory name, address _partyB) external whenNotPaused {
+		require(_partyB != address(0), "MultiAccount: Zero Address");
 		address account = _addAccount(msg.sender, name);
-		accountToPartyBBinding[account] = whitelistedPartyB;
-		emit BindToPartyB(msg.sender, account, whitelistedPartyB);
+		accountToPartyBBinding[account] = _partyB;
+		emit BindToPartyB(account, _partyB);
 	}
 
 	/**
@@ -297,7 +297,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		address boundPartyB = accountToPartyBBinding[account];
 		if (boundPartyB != address(0)) {
 			address expectedPartyB = decodePartyBFromInput(_callData);
-			require(expectedPartyB == address(0) || boundPartyB == expectedPartyB, "Unauthorized partyB");
+			require(expectedPartyB == address(0) || boundPartyB == expectedPartyB, "MultiAccount: Unauthorized partyB");
 		}
 
 		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
@@ -397,7 +397,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 				(address[], uint256, uint8, uint8, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, SingleUpnlAndPriceSig)
 			);
 
-			require(partyBsWhitelist.length == 1, "Only one PartyB must be whitelisted");
+			require(partyBsWhitelist.length == 1, "MultiAccount: Only one PartyB must be whitelisted");
 			return partyBsWhitelist[0];
 		} else if (_selector == SELECTOR_SEND_QUOTE_WITH_AFFILIATE) {
 			(address[] memory partyBsWhitelist, , , , , , , , , , , , , ) = abi.decode(
@@ -420,7 +420,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 				)
 			);
 
-			require(partyBsWhitelist.length == 1, "Only one PartyB must be whitelisted");
+			require(partyBsWhitelist.length == 1, "MultiAccount: Only one PartyB must be whitelisted");
 			return partyBsWhitelist[0];
 		} else {
 			return address(0);

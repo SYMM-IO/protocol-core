@@ -23,5 +23,5 @@ interface IMultiAccount {
 	event DelegateAccesses(address account, address target, bytes4[] selector, bool state);
 	event ProposeToRevokeAccesses(address account, address target, bytes4[] selector);
 	event SetRevokeCooldown(uint256 oldCooldown, uint256 newCooldown);
-	event BindToPartyB(address user, address account, whitelistedPartyB);
+	event BindToPartyB(address account, address partyB);
 }
