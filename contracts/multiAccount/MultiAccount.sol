@@ -367,7 +367,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @param data The input data (abi encoded) passed to the contract.
 	 * @return The PartyB address extracted from the input data.
 	 */
-	function decodePartyBFromInput(bytes memory data) internal view returns (address) {
+	function decodePartyBFromInput(bytes memory data) internal pure returns (address) {
 		bytes memory args;
 		bytes4 _selector;
 
