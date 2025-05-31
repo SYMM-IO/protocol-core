@@ -74,6 +74,7 @@
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
   },
   "dependencies": {
+    "@coti-io/coti-ethers": "^1.0.5",
     "lodash": "^4.17.21",
     "prettier-plugin-solidity": "^2.0.0"
   }

@@ -44,10 +44,10 @@ const config: HardhatUserConfig = {
 	},
 	networks: {
 		hardhat: {
-			forking: {
-				url: "https://base-mainnet.infura.io/v3/{API_KEY}",
-				blockNumber: 23478537,
-			},
+			// forking: {
+			// 	url: "https://base-mainnet.infura.io/v3/{API_KEY}",
+			// 	blockNumber: 23478537,
+			// },
 			loggingEnabled: false,
 			allowUnlimitedContractSize: false,
 		},
@@ -65,7 +65,7 @@ const config: HardhatUserConfig = {
 			accounts: [privateKey],
 		},
 		base: {
-			url: "https://virtual.base.rpc.tenderly.co/b0a4916f-040f-46c4-970d-a3c95d04ee02",
+			url: "https://mainnet.base.org",
 			accounts: [privateKey],
 		},
 		polygon: {
@@ -108,11 +108,16 @@ const config: HardhatUserConfig = {
 			url: "https://rpc.berachain.com",
 			accounts: [privateKey],
 		},
+		coti: {
+			url: "https://mainnet.coti.io/rpc",
+			accounts: [privateKey],
+		},
 	},
 	etherscan: {
 		apiKey: {
 			arbitrumOne: arbitrumApiKey,
 			iota: iotaApiKey,
+			coti: "abc",
 			mode: modeApiKey,
 			// mode2: modeApiKey,
 			blast: blastApiKey,
@@ -165,6 +170,14 @@ const config: HardhatUserConfig = {
 				urls: {
 					apiURL: "https://explorer.evm.iota.org/api",
 					browserURL: "https://explorer.evm.iota.org",
+				},
+			},
+			{
+				network: "coti",
+				chainId: 2632500,
+				urls: {
+					apiURL: "https://mainnet.cotiscan.io/api",
+					browserURL: "https://mainnet.cotiscan.io",
 				},
 			},
 			// {
