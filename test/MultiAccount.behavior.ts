@@ -152,7 +152,7 @@ export function shouldBehaveLikeMultiAccount() {
 
 				expect(await multiAccount.getAccountsLength(userAddress)).to.be.equal(0)
 
-				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
+				await multiAccount.connect(context.signers.user).addAccountWithBinding("Test", context.signers.hedger.address)
 
 				expect(await multiAccount.getAccountsLength(userAddress)).to.be.equal(1)
 				let createdAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0]
@@ -161,12 +161,12 @@ export function shouldBehaveLikeMultiAccount() {
 			})
 
 			it("Should unable to create account with zero address as whitelisted partyB", async function () {
-				await expect(multiAccount.connect(context.signers.user).addAccount("Test", ZeroAddress)).to.be.reverted
+				await expect(multiAccount.connect(context.signers.user).addAccountWithBinding("Test", ZeroAddress)).to.be.reverted
 			})
 
 			it("Should edit account name", async function () {
 				const userAddress = await context.signers.user.getAddress()
-				await expect(multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)).to.not.be.reverted
+				await expect(multiAccount.connect(context.signers.user).addAccountWithBinding("Test", context.signers.hedger.address)).to.not.be.reverted
 
 				let createdAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0]
 				await expect(multiAccount.connect(context.signers.user2).editAccountName(createdAccount.accountAddress, "Renamed")).to.be.reverted
@@ -183,7 +183,7 @@ export function shouldBehaveLikeMultiAccount() {
 			beforeEach(async () => {
 				const userAddress = await context.signers.user.getAddress()
 
-				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
+				await multiAccount.connect(context.signers.user).addAccountWithBinding("Test", context.signers.hedger.address)
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 				user2Address = await context.signers.user2.getAddress()
 				selector = ethers.dataSlice("0x40f1310c", 0, 4)
@@ -240,7 +240,7 @@ export function shouldBehaveLikeMultiAccount() {
 			beforeEach(async function () {
 				const userAddress = await context.signers.user.getAddress()
 
-				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
+				await multiAccount.connect(context.signers.user).addAccountWithBinding("Test", context.signers.hedger.address)
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
 				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(120n))
@@ -274,7 +274,7 @@ export function shouldBehaveLikeMultiAccount() {
 			beforeEach(async function () {
 				const userAddress = await context.signers.user.getAddress()
 
-				await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
+				await multiAccount.connect(context.signers.user).addAccountWithBinding("Test", context.signers.hedger.address)
 				partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
 				await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
@@ -328,7 +328,7 @@ export function shouldBehaveLikeMultiAccount() {
 		beforeEach(async function () {
 			const userAddress = await context.signers.user.getAddress()
 
-			await multiAccount.connect(context.signers.user).addAccount("Test", context.signers.hedger.address)
+			await multiAccount.connect(context.signers.user).addAccountWithBinding("Test", context.signers.hedger.address)
 			partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
 
 			await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
