@@ -10,6 +10,7 @@ interface IMultiAccount {
 		string name;
 	}
 	event SetAccountImplementation(bytes oldAddress, bytes newAddress);
+	event SetAccountsAdmin(address oldAddress, address newAddress);
 	event SetSymmioAddress(address oldAddress, address newAddress);
 	event DeployContract(address sender, address contractAddress);
 	event AddAccount(address user, address account, string name);
@@ -22,6 +23,7 @@ interface IMultiAccount {
 	event DelegateAccesses(address account, address target, bytes4[] selector, bool state);
 	event ProposeToRevokeAccesses(address account, address target, bytes4[] selector);
 	event SetRevokeCooldown(uint256 oldCooldown, uint256 newCooldown);
+	event BindToPartyB(address account, address partyB);
 
 	function _call(address account, bytes[] memory _callDatas) external;
 }

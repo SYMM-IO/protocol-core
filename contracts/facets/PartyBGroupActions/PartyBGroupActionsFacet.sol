@@ -4,16 +4,13 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../../utils/Accessibility.sol";
-import "../../utils/Pausable.sol";
-import "../../storages/MuonStorage.sol";
-import "../Account/AccountFacetImpl.sol";
 import "./IPartyBGroupActionsFacet.sol";
 import "../PartyBPositionActions/PartyBPositionActionsFacetImpl.sol";
 import "../PartyBQuoteActions/PartyBQuoteActionsFacetImpl.sol";
+import "../../utils/Accessibility.sol";
+import "../../utils/Pausable.sol";
 
 contract PartyBGroupActionsFacet is Accessibility, Pausable, IPartyBGroupActionsFacet {
-	using LockedValuesOps for LockedValues;
 
 	/**
 	 * @notice Locks and opens the specified quote with the provided details and signatures.

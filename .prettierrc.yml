@@ -8,9 +8,6 @@ trailingComma: all
 useTabs: true
 
 overrides:
-  - files: "*.sol"
-    options:
-      compiler: "0.8.17"
   - files: "*.ts"
     options:
       tabWidth: 2

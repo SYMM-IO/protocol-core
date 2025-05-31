@@ -13,9 +13,13 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/ISymmio.sol";
 import "../interfaces/ISymmioPartyA.sol";
 import "../interfaces/IMultiAccount.sol";
+import { SingleUpnlAndPriceSig } from "../storages/MuonStorage.sol";
 
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
 	using SafeERC20Upgradeable for IERC20Upgradeable;
+
+	bytes4 constant SELECTOR_SEND_QUOTE = 0x7f2755b2;
+	bytes4 constant SELECTOR_SEND_QUOTE_WITH_AFFILIATE = 0x40f1310c;
 
 	bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -34,6 +38,9 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	uint256 public revokeCooldown;
 	mapping(address => mapping(address => mapping(bytes4 => uint256))) public revokeProposalTimestamp; // account -> target -> selector -> timestamp
+
+	// Mapping to track the bounded PartyB addresses for each user.
+	mapping(address => address) accountToPartyBBinding;
 
 	// Modifier to check if the sender is the owner of the account
 	modifier onlyOwner(address account, address sender) {
@@ -70,11 +77,13 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @param account The address of the account.
 	 * @param target The address of the target contract.
 	 * @param selector The function selector.
+	 * @param state The state indicating whether access is granted or revoked.
 	 */
-	function delegateAccess(address account, address target, bytes4 selector) external onlyOwner(account, msg.sender) {
+	function delegateAccess(address account, address target, bytes4 selector, bool state) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
-		emit DelegateAccess(account, target, selector, true);
-		delegatedAccesses[account][target][selector] = true;
+		require(state, "MultiAccount: Invalid state");
+		emit DelegateAccess(account, target, selector, state);
+		delegatedAccesses[account][target][selector] = state;
 	}
 
 	/**
@@ -82,13 +91,15 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @param account The address of the account.
 	 * @param target The address of the target contract.
 	 * @param selector An array of function selectors.
+	 * @param state The state indicating whether access is granted or revoked.
 	 */
-	function delegateAccesses(address account, address target, bytes4[] memory selector) external onlyOwner(account, msg.sender) {
+	function delegateAccesses(address account, address target, bytes4[] memory selector, bool state) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
+		require(state, "MultiAccount: Invalid state");
 		for (uint256 i = selector.length; i != 0; i--) {
-			delegatedAccesses[account][target][selector[i - 1]] = true;
+			delegatedAccesses[account][target][selector[i - 1]] = state;
 		}
-		emit DelegateAccesses(account, target, selector, true);
+		emit DelegateAccesses(account, target, selector, state);
 	}
 
 	/**
@@ -114,10 +125,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	function revokeAccesses(address account, address target, bytes4[] memory selector) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
 		for (uint256 i = selector.length; i != 0; i--) {
-			require(
-				revokeProposalTimestamp[account][target][selector[i - 1]] != 0,
-				"MultiAccount: Revoke access not proposed"
-			);
+			require(revokeProposalTimestamp[account][target][selector[i - 1]] != 0, "MultiAccount: Revoke access not proposed");
 			require(
 				revokeProposalTimestamp[account][target][selector[i - 1]] + revokeCooldown <= block.timestamp,
 				"MultiAccount: Cooldown not reached"
@@ -130,11 +138,20 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	/**
 	 * @dev Sets the implementation contract for the account.
-	 * @param accountImplementation_ The bytecodes of the new implementation contract.
+	 * @param accountImplementation_ The byteCodes of the new implementation contract.
 	 */
 	function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
 		emit SetAccountImplementation(accountImplementation, accountImplementation_);
 		accountImplementation = accountImplementation_;
+	}
+
+	/**
+	 * @dev Sets the Admin for the accounts.
+	 * @param admin The Address of the new accounts admin.
+	 */
+	function setAccountsAdmin(address admin) external onlyRole(SETTER_ROLE) {
+		emit SetAccountsAdmin(accountsAdmin, admin);
+		accountsAdmin = admin;
 	}
 
 	/**
@@ -199,16 +216,29 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 
 	//////////////////////////////// Account Management ////////////////////////////////////
 
+	function _addAccount(address user, string memory name) internal returns (address account) {
+		account = _deployPartyA();
+		indexOfAccount[account] = accounts[user].length;
+		accounts[user].push(Account(account, name));
+		owners[account] = user;
+		emit AddAccount(user, account, name);
+	}
+
 	/**
 	 * @dev Adds a new account for the caller with the specified name.
-	 * @param name The name of the new account.
 	 */
 	function addAccount(string memory name) external whenNotPaused {
-		address account = _deployPartyA();
-		indexOfAccount[account] = accounts[msg.sender].length;
-		accounts[msg.sender].push(Account(account, name));
-		owners[account] = msg.sender;
-		emit AddAccount(msg.sender, account, name);
+		_addAccount(msg.sender, name);
+	}
+
+	/**
+	 * @dev Adds a new account for the caller and binds it to a PartyB address in one step.
+	 */
+	function addAccountWithBinding(string memory name, address _partyB) external whenNotPaused {
+		require(_partyB != address(0), "MultiAccount: Zero Address");
+		address account = _addAccount(msg.sender, name);
+		accountToPartyBBinding[account] = _partyB;
+		emit BindToPartyB(account, _partyB);
 	}
 
 	/**
@@ -264,6 +294,12 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	function innerCall(address account, bytes memory _callData) internal {
+		address boundPartyB = accountToPartyBBinding[account];
+		if (boundPartyB != address(0)) {
+			address expectedPartyB = decodePartyBFromInput(_callData);
+			require(expectedPartyB == address(0) || boundPartyB == expectedPartyB, "MultiAccount: Unauthorized partyB");
+		}
+
 		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
 		emit Call(msg.sender, account, _callData, _success, _resultData);
 		if (!_success) {
@@ -319,5 +355,75 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 			userAccounts[i - start] = accounts[user][i];
 		}
 		return userAccounts;
+	}
+
+	/**
+	 * @dev Decodes the PartyB address from the input data based on the provided function selector.
+	 * This function checks the selector to determine the function being called and extracts the PartyB address
+	 * from the respective encoded arguments.
+	 *
+	 * It requires that only one PartyB address is whitelisted in the `partyBsWhitelist` array.
+	 *
+	 * @param data The input data (abi encoded) passed to the contract.
+	 * @return The PartyB address extracted from the input data.
+	 */
+	function decodePartyBFromInput(bytes memory data) internal view returns (address) {
+		bytes memory args;
+		bytes4 _selector;
+
+		assembly {
+			_selector := mload(add(data, 0x20))
+
+			// Allocate memory for the args slice
+			let len := mload(data)
+			let newLen := sub(len, 4)
+			args := mload(0x40) // free memory pointer
+			mstore(0x40, add(args, add(newLen, 0x20))) // move free memory pointer
+			mstore(args, newLen) // set length
+
+			// Copy data from `data + 4` to `args + 32`
+			for {
+				let i := 0
+			} lt(i, newLen) {
+				i := add(i, 32)
+			} {
+				mstore(add(args, add(0x20, i)), mload(add(data, add(0x24, i))))
+			}
+		}
+
+		if (_selector == SELECTOR_SEND_QUOTE) {
+			(address[] memory partyBsWhitelist, , , , , , , , , , , , ) = abi.decode(
+				args,
+				(address[], uint256, uint8, uint8, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, SingleUpnlAndPriceSig)
+			);
+
+			require(partyBsWhitelist.length == 1, "MultiAccount: Only one PartyB must be whitelisted");
+			return partyBsWhitelist[0];
+		} else if (_selector == SELECTOR_SEND_QUOTE_WITH_AFFILIATE) {
+			(address[] memory partyBsWhitelist, , , , , , , , , , , , , ) = abi.decode(
+				args,
+				(
+					address[],
+					uint256,
+					uint8,
+					uint8,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					uint256,
+					address,
+					SingleUpnlAndPriceSig
+				)
+			);
+
+			require(partyBsWhitelist.length == 1, "MultiAccount: Only one PartyB must be whitelisted");
+			return partyBsWhitelist[0];
+		} else {
+			return address(0);
+		}
 	}
 }

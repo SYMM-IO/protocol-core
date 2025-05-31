@@ -18,11 +18,26 @@ if (!privateKey) throw new Error("Please set your PRIVATE_KEY in a .env file")
 
 const privateKeyList: string[] = process.env.PRIVATE_KEYS_STR?.split(",") || []
 
+
 export enum TestMode {
 	STATIC = "STATIC",
 	FUZZ = "FUZZ",
 	PRE_UPGRADE = "PRE_UPGRADE",
 }
+
+const arbitrumApiKey: string = process.env.ARBITRUM_API_KEY || ""
+const bnbApiKey: string = process.env.BNB_API_KEY || ""
+const baseApiKey: string = process.env.BASE_API_KEY || ""
+const polygonApiKey: string = process.env.POLYGON_API_KEY || ""
+const zkEvmApiKey: string = process.env.ZKEVM_API_KEY || ""
+const opBnbApiKey: string = process.env.OPBNB_API_KEY || ""
+const sonicApiKey: string = process.env.SONIC_API_KEY || ""
+const iotaApiKey: string = process.env.IOTA_API_KEY || ""
+const modeApiKey: string = process.env.MODE_API_KEY || ""
+const blastApiKey: string = process.env.BLAST_API_KEY || ""
+const mantleAPIKey: string = process.env.MANTLE_API_KEY || ""
+const mantle2APIKey: string = process.env.MANTLE2_API_KEY || ""
+const beraAPIKey: string = process.env.BERA_API_KEY || ""
 
 // API Keys for different networks
 const apiKeys = {
@@ -85,7 +100,7 @@ const config: HardhatUserConfig = {
 			accounts: [privateKey],
 		},
 		bsc: {
-			url: "https://binance.llamarpc.com",
+			url: "https://bscrpc.com",
 			accounts: [privateKey],
 		},
 		opbnb: {
@@ -93,7 +108,7 @@ const config: HardhatUserConfig = {
 			accounts: [privateKey],
 		},
 		base: {
-			url: "https://base.llamarpc.com",
+			url: "https://virtual.base.rpc.tenderly.co/b0a4916f-040f-46c4-970d-a3c95d04ee02",
 			accounts: [privateKey],
 		},
 		polygon: {
@@ -124,31 +139,49 @@ const config: HardhatUserConfig = {
 			url: "https://mantle.drpc.org",
 			accounts: [privateKey],
 		},
+		sonic: {
+			url: "https://rpc.soniclabs.com",
+			accounts: [privateKey],
+		},
+		bera: {
+			url: "https://rpc.berachain.com",
+			accounts: [privateKey],
+		},
 	},
 
 	// Block explorer API configurations
 	etherscan: {
 		apiKey: {
-			arbitrumOne: apiKeys.arbitrum,
-			iota: apiKeys.iota,
-			mode: apiKeys.mode,
-			// mode2: apiKeys.mode,
-			blast: apiKeys.blast,
-			bsc: apiKeys.bnb,
-			base: apiKeys.base,
-			polygon: apiKeys.polygon,
-			// mantle: apiKeys.mantle,
-			mantle: apiKeys.mantle2,
-			zkEvm: apiKeys.zkEvm,
-			opbnb: apiKeys.opBnb,
+			arbitrumOne: arbitrumApiKey,
+			iota: iotaApiKey,
+			mode: modeApiKey,
+			// mode2: modeApiKey,
+			blast: blastApiKey,
+			bsc: bnbApiKey,
+			base: baseApiKey,
+			polygon: polygonApiKey,
+			// mantle: mantleAPIKey,
+			mantle: mantle2APIKey,
+			zkEvm: zkEvmApiKey,
+			opbnb: opBnbApiKey,
+			sonic: sonicApiKey,
+			bera: beraAPIKey
 		},
 		customChains: [
+			// {
+			// 	network: "bera",
+			// 	chainId: 80094,
+			// 	urls: {
+			// 		apiURL: `https://api.berascan.com/api?apiKey=${beraAPIKey}`,
+			// 		browserURL: "https://berascan.com",
+			// 	},
+			// },
 			{
-				network: "base",
-				chainId: 8453,
+				network: "bera",
+				chainId: 80094,
 				urls: {
-					apiURL: `https://api.basescan.org/api?apiKey=${apiKeys.base}`,
-					browserURL: "https://basescan.org",
+					apiURL: "https://api.routescan.io/v2/network/mainnet/evm/80094/etherscan",
+					browserURL: "https://beratrail.io",
 				},
 			},
 			{
@@ -214,6 +247,14 @@ const config: HardhatUserConfig = {
 					apiURL: "https://api.mantlescan.xyz/api",
 					browserURL: "https://mantlescan.xyz",
 				},
+			},
+			{
+				network: "sonic",
+				chainId: 146,
+				urls: {
+					apiURL: "https://api.sonicscan.org/api",
+					browserURL: "https://sonicscan.org"
+				}
 			},
 		],
 	},
