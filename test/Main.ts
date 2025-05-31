@@ -17,10 +17,11 @@ import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
 import { shouldBehaveLikeMultiAccount } from "./MultiAccount.behavior"
 import { shouldBehaveLikeControlFacet } from "./ControlFacet.behavior"
 import { shouldBehaveLikeSettlement } from "./Settlement.behavior"
+import { TestMode } from "../hardhat.config"
 import { shouldBehaveLikePreUpgradeTest } from "./PreUpgrade.behavior"
 
 describe("UnitTests", function () {
-	if (process.env.TEST_MODE == "static") {
+	if (process.env.TEST_MODE == TestMode.STATIC) {
 		describe("Diamond", async function () {
 			shouldBehaveLikeDiamond()
 		})
@@ -92,15 +93,15 @@ describe("UnitTests", function () {
 		describe("FeeDistributor", async function () {
 			shouldBehaveLikeFeeDistributor()
 		})
-	} else if (process.env.TEST_MODE == "fuzz") {
-		describe("FuzzTest", async function () {
+	} else if (process.env.TEST_MODE == TestMode.FUZZ) {
+		describe("Fuzz Test", async function () {
 			shouldBehaveLikeFuzzTest()
 		})
-	} else if (process.env.TEST_MODE == "pre-upgrade") {
-		describe("pre-upgrade test", async function () {
+	} else if (process.env.TEST_MODE == TestMode.PRE_UPGRADE) {
+		describe("Pre Upgrade Test", async function () {
 			shouldBehaveLikePreUpgradeTest()
 		})
 	} else {
-		throw new Error("Invalid TEST_MODE property. should be static or fuzz")
+		throw new Error("Invalid TEST_MODE env property")
 	}
 })

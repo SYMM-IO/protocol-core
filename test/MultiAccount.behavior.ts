@@ -1,6 +1,6 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
 import { expect } from "chai"
-import { AbiCoder, BigNumberish, ZeroAddress } from "ethers"
+import { AbiCoder, BigNumberish, ZeroAddress, AddressLike, BytesLike } from "ethers"
 import { ethers, upgrades } from "hardhat"
 import { PairUpnlAndPriceSigStruct } from "../src/types/contracts/interfaces/ISymmio"
 import { initializeFixture } from "./Initialize.fixture"
@@ -10,11 +10,11 @@ import { RunContext } from "./models/RunContext"
 import { User } from "./models/User"
 import { CloseRequest, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest"
 import { FillCloseRequest, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest"
-import { marketOpenRequestBuilder, OpenRequest } from "./models/requestModels/OpenRequest"
+import { limitOpenRequestBuilder, marketOpenRequestBuilder, OpenRequest } from "./models/requestModels/OpenRequest"
 import { limitQuoteRequestBuilder, marketQuoteRequestBuilder, QuoteRequest } from "./models/requestModels/QuoteRequest"
 import { decimal, PromiseOrValue } from "./utils/Common"
 import { getDummyPairUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
-import { MultiAccount } from "../src/types"
+import { MultiAccount, SymmioPartyB } from "../src/types"
 
 async function getListFormatOfQuoteRequest(request: QuoteRequest): Promise<any> {
 	return [
@@ -67,7 +67,7 @@ export function shouldBehaveLikeMultiAccount() {
 	let user: User
 	let hedger: Hedger
 	let symmioAddress: any
-	let symmioPartyB: any
+	let symmioPartyB: SymmioPartyB
 
 	beforeEach(async () => {
 		context = await loadFixture(initializeFixture)
@@ -95,7 +95,7 @@ export function shouldBehaveLikeMultiAccount() {
 		})
 
 		multiAccount = (await MultiAccount.waitForDeployment()) as unknown as MultiAccount
-		symmioPartyB = await SymmioPartyBDeploy.waitForDeployment()
+		symmioPartyB = (await SymmioPartyBDeploy.waitForDeployment()) as unknown as SymmioPartyB
 
 		await context.controlFacet.connect(context.signers.admin).registerPartyB(await symmioPartyB.getAddress())
 		await context.controlFacet.connect(context.signers.admin).registerAffiliate(await MultiAccount.getAddress())
@@ -321,6 +321,7 @@ export function shouldBehaveLikeMultiAccount() {
 			})
 		})
 	})
+
 	describe("send new quote", function () {
 		let partyAAccount: any
 
@@ -437,6 +438,132 @@ export function shouldBehaveLikeMultiAccount() {
 					})
 				})
 			})
+		})
+	})
+
+	describe("sequencedCall", function () {
+		let partyAAccount: AddressLike
+		let sendQuoteSelector: BytesLike = ethers.dataSlice("0x40f1310c", 0, 4)
+		let lockQuoteSelector: BytesLike = ethers.dataSlice("0xca6b88de", 0, 4)
+		let openPositionSelector: BytesLike = ethers.dataSlice("0xfa59fbe8", 0, 4)
+
+		beforeEach(async () => {
+			const userAddress = await context.signers.user.getAddress()
+
+			await multiAccount.connect(context.signers.user).addAccount("Test")
+			partyAAccount = (await multiAccount.getAccounts(userAddress, 0, 10))[0].accountAddress
+
+			await context.collateral.connect(context.signers.user).mint(userAddress, decimal(510n))
+			await context.collateral.connect(context.signers.user).mint(await symmioPartyB.getAddress(), decimal(2000n))
+			await context.collateral.connect(context.signers.user).approve(await multiAccount.getAddress(), ethers.MaxUint256)
+
+			await multiAccount.connect(context.signers.user).depositAndAllocateForAccount(partyAAccount, decimal(2000n))
+			await multiAccount.connect(context.signers.user).delegateAccess(partyAAccount, await symmioPartyB.getAddress(), sendQuoteSelector)
+
+			await symmioPartyB.setSelectorsQuoteOffsets([lockQuoteSelector, openPositionSelector], [4, 4])
+			await symmioPartyB.setMulticastWhitelist(await multiAccount.getAddress(), true)
+			await symmioPartyB.setMulticastWhitelist(await context.collateral.getAddress(), true)
+		})
+
+		it("should lockQuote successfully", async () => {
+			let depositAmount = decimal(500n).toString()
+
+			let quoteRequest = limitQuoteRequestBuilder().build()
+			let sendQuoteData = context.partyAFacet.interface.encodeFunctionData("sendQuoteWithAffiliate", await getListFormatOfQuoteRequest(quoteRequest))
+			let sendQuoteCallData = multiAccount.interface.encodeFunctionData("_call", [partyAAccount, [sendQuoteData]])
+
+			let approveData = context.collateral.interface.encodeFunctionData("approve", [context.diamond, depositAmount])
+			let depositData = context.accountFacet.interface.encodeFunctionData("deposit", [depositAmount])
+			let allocateData = context.accountFacet.interface.encodeFunctionData("allocateForPartyB", [depositAmount, partyAAccount])
+
+			let lockQuoteData = context.partyBQuoteActionsFacet.interface.encodeFunctionData("lockQuote", [1000000, await getDummySingleUpnlSig()])
+
+			let openRequest = limitOpenRequestBuilder().build()
+			let openPositionData = context.partyBPositionActionsFacet.interface.encodeFunctionData("openPosition", [
+				100000000,
+				...(await getListFormatOfOpenRequest(openRequest)),
+			])
+
+			const configs: SymmioPartyB.SequencedCallConfigStruct[] = [
+				{
+					callData: sendQuoteCallData,
+					createsQuote: true,
+					needsQuoteId: false,
+					destAddress: await multiAccount.getAddress(),
+				},
+				{
+					callData: approveData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.collateral,
+				},
+				{
+					callData: depositData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.diamond,
+				},
+				{
+					callData: allocateData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.diamond,
+				},
+				{
+					callData: lockQuoteData,
+					createsQuote: false,
+					needsQuoteId: true,
+					destAddress: context.diamond,
+				},
+				{
+					callData: openPositionData,
+					createsQuote: false,
+					needsQuoteId: true,
+					destAddress: context.diamond,
+				},
+				{
+					callData: sendQuoteCallData,
+					createsQuote: true,
+					needsQuoteId: false,
+					destAddress: await multiAccount.getAddress(),
+				},
+				{
+					callData: approveData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.collateral,
+				},
+				{
+					callData: depositData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.diamond,
+				},
+				{
+					callData: allocateData,
+					createsQuote: false,
+					needsQuoteId: false,
+					destAddress: context.diamond,
+				},
+				{
+					callData: lockQuoteData,
+					createsQuote: false,
+					needsQuoteId: true,
+					destAddress: context.diamond,
+				},
+				{
+					callData: openPositionData,
+					createsQuote: false,
+					needsQuoteId: true,
+					destAddress: context.diamond,
+				},
+			]
+			await symmioPartyB.sequencedCall(configs)
+			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
+			expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
+			await symmioPartyB.sequencedCall(configs)
+			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
+			expect((await context.viewFacet.getQuote(4)).quoteStatus).to.be.equal(QuoteStatus.OPENED)
 		})
 	})
 }

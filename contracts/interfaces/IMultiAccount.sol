@@ -24,4 +24,6 @@ interface IMultiAccount {
 	event ProposeToRevokeAccesses(address account, address target, bytes4[] selector);
 	event SetRevokeCooldown(uint256 oldCooldown, uint256 newCooldown);
 	event BindToPartyB(address account, address partyB);
+
+	function _call(address account, bytes[] memory _callDatas) external;
 }
