@@ -314,7 +314,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	 * @param account The address of the account to execute the calls on behalf of.
 	 * @param _callDatas An array of call data to execute.
 	 */
-	function _call(address account, bytes[] memory _callDatas) public whenNotPaused {
+	function _call(address account, bytes[] memory _callDatas) external whenNotPaused {
 		bool isOwner = owners[account] == msg.sender;
 		for (uint8 i; i < _callDatas.length; i++) {
 			bytes memory _callData = _callDatas[i];

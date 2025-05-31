@@ -8,15 +8,22 @@ import "solidity-docgen"
 
 import "./tasks/deploy"
 
+// Load environment variables
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env"
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) })
 
-// Ensure that we have all the environment variables we need.
+// Required environment variables
 const privateKey: string | undefined = process.env.PRIVATE_KEY
 if (!privateKey) throw new Error("Please set your PRIVATE_KEY in a .env file")
 
-const privateKeysStr: string | undefined = process.env.PRIVATE_KEYS_STR
-const privateKeyList: string[] = privateKeysStr?.split(",") || []
+const privateKeyList: string[] = process.env.PRIVATE_KEYS_STR?.split(",") || []
+
+
+export enum TestMode {
+	STATIC = "STATIC",
+	FUZZ = "FUZZ",
+	PRE_UPGRADE = "PRE_UPGRADE",
+}
 
 const arbitrumApiKey: string = process.env.ARBITRUM_API_KEY || ""
 const bnbApiKey: string = process.env.BNB_API_KEY || ""
@@ -32,29 +39,65 @@ const mantleAPIKey: string = process.env.MANTLE_API_KEY || ""
 const mantle2APIKey: string = process.env.MANTLE2_API_KEY || ""
 const beraAPIKey: string = process.env.BERA_API_KEY || ""
 
-const hardhatDockerUrl: string | undefined = process.env.HARDHAT_DOCKER_URL || ""
+// API Keys for different networks
+const apiKeys = {
+	arbitrum: process.env.ARBITRUM_API_KEY || "",
+	bnb: process.env.BNB_API_KEY || "",
+	base: process.env.BASE_API_KEY || "",
+	polygon: process.env.POLYGON_API_KEY || "",
+	zkEvm: process.env.ZKEVM_API_KEY || "",
+	opBnb: process.env.OPBNB_API_KEY || "",
+	iota: process.env.IOTA_API_KEY || "",
+	mode: process.env.MODE_API_KEY || "",
+	blast: process.env.BLAST_API_KEY || "",
+	mantle: process.env.MANTLE_API_KEY || "",
+	mantle2: process.env.MANTLE2_API_KEY || "",
+}
 
+// Default configuration
 const config: HardhatUserConfig = {
 	defaultNetwork: "hardhat",
-	gasReporter: {
-		currency: "USD",
-		enabled: true,
-		excludeContracts: [],
-		src: "./contracts",
+
+	// Compiler settings
+	solidity: {
+		version: "0.8.18",
+		settings: {
+			metadata: {
+				// Not including the metadata hash
+				// https://github.com/paulrberg/hardhat-template/issues/31
+				bytecodeHash: "none",
+			},
+			// Disable the optimizer when debugging
+			// https://hardhat.org/hardhat-network/#solidity-optimizer-support
+			optimizer: {
+				enabled: true,
+				runs: 200,
+			},
+			viaIR: true,
+		},
 	},
+
+	// Network configurations
 	networks: {
 		hardhat: {
-			forking: {
-				url: "https://base-mainnet.infura.io/v3/{API_KEY}",
-				blockNumber: 23478537,
-			},
+			forking:
+				process.env.TEST_MODE != TestMode.STATIC
+					? {
+							url: "https://base-mainnet.infura.io/v3/{API_KEY}",
+							blockNumber: 23478537,
+					  }
+					: undefined,
 			loggingEnabled: false,
 			allowUnlimitedContractSize: false,
 		},
 		docker: {
-			url: hardhatDockerUrl,
+			url: process.env.HARDHAT_DOCKER_URL || "",
 			allowUnlimitedContractSize: false,
 			accounts: privateKeyList,
+		},
+		arbitrum: {
+			url: "https://arbitrum.llamarpc.com",
+			accounts: [privateKey],
 		},
 		bsc: {
 			url: "https://bscrpc.com",
@@ -96,10 +139,6 @@ const config: HardhatUserConfig = {
 			url: "https://mantle.drpc.org",
 			accounts: [privateKey],
 		},
-		arbitrum: {
-			url: "https://arbitrum.llamarpc.com",
-			accounts: [privateKey],
-		},
 		sonic: {
 			url: "https://rpc.soniclabs.com",
 			accounts: [privateKey],
@@ -109,6 +148,8 @@ const config: HardhatUserConfig = {
 			accounts: [privateKey],
 		},
 	},
+
+	// Block explorer API configurations
 	etherscan: {
 		apiKey: {
 			arbitrumOne: arbitrumApiKey,
@@ -124,7 +165,7 @@ const config: HardhatUserConfig = {
 			zkEvm: zkEvmApiKey,
 			opbnb: opBnbApiKey,
 			sonic: sonicApiKey,
-			bera: beraAPIKey,
+			bera: beraAPIKey
 		},
 		customChains: [
 			// {
@@ -147,7 +188,7 @@ const config: HardhatUserConfig = {
 				network: "zkEvm",
 				chainId: 1101,
 				urls: {
-					apiURL: `https://api-zkevm.polygonscan.com/api?apikey=${zkEvmApiKey}`,
+					apiURL: `https://api-zkevm.polygonscan.com/api?apikey=${apiKeys.zkEvm}`,
 					browserURL: "https://zkevm.polygonscan.com",
 				},
 			},
@@ -155,7 +196,7 @@ const config: HardhatUserConfig = {
 				network: "opbnb",
 				chainId: 204,
 				urls: {
-					apiURL: `https://api-opbnb.bscscan.com/api?apikey=${opBnbApiKey}`,
+					apiURL: `https://api-opbnb.bscscan.com/api?apikey=${apiKeys.opBnb}`,
 					browserURL: "https://opbnb.bscscan.com",
 				},
 			},
@@ -168,12 +209,12 @@ const config: HardhatUserConfig = {
 				},
 			},
 			// {
-			// 	network: "mode",
-			// 	chainId: 34443,
-			// 	urls: {
-			// 		apiURL: "https://explorer.mode.network/api",
-			// 		browserURL: "https://explorer.mode.network"
-			// 	}
+			//   network: "mode",
+			//   chainId: 34443,
+			//   urls: {
+			//     apiURL: "https://explorer.mode.network/api",
+			//     browserURL: "https://explorer.mode.network"
+			//   }
 			// },
 			{
 				network: "mode",
@@ -187,17 +228,17 @@ const config: HardhatUserConfig = {
 				network: "blast",
 				chainId: 81457,
 				urls: {
-					apiURL: `https://api.blastscan.io/api?apiKey=${blastApiKey}`,
+					apiURL: `https://api.blastscan.io/api?apiKey=${apiKeys.blast}`,
 					browserURL: "https://blastscan.io",
 				},
 			},
 			// {
-			// 	network: "mantle",
-			// 	chainId: 5000,
-			// 	urls: {
-			// 		apiURL: "https://explorer.mantle.xyz/api",
-			// 		browserURL: "https://explorer.mantle.xyz"
-			// 	}
+			//   network: "mantle",
+			//   chainId: 5000,
+			//   urls: {
+			//     apiURL: "https://explorer.mantle.xyz/api",
+			//     browserURL: "https://explorer.mantle.xyz"
+			//   }
 			// },
 			{
 				network: "mantle",
@@ -217,33 +258,28 @@ const config: HardhatUserConfig = {
 			},
 		],
 	},
+
+	// Project structure
 	paths: {
 		artifacts: "./artifacts",
 		cache: "./cache",
 		sources: "./contracts",
 		tests: "./test",
 	},
-	solidity: {
-		version: "0.8.18",
-		settings: {
-			metadata: {
-				// Not including the metadata hash
-				// https://github.com/paulrberg/hardhat-template/issues/31
-				bytecodeHash: "none",
-			},
-			// Disable the optimizer when debugging
-			// https://hardhat.org/hardhat-network/#solidity-optimizer-support
-			optimizer: {
-				enabled: true,
-				runs: 200,
-			},
-			viaIR: true,
-		},
+
+	// Testing configuration
+	gasReporter: {
+		currency: "USD",
+		enabled: true,
+		excludeContracts: [],
+		src: "./contracts",
 	},
+
 	typechain: {
 		outDir: "src/types",
 		target: "ethers-v6",
 	},
+
 	mocha: {
 		timeout: 100000000,
 	},
