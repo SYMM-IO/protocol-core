@@ -398,6 +398,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 			);
 
 			require(partyBsWhitelist.length == 1, "MultiAccount: Only one PartyB must be whitelisted");
+			require(partyBsWhitelist[0] != address(0), "MultiAccount: zeroAddress in args");
 			return partyBsWhitelist[0];
 		} else if (_selector == SELECTOR_SEND_QUOTE_WITH_AFFILIATE) {
 			(address[] memory partyBsWhitelist, , , , , , , , , , , , , ) = abi.decode(
@@ -421,6 +422,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 			);
 
 			require(partyBsWhitelist.length == 1, "MultiAccount: Only one PartyB must be whitelisted");
+			require(partyBsWhitelist[0] != address(0), "MultiAccount: zeroAddress in args");
 			return partyBsWhitelist[0];
 		} else {
 			return address(0);
