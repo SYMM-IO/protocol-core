@@ -40,7 +40,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	mapping(address => mapping(address => mapping(bytes4 => uint256))) public revokeProposalTimestamp; // account -> target -> selector -> timestamp
 
 	// Mapping to track the bounded PartyB addresses for each user.
-	mapping(address => address) accountToPartyBBinding;
+	mapping(address => address) public accountToPartyBBinding;
 
 	// Modifier to check if the sender is the owner of the account
 	modifier onlyOwner(address account, address sender) {
@@ -355,6 +355,29 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 			userAccounts[i - start] = accounts[user][i];
 		}
 		return userAccounts;
+	}
+
+	/**
+	 * @dev Returns an array of accounts with their PartyB bindings belonging to the specified user.
+	 * @param user The address of the user.
+	 * @param start The index to start retrieving accounts from.
+	 * @param size The maximum number of accounts to retrieve.
+	 * @return An array of BoundedAccount structures including PartyB binding information.
+	 */
+	function getAccountsWithBinding(address user, uint256 start, uint256 size) external view returns (BoundedAccount[] memory) {
+		uint256 len = size > accounts[user].length - start ? accounts[user].length - start : size;
+		BoundedAccount[] memory userAccountsWithBinding = new BoundedAccount[](len);
+
+		for (uint256 i = start; i < start + len; i++) {
+			Account memory userAccount = accounts[user][i];
+			userAccountsWithBinding[i - start] = BoundedAccount({
+				accountAddress: userAccount.accountAddress,
+				name: userAccount.name,
+				boundedPartyB: accountToPartyBBinding[userAccount.accountAddress]
+			});
+		}
+
+		return userAccountsWithBinding;
 	}
 
 	/**

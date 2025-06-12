@@ -9,6 +9,11 @@ interface IMultiAccount {
 		address accountAddress;
 		string name;
 	}
+	struct BoundedAccount {
+		address accountAddress;
+		string name;
+		address boundedPartyB; // The PartyB address bound to this account (address(0) if not bound)
+	}
 	event SetAccountImplementation(bytes oldAddress, bytes newAddress);
 	event SetAccountsAdmin(address oldAddress, address newAddress);
 	event SetSymmioAddress(address oldAddress, address newAddress);
