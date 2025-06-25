@@ -39,7 +39,17 @@ library AccountFacetImpl {
 		IERC20(appLayout.collateral).safeTransfer(user, amount);
 	}
 
-	function allocate(uint256 amount) internal {
+	function securedWithdraw(address user, uint256 amount) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+		require(
+			block.timestamp >= accountLayout.withdrawCooldown[msg.sender] + MAStorage.layout().deallocateCooldown,
+			"AccountFacet: Cooldown hasn't reached"
+		);
+		AccountStorage.layout().balances[user] -= amount;
+	}
+
+	function allocate(address user, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(
 			accountLayout.allocatedBalances[msg.sender] + amount <= GlobalAppStorage.layout().balanceLimitPerUser,
