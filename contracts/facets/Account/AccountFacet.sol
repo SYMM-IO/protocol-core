@@ -65,10 +65,19 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	function depositAndAllocate(uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
 		AccountFacetImpl.deposit(msg.sender, amount);
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
-		AccountFacetImpl.allocate(amountWith18Decimals);
+		AccountFacetImpl.allocate(msg.sender, amountWith18Decimals);
 		emit Deposit(msg.sender, msg.sender, amount);
 		emit AllocatePartyA(msg.sender, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]);
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
+	}
+
+	function depositAndAllocateFor(address user, uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
+		AccountFacetImpl.deposit(user, amount);
+		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
+		AccountFacetImpl.allocate(user, amountWith18Decimals);
+		emit Deposit(msg.sender, user, amount);
+		emit AllocatePartyA(user, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]);
+		emit SharedEvents.BalanceChangePartyA(user, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
 	/// @notice Allows Party A to deallocate a specified amount of collateral.
