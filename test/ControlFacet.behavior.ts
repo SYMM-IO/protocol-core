@@ -31,7 +31,7 @@ export function shouldBehaveLikeControlFacet(): void {
 		hedger2 = context.signers.hedger2
 		hedger3 = context.signers.others[0]
 
-		await context.controlFacet.transferOwnership(await owner.getAddress())
+		await context.controlFacet.connect(context.signers.admin).transferOwnership(await owner.getAddress())
 		await context.controlFacet.connect(owner).setAdmin(await owner.getAddress())
 		await context.controlFacet.connect(owner).grantRole(await owner.getAddress(), PARTY_B_MANAGER_ROLE)
 		await context.controlFacet.connect(owner).grantRole(await owner.getAddress(), SYMBOL_MANAGER_ROLE)

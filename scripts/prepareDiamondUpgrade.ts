@@ -19,7 +19,6 @@ async function main() {
 	facetAddresses.set("SettlementFacet", "")
 	facetAddresses.set("PartyBPositionActionsFacet", "")
 	facetAddresses.set("PartyBQuoteActionsFacet", "")
-	facetAddresses.set("PartyBGroupActionsFacet", "")
 
 	const [deployer] = await ethers.getSigners()
 

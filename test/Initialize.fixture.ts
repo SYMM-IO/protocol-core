@@ -1,8 +1,8 @@
-import {ethers, run} from "hardhat"
+import { ethers, run } from "hardhat"
 
-import {createRunContext, RunContext} from "./models/RunContext"
-import {decimal} from "./utils/Common"
-import {toUtf8Bytes} from "ethers"
+import { createRunContext, RunContext } from "./models/RunContext"
+import { decimal } from "./utils/Common"
+import { toUtf8Bytes } from "ethers"
 
 export async function initializeFixture(): Promise<RunContext> {
 	let collateral = await run("deploy:stablecoin")
@@ -15,14 +15,20 @@ export async function initializeFixture(): Promise<RunContext> {
 
 	const multiAccount = await run("deploy:multiAccount", {
 		symmioAddress: await diamond.getAddress(),
-		admin: process.env.ADMIN_PUBLIC_KEY
+		admin: process.env.ADMIN_PUBLIC_KEY,
 	})
 	const multiAccount2 = await run("deploy:multiAccount", {
 		symmioAddress: await diamond.getAddress(),
-		admin: process.env.ADMIN_PUBLIC_KEY
+		admin: process.env.ADMIN_PUBLIC_KEY,
 	})
 
-	let context = await createRunContext(await diamond.getAddress(), await collateral.getAddress(), await multiAccount.getAddress(), await multiAccount2.getAddress(), true)
+	let context = await createRunContext(
+		await diamond.getAddress(),
+		await collateral.getAddress(),
+		await multiAccount.getAddress(),
+		await multiAccount2.getAddress(),
+		true,
+	)
 
 	await context.controlFacet.connect(context.signers.admin).setAdmin(context.signers.admin.getAddress())
 
@@ -31,8 +37,12 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("SYMBOL_MANAGER_ROLE")))
-	await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("SETTER_ROLE")))
-	await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("PAUSER_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("SETTER_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("PAUSER_ROLE")))
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("PARTY_B_MANAGER_ROLE")))
@@ -42,13 +52,25 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("DISPUTE_ROLE")))
-	context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
-		await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
+	context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
+		await context.controlFacet
+			.connect(context.signers.admin)
+			.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.liquidator.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.liquidator.getAddress(), ethers.keccak256(toUtf8Bytes("PARTYB_LIQUIDATOR_ROLE")))
 
-	await context.controlFacet.connect(context.signers.admin).addSymbol("BTCUSDT", decimal(5n), decimal(1n, 16), decimal(1n, 16), decimal(100n), 28800, 900)
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.addSymbol("BTCUSDT", decimal(5n), decimal(1n, 16), decimal(1n, 16), decimal(100n), 28800, 900)
+	await context.controlFacet.connect(context.signers.admin).setSymbolType(1, 1)
+	await context.controlFacet.setPartyBWhitelistedSymbolTypeStatus(context.signers.hedger.address, 1, true)
+	await context.controlFacet.setPartyBWhitelistedSymbolTypeStatus(context.signers.hedger2.address, 1, true)
 
 	await context.controlFacet.connect(context.signers.admin).setPendingQuotesValidLength(10)
 	await context.controlFacet.connect(context.signers.admin).setLiquidatorShare(decimal(1n, 17))

@@ -21,7 +21,6 @@ and modularity. Currently, we have 13 facets:
 10. **SettlementFacet**
 11. **PartyBPositionActionsFacet**
 12. **PartyBQuoteActionsFacet**
-13. **PartyBGroupActionsFacet**
 
 There are also some additional second-layer contracts required by hedgers and frontends:
 

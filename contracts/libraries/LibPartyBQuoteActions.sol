@@ -6,6 +6,7 @@ pragma solidity >=0.8.18;
 
 import "../storages/QuoteStorage.sol";
 import "../storages/MAStorage.sol";
+import "../storages/SymbolStorage.sol";
 import "./LibAccount.sol";
 import "./LibLockedValues.sol";
 
@@ -15,10 +16,16 @@ library LibPartyBQuoteActions {
 	function lockQuote(uint256 quoteId) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		require(quote.quoteStatus == QuoteStatus.PENDING, "PartyBFacet: Invalid state");
 		require(block.timestamp <= quote.deadline, "PartyBFacet: Quote is expired");
 		require(quoteId <= quoteLayout.lastId, "PartyBFacet: Invalid quoteId");
+		require(
+			accountLayout.partyBWhitelistedSymbolTypes[msg.sender][symbolLayout.symbolTypes[quote.symbolId]],
+			"PartyBFacet: symbol type is not whitelisted"
+		);
 		require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][quote.partyA], "PartyBFacet: PartyB isn't solvent");
 		bool isValidPartyB;
 		if (quote.partyBsWhiteList.length == 0) {

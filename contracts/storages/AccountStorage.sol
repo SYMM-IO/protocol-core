@@ -95,6 +95,8 @@ library AccountStorage {
 		mapping(uint256 => DeferredWithdraw) deferredWithdraws;
 		mapping(address => uint256[]) deferredWithdrawIds;
 		uint256 lastdeferredWithdrawId;
+		// partyB => symbolType => status
+		mapping(address => mapping(uint256 => bool)) partyBWhitelistedSymbolTypes;
 	}
 
 	function layout() internal pure returns (Layout storage l) {
