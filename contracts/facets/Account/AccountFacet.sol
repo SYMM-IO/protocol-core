@@ -33,7 +33,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	}
 
 	function securedWithdrawFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.SECURED_WITHDRAWER_ROLE) {
-		AccountFacetImpl.securedWithdraw(user, amount);
+		AccountFacetImpl.securedWithdrawFor(user, amount);
 		emit Withdraw(msg.sender, user, amount);
 	}
 

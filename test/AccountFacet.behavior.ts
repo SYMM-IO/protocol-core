@@ -1,13 +1,14 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {expect} from "chai"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
 
-import {initializeFixture} from "./Initialize.fixture"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {getDummySingleUpnlSig} from "./utils/SignatureUtils"
-import {Hedger} from "./models/Hedger"
-import {decimal, unDecimal} from "./utils/Common"
-import {ethers} from "hardhat"
+import { initializeFixture } from "./Initialize.fixture"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import { Hedger } from "./models/Hedger"
+import { decimal, unDecimal } from "./utils/Common"
+import { ethers } from "hardhat"
+import { keccak256 } from "js-sha3"
 
 export function shouldBehaveLikeAccountFacet(): void {
 	let context: RunContext, user: User, user2: User, hedger: Hedger
@@ -160,9 +161,9 @@ export function shouldBehaveLikeAccountFacet(): void {
 			it("Should fail to deallocate too often", async function () {
 				const userAddress = context.signers.user.getAddress()
 				await context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
-				await expect(
-					context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
-				).to.be.revertedWith("AccountFacet: Too many deallocate in a short window")
+				await expect(context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())).to.be.revertedWith(
+					"AccountFacet: Too many deallocate in a short window",
+				)
 				await time.increase((await context.viewFacet.getDeallocateDebounceTime()) + 1n)
 				await context.accountFacet.connect(context.signers.user).deallocate("25", await getDummySingleUpnlSig())
 				expect(await context.viewFacet.balanceOf(userAddress)).to.equal("50")
@@ -244,12 +245,76 @@ export function shouldBehaveLikeAccountFacet(): void {
 			await context.accountFacet.connect(context.signers.user).deposit("300")
 		})
 
-		it('should internal transfer successfully', async () => {
+		it("should internal transfer successfully", async () => {
 			await context.accountFacet.connect(context.signers.user).internalTransfer(await user2.getAddress(), "250")
-			expect(await context.viewFacet.balanceOf(await user2.getAddress())).to.be.equal('0')
-			expect(await context.viewFacet.allocatedBalanceOfPartyA(await user2.getAddress())).to.be.equal('250')
+			expect(await context.viewFacet.balanceOf(await user2.getAddress())).to.be.equal("0")
+			expect(await context.viewFacet.allocatedBalanceOfPartyA(await user2.getAddress())).to.be.equal("250")
 
-			expect(await context.viewFacet.balanceOf(await user.getAddress())).to.be.equal('50')
+			expect(await context.viewFacet.balanceOf(await user.getAddress())).to.be.equal("50")
+		})
+	})
+
+	describe("securedWithdrawFor", async function () {
+		const SECURED_WITHDRAWER_ROLE = `0x${keccak256("SECURED_WITHDRAWER_ROLE")}`
+		beforeEach(async () => {
+			user2 = new User(context, context.signers.user2)
+			await user2.setup()
+			await user2.setBalances("500", "500")
+
+			await context.controlFacet.grantRole(context.signers.admin, SECURED_WITHDRAWER_ROLE)
+		})
+
+		it("should fail when msgSender is not SECURED WITHDRAWER", async () => {
+			await expect(context.accountFacet.connect(context.signers.others[0]).securedWithdrawFor(context.signers.user2.address, "500")).to.revertedWith(
+				"Accessibility: Must has role",
+			)
+		})
+
+		it("should fail when accounting paused", async () => {
+			await context.controlFacet.pauseAccounting()
+			await expect(context.accountFacet.securedWithdrawFor(context.signers.user2.address, "500")).to.revertedWith("Pausable: Accounting paused")
+		})
+
+		it("should fail when global paused", async () => {
+			await context.controlFacet.pauseGlobal()
+			await expect(context.accountFacet.securedWithdrawFor(context.signers.user2.address, "500")).to.revertedWith("Pausable: Global paused")
+		})
+
+		it("should secured withdraw sccessfully", async () => {
+			await expect(context.accountFacet.securedWithdrawFor(context.signers.user2.address, "500")).to.not.reverted
+			expect(await context.viewFacet.balanceOf(context.signers.user2.address)).to.be.eq("0")
+		})
+
+		// TODO ::: more test for: withdraw cooldown should pass
+	})
+
+	describe("depositAndAllocateFor", async function () {
+		beforeEach(async () => {
+			const admin = new User(context, context.signers.admin)
+			await admin.setup()
+			await admin.setBalances("500")
+		})
+
+		it("should fail when msgSender is suspend", async () => {
+			await context.controlFacet.suspendedAddress(context.signers.admin)
+			await expect(context.accountFacet.depositAndAllocateFor(context.signers.user2.address, "500")).to.revertedWith(
+				"Accessibility: Sender is Suspended",
+			)
+		})
+
+		it("should fail when accounting paused", async () => {
+			await context.controlFacet.pauseAccounting()
+			await expect(context.accountFacet.depositAndAllocateFor(context.signers.user2.address, "500")).to.revertedWith("Pausable: Accounting paused")
+		})
+
+		it("should fail when global paused", async () => {
+			await context.controlFacet.pauseGlobal()
+			await expect(context.accountFacet.depositAndAllocateFor(context.signers.user2.address, "500")).to.revertedWith("Pausable: Global paused")
+		})
+
+		it("should deposit And Allocate For sccessfully", async () => {
+			await expect(context.accountFacet.depositAndAllocateFor(context.signers.user2.address, "500")).to.not.reverted
+			expect(await context.viewFacet.allocatedBalanceOfPartyA(context.signers.user2.address)).to.be.eq("500")
 		})
 	})
 }
