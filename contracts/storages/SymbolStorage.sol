@@ -33,6 +33,7 @@ library SymbolStorage {
 		uint256 lastId;
 		mapping(uint256 => uint256) forceCloseGapRatio; // symbolId -> forceCloseGapRatio
 		mapping(uint256 => mapping(address => FundingFee)) fundingFees; // SymbolId -> PartyB Address -> Funding Fee
+		mapping(uint256 => uint256) symbolTypes;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

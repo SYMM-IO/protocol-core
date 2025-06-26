@@ -1,26 +1,28 @@
-import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
-import {Builder} from "builder-pattern"
-import {ethers} from "hardhat"
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers"
+import { Builder } from "builder-pattern"
+import { ethers } from "hardhat"
 
-import {initializeFixture} from "./Initialize.fixture"
-import {OrderType, PositionType} from "./models/Enums"
-import {Hedger} from "./models/Hedger"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {OpenRequest} from "./models/requestModels/OpenRequest"
-import {QuoteRequest} from "./models/requestModels/QuoteRequest"
-import {decimal} from "./utils/Common"
-import {getDummySingleUpnlAndPriceSig} from "./utils/SignatureUtils"
+import { initializeFixture } from "./Initialize.fixture"
+import { OrderType, PositionType } from "./models/Enums"
+import { Hedger } from "./models/Hedger"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { OpenRequest } from "./models/requestModels/OpenRequest"
+import { QuoteRequest } from "./models/requestModels/QuoteRequest"
+import { decimal } from "./utils/Common"
+import { getDummySingleUpnlAndPriceSig } from "./utils/SignatureUtils"
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
 
 export function shouldBehaveLikeSpecificScenario(): void {
+	let uSigner: SignerWithAddress
 	beforeEach(async function () {
 		this.context = await loadFixture(initializeFixture)
+		uSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address)
 	})
 
 	it("Closing position with allocated less than quote value and with positive upnl", async function () {
 		const context: RunContext = this.context
 
-		const uSigner = await ethers.getImpersonatedSigner(ethers.Wallet.createRandom().address)
 		const user = new User(context, uSigner)
 		await user.setup()
 		await user.setNativeBalance(100n ** 18n)

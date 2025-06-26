@@ -14,6 +14,7 @@ library PartyBQuoteActionsFacetImpl {
 	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
+
 		LibMuonPartyB.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
 		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, quote.partyA);
 		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");

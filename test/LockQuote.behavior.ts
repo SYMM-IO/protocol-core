@@ -1,17 +1,17 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {expect} from "chai"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
 
-import {initializeFixture} from "./Initialize.fixture"
-import {PositionType, QuoteStatus} from "./models/Enums"
-import {Hedger} from "./models/Hedger"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {limitQuoteRequestBuilder} from "./models/requestModels/QuoteRequest"
-import {LockQuoteValidator} from "./models/validators/LockQuoteValidator"
-import {UnlockQuoteValidator} from "./models/validators/UnlockQuoteValidator"
-import {decimal, pausePartyB} from "./utils/Common"
-import {getDummySingleUpnlSig} from "./utils/SignatureUtils"
-import {QuoteStruct} from "../src/types/contracts/interfaces/ISymmio"
+import { initializeFixture } from "./Initialize.fixture"
+import { PositionType, QuoteStatus } from "./models/Enums"
+import { Hedger } from "./models/Hedger"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
+import { LockQuoteValidator } from "./models/validators/LockQuoteValidator"
+import { UnlockQuoteValidator } from "./models/validators/UnlockQuoteValidator"
+import { decimal, pausePartyB } from "./utils/Common"
+import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import { QuoteStruct } from "../src/types/contracts/interfaces/ISymmio"
 
 export function shouldBehaveLikeLockQuote(): void {
 	let context: RunContext, user: User, hedger: Hedger, hedger2: Hedger
@@ -88,6 +88,11 @@ export function shouldBehaveLikeLockQuote(): void {
 		await expect(hedger.lockQuote(1)).to.be.revertedWith("PartyBFacet: Quote is expired")
 	})
 
+	it("Should fail when ", async function () {
+		await context.controlFacet.setPartyBWhitelistedSymbolTypeStatus(context.signers.hedger.address, 1, false)
+		await expect(hedger.lockQuote(1)).to.be.revertedWith("PartyBFacet: symbol type is not whitelisted")
+	})
+
 	it("Should run successfully", async function () {
 		const validator = new LockQuoteValidator()
 		const beforeOut = await validator.before(context, {
@@ -125,7 +130,7 @@ export function shouldBehaveLikeLockQuote(): void {
 
 		it("Should run successfully", async function () {
 			const validator = new UnlockQuoteValidator()
-			const beforeOut = await validator.before(context, {user: user})
+			const beforeOut = await validator.before(context, { user: user })
 			await hedger.unlockQuote(1)
 			await validator.after(context, {
 				user: user,
