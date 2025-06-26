@@ -15,7 +15,6 @@ async function main() {
 		"SettlementFacet",
 		"PartyBPositionActionsFacet",
 		"PartyBQuoteActionsFacet",
-		"PartyBGroupActionsFacet",
 	]
 	for (const facetName of facetNames) {
 		const Facet = await ethers.getContractFactory(facetName)

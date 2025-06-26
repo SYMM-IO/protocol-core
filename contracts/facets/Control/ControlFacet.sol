@@ -310,6 +310,13 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		symbolLayout.symbols[symbolId].tradingFee = tradingFee;
 	}
 
+	function setSymbolType(uint256 symbolId, uint256 symbolType) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+		require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+		symbolLayout.symbolTypes[symbolId] = symbolType;
+		emit SetSymbolType(symbolId, symbolType);
+	}
+
 	// CoolDowns //////////////////////////////////////////////////
 
 	/// @notice Sets the cooldown period for deallocation, requiring users to wait before they can proceed with withdrawals.
@@ -392,7 +399,6 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit SetUnbindCooldown(MAStorage.layout().unbindCooldown, unbindCooldown);
 		MAStorage.layout().unbindCooldown = unbindCooldown;
 	}
-
 
 	// Pause State //////////////////////////////////////////////////
 
@@ -543,5 +549,14 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		MAStorage.layout().liquidationInsuranceVault = insuranceVault;
 		MAStorage.layout().maxLiquidationProfitPerPosition = maxLiquidationProfit;
 		emit SetLiquidationInsuranceVaultParams(insuranceVault, maxLiquidationProfit);
+	}
+
+	function setPartyBWhitelistedSymbolTypeStatus(
+		address partyB,
+		uint256 symbolType,
+		bool isWhiteList
+	) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		AccountStorage.layout().partyBWhitelistedSymbolTypes[partyB][symbolType] = isWhiteList;
+		emit SetPartyBWhitelistedSymbolTypeStatus(partyB, symbolType, isWhiteList);
 	}
 }
