@@ -4,6 +4,20 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
+/**
+ * @title  MultiAccount
+ * @notice Manages multiple accounts per user on the Symmio protocol.
+ *         Users can create sub-accounts, delegate trading permissions, and bind accounts
+ *         to specific PartyB addresses for controlled trading access.
+ *
+ * @dev    Core features include:
+ *         • Account creation with CREATE2 for deterministic addresses
+ *         • Granular permission delegation with cooldown-based revocation
+ *         • PartyB binding for account-specific counterparty restrictions
+ *         • Integrated deposits, withdrawals, and allocations
+ *         • Pause functionality and role-based access control
+ */
+
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -18,35 +32,61 @@ import { SingleUpnlAndPriceSig } from "../storages/MuonStorage.sol";
 contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, AccessControlUpgradeable {
 	using SafeERC20Upgradeable for IERC20Upgradeable;
 
+	/* ────────────────────── Function Selectors ────────────────────── */
+
+	/// @dev Function selector for sendQuote in Symmio protocol.
 	bytes4 constant SELECTOR_SEND_QUOTE = 0x7f2755b2;
+
+	/// @dev Function selector for sendQuoteWithAffiliate in Symmio protocol.
 	bytes4 constant SELECTOR_SEND_QUOTE_WITH_AFFILIATE = 0x40f1310c;
 
+	/* ─────────────────────────────── Roles ─────────────────────────────── */
+
+	/// @notice Role that can update contract configuration and addresses.
 	bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
+
+	/// @notice Role that can pause contract operations.
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+
+	/// @notice Role that can unpause contract operations.
 	bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 
-	mapping(address => Account[]) public accounts; // User to their accounts mapping
-	mapping(address => uint256) public indexOfAccount; // Account to its index mapping
-	mapping(address => address) public owners; // Account to its owner mapping
+	/* ──────────────────────── Storage Variables ──────────────────────── */
 
-	address public accountsAdmin; // Admin address for the accounts
-	address public symmioAddress; // Address of the Symmio platform
-	uint256 public saltCounter; // Counter for generating unique addresses with create2
+	/// @notice Mapping from user addresses to their array of accounts.
+	mapping(address => Account[]) public accounts;
+
+	/// @notice Mapping from account address to its index in the owner's accounts array.
+	mapping(address => uint256) public indexOfAccount;
+
+	/// @notice Mapping from account address to its owner address.
+	mapping(address => address) public owners;
+
+	/// @notice Admin address for the account contracts (receives admin role on deployed accounts).
+	address public accountsAdmin;
+
+	/// @notice Address of the main Symmio protocol contract.
+	address public symmioAddress;
+
+	/// @notice Counter for generating unique CREATE2 salts for account deployment.
+	uint256 public saltCounter;
+
+	/// @notice Bytecode of the account implementation contract.
 	bytes public accountImplementation;
 
-	mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses; // account -> target -> selector -> state
+	/// @notice Triple mapping for delegated access permissions: account => delegate => selector => enabled.
+	mapping(address => mapping(address => mapping(bytes4 => bool))) public delegatedAccesses;
 
+	/// @notice Cooldown period (in seconds) required before revoking delegated access.
 	uint256 public revokeCooldown;
-	mapping(address => mapping(address => mapping(bytes4 => uint256))) public revokeProposalTimestamp; // account -> target -> selector -> timestamp
 
-	// Mapping to track the bounded PartyB addresses for each user.
+	/// @notice Triple mapping tracking revoke proposal timestamps: account => delegate => selector => timestamp.
+	mapping(address => mapping(address => mapping(bytes4 => uint256))) public revokeProposalTimestamp;
+
+	/// @notice Mapping from account address to its bound PartyB address (if any).
 	mapping(address => address) public accountToPartyBBinding;
 
-	// Modifier to check if the sender is the owner of the account
-	modifier onlyOwner(address account, address sender) {
-		require(owners[account] == sender, "MultiAccount: Sender isn't owner of account");
-		_;
-	}
+	/* ─────────────────────────── Initialization ─────────────────────────── */
 
 	/// @custom:oz-upgrades-unsafe-allow constructor
 	constructor() {
@@ -54,10 +94,10 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Initializes the contract with necessary parameters.
-	 * @param admin The admin address for the accounts contracts.
-	 * @param symmioAddress_ The address of the Symmio platform.
-	 * @param accountImplementation_ The bytecode of the account implementation contract.
+	 * @notice Initialize the upgradeable proxy.
+	 * @param admin                     Receives all admin roles (DEFAULT_ADMIN, SETTER, PAUSER, UNPAUSER).
+	 * @param symmioAddress_            Address of the main Symmio protocol contract.
+	 * @param accountImplementation_    Bytecode of the account implementation contract.
 	 */
 	function initialize(address admin, address symmioAddress_, bytes memory accountImplementation_) public initializer {
 		__Pausable_init();
@@ -72,12 +112,14 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		accountImplementation = accountImplementation_;
 	}
 
+	/* ───────────────────── Access Control & Delegation ───────────────────── */
+
 	/**
-	 * @dev Allows the owner of an account to delegate access to a specific function selector of a target contract.
-	 * @param account The address of the account.
-	 * @param target The address of the target contract.
-	 * @param selector The function selector.
-	 * @param state The state indicating whether access is granted or revoked.
+	 * @notice Grant delegated access to a specific function on a target address.
+	 * @param account   Account address to grant access for.
+	 * @param target    Target address to delegate to.
+	 * @param selector  Function selector to grant access to.
+	 * @param state     Must be true (access grant only - revocation requires separate flow).
 	 */
 	function delegateAccess(address account, address target, bytes4 selector, bool state) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
@@ -87,11 +129,11 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Allows the owner of an account to delegate access to a single target contract and multiple function selectors.
-	 * @param account The address of the account.
-	 * @param target The address of the target contract.
-	 * @param selector An array of function selectors.
-	 * @param state The state indicating whether access is granted or revoked.
+	 * @notice Grant delegated access to multiple function selectors on a target address.
+	 * @param account   Account address to grant access for.
+	 * @param target    Target address to delegate to.
+	 * @param selector  Array of function selectors to grant access to.
+	 * @param state     Must be true (access grant only).
 	 */
 	function delegateAccesses(address account, address target, bytes4[] memory selector, bool state) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
@@ -103,10 +145,10 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Allows the owner of an account to propose revoke access from a single target contract and multiple function selectors.
-	 * @param account The address of the account.
-	 * @param target The address of the target contract.
-	 * @param selector An array of function selectors.
+	 * @notice Propose to revoke delegated access (starts cooldown period).
+	 * @param account   Account address to revoke access from.
+	 * @param target    Target address.
+	 * @param selector  Array of function selectors to propose revoking.
 	 */
 	function proposeToRevokeAccesses(address account, address target, bytes4[] memory selector) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
@@ -117,10 +159,10 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Allows the owner of an account to revoke access from a single target contract and multiple function selectors.
-	 * @param account The address of the account.
-	 * @param target The address of the target contract.
-	 * @param selector An array of function selectors.
+	 * @notice Execute revocation of delegated access after cooldown period.
+	 * @param account   Account address to revoke access from.
+	 * @param target    Target address.
+	 * @param selector  Array of function selectors to revoke.
 	 */
 	function revokeAccesses(address account, address target, bytes4[] memory selector) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
@@ -136,86 +178,14 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		emit DelegateAccesses(account, target, selector, false);
 	}
 
-	/**
-	 * @dev Sets the implementation contract for the account.
-	 * @param accountImplementation_ The byteCodes of the new implementation contract.
-	 */
-	function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
-		emit SetAccountImplementation(accountImplementation, accountImplementation_);
-		accountImplementation = accountImplementation_;
-	}
+	/* ────────────────────────── Account Management ────────────────────────── */
 
 	/**
-	 * @dev Sets the Admin for the accounts.
-	 * @param admin The Address of the new accounts admin.
+	 * @dev Internal function to create a new account for a user.
+	 * @param user User address who will own the new account.
+	 * @param name Human-readable name for the account.
+	 * @return account Address of the newly created account.
 	 */
-	function setAccountsAdmin(address admin) external onlyRole(SETTER_ROLE) {
-		emit SetAccountsAdmin(accountsAdmin, admin);
-		accountsAdmin = admin;
-	}
-
-	/**
-	 * @dev Sets the revoke cooldown.
-	 * @param cooldown the new revoke cooldown.
-	 */
-	function setRevokeCooldown(uint256 cooldown) external onlyRole(SETTER_ROLE) {
-		emit SetRevokeCooldown(revokeCooldown, cooldown);
-		revokeCooldown = cooldown;
-	}
-
-	/**
-	 * @dev Sets the address of the Symmio platform.
-	 * @param addr The address of the Symmio platform.
-	 */
-	function setSymmioAddress(address addr) external onlyRole(SETTER_ROLE) {
-		emit SetSymmioAddress(symmioAddress, addr);
-		symmioAddress = addr;
-	}
-
-	/**
-	 * @dev Internal function to deploy a new party A account contract.
-	 * @return account The address of the newly deployed account contract.
-	 */
-	function _deployPartyA() internal returns (address account) {
-		bytes32 salt = keccak256(abi.encodePacked("MultiAccount_", saltCounter));
-		saltCounter += 1;
-
-		bytes memory bytecode = abi.encodePacked(accountImplementation, abi.encode(accountsAdmin, address(this), symmioAddress));
-		account = _deployContract(bytecode, salt);
-		return account;
-	}
-
-	/**
-	 * @dev Internal function to deploy a contract with create2.
-	 * @param bytecode The bytecode of the contract to be deployed.
-	 * @param salt The salt used for contract deployment.
-	 * @return contractAddress The address of the deployed contract.
-	 */
-	function _deployContract(bytes memory bytecode, bytes32 salt) internal returns (address contractAddress) {
-		assembly {
-			contractAddress := create2(0, add(bytecode, 32), mload(bytecode), salt)
-		}
-		require(contractAddress != address(0), "MultiAccount: create2 failed");
-		emit DeployContract(msg.sender, contractAddress);
-		return contractAddress;
-	}
-
-	/**
-	 * @dev Pauses the contract, preventing execution of transactions.
-	 */
-	function pause() external onlyRole(PAUSER_ROLE) {
-		_pause();
-	}
-
-	/**
-	 * @dev Unpauses the contract, allowing execution of transactions.
-	 */
-	function unpause() external onlyRole(UNPAUSER_ROLE) {
-		_unpause();
-	}
-
-	//////////////////////////////// Account Management ////////////////////////////////////
-
 	function _addAccount(address user, string memory name) internal returns (address account) {
 		account = _deployPartyA();
 		indexOfAccount[account] = accounts[user].length;
@@ -225,14 +195,17 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Adds a new account for the caller with the specified name.
+	 * @notice Create a new account.
+	 * @param name Unique name for the account.
 	 */
 	function addAccount(string memory name) external whenNotPaused {
 		_addAccount(msg.sender, name);
 	}
 
 	/**
-	 * @dev Adds a new account for the caller and binds it to a PartyB address in one step.
+	 * @notice Create a new account and bind it to a specific PartyB.
+	 * @param name     Unique name for the account.
+	 * @param _partyB  PartyB address to bind this account to.
 	 */
 	function addAccountWithBinding(string memory name, address _partyB) external whenNotPaused {
 		require(_partyB != address(0), "MultiAccount: Zero Address");
@@ -242,9 +215,9 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Edits the name of the specified account.
-	 * @param accountAddress The address of the account to edit.
-	 * @param name The new name for the account.
+	 * @notice Update the display name of an existing account.
+	 * @param accountAddress Address of the account to rename.
+	 * @param name           New display name for the account.
 	 */
 	function editAccountName(address accountAddress, string memory name) external whenNotPaused {
 		uint256 index = indexOfAccount[accountAddress];
@@ -253,9 +226,9 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Deposits funds into the specified account.
-	 * @param account The address of the account to deposit funds into.
-	 * @param amount The amount of funds to deposit.
+	 * @notice Deposit collateral tokens for an account in symmio platform.
+	 * @param account Account address to deposit into.
+	 * @param amount  Amount of collateral tokens to deposit.
 	 */
 	function depositForAccount(address account, uint256 amount) external onlyOwner(account, msg.sender) whenNotPaused {
 		address collateral = ISymmio(symmioAddress).getCollateral();
@@ -266,9 +239,9 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Deposits funds into the specified account and allocates them.
-	 * @param account The address of the account to deposit and allocate funds.
-	 * @param amount The amount of funds to deposit and allocate.
+	 * @notice Deposit collateral tokens and immediately allocate them in symmio platform.
+	 * @param account Account address to deposit and allocate for.
+	 * @param amount  Amount of collateral tokens to deposit and allocate.
 	 */
 	function depositAndAllocateForAccount(address account, uint256 amount) external onlyOwner(account, msg.sender) whenNotPaused {
 		address collateral = ISymmio(symmioAddress).getCollateral();
@@ -283,9 +256,9 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	}
 
 	/**
-	 * @dev Withdraws funds from the specified account.
-	 * @param account The address of the account to withdraw funds from.
-	 * @param amount The amount of funds to withdraw.
+	 * @notice Withdraw collateral tokens from a account to the owner.
+	 * @param account Account address to withdraw from.
+	 * @param amount  Amount of collateral tokens to withdraw.
 	 */
 	function withdrawFromAccount(address account, uint256 amount) external onlyOwner(account, msg.sender) whenNotPaused {
 		bytes memory _callData = abi.encodeWithSignature("withdrawTo(address,uint256)", owners[account], amount);
@@ -293,26 +266,10 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		innerCall(account, _callData);
 	}
 
-	function innerCall(address account, bytes memory _callData) internal {
-		address boundPartyB = accountToPartyBBinding[account];
-		if (boundPartyB != address(0)) {
-			address expectedPartyB = decodePartyBFromInput(_callData);
-			require(expectedPartyB == address(0) || boundPartyB == expectedPartyB, "MultiAccount: Unauthorized partyB");
-		}
-
-		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
-		emit Call(msg.sender, account, _callData, _success, _resultData);
-		if (!_success) {
-			assembly {
-				revert(add(_resultData, 32), mload(_resultData))
-			}
-		}
-	}
-
 	/**
-	 * @dev Executes a series of calls on behalf of the specified account.
-	 * @param account The address of the account to execute the calls on behalf of.
-	 * @param _callDatas An array of call data to execute.
+	 * @notice Execute multiple function calls on behalf of a account.
+	 * @param account    Account address to execute calls for.
+	 * @param _callDatas Array of encoded function call data.
 	 */
 	function _call(address account, bytes[] memory _callDatas) external whenNotPaused {
 		bool isOwner = owners[account] == msg.sender;
@@ -330,65 +287,61 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		}
 	}
 
-	//////////////////////////////// VIEWS ////////////////////////////////////
+	/* ───────────────────────── Internal Helpers ───────────────────────── */
 
 	/**
-	 * @dev Returns the number of accounts belonging to the specified user.
-	 * @param user The address of the user.
-	 * @return The number of accounts.
+	 * @dev Execute a function call on a account with PartyB binding validation.
+	 * @param account   Account address to call.
+	 * @param _callData Encoded function call data.
 	 */
-	function getAccountsLength(address user) external view returns (uint256) {
-		return accounts[user].length;
-	}
-
-	/**
-	 * @dev Returns an array of accounts belonging to the specified user.
-	 * @param user The address of the user.
-	 * @param start The index to start retrieving accounts from.
-	 * @param size The maximum number of accounts to retrieve.
-	 * @return An array of Account structures.
-	 */
-	function getAccounts(address user, uint256 start, uint256 size) external view returns (Account[] memory) {
-		uint256 len = size > accounts[user].length - start ? accounts[user].length - start : size;
-		Account[] memory userAccounts = new Account[](len);
-		for (uint256 i = start; i < start + len; i++) {
-			userAccounts[i - start] = accounts[user][i];
-		}
-		return userAccounts;
-	}
-
-	/**
-	 * @dev Returns an array of accounts with their PartyB bindings belonging to the specified user.
-	 * @param user The address of the user.
-	 * @param start The index to start retrieving accounts from.
-	 * @param size The maximum number of accounts to retrieve.
-	 * @return An array of BoundedAccount structures including PartyB binding information.
-	 */
-	function getAccountsWithBinding(address user, uint256 start, uint256 size) external view returns (BoundedAccount[] memory) {
-		uint256 len = size > accounts[user].length - start ? accounts[user].length - start : size;
-		BoundedAccount[] memory userAccountsWithBinding = new BoundedAccount[](len);
-
-		for (uint256 i = start; i < start + len; i++) {
-			Account memory userAccount = accounts[user][i];
-			userAccountsWithBinding[i - start] = BoundedAccount({
-				accountAddress: userAccount.accountAddress,
-				name: userAccount.name,
-				boundedPartyB: accountToPartyBBinding[userAccount.accountAddress]
-			});
+	function innerCall(address account, bytes memory _callData) internal {
+		address boundPartyB = accountToPartyBBinding[account];
+		if (boundPartyB != address(0)) {
+			address expectedPartyB = decodePartyBFromInput(_callData);
+			require(expectedPartyB == address(0) || boundPartyB == expectedPartyB, "MultiAccount: Unauthorized partyB");
 		}
 
-		return userAccountsWithBinding;
+		(bool _success, bytes memory _resultData) = ISymmioPartyA(account)._call(_callData);
+		emit Call(msg.sender, account, _callData, _success, _resultData);
+		if (!_success) {
+			assembly {
+				revert(add(_resultData, 32), mload(_resultData))
+			}
+		}
 	}
 
 	/**
-	 * @dev Decodes the PartyB address from the input data based on the provided function selector.
-	 * This function checks the selector to determine the function being called and extracts the PartyB address
-	 * from the respective encoded arguments.
-	 *
-	 * It requires that only one PartyB address is whitelisted in the `partyBsWhitelist` array.
-	 *
-	 * @param data The input data (abi encoded) passed to the contract.
-	 * @return The PartyB address extracted from the input data.
+	 * @dev Deploy a new PartyA account contract using CREATE2.
+	 * @return account Address of the newly deployed account contract.
+	 */
+	function _deployPartyA() internal returns (address account) {
+		bytes32 salt = keccak256(abi.encodePacked("MultiAccount_", saltCounter));
+		saltCounter += 1;
+
+		bytes memory bytecode = abi.encodePacked(accountImplementation, abi.encode(accountsAdmin, address(this), symmioAddress));
+		account = _deployContract(bytecode, salt);
+		return account;
+	}
+
+	/**
+	 * @dev Deploy a contract using CREATE2 with the specified bytecode and salt.
+	 * @param bytecode Bytecode of the contract to deploy.
+	 * @param salt     Salt for CREATE2 deployment.
+	 * @return contractAddress Address of the deployed contract.
+	 */
+	function _deployContract(bytes memory bytecode, bytes32 salt) internal returns (address contractAddress) {
+		assembly {
+			contractAddress := create2(0, add(bytecode, 32), mload(bytecode), salt)
+		}
+		require(contractAddress != address(0), "MultiAccount: create2 failed");
+		emit DeployContract(msg.sender, contractAddress);
+		return contractAddress;
+	}
+
+	/**
+	 * @dev Extract PartyB address from encoded function call data for binding validation.
+	 * @param data Encoded function call data.
+	 * @return PartyB address if found in supported function signatures, otherwise address(0).
 	 */
 	function decodePartyBFromInput(bytes memory data) internal pure returns (address) {
 		bytes memory args;
@@ -450,5 +403,99 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 		} else {
 			return address(0);
 		}
+	}
+
+	/* ────────────────────────── Admin Functions ────────────────────────── */
+
+	/// @notice Update the bytecode for new account deployments.
+	function setAccountImplementation(bytes memory accountImplementation_) external onlyRole(SETTER_ROLE) {
+		emit SetAccountImplementation(accountImplementation, accountImplementation_);
+		accountImplementation = accountImplementation_;
+	}
+
+	/// @notice Update the admin address for deployed accounts.
+	function setAccountsAdmin(address admin) external onlyRole(SETTER_ROLE) {
+		emit SetAccountsAdmin(accountsAdmin, admin);
+		accountsAdmin = admin;
+	}
+
+	/// @notice Update the cooldown period for access revocation.
+	function setRevokeCooldown(uint256 cooldown) external onlyRole(SETTER_ROLE) {
+		emit SetRevokeCooldown(revokeCooldown, cooldown);
+		revokeCooldown = cooldown;
+	}
+
+	/// @notice Update the main Symmio protocol contract address.
+	function setSymmioAddress(address addr) external onlyRole(SETTER_ROLE) {
+		emit SetSymmioAddress(symmioAddress, addr);
+		symmioAddress = addr;
+	}
+
+	/// @notice Pause all contract operations except view functions.
+	function pause() external onlyRole(PAUSER_ROLE) {
+		_pause();
+	}
+
+	/// @notice Resume all contract operations.
+	function unpause() external onlyRole(UNPAUSER_ROLE) {
+		_unpause();
+	}
+
+	/* ────────────────────────── View Functions ────────────────────────── */
+
+	/**
+	 * @notice Get the number of accounts owned by a user.
+	 * @param user User address to query.
+	 * @return Number of accounts owned by the user.
+	 */
+	function getAccountsLength(address user) external view returns (uint256) {
+		return accounts[user].length;
+	}
+
+	/**
+	 * @notice Get a paginated list of accounts owned by a user.
+	 * @param user  User address to query.
+	 * @param start Starting index for pagination.
+	 * @param size  Maximum number of accounts to return.
+	 * @return Array of Account structures.
+	 */
+	function getAccounts(address user, uint256 start, uint256 size) external view returns (Account[] memory) {
+		uint256 len = size > accounts[user].length - start ? accounts[user].length - start : size;
+		Account[] memory userAccounts = new Account[](len);
+		for (uint256 i = start; i < start + len; i++) {
+			userAccounts[i - start] = accounts[user][i];
+		}
+		return userAccounts;
+	}
+
+	/**
+	 * @notice Get accounts with their PartyB binding information.
+	 * @param user  User address to query.
+	 * @param start Starting index for pagination.
+	 * @param size  Maximum number of accounts to return.
+	 * @return Array of BoundedAccount structures including PartyB binding data.
+	 */
+	function getAccountsWithBinding(address user, uint256 start, uint256 size) external view returns (BoundedAccount[] memory) {
+		uint256 len = size > accounts[user].length - start ? accounts[user].length - start : size;
+		BoundedAccount[] memory userAccountsWithBinding = new BoundedAccount[](len);
+
+		for (uint256 i = start; i < start + len; i++) {
+			Account memory userAccount = accounts[user][i];
+			userAccountsWithBinding[i - start] = BoundedAccount({
+				accountAddress: userAccount.accountAddress,
+				name: userAccount.name,
+				boundedPartyB: accountToPartyBBinding[userAccount.accountAddress]
+			});
+		}
+
+		return userAccountsWithBinding;
+	}
+
+	/* ─────────────────────────────── Modifiers ─────────────────────────────── */
+
+	/// @notice Restricts function access to the owner of the specified account.
+	modifier onlyOwner(address account, address sender) {
+		require(owners[account] == sender, "MultiAccount: Sender isn't owner of account");
+		_;
 	}
 }
