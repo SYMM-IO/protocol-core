@@ -78,4 +78,25 @@ library LibMuonLiquidation {
 		);
 		LibMuon.verifyTSSAndGateway(hash, priceSig.sigs, priceSig.gatewaySignature);
 	}
+
+	function verifyClearingHouseLiquidation(ClearingHouseLiquidation memory liquidationSig, address partyB) internal view {
+		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
+		bytes32 hash = keccak256(
+			abi.encodePacked(
+				muonLayout.muonAppId,
+				liquidationSig.reqId,
+				liquidationSig.liquidationId,
+				address(this),
+				"verifyClearingHouseLiquidation",
+				partyB,
+				liquidationSig.upnl,
+				liquidationSig.totalUnrealizedLoss,
+				liquidationSig.timestamp,
+				liquidationSig.liquidationBlockNumber,
+				liquidationSig.liquidationTimestamp,
+				LibMuon.getChainId()
+			)
+		);
+		LibMuon.verifyTSSAndGateway(hash, liquidationSig.sigs, liquidationSig.gatewaySignature);
+	}
 }

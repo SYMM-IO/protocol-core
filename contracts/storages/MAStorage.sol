@@ -34,6 +34,7 @@ library MAStorage {
 		address liquidationInsuranceVault;
 		uint256 maxLiquidationProfitPerPosition;
 		uint256 unbindCooldown;
+		mapping(address => bool) partyBClearingHouseLiquidationStatus;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

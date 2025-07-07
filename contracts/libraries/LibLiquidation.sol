@@ -25,6 +25,7 @@ library LibLiquidation {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 
+		//!-----------
 		// Calculate available balance for liquidation
 		int256 availableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlPartyB, partyB, partyA);
 
@@ -33,6 +34,8 @@ library LibLiquidation {
 
 		uint256 liquidatorShare;
 		uint256 remainingLf;
+
+		//!-----------
 
 		// Determine liquidator share and remaining locked funds
 		if (uint256(-availableBalance) < accountLayout.partyBLockedBalances[partyB][partyA].lf) {
@@ -46,14 +49,18 @@ library LibLiquidation {
 			maLayout.partyBPositionLiquidatorsShare[partyB][partyA] = 0;
 		}
 
+		//!-----------
 		// Update liquidation status and timestamp for Party B
 		maLayout.partyBLiquidationStatus[partyB][partyA] = true;
 		maLayout.partyBLiquidationTimestamp[partyB][partyA] = timestamp;
+		//!-----------
 
+		//!-----------
 		uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
 
 		for (uint256 index = 0; index < pendingQuotes.length; ) {
 			Quote storage quote = quoteLayout.quotes[pendingQuotes[index]];
+
 			if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING)) {
 				accountLayout.pendingLockedBalances[partyA].subQuote(quote);
 				uint256 fee = LibQuote.getTradingFee(quote.id);
@@ -67,16 +74,25 @@ library LibLiquidation {
 				index++;
 			}
 		}
+		//!-----------
 
+
+		//!-----------
 		// Update allocated balances for Party A
 		uint256 value = accountLayout.partyBAllocatedBalances[partyB][partyA] - remainingLf;
 		accountLayout.allocatedBalances[partyA] += value;
 		emit SharedEvents.BalanceChangePartyA(partyA, value, SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
+		//!-----------
 
 		// Clear pending quotes and reset balances for Party B
 		delete quoteLayout.partyBPendingQuotes[partyB][partyA];
-		emit SharedEvents.BalanceChangePartyB(partyB, partyA, accountLayout.partyBAllocatedBalances[partyB][partyA],
-			SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
+		emit SharedEvents.BalanceChangePartyB(
+			partyB,
+			partyA,
+			accountLayout.partyBAllocatedBalances[partyB][partyA],
+			SharedEvents.BalanceChangeType.REALIZED_PNL_OUT
+		);
+
 		accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
 		accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
 		accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
