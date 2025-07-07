@@ -21,6 +21,7 @@ library LibAccessibility {
 	bytes32 public constant PARTYB_LIQUIDATOR_ROLE = keccak256("PARTYB_LIQUIDATOR_ROLE");
 	bytes32 public constant SECURED_DEPOSITOR_ROLE = keccak256("SECURED_DEPOSITOR_ROLE");
 	bytes32 public constant SECURED_WITHDRAWER_ROLE = keccak256("SECURED_WITHDRAWER_ROLE");
+	bytes32 public constant CLEARING_HOUSE_ROLE = keccak256("CLEARING_HOUSE_ROLE");
 	
 	/**
 	 * @notice Checks if a user has a specific role.

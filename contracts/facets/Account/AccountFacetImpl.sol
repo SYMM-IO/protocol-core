@@ -41,9 +41,8 @@ library AccountFacetImpl {
 
 	function securedWithdraw(address user, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 		require(
-			block.timestamp >= accountLayout.withdrawCooldown[msg.sender] + MAStorage.layout().deallocateCooldown,
+			block.timestamp >= accountLayout.withdrawCooldown[user] + MAStorage.layout().deallocateCooldown,
 			"AccountFacet: Cooldown hasn't reached"
 		);
 		AccountStorage.layout().balances[user] -= amount;
@@ -52,12 +51,12 @@ library AccountFacetImpl {
 	function allocate(address user, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(
-			accountLayout.allocatedBalances[msg.sender] + amount <= GlobalAppStorage.layout().balanceLimitPerUser,
+			accountLayout.allocatedBalances[user] + amount <= GlobalAppStorage.layout().balanceLimitPerUser,
 			"AccountFacet: Allocated balance limit reached"
 		);
-		require(accountLayout.balances[msg.sender] >= amount, "AccountFacet: Insufficient balance");
-		accountLayout.balances[msg.sender] -= amount;
-		accountLayout.allocatedBalances[msg.sender] += amount;
+		require(accountLayout.balances[user] >= amount, "AccountFacet: Insufficient balance");
+		accountLayout.balances[user] -= amount;
+		accountLayout.allocatedBalances[user] += amount;
 	}
 
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) internal {
@@ -175,38 +174,8 @@ library AccountFacetImpl {
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
 	}
 
-	function depositToReserveVault(uint256 amount, address partyB) internal {
+	function setMasterAccountMode(bool _active) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(amount <= accountLayout.balances[msg.sender], "AccountFacet: Insufficient balance");
-		require(MAStorage.layout().partyBStatus[partyB], "AccountFacet: Should be partyB");
-		accountLayout.balances[msg.sender] -= amount;
-		accountLayout.reserveVault[partyB] += amount;
-	}
-
-	function withdrawFromReserveVault(uint256 amount) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(amount > 0 && amount <= accountLayout.reserveVault[msg.sender], "AccountFacet: Insufficient balance");
-		accountLayout.reserveVault[msg.sender] -= amount;
-		accountLayout.balances[msg.sender] += amount;
-		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
-	}
-
-	function allocateFromReserveVault(address partyA, uint256 amount) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(amount > 0 && amount <= accountLayout.reserveVault[msg.sender], "AccountFacet: Insufficient balance");
-		accountLayout.reserveVault[msg.sender] -= amount;
-		accountLayout.partyBAllocatedBalances[msg.sender][partyA] += amount;
-	}
-
-	function deallocateToReserveVault(address partyA, uint256 amount, SingleUpnlSig memory upnlSig) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.partyBAllocatedBalances[msg.sender][partyA] >= amount, "AccountFacet: Insufficient allocated balance");
-		LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
-		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, partyA);
-		require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
-		require(uint256(availableBalance) >= amount, "AccountFacet: Will be liquidatable");
-
-		accountLayout.partyBAllocatedBalances[msg.sender][partyA] -= amount;
-		accountLayout.reserveVault[msg.sender] += amount;
+		accountLayout.masterAccountMode[msg.sender] = _active;
 	}
 }

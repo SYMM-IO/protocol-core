@@ -37,6 +37,7 @@ abstract contract Accessibility {
 
 	modifier notLiquidatedPartyB(address partyB, address partyA) {
 		require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "Accessibility: PartyB isn't solvent");
+		require(!MAStorage.layout().partyBClearingHouseLiquidationStatus[partyB], "Accessibility: PartyB isn't solvent");
 		_;
 	}
 

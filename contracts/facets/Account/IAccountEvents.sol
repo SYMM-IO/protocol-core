@@ -24,4 +24,5 @@ interface IAccountEvents {
 	event CancelDeferredWithdraw(uint256 id);
 	event DepositToReserveVault(address sender, address partyB, uint256 amount);
 	event WithdrawFromReserveVault(address partyB, uint256 amount);
+	event SetMasterAccountMode(address user, bool active);
 }
