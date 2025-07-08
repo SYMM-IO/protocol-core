@@ -79,7 +79,7 @@ library LibMuonLiquidation {
 		LibMuon.verifyTSSAndGateway(hash, priceSig.sigs, priceSig.gatewaySignature);
 	}
 
-	function verifyClearingHouseLiquidation(ClearingHouseLiquidation memory liquidationSig, address partyB) internal view {
+	function verifyCrossLiquidation(CrossLiquidation memory liquidationSig, address partyB) internal view {
 		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
 		bytes32 hash = keccak256(
 			abi.encodePacked(
@@ -87,7 +87,7 @@ library LibMuonLiquidation {
 				liquidationSig.reqId,
 				liquidationSig.liquidationId,
 				address(this),
-				"verifyClearingHouseLiquidation",
+				"verifyCrossLiquidation",
 				partyB,
 				liquidationSig.upnl,
 				liquidationSig.totalUnrealizedLoss,
