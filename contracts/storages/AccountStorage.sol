@@ -34,7 +34,7 @@ struct LiquidationDetail {
 	uint256 liquidationTimestamp;
 }
 
-struct ClearingHouseLiquidationDetail {
+struct CrossLiquidationDetail {
 	bytes liquidationId;
 	int256 upnl;
 	int256 totalUnrealizedLoss;
@@ -108,7 +108,7 @@ library AccountStorage {
 		mapping(address => bool) masterAccountMode;
 		mapping(address => uint256) partyBTotalCva;
 		mapping(address => uint256) partyBTotalLf;
-		mapping(address => ClearingHouseLiquidationDetail) clearingHouseLiquidationDetails;
+		mapping(address => CrossLiquidationDetail) CrossLiquidationDetails;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

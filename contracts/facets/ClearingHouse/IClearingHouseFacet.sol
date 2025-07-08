@@ -8,7 +8,7 @@ import "../../storages/MuonStorage.sol";
 import "./IClearingHouseFacetEvents.sol";
 
 interface IClearingHouseFacet is IClearingHouseFacetEvents {
-	function liquidatePartyB(address partyB, ClearingHouseLiquidation memory liquidationSig) external;
+	function liquidatePartyB(address partyB, CrossLiquidation memory liquidationSig) external;
 	function deallocateForLiquidation(address partyB, address partyA, uint256 amount) external;
 	function transferToPartyA(address partyB, address partyA, uint256 amount) external;
 	function transferToLiquidator(address partyB, uint256 liquidatorShare) external;

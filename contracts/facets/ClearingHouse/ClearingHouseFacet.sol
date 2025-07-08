@@ -21,7 +21,7 @@ contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
      */
     function liquidatePartyB(
         address partyB,
-        ClearingHouseLiquidation memory liquidationSig
+        CrossLiquidation memory liquidationSig
     ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
         ClearingHouseFacetImpl.liquidatePartyB(partyB, liquidationSig);
 

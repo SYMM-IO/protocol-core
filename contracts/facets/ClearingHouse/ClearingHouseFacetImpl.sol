@@ -17,11 +17,11 @@ import "../../libraries/muon/LibMuonLiquidation.sol";
 library ClearingHouseFacetImpl {
 	using LockedValuesOps for LockedValues;
 
-	function liquidatePartyB(address partyB, ClearingHouseLiquidation memory liquidationSig) internal {
+	function liquidatePartyB(address partyB, CrossLiquidation memory liquidationSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 
-		LibMuonLiquidation.verifyClearingHouseLiquidation(liquidationSig, partyB);
+		LibMuonLiquidation.verifyCrossLiquidation(liquidationSig, partyB);
 		require(
 			uint256(-liquidationSig.upnl) +
 				((liquidationSig.liquidationAllocatedBalance + accountLayout.partyBAllocatedBalances[partyB][address(0)]) -
@@ -30,7 +30,7 @@ library ClearingHouseFacetImpl {
 			"ClearingHouseFacet: partyB is solvent"
 		);
 		maLayout.crossLiquidationStatus[partyB] = true;
-		accountLayout.clearingHouseLiquidationDetails[partyB] = ClearingHouseLiquidationDetail({
+		accountLayout.CrossLiquidationDetails[partyB] = CrossLiquidationDetail({
 			liquidationId: liquidationSig.liquidationId,
 			upnl: liquidationSig.upnl,
 			totalUnrealizedLoss: liquidationSig.totalUnrealizedLoss,
@@ -44,17 +44,17 @@ library ClearingHouseFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(accountLayout.partyBAllocatedBalances[partyB][partyA] >= amount, "ClearingHouseFacet: Insufficient allocated balance");
 		accountLayout.partyBAllocatedBalances[partyB][partyA] -= amount;
-		accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation += amount;
+		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation += amount;
 	}
 
 	function transferToPartyA(address partyB, address partyA, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
 		require(
-			accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation >= amount,
+			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation >= amount,
 			"ClearingHouseFacet: Insufficient allocated balance"
 		);
-		accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation -= amount;
+		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation -= amount;
 		accountLayout.allocatedBalances[partyA] += amount;
 	}
 
@@ -62,11 +62,11 @@ library ClearingHouseFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
 		require(
-			accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation >= liquidatorShare,
+			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation >= liquidatorShare,
 			"ClearingHouseFacet: Insufficient allocated balance"
 		);
-		accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation -= liquidatorShare;
-		accountLayout.clearingHouseLiquidationDetails[partyB].liquidationFee += liquidatorShare;
+		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation -= liquidatorShare;
+		accountLayout.CrossLiquidationDetails[partyB].liquidationFee += liquidatorShare;
 		accountLayout.allocatedBalances[msg.sender] += liquidatorShare;
 	}
 
