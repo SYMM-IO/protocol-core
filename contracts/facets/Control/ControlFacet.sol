@@ -310,11 +310,20 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		symbolLayout.symbols[symbolId].tradingFee = tradingFee;
 	}
 
-	function setSymbolType(uint256 symbolId, uint256 symbolType) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+	function setSymbolTypes(uint256[] calldata symbolIds, uint256[] calldata symbolTypes) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+		require(symbolIds.length == symbolTypes.length, "ControlFacet: Array length mismatch");
+
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
-		require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
-		symbolLayout.symbolTypes[symbolId] = symbolType;
-		emit SetSymbolType(symbolId, symbolType);
+
+		for (uint256 i = 0; i < symbolIds.length; i++) {
+			uint256 symbolId = symbolIds[i];
+			uint256 symbolType = symbolTypes[i];
+
+			require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+
+			symbolLayout.symbolTypes[symbolId] = symbolType;
+			emit SetSymbolType(symbolId, symbolType);
+		}
 	}
 
 	// CoolDowns //////////////////////////////////////////////////
@@ -558,5 +567,18 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		AccountStorage.layout().partyBWhitelistedSymbolTypes[partyB][symbolType] = isWhiteList;
 		emit SetPartyBWhitelistedSymbolTypeStatus(partyB, symbolType, isWhiteList);
+	}
+
+	function setMasterAccountModeDeactivationCooldown(uint256 masterAccountModeDeactivationCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		emit SetMasterAccountModeDeactivationCooldown(
+			MAStorage.layout().masterAccountModeDeactivationCooldown,
+			masterAccountModeDeactivationCooldown
+		);
+		MAStorage.layout().masterAccountModeDeactivationCooldown = masterAccountModeDeactivationCooldown;
+	}
+
+	function setSignatureVerifierAddress(address signatureVerifier) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		GlobalAppStorage.layout().signatureVerifier = signatureVerifier;
+		emit SetSignatureVerifierAddress(signatureVerifier);
 	}
 }

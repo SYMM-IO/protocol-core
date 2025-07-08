@@ -25,16 +25,16 @@ contract ViewFacet is IViewFacet {
 	 * @return The address of the pendingOwner.
 	 */
 	function pendingOwner() external view virtual returns (address) {
-        return LibDiamond.diamondStorage().pendingOwner;
-    }
+		return LibDiamond.diamondStorage().pendingOwner;
+	}
 
 	/**
 	 * @notice Returns the owner of the diamond.
 	 * @return The address of the owner.
 	 */
 	function owner() external view virtual returns (address) {
-        return LibDiamond.diamondStorage().contractOwner;
-    }
+		return LibDiamond.diamondStorage().contractOwner;
+	}
 
 	/**
 	 * @notice Returns the balance of the specified user.
@@ -918,5 +918,13 @@ contract ViewFacet is IViewFacet {
 	 */
 	function getLiquidationInsuranceVaultParams() external view returns (address, uint256) {
 		return (MAStorage.layout().liquidationInsuranceVault, MAStorage.layout().maxLiquidationProfitPerPosition);
+	}
+
+	function masterAccountDeactivationCooldown() external view returns (uint256) {
+		return MAStorage.layout().masterAccountModeDeactivationCooldown;
+	}
+
+	function getSignatureVerifier() external view returns (address) {
+		return GlobalAppStorage.layout().signatureVerifier;
 	}
 }

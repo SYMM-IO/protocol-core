@@ -174,8 +174,9 @@ library AccountFacetImpl {
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
 	}
 
-	function setMasterAccountMode(bool _active) internal {
+	function activeMasterAccountMode() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		accountLayout.masterAccountMode[msg.sender] = _active;
+		require(!accountLayout.masterAccountMode[msg.sender], "AccountFacet: master account mode is active");
+		accountLayout.masterAccountMode[msg.sender] = true;
 	}
 }

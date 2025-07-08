@@ -29,7 +29,7 @@ library ClearingHouseFacetImpl {
 				0,
 			"ClearingHouseFacet: partyB is solvent"
 		);
-		maLayout.partyBClearingHouseLiquidationStatus[partyB] = true;
+		maLayout.crossLiquidationStatus[partyB] = true;
 		accountLayout.clearingHouseLiquidationDetails[partyB] = ClearingHouseLiquidationDetail({
 			liquidationId: liquidationSig.liquidationId,
 			upnl: liquidationSig.upnl,
@@ -75,7 +75,7 @@ library ClearingHouseFacetImpl {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(maLayout.partyBClearingHouseLiquidationStatus[partyB] == true, "ClearingHouseFacet: partyB is not liquidate");
+		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: partyB is not liquidate");
 		uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
 
 		for (uint256 index = 0; index < pendingQuotes.length; ) {
@@ -151,7 +151,7 @@ library ClearingHouseFacetImpl {
 		}
 
 		if (quoteLayout.partyBPositionsCount[partyB][partyA] == 0) {
-			maLayout.partyBClearingHouseLiquidationStatus[partyB] = false;
+			maLayout.crossLiquidationStatus[partyB] = false;
 			maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
 			accountLayout.partyBNonces[partyB][partyA] += 1;
 		}

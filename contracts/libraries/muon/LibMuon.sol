@@ -7,7 +7,9 @@ pragma solidity >=0.8.18;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../LibMuonV04ClientBase.sol";
 import "../../storages/MuonStorage.sol";
+import "../../storages/GlobalAppStorage.sol";
 import "../../storages/AccountStorage.sol";
+import "../../helpers/ISymmioSignatureVerifier.sol";
 
 library LibMuon {
 	using ECDSA for bytes32;
@@ -27,13 +29,7 @@ library LibMuon {
 	// We emphasize this because they are only disabled for testing purposes.
 	function verifyTSSAndGateway(bytes32 hash, SchnorrSign memory sign, bytes memory gatewaySignature) internal view {
 		// == SignatureCheck( ==
-		bool verified = LibMuonV04ClientBase.muonVerify(uint256(hash), sign, MuonStorage.layout().muonPublicKey);
-		require(verified, "LibMuon: TSS not verified");
-
-		hash = hash.toEthSignedMessageHash();
-		address gatewaySignatureSigner = hash.recover(gatewaySignature);
-
-		require(gatewaySignatureSigner == MuonStorage.layout().validGateway, "LibMuon: Gateway is not valid");
+		ISignatureVerifier(GlobalAppStorage.layout().signatureVerifier).verify(hash, sign, gatewaySignature);
 		// == ) ==
 	}
 
