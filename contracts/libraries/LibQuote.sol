@@ -195,6 +195,8 @@ library LibQuote {
 		);
 		accountLayout.lockedBalances[quote.partyA].subQuote(quote).add(lockedValues);
 		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].subQuote(quote).add(lockedValues);
+		accountLayout.partyBTotalCva[quote.partyB] -= quote.lockedValues.cva;
+		accountLayout.partyBTotalLf[quote.partyB] -= quote.lockedValues.lf;
 		quote.lockedValues = lockedValues;
 
 		if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {

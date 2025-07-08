@@ -14,8 +14,6 @@ import "../../libraries/SharedEvents.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/muon/LibMuonLiquidation.sol";
 
-// TODO :::
-// add totalCVA and totalLF to other facets
 library ClearingHouseFacetImpl {
 	using LockedValuesOps for LockedValues;
 
@@ -29,7 +27,7 @@ library ClearingHouseFacetImpl {
 				((liquidationSig.liquidationAllocatedBalance + accountLayout.partyBAllocatedBalances[partyB][address(0)]) -
 					(accountLayout.partyBTotalCva[partyB] + accountLayout.partyBTotalLf[partyB])) >
 				0,
-			"partyB is solvent"
+			"ClearingHouseFacet: partyB is solvent"
 		);
 		maLayout.partyBClearingHouseLiquidationStatus[partyB] = true;
 		accountLayout.clearingHouseLiquidationDetails[partyB] = ClearingHouseLiquidationDetail({
@@ -44,7 +42,7 @@ library ClearingHouseFacetImpl {
 
 	function deallocateForLiquidation(address partyB, address partyA, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.partyBAllocatedBalances[partyB][partyA] >= amount, "Insufficient allocated balance");
+		require(accountLayout.partyBAllocatedBalances[partyB][partyA] >= amount, "ClearingHouseFacet: Insufficient allocated balance");
 		accountLayout.partyBAllocatedBalances[partyB][partyA] -= amount;
 		accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation += amount;
 	}
@@ -52,7 +50,10 @@ library ClearingHouseFacetImpl {
 	function transferToPartyA(address partyB, address partyA, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation >= amount, "Insufficient allocated balance");
+		require(
+			accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation >= amount,
+			"ClearingHouseFacet: Insufficient allocated balance"
+		);
 		accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation -= amount;
 		accountLayout.allocatedBalances[partyA] += amount;
 	}
@@ -60,7 +61,10 @@ library ClearingHouseFacetImpl {
 	function transferToLiquidator(address partyB, uint256 liquidatorShare) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation >= liquidatorShare, "Insufficient allocated balance");
+		require(
+			accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation >= liquidatorShare,
+			"ClearingHouseFacet: Insufficient allocated balance"
+		);
 		accountLayout.clearingHouseLiquidationDetails[partyB].deallocateForLiquidation -= liquidatorShare;
 		accountLayout.clearingHouseLiquidationDetails[partyB].liquidationFee += liquidatorShare;
 		accountLayout.allocatedBalances[msg.sender] += liquidatorShare;
@@ -71,7 +75,7 @@ library ClearingHouseFacetImpl {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(maLayout.partyBClearingHouseLiquidationStatus[partyB] == true, "partyB is not liquidate");
+		require(maLayout.partyBClearingHouseLiquidationStatus[partyB] == true, "ClearingHouseFacet: partyB is not liquidate");
 		uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
 
 		for (uint256 index = 0; index < pendingQuotes.length; ) {
@@ -111,10 +115,10 @@ library ClearingHouseFacetImpl {
 		LibMuonLiquidation.verifyQuotePrices(priceSig);
 		require(
 			priceSig.timestamp <= maLayout.partyBLiquidationTimestamp[partyB][partyA] + maLayout.liquidationTimeout,
-			"LiquidationFacet: Invalid signature"
+			"ClearingHouseFacet: Invalid signature"
 		);
-		require(maLayout.partyBLiquidationStatus[partyB][partyA], "LiquidationFacet: PartyB is solvent");
-		require(maLayout.partyBLiquidationTimestamp[partyB][partyA] <= priceSig.timestamp, "LiquidationFacet: Expired signature");
+		require(maLayout.partyBLiquidationStatus[partyB][partyA], "ClearingHouseFacet: PartyB is solvent");
+		require(maLayout.partyBLiquidationTimestamp[partyB][partyA] <= priceSig.timestamp, "ClearingHouseFacet: Expired signature");
 
 		liquidatedAmounts = new uint256[](priceSig.quoteIds.length);
 		closeIds = new uint256[](priceSig.quoteIds.length);
@@ -125,9 +129,9 @@ library ClearingHouseFacetImpl {
 				quote.quoteStatus == QuoteStatus.OPENED ||
 					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
-				"LiquidationFacet: Invalid state"
+				"ClearingHouseFacet: Invalid state"
 			);
-			require(quote.partyA == partyA && quote.partyB == partyB, "LiquidationFacet: Invalid party");
+			require(quote.partyA == partyA && quote.partyB == partyB, "ClearingHouseFacet: Invalid party");
 
 			liquidatedAmounts[index] = quote.quantity - quote.closedAmount;
 			closeIds[index] = quoteLayout.closeIds[quote.id];
