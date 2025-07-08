@@ -193,4 +193,8 @@ interface IViewFacet {
 	function getNextBridgeTransactionId() external view returns (uint256);
 
 	function getLiquidationInsuranceVaultParams() external view returns (address, uint256);
+
+	function masterAccountDeactivationCooldown() external view returns (uint256);
+
+	function getSignatureVerifier() external view returns (address);
 }

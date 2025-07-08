@@ -170,8 +170,8 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
-	function setMasterAccountMode(bool _active) external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
-		AccountFacetImpl.setMasterAccountMode(_active);
-		emit SetMasterAccountMode(msg.sender, _active);
+	function activeMasterAccountMode() external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.activeMasterAccountMode();
+		emit ActiveMasterAccountMode(msg.sender);
 	}
 }
