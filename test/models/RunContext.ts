@@ -3,6 +3,7 @@ import {ethers} from "hardhat"
 import {
 	AccountFacet,
 	BridgeFacet,
+	ClearingHouseFacet,
 	ControlFacet,
 	DiamondCutFacet,
 	DiamondLoupeFacet,
@@ -32,6 +33,7 @@ export class RunContext {
 	fundingRateFacet!: FundingRateFacet
 	settlementFacet!: SettlementFacet
 	forceActionsFacet!: ForceActionsFacet
+	clearingHouseFacet!: ClearingHouseFacet
 	signers!: {
 		admin: SignerWithAddress
 		user: SignerWithAddress
@@ -87,6 +89,7 @@ export async function createRunContext(diamond: string, collateral: string, mult
 	context.fundingRateFacet = await ethers.getContractAt("FundingRateFacet", diamond)
 	context.settlementFacet = await ethers.getContractAt("SettlementFacet", diamond)
 	context.forceActionsFacet = await ethers.getContractAt("ForceActionsFacet", diamond)
+	context.clearingHouseFacet = await ethers.getContractAt("ClearingHouseFacet", diamond)
 
 	context.manager = new TestManager(context, onlyInitialize)
 	if (!onlyInitialize) await context.manager.start()

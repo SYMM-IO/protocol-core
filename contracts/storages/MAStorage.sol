@@ -35,8 +35,6 @@ library MAStorage {
 		uint256 maxLiquidationProfitPerPosition;
 		uint256 unbindCooldown;
 		mapping(address => bool) crossLiquidationStatus;
-		uint256 masterAccountModeDeactivationCooldown;
-		mapping(address => uint256) masterAccountModeDeactivationRequestTimestamp;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

@@ -920,8 +920,12 @@ contract ViewFacet is IViewFacet {
 		return (MAStorage.layout().liquidationInsuranceVault, MAStorage.layout().maxLiquidationProfitPerPosition);
 	}
 
-	function masterAccountDeactivationCooldown() external view returns (uint256) {
-		return MAStorage.layout().masterAccountModeDeactivationCooldown;
+	function getPartyBCrossLiquidationStatus(address partyB) external view returns (bool) {
+		return MAStorage.layout().crossLiquidationStatus[partyB];
+	}
+
+	function getCrossLiquidationDetails(address partyB) external view returns (CrossLiquidationDetail memory) {
+		return AccountStorage.layout().CrossLiquidationDetails[partyB];
 	}
 
 	function getSignatureVerifier() external view returns (address) {

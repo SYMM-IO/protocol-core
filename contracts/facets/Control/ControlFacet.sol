@@ -569,14 +569,6 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit SetPartyBWhitelistedSymbolTypeStatus(partyB, symbolType, isWhiteList);
 	}
 
-	function setMasterAccountModeDeactivationCooldown(uint256 masterAccountModeDeactivationCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
-		emit SetMasterAccountModeDeactivationCooldown(
-			MAStorage.layout().masterAccountModeDeactivationCooldown,
-			masterAccountModeDeactivationCooldown
-		);
-		MAStorage.layout().masterAccountModeDeactivationCooldown = masterAccountModeDeactivationCooldown;
-	}
-
 	function setSignatureVerifierAddress(address signatureVerifier) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		GlobalAppStorage.layout().signatureVerifier = signatureVerifier;
 		emit SetSignatureVerifierAddress(signatureVerifier);

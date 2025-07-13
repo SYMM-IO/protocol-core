@@ -79,6 +79,5 @@ interface IControlEvents {
 	event RemoveBridge(address bridge);
 	event SetLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit);
 	event SetPartyBWhitelistedSymbolTypeStatus(address partyB, uint256 symbolType, bool isWhiteList);
-	event SetMasterAccountModeDeactivationCooldown(uint256 oldMasterAccountModeDeactivationCooldown, uint256 newMasterAccountModeDeactivationCooldown);
 	event SetSignatureVerifierAddress(address SignatureVerifier);
 }
