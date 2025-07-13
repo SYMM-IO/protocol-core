@@ -1,18 +1,12 @@
-import {SingleUpnlAndPriceSigStruct} from "../../src/types/contracts/facets/PartyA/PartyAFacet"
-import {QuotePriceSigStruct} from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
-import {getBlockTimestamp} from "./Common"
-import {PairUpnlSigStructOutput} from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
-import {HighLowPriceSigStruct} from "../../src/types/contracts/facets/ForceActions/ForceActionsFacet"
-import {
-	DeferredLiquidationSigStruct,
-	PairUpnlAndPriceSigStruct,
-	SingleUpnlSigStruct
-} from "../../src/types/contracts/interfaces/ISymmio"
-import {ethers} from "hardhat"
-import {
-	QuoteSettlementDataStructOutput,
-	SettlementSigStructOutput
-} from "../../src/types/contracts/facets/Settlement/ISettlementFacet"
+import { SingleUpnlAndPriceSigStruct } from "../../src/types/contracts/facets/PartyA/PartyAFacet"
+import { QuotePriceSigStruct } from "../../src/types/contracts/facets/liquidation/LiquidationFacet"
+import { getBlockTimestamp } from "./Common"
+import { PairUpnlSigStructOutput } from "../../src/types/contracts/facets/FundingRate/FundingRateFacet"
+import { HighLowPriceSigStruct } from "../../src/types/contracts/facets/ForceActions/ForceActionsFacet"
+import { DeferredLiquidationSigStruct, PairUpnlAndPriceSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/interfaces/ISymmio"
+import { ethers } from "hardhat"
+import { QuoteSettlementDataStructOutput, SettlementSigStructOutput } from "../../src/types/contracts/facets/Settlement/ISettlementFacet"
+import { CrossLiquidationStruct } from "../../src/types/contracts/facets/ClearingHouse/ClearingHouseFacet"
 
 export async function getDummySingleUpnlSig(upnl: bigint = 0n): Promise<SingleUpnlSigStruct> {
 	return {
@@ -91,10 +85,7 @@ export async function getDummyPairUpnlAndPriceSig(
 	}
 }
 
-export async function getDummyPairUpnlSig(
-	upnlPartyA: bigint = 0n,
-	upnlPartyB: bigint = 0n,
-): Promise<PairUpnlSigStructOutput> {
+export async function getDummyPairUpnlSig(upnlPartyA: bigint = 0n, upnlPartyB: bigint = 0n): Promise<PairUpnlSigStructOutput> {
 	return {
 		reqId: "0x",
 		timestamp: BigInt(await getBlockTimestamp()),
@@ -167,6 +158,30 @@ export async function getDummyPriceSig(quoteIds: bigint[] = [], prices: bigint[]
 		timestamp: await getBlockTimestamp(),
 		quoteIds: quoteIds,
 		prices: prices,
+		gatewaySignature: ethers.ZeroAddress,
+		sigs: {
+			signature: "0",
+			owner: ethers.ZeroAddress,
+			nonce: ethers.ZeroAddress,
+		},
+	}
+}
+
+export async function getDummyCrossLiquidationSig(
+	liquidationId: string = "0x",
+	upnl: bigint = 0n,
+	totalUnrealizedLoss: bigint = 0n,
+	allocatedBalance: bigint = 0n,
+): Promise<CrossLiquidationStruct> {
+	return {
+		reqId: "0x",
+		liquidationId: liquidationId,
+		timestamp: await getBlockTimestamp(),
+		liquidationBlockNumber: 1,
+		liquidationTimestamp: await getBlockTimestamp(),
+		liquidationAllocatedBalance: allocatedBalance,
+		upnl: upnl,
+		totalUnrealizedLoss: totalUnrealizedLoss,
 		gatewaySignature: ethers.ZeroAddress,
 		sigs: {
 			signature: "0",

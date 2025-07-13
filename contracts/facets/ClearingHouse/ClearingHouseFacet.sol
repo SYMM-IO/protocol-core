@@ -19,13 +19,13 @@ contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
      * @param partyB The address of Party B.
      * @param liquidationSig The signature confirming PartyB insolvency.
      */
-    function liquidatePartyB(
+    function liquidateCrossPartyB(
         address partyB,
         CrossLiquidation memory liquidationSig
-    ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        ClearingHouseFacetImpl.liquidatePartyB(partyB, liquidationSig);
+    ) external whenNotLiquidationPaused notCrossLiquidatedPartyB(partyB) onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
+        ClearingHouseFacetImpl.liquidateCrossPartyB(partyB, liquidationSig);
 
-        emit LiquidatePartyBClearingHouse(
+        emit LiquidateCrossPartyB(
             msg.sender,
             partyB,
             liquidationSig.liquidationId,
@@ -38,12 +38,12 @@ contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
     /**
      * @notice Deallocates PartyB balance for liquidation purposes.
      */
-    function deallocateForLiquidation(
+    function deallocateForCrossLiquidation(
         address partyB,
         address partyA,
         uint256 amount
     ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        ClearingHouseFacetImpl.deallocateForLiquidation(partyB, partyA, amount);
+        ClearingHouseFacetImpl.deallocateForCrossLiquidation(partyB, partyA, amount);
         emit DeallocateForLiquidation(partyB, partyA, amount);
     }
 
@@ -84,16 +84,16 @@ contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
     /**
      * @notice Liquidates active positions of PartyB with PartyA.
      */
-    function liquidatePositionsPartyB(
+    function liquidateCrossPositionsPartyB(
         address partyB,
         address partyA,
         QuotePriceSig memory priceSig
     ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        (uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = ClearingHouseFacetImpl.liquidatePositionsPartyB(
+        (uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = ClearingHouseFacetImpl.liquidateCrossPositionsPartyB(
             partyB,
             partyA,
             priceSig
         );
-        emit LiquidatePositionsPartyB(partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
+        emit LiquidateCrossPositionsPartyB(partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
     }
 }

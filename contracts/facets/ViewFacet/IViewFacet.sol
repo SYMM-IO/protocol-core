@@ -194,7 +194,7 @@ interface IViewFacet {
 
 	function getLiquidationInsuranceVaultParams() external view returns (address, uint256);
 
-	function masterAccountDeactivationCooldown() external view returns (uint256);
+	function getPartyBCrossLiquidationStatus(address partyB) external view returns (bool);
 
 	function getSignatureVerifier() external view returns (address);
 }
