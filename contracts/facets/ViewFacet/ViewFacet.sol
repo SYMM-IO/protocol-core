@@ -928,6 +928,14 @@ contract ViewFacet is IViewFacet {
 		return AccountStorage.layout().CrossLiquidationDetails[partyB];
 	}
 
+	function getPartyBTotalCva(address partyB) external view returns (uint256) {
+		return AccountStorage.layout().partyBTotalCva[partyB];
+	}
+
+	function getPartyBTotalLf(address partyB) external view returns (uint256) {
+		return AccountStorage.layout().partyBTotalLf[partyB];
+	}
+
 	function getSignatureVerifier() external view returns (address) {
 		return GlobalAppStorage.layout().signatureVerifier;
 	}

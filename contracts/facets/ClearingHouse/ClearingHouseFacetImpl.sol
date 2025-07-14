@@ -24,22 +24,15 @@ library ClearingHouseFacetImpl {
 
 		require(accountLayout.masterAccountMode[partyB], "ClearingHouseFacet: partyB masterMode is not active");
 
-		console.logInt(liquidationSig.upnl);
-		console.log("liquidationSig.liquidationAllocatedBalance == %s", liquidationSig.liquidationAllocatedBalance);
-		console.log("accountLayout.partyBAllocatedBalances[partyB][address(0)] == %s", accountLayout.partyBAllocatedBalances[partyB][address(0)]);
-		console.log("accountLayout.partyBTotalCva[partyB] == %s", accountLayout.partyBTotalCva[partyB]);
-		console.log("accountLayout.partyBTotalLf[partyB] == %s", accountLayout.partyBTotalLf[partyB]);
 		LibMuonLiquidation.verifyCrossLiquidation(liquidationSig, partyB);
-		console.log("111111111111111111111111");
-		// require(liquidationSig.upnl < 0, "ClearingHouseFacet: partyB is solvent upnl > 0");
 		require(
-			liquidationSig.upnl +
-				(int256(liquidationSig.liquidationAllocatedBalance + accountLayout.partyBAllocatedBalances[partyB][address(0)]) -
-					int256(accountLayout.partyBTotalCva[partyB] + accountLayout.partyBTotalLf[partyB])) <
+			liquidationSig.upnl < 0 &&
+				liquidationSig.upnl +
+					(int256(liquidationSig.liquidationAllocatedBalance + accountLayout.partyBAllocatedBalances[partyB][address(0)]) -
+						int256(accountLayout.partyBTotalCva[partyB] + accountLayout.partyBTotalLf[partyB])) <
 				0,
 			"ClearingHouseFacet: partyB is solvent"
 		);
-		console.log("2222222222222222222222");
 		maLayout.crossLiquidationStatus[partyB] = true;
 		accountLayout.CrossLiquidationDetails[partyB] = CrossLiquidationDetail({
 			liquidationId: liquidationSig.liquidationId,
@@ -53,6 +46,9 @@ library ClearingHouseFacetImpl {
 
 	function deallocateForCrossLiquidation(address partyB, address partyA, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		MAStorage.Layout storage maLayout = MAStorage.layout();
+
+		require(maLayout.crossLiquidationStatus[partyB], "ClearingHouseFacet: partyB is not liquidated");
 		require(accountLayout.partyBAllocatedBalances[partyB][partyA] >= amount, "ClearingHouseFacet: Insufficient allocated balance");
 		accountLayout.partyBAllocatedBalances[partyB][partyA] -= amount;
 		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation += amount;
