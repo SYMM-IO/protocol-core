@@ -196,5 +196,9 @@ interface IViewFacet {
 
 	function getPartyBCrossLiquidationStatus(address partyB) external view returns (bool);
 
+	function getPartyBTotalCva(address partyB) external view returns (uint256);
+
+	function getPartyBTotalLf(address partyB) external view returns (uint256);
+
 	function getSignatureVerifier() external view returns (address);
 }
