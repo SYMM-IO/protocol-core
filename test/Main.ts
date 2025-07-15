@@ -18,6 +18,7 @@ import { shouldBehaveLikeMultiAccount } from "./MultiAccount.behavior"
 import { shouldBehaveLikeControlFacet } from "./ControlFacet.behavior"
 import { shouldBehaveLikeSettlement } from "./Settlement.behavior"
 import { shouldBehaveLikeClearingHouseFacet } from "./ClearingHouseFacet.behavior"
+import { shouldBehaveLikePartyBBatchActionsFacet } from "./PartyBBatchActionsFacet.behavior"
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == "static") {
@@ -96,6 +97,10 @@ describe("UnitTests", function () {
 		describe("ClearingHouseFacet", async function () {
 			shouldBehaveLikeClearingHouseFacet()
 		})
+
+		// describe("PartyBBatchActionsFacet", async function () {
+		// 	shouldBehaveLikePartyBBatchActionsFacet()
+		// })
 	} else if (process.env.TEST_MODE == "fuzz") {
 		describe("FuzzTest", async function () {
 			shouldBehaveLikeFuzzTest()
