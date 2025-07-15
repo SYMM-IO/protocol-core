@@ -11,6 +11,7 @@ import {
 	FundingRateFacet,
 	LiquidationFacet,
 	PartyAFacet,
+	PartyBBatchActionsFacet,
 	PartyBPositionActionsFacet,
 	PartyBQuoteActionsFacet,
 	SettlementFacet,
@@ -24,6 +25,7 @@ export class RunContext {
 	diamondCutFacet!: DiamondCutFacet
 	diamondLoupeFacet!: DiamondLoupeFacet
 	partyAFacet!: PartyAFacet
+	partyBBatchActionsFacet!: PartyBBatchActionsFacet
 	partyBQuoteActionsFacet!: PartyBQuoteActionsFacet
 	partyBPositionActionsFacet!: PartyBPositionActionsFacet
 	bridgeFacet!: BridgeFacet
@@ -80,6 +82,7 @@ export async function createRunContext(diamond: string, collateral: string, mult
 	context.diamondCutFacet = await ethers.getContractAt("DiamondCutFacet", diamond)
 	context.diamondLoupeFacet = await ethers.getContractAt("DiamondLoupeFacet", diamond)
 	context.partyAFacet = await ethers.getContractAt("PartyAFacet", diamond)
+	context.partyBBatchActionsFacet = await ethers.getContractAt("PartyBBatchActionsFacet", diamond)
 	context.partyBQuoteActionsFacet = await ethers.getContractAt("PartyBQuoteActionsFacet", diamond)
 	context.partyBPositionActionsFacet = await ethers.getContractAt("PartyBPositionActionsFacet", diamond)
 	context.bridgeFacet = await ethers.getContractAt("BridgeFacet", diamond)

@@ -190,3 +190,25 @@ export async function getDummyCrossLiquidationSig(
 		},
 	}
 }
+
+export async function getDummyPairUpnlAndPricesSig(
+	prices: bigint[] = [1n],
+	symbolIds: bigint[] = [1n],
+	upnlPartyA: bigint = 0n,
+	upnlPartyB: bigint = 0n,
+): Promise<any> {
+	return {
+		reqId: "0x",
+		timestamp: await getBlockTimestamp(),
+		upnlPartyA: upnlPartyA,
+		upnlPartyB: upnlPartyB,
+		symbolIds: symbolIds,
+		prices: prices,
+		gatewaySignature: ethers.ZeroAddress,
+		sigs: {
+			signature: "0",
+			owner: ethers.ZeroAddress,
+			nonce: ethers.ZeroAddress,
+		},
+	}
+}
