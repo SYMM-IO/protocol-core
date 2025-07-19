@@ -34,6 +34,7 @@ library ClearingHouseFacetImpl {
 			"ClearingHouseFacet: partyB is solvent"
 		);
 		maLayout.crossLiquidationStatus[partyB] = true;
+		maLayout.partyBLiquidationTimestamp[partyB][address(0)] = liquidationSig.timestamp;
 		accountLayout.CrossLiquidationDetails[partyB] = CrossLiquidationDetail({
 			liquidationId: liquidationSig.liquidationId,
 			upnl: liquidationSig.upnl,
@@ -48,7 +49,7 @@ library ClearingHouseFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 
-		require(maLayout.crossLiquidationStatus[partyB], "ClearingHouseFacet: partyB is not liquidated");
+		require(maLayout.crossLiquidationStatus[partyB], "ClearingHouseFacet: PartyB is solvent");
 		require(accountLayout.partyBAllocatedBalances[partyB][partyA] >= amount, "ClearingHouseFacet: Insufficient allocated balance");
 		accountLayout.partyBAllocatedBalances[partyB][partyA] -= amount;
 		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation += amount;
@@ -56,7 +57,9 @@ library ClearingHouseFacetImpl {
 
 	function transferToPartyA(address partyB, address partyA, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		MAStorage.Layout storage maLayout = MAStorage.layout();
 
+		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: PartyB is solvent");
 		require(
 			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation >= amount,
 			"ClearingHouseFacet: Insufficient allocated balance"
@@ -67,7 +70,9 @@ library ClearingHouseFacetImpl {
 
 	function transferToLiquidator(address partyB, uint256 liquidatorShare) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		MAStorage.Layout storage maLayout = MAStorage.layout();
 
+		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: PartyB is solvent");
 		require(
 			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation >= liquidatorShare,
 			"ClearingHouseFacet: Insufficient allocated balance"
@@ -82,7 +87,7 @@ library ClearingHouseFacetImpl {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: partyB is not liquidate");
+		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: PartyB is solvent");
 		uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
 
 		for (uint256 index = 0; index < pendingQuotes.length; ) {
@@ -120,12 +125,13 @@ library ClearingHouseFacetImpl {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 
 		LibMuonLiquidation.verifyQuotePrices(priceSig);
+		require(maLayout.crossLiquidationStatus[partyB], "ClearingHouseFacet: PartyB is solvent");
+
 		require(
-			priceSig.timestamp <= maLayout.partyBLiquidationTimestamp[partyB][partyA] + maLayout.liquidationTimeout,
+			priceSig.timestamp <= maLayout.partyBLiquidationTimestamp[partyB][address(0)] + maLayout.liquidationTimeout,
 			"ClearingHouseFacet: Invalid signature"
 		);
-		require(maLayout.partyBLiquidationStatus[partyB][partyA], "ClearingHouseFacet: PartyB is solvent");
-		require(maLayout.partyBLiquidationTimestamp[partyB][partyA] <= priceSig.timestamp, "ClearingHouseFacet: Expired signature");
+		require(maLayout.partyBLiquidationTimestamp[partyB][address(0)] <= priceSig.timestamp, "ClearingHouseFacet: Expired signature");
 
 		liquidatedAmounts = new uint256[](priceSig.quoteIds.length);
 		closeIds = new uint256[](priceSig.quoteIds.length);
@@ -159,7 +165,7 @@ library ClearingHouseFacetImpl {
 
 		if (quoteLayout.partyBPositionsCount[partyB][partyA] == 0) {
 			maLayout.crossLiquidationStatus[partyB] = false;
-			maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
+			//! maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
 			accountLayout.partyBNonces[partyB][partyA] += 1;
 		}
 		return (liquidatedAmounts, closeIds);

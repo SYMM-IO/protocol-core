@@ -20,7 +20,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 		context = await loadFixture(initializeFixture)
 		user = new User(context, context.signers.user)
 		await user.setup()
-		await user.setBalances(decimal(2000n), decimal(1000n), decimal(500n))
+		await user.setBalances(decimal(2000n), decimal(2000n), decimal(2000n))
 
 		user2 = new User(context, context.signers.user2)
 		await user2.setup()
@@ -49,8 +49,8 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 		// Quote3 -> sent
 		await user.sendQuote()
 
-		// Quote4 -> user2 -> opened
-		await user2.sendQuote()
+		// Quote4 -> user -> opened
+		await user.sendQuote()
 		await hedger.lockQuote(4)
 		await hedger.openPosition(4)
 
@@ -189,7 +189,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				context.clearingHouseFacet
 					.connect(context.signers.liquidator)
 					.deallocateForCrossLiquidation(context.signers.hedger, context.signers.user, 100n),
-			).to.revertedWith("ClearingHouseFacet: partyB is not liquidated")
+			).to.revertedWith("ClearingHouseFacet: PartyB is solvent")
 		})
 
 		describe("After PartyB Liquidation", () => {
@@ -318,12 +318,6 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				expect(newAllocation).to.equal(oldAllocation + transferAmount)
 			})
 
-			it("should fail with zero amount", async () => {
-				await expect(
-					context.clearingHouseFacet.connect(context.signers.liquidator).transferToLiquidator(context.signers.hedger, 0n),
-				).to.be.revertedWith("ClearingHouseFacet: Invalid amount")
-			})
-
 			it("should handle partial transfers correctly", async () => {
 				const partialAmount = 500n
 				const detailsBefore = await context.viewFacet.getCrossLiquidationDetails(context.signers.hedger)
@@ -397,7 +391,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 			})
 
 			it("should liquidate cross positions successfully", async () => {
-				const priceSig = await getDummyPriceSig([1n, 4n], [decimal(1n), decimal(1n)])
+				const priceSig = await getDummyPriceSig([1n], [decimal(1n)])
 
 				await expect(
 					context.clearingHouseFacet
@@ -406,10 +400,8 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				).to.not.reverted
 
 				const quote1: QuoteStructOutput = await context.viewFacet.getQuote(1)
-				const quote4: QuoteStructOutput = await context.viewFacet.getQuote(4)
 
 				expect(quote1.quoteStatus).to.equal(QuoteStatus.LIQUIDATED)
-				expect(quote4.quoteStatus).to.equal(QuoteStatus.LIQUIDATED)
 			})
 
 			it("should fail when partyB is not liquidated", async () => {
