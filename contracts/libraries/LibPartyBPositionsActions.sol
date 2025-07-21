@@ -178,6 +178,10 @@ library LibPartyBPositionsActions {
 			"PartyBFacet: Leverage is high"
 		);
 
+		accountLayout.partyBTotalCva[quote.partyB] += quote.lockedValues.cva;
+		accountLayout.partyBTotalLf[quote.partyB] += quote.lockedValues.lf;
+		quoteLayout.partyBPositionsCount[quote.partyB][address(0)] += 1;
+
 		quote.quoteStatus = QuoteStatus.OPENED;
 		LibQuote.addToOpenPositions(quoteId);
 	}

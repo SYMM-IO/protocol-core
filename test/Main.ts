@@ -22,85 +22,85 @@ import { shouldBehaveLikePartyBBatchActionsFacet } from "./PartyBBatchActionsFac
 
 describe("UnitTests", function () {
 	if (process.env.TEST_MODE == "static") {
-		// describe("Diamond", async function () {
-		// 	shouldBehaveLikeDiamond()
-		// })
+		describe("Diamond", async function () {
+			shouldBehaveLikeDiamond()
+		})
 
-		// describe("AccountFacet", async function () {
-		// 	shouldBehaveLikeAccountFacet()
-		// })
+		describe("AccountFacet", async function () {
+			shouldBehaveLikeAccountFacet()
+		})
 
-		// describe("SendQuote", async function () {
-		// 	shouldBehaveLikeSendQuote()
-		// })
+		describe("SendQuote", async function () {
+			shouldBehaveLikeSendQuote()
+		})
 
-		// describe("LockQuote", async function () {
-		// 	shouldBehaveLikeLockQuote()
-		// })
+		describe("LockQuote", async function () {
+			shouldBehaveLikeLockQuote()
+		})
 
-		// describe("OpenPosition", async function () {
-		// 	shouldBehaveLikeOpenPosition()
-		// })
+		describe("OpenPosition", async function () {
+			shouldBehaveLikeOpenPosition()
+		})
 
-		// describe("CancelQuote", async function () {
-		// 	shouldBehaveLikeCancelQuote()
-		// })
+		describe("CancelQuote", async function () {
+			shouldBehaveLikeCancelQuote()
+		})
 
-		// describe("ClosePosition", async function () {
-		// 	shouldBehaveLikeClosePosition()
-		// })
+		describe("ClosePosition", async function () {
+			shouldBehaveLikeClosePosition()
+		})
 
-		// describe("EmergencyClosePosition", async function () {
-		// 	shouldBehaveLikeEmergencyClosePosition()
-		// })
+		describe("EmergencyClosePosition", async function () {
+			shouldBehaveLikeEmergencyClosePosition()
+		})
 
-		// describe("ForceClosePosition", async function () {
-		// 	shouldBehaveLikeForceClosePosition()
-		// })
+		describe("ForceClosePosition", async function () {
+			shouldBehaveLikeForceClosePosition()
+		})
 
-		// describe("SettleAndForceClosePosition", async function () {
-		// 	shouldBehaveLikeSettleAndForceClosePosition()
-		// })
+		describe("SettleAndForceClosePosition", async function () {
+			shouldBehaveLikeSettleAndForceClosePosition()
+		})
 
-		// describe("Liquidation", async function () {
-		// 	shouldBehaveLikeLiquidationFacet()
-		// })
+		describe("Liquidation", async function () {
+			shouldBehaveLikeLiquidationFacet()
+		})
 
-		// describe("FundingRate", async function () {
-		// 	shouldBehaveLikeFundingRate()
-		// })
+		describe.skip("FundingRate", async function () {
+			shouldBehaveLikeFundingRate()
+		})
 
-		// describe("SpecificScenario", async function () {
-		// 	shouldBehaveLikeSpecificScenario()
-		// })
+		describe("SpecificScenario", async function () {
+			shouldBehaveLikeSpecificScenario()
+		})
 
-		// describe("BridgeFacet", async function () {
-		// 	shouldBehaveLikeBridgeFacet()
-		// })
+		describe("BridgeFacet", async function () {
+			shouldBehaveLikeBridgeFacet()
+		})
 
-		// describe("MultiAccount", async function () {
-		// 	shouldBehaveLikeMultiAccount()
-		// })
+		describe("MultiAccount", async function () {
+			shouldBehaveLikeMultiAccount()
+		})
 
-		// describe("ControlFacet", async function () {
-		// 	shouldBehaveLikeControlFacet()
-		// })
+		describe("ControlFacet", async function () {
+			shouldBehaveLikeControlFacet()
+		})
 
-		// describe("Settlement", async function () {
-		// 	shouldBehaveLikeSettlement()
-		// })
+		describe("Settlement", async function () {
+			shouldBehaveLikeSettlement()
+		})
 
-		// describe("FeeDistributor", async function () {
-		// 	shouldBehaveLikeFeeDistributor()
-		// })
+		describe("FeeDistributor", async function () {
+			shouldBehaveLikeFeeDistributor()
+		})
 
 		describe("ClearingHouseFacet", async function () {
 			shouldBehaveLikeClearingHouseFacet()
 		})
 
-		// describe("PartyBBatchActionsFacet", async function () {
-		// 	shouldBehaveLikePartyBBatchActionsFacet()
-		// })
+		describe("PartyBBatchActionsFacet", async function () {
+			shouldBehaveLikePartyBBatchActionsFacet()
+		})
 	} else if (process.env.TEST_MODE == "fuzz") {
 		describe("FuzzTest", async function () {
 			shouldBehaveLikeFuzzTest()

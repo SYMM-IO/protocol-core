@@ -179,9 +179,8 @@ export async function getDummyCrossLiquidationSig(
 		timestamp: await getBlockTimestamp(),
 		liquidationBlockNumber: 1,
 		liquidationTimestamp: await getBlockTimestamp(),
-		liquidationAllocatedBalance: allocatedBalance,
+		totalAllocatedBalance: allocatedBalance,
 		upnl: upnl,
-		totalUnrealizedLoss: totalUnrealizedLoss,
 		gatewaySignature: ethers.ZeroAddress,
 		sigs: {
 			signature: "0",

@@ -243,6 +243,7 @@ library LibQuote {
 			removeFromOpenPositions(quote.id);
 			quoteLayout.partyAPositionsCount[quote.partyA] -= 1;
 			quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] -= 1;
+			quoteLayout.partyBPositionsCount[quote.partyB][address(0)] -= 1;
 		} else if (quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING || quote.quantityToClose == 0) {
 			quote.quoteStatus = QuoteStatus.OPENED;
 			quote.statusModifyTimestamp = block.timestamp;

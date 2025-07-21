@@ -12,88 +12,70 @@ import "../../storages/AccountStorage.sol";
 import "../../storages/MAStorage.sol";
 
 contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
-    using LockedValuesOps for LockedValues;
+	using LockedValuesOps for LockedValues;
 
-    /**
-     * @notice Initiates clearing house liquidation for a PartyB.
-     * @param partyB The address of Party B.
-     * @param liquidationSig The signature confirming PartyB insolvency.
-     */
-    function liquidateCrossPartyB(
-        address partyB,
-        CrossLiquidation memory liquidationSig
-    ) external whenNotLiquidationPaused notCrossLiquidatedPartyB(partyB) onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        ClearingHouseFacetImpl.liquidateCrossPartyB(partyB, liquidationSig);
+	/**
+	 * @notice Initiates clearing house liquidation for a PartyB.
+	 * @param partyB The address of Party B.
+	 * @param liquidationSig The signature confirming PartyB insolvency.
+	 */
+	function liquidateCrossPartyB(
+		address partyB,
+		CrossLiquidation memory liquidationSig
+	) external whenNotLiquidationPaused notCrossLiquidatedPartyB(partyB) onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
+		ClearingHouseFacetImpl.liquidateCrossPartyB(partyB, liquidationSig);
 
-        emit LiquidateCrossPartyB(
-            msg.sender,
-            partyB,
-            liquidationSig.liquidationId,
-            liquidationSig.upnl,
-            liquidationSig.totalUnrealizedLoss,
-            liquidationSig.timestamp
-        );
-    }
+		emit LiquidateCrossPartyB(msg.sender, partyB, liquidationSig.liquidationId, liquidationSig.upnl, liquidationSig.timestamp);
+	}
 
-    /**
-     * @notice Deallocates PartyB balance for liquidation purposes.
-     */
-    function deallocateForCrossLiquidation(
-        address partyB,
-        address partyA,
-        uint256 amount
-    ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        ClearingHouseFacetImpl.deallocateForCrossLiquidation(partyB, partyA, amount);
-        emit DeallocateForLiquidation(partyB, partyA, amount);
-    }
+	/**
+	 * @notice Deallocates PartyB balance for liquidation purposes.
+	 */
+	function deallocateForCrossLiquidation(
+		address partyB,
+		address[] memory partyAs,
+		uint256[] memory amounts
+	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
+		ClearingHouseFacetImpl.deallocateForCrossLiquidation(partyB, partyAs, amounts);
+		emit DeallocateForLiquidation(partyB, partyAs, amounts);
+	}
 
-    /**
-     * @notice Transfers assets to PartyA during liquidation.
-     */
-    function transferToPartyA(
-        address partyB,
-        address partyA,
-        uint256 amount
-    ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        ClearingHouseFacetImpl.transferToPartyA(partyB, partyA, amount);
-        emit TransferToPartyA(partyB, partyA, amount);
-    }
+	/**
+	 * @notice Transfers assets to PartyA during liquidation.
+	 */
+	function distribute(
+		address partyB,
+		address receiver,
+		uint256 amount
+	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
+		ClearingHouseFacetImpl.distribute(partyB, receiver, amount);
+		emit Distribute(partyB, receiver, amount);
+	}
 
-    /**
-     * @notice Transfers liquidation fee to liquidator (msg.sender).
-     */
-    function transferToLiquidator(
-        address partyB,
-        uint256 liquidatorShare
-    ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        ClearingHouseFacetImpl.transferToLiquidator(partyB, liquidatorShare);
-        emit TransferToLiquidator(partyB, msg.sender, liquidatorShare);
-    }
+	/**
+	 * @notice Liquidates all pending quotes from PartyB to PartyA.
+	 */
+	function liquidatePendingQuotes(
+		address partyB,
+		address[] memory partyAs
+	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
+		ClearingHouseFacetImpl.liquidatePendingQuotes(partyB, partyAs);
+		emit LiquidatePendingQuotes(partyB, partyAs);
+	}
 
-    /**
-     * @notice Liquidates all pending quotes from PartyB to PartyA.
-     */
-    function liquidatePendingQuotes(
-        address partyB,
-        address partyA
-    ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        ClearingHouseFacetImpl.liquidatePendingQuotes(partyB, partyA);
-        emit LiquidatePendingQuotes(partyB, partyA);
-    }
-
-    /**
-     * @notice Liquidates active positions of PartyB with PartyA.
-     */
-    function liquidateCrossPositionsPartyB(
-        address partyB,
-        address partyA,
-        QuotePriceSig memory priceSig
-    ) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-        (uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = ClearingHouseFacetImpl.liquidateCrossPositionsPartyB(
-            partyB,
-            partyA,
-            priceSig
-        );
-        emit LiquidateCrossPositionsPartyB(partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
-    }
+	/**
+	 * @notice Liquidates active positions of PartyB with PartyA.
+	 */
+	function liquidateCrossPositionsPartyB(
+		address partyB,
+		address partyA,
+		QuotePriceSig memory priceSig
+	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
+		(uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = ClearingHouseFacetImpl.liquidateCrossPositionsPartyB(
+			partyB,
+			partyA,
+			priceSig
+		);
+		emit LiquidateCrossPositionsPartyB(partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
+	}
 }

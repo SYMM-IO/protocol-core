@@ -90,10 +90,10 @@ library LibMuonLiquidation {
 				"verifyCrossLiquidation",
 				partyB,
 				liquidationSig.upnl,
-				liquidationSig.totalUnrealizedLoss,
 				liquidationSig.timestamp,
 				liquidationSig.liquidationBlockNumber,
 				liquidationSig.liquidationTimestamp,
+				liquidationSig.totalAllocatedBalance,
 				LibMuon.getChainId()
 			)
 		);
