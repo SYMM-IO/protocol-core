@@ -32,11 +32,6 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit Deposit(msg.sender, user, amount);
 	}
 
-	function securedWithdrawFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.SECURED_WITHDRAWER_ROLE) {
-		AccountFacetImpl.securedWithdraw(user, amount);
-		emit Withdraw(msg.sender, user, amount);
-	}
-
 	/// @notice Allows either PartyA or PartyB to withdraw a specified amount of collateral, provided that the withdrawal cooldown period has elapsed.
 	/// @param amount The precise amount of collateral to be withdrawn, specified in collateral decimals.
 	function withdraw(uint256 amount) external whenNotAccountingPaused notSuspended(msg.sender) {
@@ -71,7 +66,10 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
-	function depositAndAllocateFor(address user, uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
+	function depositAndAllocateFor(
+		address user,
+		uint256 amount
+	) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
 		AccountFacetImpl.deposit(user, amount);
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
 		AccountFacetImpl.allocate(user, amountWith18Decimals);

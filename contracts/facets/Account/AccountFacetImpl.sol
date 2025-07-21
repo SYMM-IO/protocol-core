@@ -39,15 +39,6 @@ library AccountFacetImpl {
 		IERC20(appLayout.collateral).safeTransfer(user, amount);
 	}
 
-	function securedWithdraw(address user, uint256 amount) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(
-			block.timestamp >= accountLayout.withdrawCooldown[user] + MAStorage.layout().deallocateCooldown,
-			"AccountFacet: Cooldown hasn't reached"
-		);
-		AccountStorage.layout().balances[user] -= amount;
-	}
-
 	function allocate(address user, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(
@@ -83,7 +74,7 @@ library AccountFacetImpl {
 
 		accountLayout.balances[msg.sender] -= amount;
 
-		currentId = ++accountLayout.lastdeferredWithdrawId;
+		currentId = ++accountLayout.lastDeferredWithdrawId;
 		DeferredWithdraw memory withdrawObject = DeferredWithdraw({
 			id: currentId,
 			amount: amount,
@@ -99,7 +90,7 @@ library AccountFacetImpl {
 	function claimDeferredWithdraw(uint256 id) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		DeferredWithdraw storage withdrawObject = accountLayout.deferredWithdraws[id];
-		require(id <= accountLayout.lastdeferredWithdrawId, "AccountFacet: Invalid Id");
+		require(id <= accountLayout.lastDeferredWithdrawId, "AccountFacet: Invalid Id");
 		require(withdrawObject.status == DeferredWithdrawStatus.INITIATED, "AccountFacet: Already withdrawn");
 		require(block.timestamp >= MAStorage.layout().deallocateCooldown + withdrawObject.timestamp, "AccountFacet: Cooldown hasn't reached");
 		require(withdrawObject.user != address(0), "AccountFacet: Zero address");
@@ -113,7 +104,7 @@ library AccountFacetImpl {
 	function cancelDeferredWithdraw(uint256 id) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		DeferredWithdraw storage withdrawObject = accountLayout.deferredWithdraws[id];
-		require(id <= accountLayout.lastdeferredWithdrawId, "AccountFacet: Invalid Id");
+		require(id <= accountLayout.lastDeferredWithdrawId, "AccountFacet: Invalid Id");
 		require(withdrawObject.status == DeferredWithdrawStatus.INITIATED, "AccountFacet: Already withdrawn");
 		require(withdrawObject.user != address(0), "AccountFacet: Zero address");
 		require(!AccountStorage.layout().suspendedAddresses[withdrawObject.user], "AccountFacet: Receiver address is Suspended");

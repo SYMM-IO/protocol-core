@@ -28,7 +28,7 @@ library ClearingHouseFacetImpl {
 		require(
 			liquidationSig.upnl < 0 &&
 				liquidationSig.upnl +
-					(int256(liquidationSig.liquidationAllocatedBalance + accountLayout.partyBAllocatedBalances[partyB][address(0)]) -
+					(int256(liquidationSig.totalAllocatedBalance + accountLayout.partyBAllocatedBalances[partyB][address(0)]) -
 						int256(accountLayout.partyBTotalCva[partyB] + accountLayout.partyBTotalLf[partyB])) <
 				0,
 			"ClearingHouseFacet: partyB is solvent"
@@ -38,24 +38,27 @@ library ClearingHouseFacetImpl {
 		accountLayout.CrossLiquidationDetails[partyB] = CrossLiquidationDetail({
 			liquidationId: liquidationSig.liquidationId,
 			upnl: liquidationSig.upnl,
-			totalUnrealizedLoss: liquidationSig.totalUnrealizedLoss,
-			liquidationFee: 0,
 			timestamp: liquidationSig.timestamp,
 			deallocateForLiquidation: 0
 		});
 	}
 
-	function deallocateForCrossLiquidation(address partyB, address partyA, uint256 amount) internal {
+	function deallocateForCrossLiquidation(address partyB, address[] memory partyAs, uint256[] memory amounts) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 
+		require(partyAs.length == amounts.length, "");
 		require(maLayout.crossLiquidationStatus[partyB], "ClearingHouseFacet: PartyB is solvent");
-		require(accountLayout.partyBAllocatedBalances[partyB][partyA] >= amount, "ClearingHouseFacet: Insufficient allocated balance");
-		accountLayout.partyBAllocatedBalances[partyB][partyA] -= amount;
-		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation += amount;
+		for (uint256 i = 0; i < partyAs.length; i++) {
+			address partyA = partyAs[i];
+			uint256 amount = amounts[i];
+			require(accountLayout.partyBAllocatedBalances[partyB][partyA] >= amount, "ClearingHouseFacet: Insufficient allocated balance");
+			accountLayout.partyBAllocatedBalances[partyB][partyA] -= amount;
+			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation += amount;
+		}
 	}
 
-	function transferToPartyA(address partyB, address partyA, uint256 amount) internal {
+	function distribute(address partyB, address receiver, uint256 amount) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 
@@ -65,54 +68,44 @@ library ClearingHouseFacetImpl {
 			"ClearingHouseFacet: Insufficient allocated balance"
 		);
 		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation -= amount;
-		accountLayout.allocatedBalances[partyA] += amount;
+		accountLayout.allocatedBalances[receiver] += amount;
 	}
 
-	function transferToLiquidator(address partyB, uint256 liquidatorShare) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		MAStorage.Layout storage maLayout = MAStorage.layout();
-
-		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: PartyB is solvent");
-		require(
-			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation >= liquidatorShare,
-			"ClearingHouseFacet: Insufficient allocated balance"
-		);
-		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation -= liquidatorShare;
-		accountLayout.CrossLiquidationDetails[partyB].liquidationFee += liquidatorShare;
-		accountLayout.allocatedBalances[msg.sender] += liquidatorShare;
-	}
-
-	function liquidatePendingQuotes(address partyB, address partyA) internal {
+	function liquidatePendingQuotes(address partyB, address[] memory partyAs) internal {
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
 		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: PartyB is solvent");
-		uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
 
-		for (uint256 index = 0; index < pendingQuotes.length; ) {
-			Quote storage quote = quoteLayout.quotes[pendingQuotes[index]];
-			if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING)) {
-				accountLayout.pendingLockedBalances[partyA].subQuote(quote);
-				uint256 fee = LibQuote.getTradingFee(quote.id);
-				accountLayout.allocatedBalances[partyA] += fee;
-				emit SharedEvents.BalanceChangePartyA(partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
-				pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
-				pendingQuotes.pop();
-				quote.quoteStatus = QuoteStatus.LIQUIDATED_PENDING;
-				quote.statusModifyTimestamp = block.timestamp;
-			} else {
-				index++;
+		for (uint256 j = 0; j < partyAs.length; j++) {
+			address partyA = partyAs[j];
+			uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
+			for (uint256 index = 0; index < pendingQuotes.length; ) {
+				Quote storage quote = quoteLayout.quotes[pendingQuotes[index]];
+				if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING)) {
+					accountLayout.pendingLockedBalances[partyA].subQuote(quote);
+					uint256 fee = LibQuote.getTradingFee(quote.id);
+					accountLayout.allocatedBalances[partyA] += fee;
+					emit SharedEvents.BalanceChangePartyA(partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
+					pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
+					pendingQuotes.pop();
+					quote.quoteStatus = QuoteStatus.LIQUIDATED_PENDING;
+					quote.statusModifyTimestamp = block.timestamp;
+				} else {
+					index++;
+				}
+			}
+
+			if (quoteLayout.partyBPendingQuotes[partyB][partyA].length > 0) {
+				delete quoteLayout.partyBPendingQuotes[partyB][partyA];
+				accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
+				accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
+				accountLayout.partyANonces[partyA] += 1;
+
+				accountLayout.connectedPartyBCount[partyA] -= 1;
 			}
 		}
-
-		delete quoteLayout.partyBPendingQuotes[partyB][partyA];
-
-		accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
-		accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
-		accountLayout.partyANonces[partyA] += 1;
-
-		accountLayout.connectedPartyBCount[partyA] -= 1;
 	}
 
 	function liquidateCrossPositionsPartyB(
@@ -158,16 +151,25 @@ library ClearingHouseFacetImpl {
 				(quote.closedAmount + LibQuote.quoteOpenAmount(quote));
 			quote.closedAmount = quote.quantity;
 
+			accountLayout.partyBTotalLf[partyB] -= quote.lockedValues.lf;
+			accountLayout.partyBTotalCva[partyB] -= quote.lockedValues.cva;
 			LibQuote.removeFromOpenPositions(quote.id);
 			quoteLayout.partyAPositionsCount[partyA] -= 1;
 			quoteLayout.partyBPositionsCount[partyB][partyA] -= 1;
+			quoteLayout.partyBPositionsCount[partyB][address(0)] -= 1;
 		}
 
 		if (quoteLayout.partyBPositionsCount[partyB][partyA] == 0) {
-			maLayout.crossLiquidationStatus[partyB] = false;
-			//! maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
 			accountLayout.partyBNonces[partyB][partyA] += 1;
+			accountLayout.connectedPartyBCount[partyA] -= 1;
 		}
+
+		if (quoteLayout.partyBPositionsCount[partyB][address(0)] == 0) {
+			//!  بقیه جاها باید + بشه
+			maLayout.crossLiquidationStatus[partyB] = false;
+			maLayout.partyBLiquidationTimestamp[partyB][address(0)] = 0;
+		}
+
 		return (liquidatedAmounts, closeIds);
 	}
 }

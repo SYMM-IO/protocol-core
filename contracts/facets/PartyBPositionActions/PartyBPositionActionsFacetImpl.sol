@@ -31,8 +31,6 @@ library PartyBPositionActionsFacetImpl {
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 
 		currentId = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);		
-		accountLayout.partyBTotalCva[quote.partyB] += quote.lockedValues.cva;
-		accountLayout.partyBTotalLf[quote.partyB] += quote.lockedValues.lf;
 		uint256[] memory quoteIds = new uint256[](1);
 		uint256[] memory filledAmounts = new uint256[](1);
 		uint256[] memory marketPrices = new uint256[](1);
