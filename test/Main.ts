@@ -74,7 +74,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeSpecificScenario()
 		})
 
-		describe("BridgeFacet", async function () {
+		describe.only("BridgeFacet", async function () {
 			shouldBehaveLikeBridgeFacet()
 		})
 

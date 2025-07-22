@@ -1,13 +1,13 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {initializeFixture} from "./Initialize.fixture"
-import {expect} from "chai"
-import {TransferToBridgeValidator} from "./models/validators/TransferToBridgeValidator"
-import {decimal} from "./utils/Common"
-import {WithdrawLockedTransactionValidator} from "./models/validators/WithdrawLockedTransactionValidator"
-import {BridgeTransactionStatus} from "./models/Enums"
-import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { initializeFixture } from "./Initialize.fixture"
+import { expect } from "chai"
+import { TransferToBridgeValidator } from "./models/validators/TransferToBridgeValidator"
+import { decimal, pauseAccounting, suspendAddress } from "./utils/Common"
+import { WithdrawLockedTransactionValidator } from "./models/validators/WithdrawLockedTransactionValidator"
+import { BridgeTransactionStatus } from "./models/Enums"
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
 
 export function shouldBehaveLikeBridgeFacet(): void {
 	let context: RunContext, user: User
@@ -67,27 +67,29 @@ export function shouldBehaveLikeBridgeFacet(): void {
 			await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100n), await bridge.getAddress())
 		})
 
-		it('should suspend successfully', async () => {
-			await expect(context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(10))
-				.to.be.revertedWith("BridgeFacet: Invalid transactionId")
+		it("should suspend successfully", async () => {
+			await expect(context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(10)).to.be.revertedWith(
+				"BridgeFacet: Invalid transactionId",
+			)
 			await context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(1)
 			expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.eq(BridgeTransactionStatus.SUSPENDED)
 			await time.increase(43250) //12h
 			await context.bridgeFacet.connect(context.signers.bridge2).withdrawReceivedBridgeValue(2)
-			await expect(context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(2))
-				.to.be.revertedWith("BridgeFacet: Invalid status")
+			await expect(context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(2)).to.be.revertedWith("BridgeFacet: Invalid status")
 		})
 
-		it('should restore successfully', async () => {
+		it("should restore successfully", async () => {
 			let tx = await context.viewFacet.getBridgeTransaction(1)
 
-			await expect(context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(2, tx.amount))
-				.to.be.revertedWith("BridgeFacet: Invalid status")
+			await expect(context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(2, tx.amount)).to.be.revertedWith(
+				"BridgeFacet: Invalid status",
+			)
 
 			await context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(1)
 
-			await expect(context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(1, tx.amount + 1n))
-				.to.be.revertedWith("BridgeFacet: High valid amount")
+			await expect(context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(1, tx.amount + 1n)).to.be.revertedWith(
+				"BridgeFacet: High valid amount",
+			)
 
 			await context.bridgeFacet.connect(context.signers.admin).restoreBridgeTransaction(1, tx.amount / 2n)
 			expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.eq(BridgeTransactionStatus.RECEIVED)
@@ -147,7 +149,177 @@ export function shouldBehaveLikeBridgeFacet(): void {
 
 			expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.equal(BridgeTransactionStatus.WITHDRAWN)
 			expect((await context.viewFacet.getBridgeTransaction(3)).status).to.equal(BridgeTransactionStatus.WITHDRAWN)
+		})
+	})
 
+	describe("bridge transaction cancellation", () => {
+		beforeEach(async function () {
+			await context.controlFacet.addBridge(await bridge2.getAddress())
+			// Create multiple bridge transactions for testing
+			await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(100n), await bridge.getAddress())
+			await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(200n), await bridge2.getAddress())
+			await context.bridgeFacet.connect(context.signers.user).transferToBridge(decimal(150n), await bridge.getAddress())
+		})
+
+		describe("requestToCancelBridgeTransaction", () => {
+			it("Should fail with invalid transaction ID", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(10)).to.be.revertedWith(
+					"BridgeFacet: Invalid transactionId",
+				)
+			})
+
+			it("Should fail when transaction status is not RECEIVED", async function () {
+				// Suspend a transaction first
+				await context.bridgeFacet.connect(context.signers.admin).suspendBridgeTransaction(1)
+				await expect(context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)).to.be.revertedWith(
+					"BridgeFacet: Invalid status",
+				)
+			})
+
+			it("Should fail when accounting is paused", async function () {
+				await pauseAccounting(context)
+				await expect(context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)).to.be.revertedWith(
+					"Pausable: Accounting paused",
+				)
+			})
+
+			it("Should fail when user is suspended", async function () {
+				await suspendAddress(context, await context.signers.user.getAddress())
+				await expect(context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)).to.be.revertedWith(
+					"Accessibility: Sender is Suspended",
+				)
+			})
+
+			it("Should request cancellation successfully", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)).to.not.reverted
+
+				const bridge = await context.viewFacet.getBridgeTransaction(1)
+
+				expect(bridge.status).to.equal(3)
+			})
+		})
+
+		describe("acceptCancelBridgeTransaction", () => {
+			beforeEach(async function () {
+				// Request cancellation first
+				await context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)
+			})
+
+			it("Should fail with invalid transaction ID", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).acceptCancelBridgeTransaction(10)).to.be.revertedWith(
+					"BridgeFacet: Invalid transactionId",
+				)
+			})
+
+			it("Should fail when transaction status is not CANCEL_REQUESTED", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).acceptCancelBridgeTransaction(2)).to.be.revertedWith(
+					"BridgeFacet: Invalid status",
+				)
+			})
+
+			it("Should fail when accounting is paused", async function () {
+				await pauseAccounting(context)
+				await expect(context.bridgeFacet.connect(context.signers.user).acceptCancelBridgeTransaction(1)).to.be.revertedWith(
+					"Pausable: Accounting paused",
+				)
+			})
+
+			it("Should fail when user is suspended", async function () {
+				await suspendAddress(context, await context.signers.user.getAddress())
+				await expect(context.bridgeFacet.connect(context.signers.user).acceptCancelBridgeTransaction(1)).to.be.revertedWith(
+					"Accessibility: Sender is Suspended",
+				)
+			})
+
+			it("Should accept cancellation successfully", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).acceptCancelBridgeTransaction(1)).to.not.reverted
+
+				const bridge = await context.viewFacet.getBridgeTransaction(1)
+
+				expect(bridge.status).to.equal(4)
+			})
+		})
+
+		describe("rejectCancelBridgeTransaction", () => {
+			beforeEach(async function () {
+				// Request cancellation first
+				await context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)
+			})
+
+			it("Should fail with invalid transaction ID", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).rejectCancelBridgeTransaction(10)).to.be.revertedWith(
+					"BridgeFacet: Invalid transactionId",
+				)
+			})
+
+			it("Should fail when transaction status is not CANCEL_REQUESTED", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).rejectCancelBridgeTransaction(2)).to.be.revertedWith(
+					"BridgeFacet: Invalid status",
+				)
+			})
+
+			it("Should fail when accounting is paused", async function () {
+				await pauseAccounting(context)
+				await expect(context.bridgeFacet.connect(context.signers.user).rejectCancelBridgeTransaction(1)).to.be.revertedWith(
+					"Pausable: Accounting paused",
+				)
+			})
+
+			it("Should fail when user is suspended", async function () {
+				await suspendAddress(context, await context.signers.user.getAddress())
+				await expect(context.bridgeFacet.connect(context.signers.user).rejectCancelBridgeTransaction(1)).to.be.revertedWith(
+					"Accessibility: Sender is Suspended",
+				)
+			})
+
+			it("Should reject cancellation successfully", async function () {
+				await expect(context.bridgeFacet.connect(context.signers.user).rejectCancelBridgeTransaction(1)).to.not.reverted
+
+				const bridge = await context.viewFacet.getBridgeTransaction(1)
+
+				expect(bridge.status).to.equal(0)
+			})
+		})
+
+		describe("integration scenarios", () => {
+			it("Should handle full cancellation workflow", async function () {
+				// 1. Request cancellation
+				await context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)
+				expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.eq(BridgeTransactionStatus.CANCEL_REQUESTED)
+
+				// 2. Accept cancellation
+				const userBalanceBefore = await context.viewFacet.balanceOf(await context.signers.user.getAddress())
+				await context.bridgeFacet.connect(context.signers.user).acceptCancelBridgeTransaction(1)
+
+				expect((await context.viewFacet.getBridgeTransaction(1)).status).to.be.eq(BridgeTransactionStatus.CANCELED)
+				const userBalanceAfter = await context.viewFacet.balanceOf(await context.signers.user.getAddress())
+				expect(userBalanceAfter).to.be.gt(userBalanceBefore) // User should get refund
+			})
+
+			it("Should handle cancellation rejection workflow", async function () {
+				// 1. Request cancellation
+				await context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(2)
+				expect((await context.viewFacet.getBridgeTransaction(2)).status).to.be.eq(BridgeTransactionStatus.CANCEL_REQUESTED)
+
+				// 2. Reject cancellation
+				const userBalanceBefore = await context.viewFacet.balanceOf(await context.signers.user.getAddress())
+				await context.bridgeFacet.connect(context.signers.user).rejectCancelBridgeTransaction(2)
+
+				expect((await context.viewFacet.getBridgeTransaction(2)).status).to.be.eq(BridgeTransactionStatus.RECEIVED)
+				const userBalanceAfter = await context.viewFacet.balanceOf(await context.signers.user.getAddress())
+				expect(userBalanceAfter).to.be.eq(userBalanceBefore) // No refund on rejection
+			})
+
+			it("Should not allow operations on already withdrawn transactions", async function () {
+				// Withdraw transaction first
+				await time.increase(43250) // 12h cooldown
+				await context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(3)
+
+				// Should not be able to request cancellation on withdrawn transaction
+				await expect(context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(3)).to.be.revertedWith(
+					"BridgeFacet: Invalid status",
+				)
+			})
 		})
 	})
 }
