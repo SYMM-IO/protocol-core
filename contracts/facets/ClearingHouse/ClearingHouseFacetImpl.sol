@@ -165,7 +165,6 @@ library ClearingHouseFacetImpl {
 		}
 
 		if (quoteLayout.partyBPositionsCount[partyB][address(0)] == 0) {
-			//!  بقیه جاها باید + بشه
 			maLayout.crossLiquidationStatus[partyB] = false;
 			maLayout.partyBLiquidationTimestamp[partyB][address(0)] = 0;
 		}
