@@ -12,7 +12,7 @@ import "./IFundingRateFacet.sol";
 contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 	/// @notice Charges funding rates for a given Party A position.
 	/// @param partyA The address of Party A.
-	/// @param quoteIds An array of quote IDs that we are about to get fudning for.
+	/// @param quoteIds An array of quote IDs that we are about to get funding for.
 	/// @param rates An array of funding rates.
 	/// @param upnlSig The Muon signature for upnl of both parties.
 	function chargeFundingRate(
@@ -75,7 +75,7 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 	/// @notice Charges funding rates for a given Party A position.
 	/// @param partyA The address of Party A.
 	/// @param partyB The address of Party B.
-	/// @param quoteIds An array of quote IDs that we are about to get fudning for.
+	/// @param quoteIds An array of quote IDs that we are about to get funding for.
 	/// @param upnlSig The Muon signature for upnl of both parties.
 	function chargeAccumulatedFundingFee(
 		address partyA,
