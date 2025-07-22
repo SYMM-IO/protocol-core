@@ -95,6 +95,13 @@ export async function initialize(): Promise<RunContext> {
 	output.MulticallAddress = await multicall?.getAddress()
 	output.nextQuoteIdVerifierAddress = await nextQuoteIdVerifier?.getAddress()
 	saveAddresses(output)
+	console.log("Deployed successfully")
+	console.log("Addresses:")
+	console.log(output)
+
+	console.log("Testing deployment")
+	const roleHash = await context.viewFacet.connect(context.signers.admin).getRoleHash("SYMBOL_MANAGER_ROLE")
+	console.log("Role hash:", roleHash)
 	return context
 }
 
