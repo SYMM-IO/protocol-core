@@ -309,44 +309,92 @@ library LibQuote {
 	function getAccumulatedFundingFee(uint256 quoteId) internal view returns (int256 fee) {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
+
+		// Early exit conditions:
+		// 1. No epoch duration set (accumulated funding not active)
+		// 2. Position never had funding applied (new position)
 		if (fundingFee.epochDuration == 0 || quote.lastFundingPaymentTimestamp == 0) {
 			return 0;
 		}
-		uint256 newEpochs = (block.timestamp - ((fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration)) /
-			fundingFee.epochDuration;
+
+		// Calculate how many new epochs have passed since the last fee update
+		// This finds the start of the last recorded epoch and calculates epochs from there
+		uint256 lastEpochStart = (fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration;
+		uint256 newEpochs = (block.timestamp - lastEpochStart) / fundingFee.epochDuration;
+
+		// Calculate the total fee based on position type
+		// Total fee = (Historical average × Past epochs) + (Current rate × New epochs)
 		int256 totalFee;
 		if (quote.positionType == PositionType.LONG) {
+			// Long positions use long funding fees
 			totalFee = (fundingFee.accumulatedLongFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentLongFee);
 		} else {
+			// Short positions use short funding fees
 			totalFee = (fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) + (int256(newEpochs) * fundingFee.currentShortFee);
 		}
+
+		// Calculate the actual payment:
+		// 1. Subtract previously paid fees to get only unpaid amount
+		// 2. Apply to the position's open amount (notional value)
+		// 3. Scale down by 1e18 (funding fees are in 1e18 precision)
 		fee = (int256(LibQuote.quoteOpenAmount(quote)) * (totalFee - quote.paidFundingFee)) / 1e18;
-		// TODO: fix this bug
+
+		// Apply maximum funding rate cap to prevent excessive charges
+		// Max fee = Max rate per second × Time elapsed since last payment
 		int256 maxFee = int256(quote.maxFundingRate) * int256(block.timestamp - quote.lastFundingPaymentTimestamp);
+
+		// Cap the fee at the maximum allowed amount
 		if (fee > 0) {
+			// Positive fee: trader pays (capped at maxFee)
 			fee = maxFee > fee ? fee : maxFee;
 		} else {
+			// Negative fee: trader receives (capped at -maxFee)
 			fee = -maxFee < fee ? fee : -maxFee;
 		}
 	}
 
 	function chargeAccumulatedFundingFee(uint256 quoteId) internal {
+		// Load the position
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+
+		// Calculate the unpaid funding fee
 		int256 fee = getAccumulatedFundingFee(quoteId);
+
 		if (fee > 0) {
-			AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA] -= uint256(fee);
-			AccountStorage.layout().allocatedBalances[quote.partyA] += uint256(fee);
-			quote.lastFundingPaymentTimestamp = block.timestamp;
-			quote.paidFundingFee += fee;
-			emit SharedEvents.BalanceChangePartyA(quote.partyA, uint256(fee), SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
-			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, uint256(fee), SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
+			// Positive fee: Trader (PartyA) pays Market Maker (PartyB)
+			// This happens when:
+			// - Long positions in a bullish market (longs pay shorts)
+			// - Short positions in a bearish market (shorts pay longs)
+
+			// Transfer from PartyA to PartyB
+			AccountStorage.layout().allocatedBalances[quote.partyA] -= uint256(fee);
+			AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA] += uint256(fee);
+
+			// Update tracking variables
+			quote.lastFundingPaymentTimestamp = block.timestamp; // Record payment time
+			quote.paidFundingFee += fee; // Add to cumulative paid amount
+
+			// Emit events for transparency and off-chain tracking
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, uint256(fee), SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, uint256(fee), SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
 		} else if (fee < 0) {
-			AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA] += uint256(-fee);
-			AccountStorage.layout().allocatedBalances[quote.partyA] -= uint256(-fee);
-			quote.lastFundingPaymentTimestamp = block.timestamp;
-			quote.paidFundingFee += fee;
-			emit SharedEvents.BalanceChangePartyA(quote.partyA, uint256(-fee), SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
-			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, uint256(-fee), SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
+			// Negative fee: Market Maker (PartyB) pays Trader (PartyA)
+			// This happens when:
+			// - Long positions in a bearish market (longs receive from shorts)
+			// - Short positions in a bullish market (shorts receive from longs)
+
+			// Transfer from PartyB to PartyA (note: -fee to make it positive)
+			AccountStorage.layout().partyBAllocatedBalances[quote.partyB][quote.partyA] -= uint256(-fee);
+			AccountStorage.layout().allocatedBalances[quote.partyA] += uint256(-fee);
+
+			// Update tracking variables
+			quote.lastFundingPaymentTimestamp = block.timestamp; // Record payment time
+			quote.paidFundingFee += fee; // Add to cumulative (negative value)
+
+			// Emit events for transparency and off-chain tracking
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, uint256(-fee), SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, uint256(-fee), SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
 		}
+		// If fee == 0, no action needed
 	}
 }
