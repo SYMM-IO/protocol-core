@@ -102,6 +102,38 @@ export async function initialize(): Promise<RunContext> {
 	console.log("Testing deployment")
 	const roleHash = await context.viewFacet.connect(context.signers.admin).getRoleHash("SYMBOL_MANAGER_ROLE")
 	console.log("Role hash:", roleHash)
+
+
+	console.log("Testing diamond call directly (not facet)")
+	const diamondAddress = await diamond.getAddress()
+	
+	const viewFacetAbi = [
+	  {
+		"inputs": [
+		  {
+			"internalType": "string",
+			"name": "str",
+			"type": "string"
+		  }
+		],
+		"name": "getRoleHash",
+		"outputs": [
+		  {
+			"internalType": "bytes32",
+			"name": "",
+			"type": "bytes32"
+		  }
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	  }
+	]
+	
+	const diamondAsViewFacet = new ethers.Contract(diamondAddress, viewFacetAbi, context.signers.admin)
+	const roleHashViaDiamond = await diamondAsViewFacet.getRoleHash("SYMBOL_MANAGER_ROLE")
+	console.log("Role hash via Diamond address:", roleHashViaDiamond)
+
+
 	return context
 }
 
