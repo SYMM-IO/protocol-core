@@ -97,4 +97,36 @@ library BridgeFacetImpl {
 		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
 		bridgeTransaction.amount = validAmount;
 	}
+
+	function requestToCancelBridgeTransaction(uint256 transactionId) internal {
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+
+		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
+		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid status");
+		bridgeTransaction.status = BridgeTransactionStatus.CANCEL_REQUESTED;
+	}
+
+	function acceptCancelBridgeTransaction(uint256 transactionId) internal {
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+
+		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+
+		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
+		require(bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED, "BridgeFacet: Invalid status");
+		bridgeTransaction.status = BridgeTransactionStatus.CANCELED;
+		uint256 amountWith18Decimals = (bridgeTransaction.amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
+		AccountStorage.layout().balances[bridgeTransaction.user] += amountWith18Decimals;
+	}
+
+	function rejectCancelBridgeTransaction(uint256 transactionId) internal {
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+
+		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+
+		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
+		require(bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED, "BridgeFacet: Invalid status");
+		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
+	}
 }
