@@ -397,5 +397,6 @@ library LibQuote {
 			// Negative fee: cap at -maxFee
 			return fee < -maxFee ? -maxFee : fee;
 		}
+		// If fee == 0, no action needed
 	}
 }
