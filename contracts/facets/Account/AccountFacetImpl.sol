@@ -12,6 +12,7 @@ import "../../storages/MAStorage.sol";
 import "../../storages/MuonStorage.sol";
 import "../../libraries/muon/LibMuonAccount.sol";
 import "../../libraries/LibAccount.sol";
+import "../../interfaces/IExternalTransferTarget.sol";
 
 library AccountFacetImpl {
 	using SafeERC20 for IERC20;
@@ -169,5 +170,21 @@ library AccountFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(!accountLayout.masterAccountMode[msg.sender], "AccountFacet: master account mode is active");
 		accountLayout.masterAccountMode[msg.sender] = true;
+	}
+
+	function externalTransfer(address sender, address receiver, uint256 amount, address target) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+
+		require(amount > 0, "AccountFacet: Amount is zero");
+		require(receiver != address(0), "AccountFacet: Receiver is zero address");
+		require(target != address(0), "AccountFacet: Target is zero address");
+		require(accountLayout.externalTransferTargets[target], "AccountFacet: Target not whitelisted");
+
+		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
+		accountLayout.balances[sender] -= amountWith18Decimals;
+		IERC20(appLayout.collateral).safeTransfer(target, amountWith18Decimals);
+
+		IExternalTransferTarget(target).onTransfer(appLayout.collateral, sender, receiver, amount);
 	}
 }

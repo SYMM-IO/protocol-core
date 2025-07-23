@@ -172,4 +172,16 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		AccountFacetImpl.activeMasterAccountMode();
 		emit ActiveMasterAccountMode(msg.sender);
 	}
+
+	/**
+	 * @notice Transfers collateral from sender's available balance to whitelisted target without any cooldown
+	 * @dev sender must not be suspended for the operation to succeed
+	 * @param receiver The address of the recipient user in the target contract
+	 * @param amount The amount to transfer, specified in collateral decimals
+	 * @param target The address of the target contract that will receive the collateral
+	 */
+	function externalTransfer(address receiver, uint256 amount, address target) external notSuspended(msg.sender) {
+		AccountFacetImpl.externalTransfer(msg.sender, receiver, amount, target);
+		emit ExternalTransfer(msg.sender, receiver, amount, target);
+	}
 }
