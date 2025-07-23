@@ -27,8 +27,8 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit Deposit(msg.sender, user, amount);
 	}
 
-	function securedDepositFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.SECURED_DEPOSITOR_ROLE) {
-		AccountFacetImpl.securedDepositFor(user, amount);
+	function virtualDepositFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.VIRTUAL_DEPOSITOR_ROLE) {
+		AccountFacetImpl.virtualDepositFor(user, amount);
 		emit Deposit(msg.sender, user, amount);
 	}
 
