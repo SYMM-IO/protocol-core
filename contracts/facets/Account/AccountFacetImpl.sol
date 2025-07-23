@@ -23,7 +23,7 @@ library AccountFacetImpl {
 		AccountStorage.layout().balances[user] += amountWith18Decimals;
 	}
 
-	function securedDepositFor(address user, uint256 amount) internal {
+	function virtualDepositFor(address user, uint256 amount) internal {
 		AccountStorage.layout().balances[user] += amount;
 	}
 

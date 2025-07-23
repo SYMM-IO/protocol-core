@@ -550,6 +550,20 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		BridgeStorage.layout().bridges[bridge] = false;
 	}
 
+	/// @notice Adds a virtual bridge.
+	/// @param bridge The address of the virtual bridge to be added.
+	function addVirtualBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		emit AddVirtualBridge(bridge);
+		BridgeStorage.layout().virtualBridges[bridge] = true;
+	}
+
+	/// @notice Removes a virtual bridge.
+	/// @param bridge The address of the virtual bridge to be removed.
+	function removeVirtualBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		emit RemoveVirtualBridge(bridge);
+		BridgeStorage.layout().virtualBridges[bridge] = false;
+	}
+
 	/// @notice Sets the params for liquidation insurance vault.
 	/// @param insuranceVault The address of the vault.
 	/// @param maxLiquidationProfit The max profit from liquidation per position.

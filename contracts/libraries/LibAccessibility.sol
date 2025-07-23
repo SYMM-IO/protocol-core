@@ -19,7 +19,7 @@ library LibAccessibility {
 	bytes32 public constant DISPUTE_ROLE = keccak256("DISPUTE_ROLE");
 	bytes32 public constant AFFILIATE_MANAGER_ROLE = keccak256("AFFILIATE_MANAGER_ROLE");
 	bytes32 public constant PARTYB_LIQUIDATOR_ROLE = keccak256("PARTYB_LIQUIDATOR_ROLE");
-	bytes32 public constant SECURED_DEPOSITOR_ROLE = keccak256("SECURED_DEPOSITOR_ROLE");
+	bytes32 public constant VIRTUAL_DEPOSITOR_ROLE = keccak256("VIRTUAL_DEPOSITOR_ROLE");
 	bytes32 public constant SECURED_WITHDRAWER_ROLE = keccak256("SECURED_WITHDRAWER_ROLE");
 	bytes32 public constant CLEARING_HOUSE_ROLE = keccak256("CLEARING_HOUSE_ROLE");
 	

@@ -19,7 +19,7 @@ library BridgeFacetImpl {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 
-		require(bridgeLayout.bridges[bridge], "BridgeFacet: Invalid bridge");
+		require(bridgeLayout.bridges[bridge] || bridgeLayout.virtualBridges[bridge], "BridgeFacet: Invalid bridge");
 		require(bridge != user, "BridgeFacet: Bridge and user can't be the same");
 
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
@@ -102,6 +102,7 @@ library BridgeFacetImpl {
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
+		require(msg.sender == bridgeTransaction.user, "BridgeFacet: Sender is not the transaction's user");
 		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid status");
 		bridgeTransaction.status = BridgeTransactionStatus.CANCEL_REQUESTED;
@@ -113,6 +114,7 @@ library BridgeFacetImpl {
 
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
+		require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
 		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 		require(bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED, "BridgeFacet: Invalid status");
 		bridgeTransaction.status = BridgeTransactionStatus.CANCELED;
@@ -125,8 +127,21 @@ library BridgeFacetImpl {
 
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
+		require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
 		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 		require(bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED, "BridgeFacet: Invalid status");
 		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
+	}
+
+	function completeVirtualBridge(uint256 transactionId) internal {
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+
+		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
+		require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
+		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
+		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid status");
+		require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
+
+		bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
 	}
 }
