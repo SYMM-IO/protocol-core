@@ -66,7 +66,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeLiquidationFacet()
 		})
 
-		describe.skip("FundingRate", async function () {
+		describe.only("FundingRate", async function () {
 			shouldBehaveLikeFundingRate()
 		})
 
@@ -74,7 +74,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeSpecificScenario()
 		})
 
-		describe.only("BridgeFacet", async function () {
+		describe("BridgeFacet", async function () {
 			shouldBehaveLikeBridgeFacet()
 		})
 
