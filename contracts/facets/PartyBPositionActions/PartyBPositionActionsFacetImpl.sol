@@ -46,6 +46,8 @@ library PartyBPositionActionsFacetImpl {
 			quote.partyB,
 			quote.partyA
 		);
+
+		quote.lastFundingPaymentTimestamp = block.timestamp;
 	}
 
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) internal {
