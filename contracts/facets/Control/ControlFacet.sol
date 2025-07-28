@@ -587,4 +587,19 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		GlobalAppStorage.layout().signatureVerifier = signatureVerifier;
 		emit SetSignatureVerifierAddress(signatureVerifier);
 	}
+
+	/// @notice Adds an external transfer target.
+	/// @param target The address of the external transfer target to be added.
+	function addExternalTransferTarget(address target) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		require(target != address(0), "ControlFacet: Zero address");
+		emit AddExternalTransferTarget(target);
+		AccountStorage.layout().externalTransferTargets[target] = true;
+	}
+
+	/// @notice Removes an external transfer target.
+	/// @param target The address of the external transfer target to be removed.
+	function removeExternalTransferTarget(address target) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		emit RemoveExternalTransferTarget(target);
+		AccountStorage.layout().externalTransferTargets[target] = false;
+	}
 }

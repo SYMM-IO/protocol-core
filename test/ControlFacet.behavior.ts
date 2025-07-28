@@ -1,10 +1,10 @@
-import {loadFixture} from "@nomicfoundation/hardhat-network-helpers"
-import {RunContext} from "./models/RunContext"
-import {initializeFixture} from "./Initialize.fixture"
-import {expect} from "chai"
-import {keccak256} from "js-sha3"
-import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers"
-import {ethers} from "hardhat"
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers"
+import { RunContext } from "./models/RunContext"
+import { initializeFixture } from "./Initialize.fixture"
+import { expect } from "chai"
+import { keccak256 } from "js-sha3"
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
+import { ethers } from "hardhat"
 
 const DISPUTE_ROLE = `0x${keccak256("DISPUTE_ROLE")}`
 const PARTY_B_MANAGER_ROLE = `0x${keccak256("PARTY_B_MANAGER_ROLE")}`
@@ -59,9 +59,7 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 
 		it("Should not grantRole to Address zero", async function () {
-			await expect(context.controlFacet.connect(owner).grantRole(ethers.ZeroAddress, DISPUTE_ROLE)).to.be.revertedWith(
-				"ControlFacet: Zero address",
-			)
+			await expect(context.controlFacet.connect(owner).grantRole(ethers.ZeroAddress, DISPUTE_ROLE)).to.be.revertedWith("ControlFacet: Zero address")
 		})
 	})
 
@@ -80,7 +78,9 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 
 		it("Should not registerPartyB if partyB exist", async function () {
-			await expect(context.controlFacet.connect(owner).registerPartyB(await hedger.getAddress())).to.revertedWith("ControlFacet: Address is already registered")
+			await expect(context.controlFacet.connect(owner).registerPartyB(await hedger.getAddress())).to.revertedWith(
+				"ControlFacet: Address is already registered",
+			)
 		})
 	})
 
@@ -101,7 +101,9 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 
 		it("Should not deregisterPartyB if address is not register", async function () {
-			await expect(context.controlFacet.connect(owner).deregisterPartyB(await hedger.getAddress(), 1)).to.be.revertedWith("ControlFacet: Invalid index")
+			await expect(context.controlFacet.connect(owner).deregisterPartyB(await hedger.getAddress(), 1)).to.be.revertedWith(
+				"ControlFacet: Invalid index",
+			)
 		})
 	})
 
@@ -125,7 +127,8 @@ export function shouldBehaveLikeControlFacet(): void {
 			const minQty = BigInt("100000000000000000000")
 			const maxQty = BigInt("60000000000000000000")
 
-			await expect(context.controlFacet.connect(owner).addSymbol("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period)).to.not.be.reverted
+			await expect(context.controlFacet.connect(owner).addSymbol("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period)).to.not.be
+				.reverted
 			expect((await context.viewFacet.getSymbol(2)).name).to.be.equal("ETHUSDT")
 		})
 
@@ -137,9 +140,9 @@ export function shouldBehaveLikeControlFacet(): void {
 			const minQty = BigInt("100000000000000000000")
 			const maxQty = BigInt("60000000000000000000")
 
-			await expect(context.controlFacet.connect(owner).addSymbol("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period)).to.be.revertedWith(
-				"ControlFacet: High window time"
-			)
+			await expect(
+				context.controlFacet.connect(owner).addSymbol("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period),
+			).to.be.revertedWith("ControlFacet: High window time")
 		})
 
 		it("Should not addSymbol if tradingFee be high", async function () {
@@ -150,11 +153,10 @@ export function shouldBehaveLikeControlFacet(): void {
 			const minQty = BigInt("100000000000000000000")
 			const maxQty = BigInt("60000000000000000000")
 
-			await expect(context.controlFacet.connect(owner).addSymbol("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period)).to.be.revertedWith(
-				"ControlFacet: High trading fee"
-			)
+			await expect(
+				context.controlFacet.connect(owner).addSymbol("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period),
+			).to.be.revertedWith("ControlFacet: High trading fee")
 		})
-
 	})
 
 	describe("setSymbolFundingState", () => {
@@ -195,26 +197,29 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 
 		it("Should not setSymbolFundingState if invalid symbol id", async function () {
-			await expect(context.controlFacet.connect(owner).setSymbolMaxLeverage(0, BigInt("1000000000000000"))).to.be.revertedWith("ControlFacet: Invalid id")
-			await expect(context.controlFacet.connect(owner).setSymbolMaxLeverage(3, BigInt("1000000000000000"))).to.be.revertedWith("ControlFacet: Invalid id")
+			await expect(context.controlFacet.connect(owner).setSymbolMaxLeverage(0, BigInt("1000000000000000"))).to.be.revertedWith(
+				"ControlFacet: Invalid id",
+			)
+			await expect(context.controlFacet.connect(owner).setSymbolMaxLeverage(3, BigInt("1000000000000000"))).to.be.revertedWith(
+				"ControlFacet: Invalid id",
+			)
 		})
 	})
 
 	describe("setSymbolAcceptableValues", () => {
 		it("Should setSymbolAcceptableValues successfully", async function () {
-			await expect(
-				context.controlFacet.connect(owner).setSymbolAcceptableValues(1, BigInt("200000000000000000000"), BigInt("300000000000000000000"))
-			).to.not.be.reverted
+			await expect(context.controlFacet.connect(owner).setSymbolAcceptableValues(1, BigInt("200000000000000000000"), BigInt("300000000000000000000")))
+				.to.not.be.reverted
 			expect((await context.viewFacet.getSymbol(1)).minAcceptablePortionLF).to.equal(BigInt("300000000000000000000"))
 			expect((await context.viewFacet.getSymbol(1)).minAcceptableQuoteValue).to.equal(BigInt("200000000000000000000"))
 		})
 
 		it("Should not setSymbolFundingState if invalid symbol id", async function () {
 			await expect(
-				context.controlFacet.connect(owner).setSymbolAcceptableValues(0, BigInt("200000000000000000000"), BigInt("300000000000000000000"))
+				context.controlFacet.connect(owner).setSymbolAcceptableValues(0, BigInt("200000000000000000000"), BigInt("300000000000000000000")),
 			).to.be.revertedWith("ControlFacet: Invalid id")
 			await expect(
-				context.controlFacet.connect(owner).setSymbolAcceptableValues(4, BigInt("200000000000000000000"), BigInt("300000000000000000000"))
+				context.controlFacet.connect(owner).setSymbolAcceptableValues(4, BigInt("200000000000000000000"), BigInt("300000000000000000000")),
 			).to.be.revertedWith("ControlFacet: Invalid id")
 		})
 	})
@@ -226,8 +231,12 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 
 		it("Should not setSymbolTradingFee if invalid symbol id", async function () {
-			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(0, BigInt("200000000000000000000"))).to.be.revertedWith("ControlFacet: Invalid id")
-			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(6, BigInt("200000000000000000000"))).to.be.revertedWith("ControlFacet: Invalid id")
+			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(0, BigInt("200000000000000000000"))).to.be.revertedWith(
+				"ControlFacet: Invalid id",
+			)
+			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(6, BigInt("200000000000000000000"))).to.be.revertedWith(
+				"ControlFacet: Invalid id",
+			)
 		})
 	})
 
@@ -260,7 +269,6 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 	})
 
-
 	describe("setForceCancelCloseCooldown", () => {
 		it("Should setForceCancelCloseCooldown successfully", async function () {
 			await expect(context.controlFacet.connect(owner).setForceCancelCloseCooldown(BigInt("1708784117"))).to.not.be.reverted
@@ -282,71 +290,72 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 
 		it("Should not setFeeCollector when address is zero", async function () {
-			await expect(context.controlFacet.connect(owner).setFeeCollector(context.multiAccount2!, ethers.ZeroAddress)).to.be.revertedWith('ControlFacet: Zero address')
+			await expect(context.controlFacet.connect(owner).setFeeCollector(context.multiAccount2!, ethers.ZeroAddress)).to.be.revertedWith(
+				"ControlFacet: Zero address",
+			)
 		})
 	})
-
 
 	describe("pauseGlobal", () => {
 		it("Should pauseGlobal successfully", async function () {
 			await expect(context.controlFacet.connect(owner).pauseGlobal()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).globalPaused)).to.be.equal(true)
+			expect((await context.viewFacet.pauseState()).globalPaused).to.be.equal(true)
 		})
 	})
 
 	describe("pauseLiquidation", () => {
 		it("Should pauseLiquidation successfully", async function () {
 			await expect(context.controlFacet.connect(owner).pauseLiquidation()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).liquidationPaused)).to.be.equal(true)
+			expect((await context.viewFacet.pauseState()).liquidationPaused).to.be.equal(true)
 		})
 	})
 
 	describe("activeEmergencyMode", () => {
 		it("Should activeEmergencyMode successfully", async function () {
 			await expect(context.controlFacet.connect(owner).activeEmergencyMode()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).emergencyMode)).to.be.equal(true)
+			expect((await context.viewFacet.pauseState()).emergencyMode).to.be.equal(true)
 		})
 	})
 
 	describe("unpauseGlobal", () => {
 		it("Should unpauseGlobal successfully", async function () {
 			await expect(context.controlFacet.connect(owner).unpauseGlobal()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).globalPaused)).to.be.equal(false)
+			expect((await context.viewFacet.pauseState()).globalPaused).to.be.equal(false)
 		})
 	})
 
 	describe("unpauseLiquidation", () => {
 		it("Should unpauseLiquidation successfully", async function () {
 			await expect(context.controlFacet.connect(owner).unpauseLiquidation()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).liquidationPaused)).to.be.equal(false)
+			expect((await context.viewFacet.pauseState()).liquidationPaused).to.be.equal(false)
 		})
 	})
 
 	describe("unpauseAccounting", () => {
 		it("Should unpauseAccounting successfully", async function () {
 			await expect(context.controlFacet.connect(owner).unpauseAccounting()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).accountingPaused)).to.be.equal(false)
+			expect((await context.viewFacet.pauseState()).accountingPaused).to.be.equal(false)
 		})
 	})
 
 	describe("unpausePartyAActions", () => {
 		it("Should unpausePartyAActions successfully", async function () {
 			await expect(context.controlFacet.connect(owner).unpausePartyAActions()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).partyAActionsPaused)).to.be.equal(false)
+			expect((await context.viewFacet.pauseState()).partyAActionsPaused).to.be.equal(false)
 		})
 	})
 
 	describe("unpausePartyBActions", () => {
 		it("Should unpausePartyBActions successfully", async function () {
 			await expect(context.controlFacet.connect(owner).unpausePartyBActions()).to.not.reverted
-			expect(((await context.viewFacet.pauseState()).partyBActionsPaused)).to.be.equal(false)
+			expect((await context.viewFacet.pauseState()).partyBActionsPaused).to.be.equal(false)
 		})
 	})
 
 	describe("suspendedAddress", () => {
 		it("Should suspendedAddress successfully", async function () {
 			await expect(context.controlFacet.connect(owner).suspendedAddress(user2.address)).to.not.reverted
-			expect(((await context.viewFacet.isSuspended(user2.address)))).to.be.equal(true)
+			expect(await context.viewFacet.isSuspended(user2.address)).to.be.equal(true)
 		})
 	})
 
@@ -354,14 +363,47 @@ export function shouldBehaveLikeControlFacet(): void {
 		it("Should unsuspendedAddress successfully", async function () {
 			await expect(context.controlFacet.connect(owner).suspendedAddress(user2.address)).to.not.reverted
 			await expect(context.controlFacet.connect(owner).unsuspendedAddress(user2.address)).to.not.reverted
-			expect(((await context.viewFacet.isSuspended(user2.address)))).to.be.equal(false)
+			expect(await context.viewFacet.isSuspended(user2.address)).to.be.equal(false)
 		})
 	})
 
 	describe("deactiveEmergencyMode", () => {
 		it("Should deactiveEmergencyMode successfully", async function () {
 			await expect(context.controlFacet.connect(owner).deactiveEmergencyMode()).to.not.reverted
-			expect((((await context.viewFacet.pauseState()).emergencyMode))).to.be.equal(false)
+			expect((await context.viewFacet.pauseState()).emergencyMode).to.be.equal(false)
+		})
+	})
+
+	describe("ExternalTransfer methods", function () {
+		it("Should allow admin to add external transfer targets", async function () {
+			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(context.signers.others[0].address)).to.not.reverted
+		})
+
+		it("Should allow admin to remove external transfer targets", async function () {
+			await context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(context.signers.others[0].address)
+
+			await expect(context.controlFacet.connect(context.signers.admin).removeExternalTransferTarget(context.signers.others[0].address)).to.not
+				.reverted
+		})
+
+		it("Should fail when non-admin tries to add external transfer target", async function () {
+			await expect(
+				context.controlFacet.connect(context.signers.user).addExternalTransferTarget(context.signers.others[0].address),
+			).to.be.revertedWith("Accessibility: Must has role")
+		})
+
+		it("Should fail when non-admin tries to remove external transfer target", async function () {
+			await context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(context.signers.others[0].address)
+
+			await expect(
+				context.controlFacet.connect(context.signers.user).removeExternalTransferTarget(context.signers.others[0].address),
+			).to.be.revertedWith("Accessibility: Must has role")
+		})
+
+		it("Should fail to add zero address as external transfer target", async function () {
+			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(ethers.ZeroAddress)).to.be.revertedWith(
+				"ControlFacet: Zero address",
+			)
 		})
 	})
 }
