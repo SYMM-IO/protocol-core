@@ -7,6 +7,7 @@ pragma solidity >=0.8.18;
 import "../../libraries/muon/LibMuonFundingRate.sol";
 import "../../libraries/LibAccount.sol";
 import "../../libraries/LibQuote.sol";
+import "../../libraries/LibFundingRate.sol";
 import "../../storages/QuoteStorage.sol";
 import "../../storages/AccountStorage.sol";
 import "../../storages/SymbolStorage.sol";
@@ -136,129 +137,150 @@ library FundingRateFacetImpl {
 
 	/**
 	 * @notice Updates the epoch duration for accumulated funding calculation
-	 * @dev This recalculates accumulated fees when changing epoch duration
+	 * @dev Recalculates weighted averages to maintain consistency when changing epoch duration
 	 * @param symbolIds Array of symbol IDs to update
-	 * @param durations New epoch durations for each symbol
+	 * @param durations New epoch durations for each symbol (in seconds)
 	 * @param partyB Market maker address
 	 */
 	function setEpochDuration(uint256[] memory symbolIds, uint256[] memory durations, address partyB) internal {
-		require(symbolIds.length == durations.length, "ChargeFundingFacet: Invalid length");
+		require(symbolIds.length == durations.length, "FundingRateFacet: Invalid length");
 
 		for (uint256 i = 0; i < symbolIds.length; i++) {
-			require(durations[i] > 0, "ChargeFundingFacet: Zero epoch duration");
+			require(durations[i] > 0, "FundingRateFacet: Zero epoch duration");
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][partyB];
-			require(fundingFee.epochDuration > 0, "ChargeFundingFacet: Zero epoch duration");
 
-			// Calculate how many epochs have passed since last update
-			uint256 lastEpochStartTime = (fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration;
-			uint256 newEpochs = (block.timestamp - lastEpochStartTime) / fundingFee.epochDuration;
+			uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
+			uint256 currentEpochWithNewDuration = LibFundingRate.getEpochOfTimestamp(block.timestamp, durations[i]);
 
-			// Recalculate weighted average of accumulated fees
-			int256 totalLongFeeWeight = (fundingFee.accumulatedLongFee * int256(fundingFee.epochs)) + (fundingFee.currentLongFee * int256(newEpochs));
-			int256 totalShortFeeWeight = (fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) +
-				(fundingFee.currentShortFee * int256(newEpochs));
-			int256 totalEpochs = int256(newEpochs) + int256(fundingFee.epochs);
+			if (fundingFee.epochDuration != 0) {
+				// Calculate epochs elapsed since last update
+				uint256 epochsSinceLastUpdate = currentEpoch - fundingFee.lastUpdatedEpoch;
 
-			// Update accumulated fees and epoch duration
-			fundingFee.accumulatedLongFee = totalLongFeeWeight / totalEpochs;
-			fundingFee.accumulatedShortFee = totalShortFeeWeight / totalEpochs;
+				// Update weighted averages before changing epoch duration
+				if (epochsSinceLastUpdate > 0) {
+					_updateWeightedAverages(fundingFee, epochsSinceLastUpdate, fundingFee.lastUpdatedEpoch);
+				}
+
+				// Calculate new weighted averages
+				uint256 epochsInAverage = currentEpoch - fundingFee.startEpoch;
+				fundingFee.weightedAvgLongRate = (fundingFee.weightedAvgLongRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
+				fundingFee.weightedAvgShortRate = (fundingFee.weightedAvgShortRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
+			}
+
+			// Update epoch duration
 			fundingFee.epochDuration = durations[i];
-			fundingFee.epochs += newEpochs;
+			fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
 		}
 	}
 
 	/**
 	 * @notice Updates accumulated funding fees for symbols
-	 * @dev Calculates weighted average of fees across epochs
+	 * @dev Maintains a weighted average of funding rates across all epochs
 	 * @param symbolIds Array of symbol IDs
-	 * @param longFees New funding fees for long positions (as rate, not price-adjusted)
-	 * @param shortFees New funding fees for short positions (as rate, not price-adjusted)
-	 * @param marketPrices Current market prices to convert rates to price terms
+	 * @param longRates New funding rates for long positions (as percentages, not price-adjusted)
+	 * @param shortRates New funding rates for short positions (as percentages, not price-adjusted)
+	 * @param marketPrices Current market prices to convert rates to price-adjusted values
 	 */
 	function updateAccumulatedFundingFee(
 		uint256[] memory symbolIds,
-		int256[] memory longFees,
-		int256[] memory shortFees,
+		int256[] memory longRates,
+		int256[] memory shortRates,
 		int256[] memory marketPrices
 	) internal {
 		require(
-			symbolIds.length == longFees.length && longFees.length == shortFees.length && symbolIds.length == marketPrices.length,
-			"ChargeFundingFacet: Invalid length"
+			symbolIds.length == longRates.length && longRates.length == shortRates.length && symbolIds.length == marketPrices.length,
+			"FundingRateFacet: Invalid length"
 		);
 
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
-			require(fundingFee.epochDuration > 0, "ChargeFundingFacet: Zero epoch duration");
 
-			// Calculate epochs passed since last update
-			uint256 lastEpochStartTime = (fundingFee.epochs / fundingFee.epochDuration) * fundingFee.epochDuration;
-			uint256 newEpochs = (block.timestamp - lastEpochStartTime) / fundingFee.epochDuration;
+			// Initialize if first time
+			require(fundingFee.epochDuration > 0, "FundingRateFacet: Epoch duration not set");
 
-			// Calculate weighted average of accumulated fees
-			int256 totalLongFeeWeight = (fundingFee.accumulatedLongFee * int256(fundingFee.epochs)) + (fundingFee.currentLongFee * int256(newEpochs));
-			int256 totalShortFeeWeight = (fundingFee.accumulatedShortFee * int256(fundingFee.epochs)) +
-				(fundingFee.currentShortFee * int256(newEpochs));
-			int256 totalEpochs = int256(newEpochs) + int256(fundingFee.epochs);
+			uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 
-			// Convert funding rates to price-adjusted fees
-			fundingFee.currentLongFee = (longFees[i] * marketPrices[i]) / 1e18;
-			fundingFee.currentShortFee = (shortFees[i] * marketPrices[i]) / 1e18;
+			if (fundingFee.startEpoch == 0) {
+				fundingFee.startEpoch = currentEpoch;
+				fundingFee.lastUpdatedEpoch = currentEpoch;
+			}
 
-			// Update accumulated averages
-			fundingFee.accumulatedLongFee = totalLongFeeWeight / totalEpochs;
-			fundingFee.accumulatedShortFee = totalShortFeeWeight / totalEpochs;
-			fundingFee.epochs += newEpochs;
+			// Calculate epochs since last update
+			uint256 epochsSinceLastUpdate = currentEpoch - fundingFee.lastUpdatedEpoch;
+
+			// Update weighted averages if epochs have passed
+			if (epochsSinceLastUpdate > 0) {
+				uint256 epochsInAverage = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
+				_updateWeightedAverages(fundingFee, epochsSinceLastUpdate, epochsInAverage);
+			}
+
+			// Convert funding rates to price-adjusted values and store
+			fundingFee.currentLongRate = (longRates[i] * marketPrices[i]) / 1e18;
+			fundingFee.currentShortRate = (shortRates[i] * marketPrices[i]) / 1e18;
+			fundingFee.lastUpdatedEpoch = currentEpoch;
 		}
 	}
 
 	/**
 	 * @notice Sets funding fees for both long and short positions
-	 * @param symbolIds Symbol identifiers
-	 * @param longFees Funding rates for long positions
-	 * @param shortFees Funding rates for short positions
-	 * @param marketPrices Current market prices
 	 */
-	function setFundingFee(uint256[] memory symbolIds, int256[] memory longFees, int256[] memory shortFees, int256[] memory marketPrices) internal {
-		updateAccumulatedFundingFee(symbolIds, longFees, shortFees, marketPrices);
+	function setFundingFee(uint256[] memory symbolIds, int256[] memory longRates, int256[] memory shortRates, int256[] memory marketPrices) internal {
+		updateAccumulatedFundingFee(symbolIds, longRates, shortRates, marketPrices);
 	}
 
 	/**
 	 * @notice Updates only long position funding fees
 	 * @dev Preserves existing short fees while updating long fees
 	 */
-	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longFees, int256[] memory marketPrices) internal {
-		require(symbolIds.length == longFees.length && symbolIds.length == marketPrices.length, "ChargeFundingFacet: Invalid length");
-		int256[] memory shortFees = new int256[](longFees.length);
+	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longRates, int256[] memory marketPrices) internal {
+		require(symbolIds.length == longRates.length && symbolIds.length == marketPrices.length, "FundingRateFacet: Invalid length");
 
-		// Preserve existing short fees
+		int256[] memory shortRates = new int256[](longRates.length);
+
+		// Preserve existing short rates
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 			// Convert back from price-adjusted to rate
-			shortFees[i] = (fundingFee.currentShortFee * 1e18) / marketPrices[i];
+			if (marketPrices[i] > 0) {
+				shortRates[i] = (fundingFee.currentShortRate * 1e18) / marketPrices[i];
+			}
 		}
-		updateAccumulatedFundingFee(symbolIds, longFees, shortFees, marketPrices);
+		updateAccumulatedFundingFee(symbolIds, longRates, shortRates, marketPrices);
 	}
 
 	/**
 	 * @notice Updates only short position funding fees
 	 * @dev Preserves existing long fees while updating short fees
 	 */
-	function setShortFundingFee(uint256[] memory symbolIds, int256[] memory shortFees, int256[] memory marketPrices) internal {
-		require(symbolIds.length == shortFees.length && symbolIds.length == marketPrices.length, "ChargeFundingFacet: Invalid length");
-		int256[] memory longFees = new int256[](shortFees.length);
+	function setShortFundingFee(uint256[] memory symbolIds, int256[] memory shortRates, int256[] memory marketPrices) internal {
+		require(symbolIds.length == shortRates.length && symbolIds.length == marketPrices.length, "FundingRateFacet: Invalid length");
 
-		// Preserve existing long fees
+		int256[] memory longRates = new int256[](shortRates.length);
+
+		// Preserve existing long rates
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 			// Convert back from price-adjusted to rate
-			longFees[i] = (fundingFee.currentLongFee * 1e18) / marketPrices[i];
+			if (marketPrices[i] > 0) {
+				longRates[i] = (fundingFee.currentLongRate * 1e18) / marketPrices[i];
+			}
 		}
-		updateAccumulatedFundingFee(symbolIds, longFees, shortFees, marketPrices);
+		updateAccumulatedFundingFee(symbolIds, longRates, shortRates, marketPrices);
+	}
+
+	/**
+	 * @notice Updates weighted averages based on epochs passed
+	 * @param fundingFee The funding fee storage reference
+	 * @param newEpochs Number of epochs since last update
+	 * @param previousEpochs Number of epochs already in the average
+	 */
+	function _updateWeightedAverages(FundingFee storage fundingFee, uint256 newEpochs, uint256 previousEpochs) private {
+		(fundingFee.weightedAvgLongRate, fundingFee.weightedAvgShortRate) = LibFundingRate.getUpdatedAverages(fundingFee, newEpochs, previousEpochs);
 	}
 
 	/**
 	 * @notice Applies accumulated funding fees to positions
-	 * @dev Uses the accumulated funding fee system instead of direct rates
+	 * @dev Uses the accumulated funding fee system with weighted averages
 	 * @param partyA Trader address
 	 * @param partyB Market maker address
 	 * @param quoteIds Position IDs to charge
@@ -270,13 +292,13 @@ library FundingRateFacetImpl {
 		// Apply accumulated funding to each position
 		for (uint256 i = 0; i < quoteIds.length; i++) {
 			Quote storage quote = QuoteStorage.layout().quotes[quoteIds[i]];
-			require(quote.partyA == partyA, "ChargeFundingFacet: Invalid quote");
-			require(quote.partyB == partyB, "ChargeFundingFacet: Sender isn't partyB of quote");
+			require(quote.partyA == partyA, "FundingRateFacet: Invalid quote");
+			require(quote.partyB == partyB, "FundingRateFacet: Sender isn't partyB of quote");
 			require(
 				quote.quoteStatus == QuoteStatus.OPENED ||
 					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
 					quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING,
-				"ChargeFundingFacet: Invalid state"
+				"FundingRateFacet: Invalid state"
 			);
 
 			// Delegate to library function that handles the actual fee calculation
@@ -291,7 +313,7 @@ library FundingRateFacetImpl {
 			partyA
 		);
 
-		require(partyAAvailableBalance >= 0, "ChargeFundingFacet: PartyA will be insolvent");
-		require(partyBAvailableBalance >= 0, "ChargeFundingFacet: PartyB will be insolvent");
+		require(partyAAvailableBalance >= 0, "FundingRateFacet: PartyA will be insolvent");
+		require(partyBAvailableBalance >= 0, "FundingRateFacet: PartyB will be insolvent");
 	}
 }
