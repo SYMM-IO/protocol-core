@@ -13,7 +13,8 @@ import "../../storages/SymbolStorage.sol";
 
 library FundingRateFacetImpl {
 	function chargeFundingRate(address partyA, uint256[] memory quoteIds, int256[] memory rates, PairUpnlSig memory upnlSig) internal {
-		LibMuonFundingRate.verifyPairUpnl(upnlSig, msg.sender, partyA);
+		// NOTICE: This part is commented because in this version each user will be isolated with only one partyB
+		// LibMuonFundingRate.verifyPairUpnl(upnlSig, msg.sender, partyA);
 		require(quoteIds.length == rates.length && quoteIds.length > 0, "ChargeFundingFacet: Length not match");
 		int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, msg.sender, partyA);
 		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
@@ -70,8 +71,9 @@ library FundingRateFacetImpl {
 			}
 			quote.lastFundingPaymentTimestamp = paidTimestamp;
 		}
-		require(partyAAvailableBalance >= 0, "ChargeFundingFacet: PartyA will be insolvent");
-		require(partyBAvailableBalance >= 0, "ChargeFundingFacet: PartyB will be insolvent");
+		// NOTICE: This part is commented because in this version each user will be isolated with only one partyB
+		// require(partyAAvailableBalance >= 0, "ChargeFundingFacet: PartyA will be insolvent");
+		// require(partyBAvailableBalance >= 0, "ChargeFundingFacet: PartyB will be insolvent");
 		AccountStorage.layout().partyBNonces[msg.sender][partyA] += 1;
 		AccountStorage.layout().partyANonces[partyA] += 1;
 	}
