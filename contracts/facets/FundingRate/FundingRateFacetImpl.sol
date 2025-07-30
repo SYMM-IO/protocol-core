@@ -153,13 +153,8 @@ library FundingRateFacetImpl {
 			uint256 currentEpochWithNewDuration = LibFundingRate.getEpochOfTimestamp(block.timestamp, durations[i]);
 
 			if (fundingFee.epochDuration != 0) {
-				// Calculate epochs elapsed since last update
-				uint256 epochsSinceLastUpdate = currentEpoch - fundingFee.lastUpdatedEpoch;
-
 				// Update weighted averages before changing epoch duration
-				if (epochsSinceLastUpdate > 0) {
-					_updateWeightedAverages(fundingFee, epochsSinceLastUpdate, fundingFee.lastUpdatedEpoch);
-				}
+				LibFundingRate.updateWeightedAverages(fundingFee);
 
 				// Calculate new weighted averages
 				uint256 epochsInAverage = currentEpoch - fundingFee.startEpoch;
@@ -195,29 +190,19 @@ library FundingRateFacetImpl {
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 
-			// Initialize if first time
 			require(fundingFee.epochDuration > 0, "FundingRateFacet: Epoch duration not set");
 
-			uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
-
 			if (fundingFee.startEpoch == 0) {
+				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 				fundingFee.startEpoch = currentEpoch;
 				fundingFee.lastUpdatedEpoch = currentEpoch;
 			}
 
-			// Calculate epochs since last update
-			uint256 epochsSinceLastUpdate = currentEpoch - fundingFee.lastUpdatedEpoch;
-
-			// Update weighted averages if epochs have passed
-			if (epochsSinceLastUpdate > 0) {
-				uint256 epochsInAverage = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
-				_updateWeightedAverages(fundingFee, epochsSinceLastUpdate, epochsInAverage);
-			}
+			LibFundingRate.updateWeightedAverages(fundingFee);
 
 			// Convert funding rates to price-adjusted values and store
 			fundingFee.currentLongRate = (longRates[i] * marketPrices[i]) / 1e18;
 			fundingFee.currentShortRate = (shortRates[i] * marketPrices[i]) / 1e18;
-			fundingFee.lastUpdatedEpoch = currentEpoch;
 		}
 	}
 
@@ -266,16 +251,6 @@ library FundingRateFacetImpl {
 			}
 		}
 		updateAccumulatedFundingFee(symbolIds, longRates, shortRates, marketPrices);
-	}
-
-	/**
-	 * @notice Updates weighted averages based on epochs passed
-	 * @param fundingFee The funding fee storage reference
-	 * @param newEpochs Number of epochs since last update
-	 * @param previousEpochs Number of epochs already in the average
-	 */
-	function _updateWeightedAverages(FundingFee storage fundingFee, uint256 newEpochs, uint256 previousEpochs) private {
-		(fundingFee.weightedAvgLongRate, fundingFee.weightedAvgShortRate) = LibFundingRate.getUpdatedAverages(fundingFee, newEpochs, previousEpochs);
 	}
 
 	/**

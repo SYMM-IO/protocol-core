@@ -32,4 +32,13 @@ library LibFundingRate {
 			(fundingFee.weightedAvgShortRate * int256(previousEpochs) + fundingFee.currentShortRate * int256(newEpochs)) /
 			int256(totalEpochs);
 	}
+
+	function updateWeightedAverages(FundingFee storage fundingFee) internal {
+		uint256 currentEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
+		uint256 newEpochs = currentEpoch - fundingFee.lastUpdatedEpoch;
+		if (newEpochs == 0) return;
+		uint256 previousEpochs = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
+		(fundingFee.weightedAvgLongRate, fundingFee.weightedAvgShortRate) = getUpdatedAverages(fundingFee, newEpochs, previousEpochs);
+		fundingFee.lastUpdatedEpoch = currentEpoch;
+	}
 }
