@@ -61,7 +61,7 @@ library FundingRateFacetImpl {
 
 			// Ensure we're not mixing funding systems
 			require(
-				quote.lastFundingPaymentTimestamp == 0 || SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB].epochDuration == 0,
+				SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB].epochDuration == 0,
 				"ChargeFundingFacet: Use accumulated funding fee"
 			);
 

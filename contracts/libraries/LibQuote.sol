@@ -321,9 +321,7 @@ library LibQuote {
 		// 1. No epoch duration set (accumulated funding not active)
 		// 2. Position never had funding applied (new position)
 		// 3. No time has passed since funding tracking started
-		if (fundingFee.epochDuration == 0 || quote.lastFundingPaymentTimestamp == 0 || fundingFee.startEpoch == 0) {
-			return 0;
-		}
+		if (fundingFee.epochDuration == 0 || quote.lastFundingPaymentTimestamp == 0 || fundingFee.startEpoch == 0) return 0;
 
 		uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 
@@ -338,9 +336,8 @@ library LibQuote {
 		uint256 epochsBeforeLastUpdate = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
 
 		int256 beforeWeightedRate = quote.positionType == PositionType.LONG ? fundingFee.weightedAvgLongRate : fundingFee.weightedAvgShortRate;
-
-		int256 currentFee = ((beforeWeightedRate * int256(epochsBeforeLastUpdate)) + (fundingFee.currentLongRate * int256(epochsSinceLastUpdate))) /
-			1e18;
+		int256 currentRate = quote.positionType == PositionType.LONG ? fundingFee.currentLongRate : fundingFee.currentShortRate;
+		int256 currentFee = (beforeWeightedRate * int256(epochsBeforeLastUpdate)) + (currentRate * int256(epochsSinceLastUpdate));
 
 		// Subtract already paid amount
 		fee = (int256(LibQuote.quoteOpenAmount(quote)) * (currentFee - quote.paidFundingFee)) / 1e18;
