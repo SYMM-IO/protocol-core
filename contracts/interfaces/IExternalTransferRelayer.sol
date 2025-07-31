@@ -4,9 +4,9 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-interface IExternalTransferTarget {
+interface IExternalTransferRelayer {
 	/**
-	 * @notice Called when an external transfer is initiated from symmio to target
+	 * @notice Called when an external transfer is initiated from symmio to target and funds are send over there
 	 * @param collateral The collateral token being transferred
 	 * @param sender The address initiating the transfer
 	 * @param receiver The address receiving the transfer
