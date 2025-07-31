@@ -179,12 +179,13 @@ library AccountFacetImpl {
 		require(amount > 0, "AccountFacet: Amount is zero");
 		require(receiver != address(0), "AccountFacet: Receiver is zero address");
 		require(target != address(0), "AccountFacet: Target is zero address");
-		require(accountLayout.externalTransferTargets[target], "AccountFacet: Target not whitelisted");
+		address relayer = accountLayout.externalTransferTargetsToRelayers[target];
+		require(relayer != address(0), "AccountFacet: Target not whitelisted");
 
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
 		accountLayout.balances[sender] -= amountWith18Decimals;
-		IERC20(appLayout.collateral).safeTransfer(target, amountWith18Decimals);
+		IERC20(appLayout.collateral).safeTransfer( relayer, amountWith18Decimals);
 
-		IExternalTransferTarget(target).onTransfer(appLayout.collateral, sender, receiver, amount);
+		IExternalTransferTarget(relayer).onTransfer(appLayout.collateral, sender, receiver, amount);
 	}
 }

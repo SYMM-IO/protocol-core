@@ -82,6 +82,6 @@ interface IControlEvents {
 	event SetLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit);
 	event SetPartyBWhitelistedSymbolTypeStatus(address partyB, uint256 symbolType, bool isWhiteList);
 	event SetSignatureVerifierAddress(address SignatureVerifier);
-	event AddExternalTransferTarget(address target);
+	event AddExternalTransferTarget(address target, address relayer);
 	event RemoveExternalTransferTarget(address target);
 }
