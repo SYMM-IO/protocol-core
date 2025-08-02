@@ -154,12 +154,13 @@ library FundingRateFacetImpl {
 
 			if (fundingFee.epochDuration != 0) {
 				// Update weighted averages before changing epoch duration
-				LibFundingRate.updateWeightedAverages(fundingFee);
+				LibFundingRate.updateAccumulatedRates(fundingFee);
 
 				// Calculate new weighted averages
 				uint256 epochsInAverage = currentEpoch - fundingFee.startEpoch;
-				fundingFee.weightedAvgLongRate = (fundingFee.weightedAvgLongRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
-				fundingFee.weightedAvgShortRate = (fundingFee.weightedAvgShortRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
+				fundingFee.accumulatedLongRate = (fundingFee.accumulatedLongRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
+				fundingFee.accumulatedShortRate = (fundingFee.accumulatedShortRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
+				fundingFee.startEpoch = fundingFee.startEpoch * fundingFee.epochDuration / durations[i];
 			}
 
 			// Update epoch duration
@@ -198,7 +199,7 @@ library FundingRateFacetImpl {
 				fundingFee.lastUpdatedEpoch = currentEpoch;
 			}
 
-			LibFundingRate.updateWeightedAverages(fundingFee);
+			LibFundingRate.updateAccumulatedRates(fundingFee);
 
 			// Convert funding rates to price-adjusted values and store
 			fundingFee.currentLongRate = (longRates[i] * marketPrices[i]) / 1e18;

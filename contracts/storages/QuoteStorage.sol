@@ -68,7 +68,7 @@ struct Quote {
 	uint256 deadline;
 	uint256 tradingFee;
 	address affiliate;
-	int256 paidFundingFee;
+	int256 accumulatedPaidFunding;
 	uint256 lastFundingTimestamp;
 }
 

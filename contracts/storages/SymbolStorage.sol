@@ -26,8 +26,8 @@ struct FundingFee {
 	int256 currentLongRate; // Current rate for long positions
 	int256 currentShortRate; // Current rate for short positions
 	// Weighted average rates over all tracked epochs
-	int256 weightedAvgLongRate; // Historical weighted average for longs
-	int256 weightedAvgShortRate; // Historical weighted average for shorts
+	int256 accumulatedLongRate; // Historical weighted average for longs
+	int256 accumulatedShortRate; // Historical weighted average for shorts
 	// Epoch tracking
 	uint256 lastUpdatedEpoch; // Epoch number when rates were last updated
 	uint256 startEpoch; // Epoch when funding tracking started

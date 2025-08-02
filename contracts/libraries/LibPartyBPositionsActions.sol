@@ -6,6 +6,7 @@ pragma solidity >=0.8.18;
 
 import "../storages/QuoteStorage.sol";
 import "./LibQuote.sol";
+import "./LibFundingRate.sol";
 
 library LibPartyBPositionsActions {
 	using LockedValuesOps for LockedValues;
@@ -59,6 +60,11 @@ library LibPartyBPositionsActions {
 		quote.openedPrice = openedPrice;
 		quote.initialOpenedPrice = openedPrice;
 		quote.statusModifyTimestamp = block.timestamp;
+		quote.lastFundingPaymentTimestamp = block.timestamp;
+		(int256 accumulatedLongRate, int256 accumulatedShortRate) = LibFundingRate.getCurrentAccumulatedRate(
+			SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB]
+		);
+		quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? accumulatedLongRate : accumulatedShortRate;
 
 		LibQuote.removeFromPendingQuotes(quote);
 
@@ -133,7 +139,7 @@ library LibPartyBPositionsActions {
 				deadline: quote.deadline,
 				tradingFee: quote.tradingFee,
 				affiliate: quote.affiliate,
-				paidFundingFee: 0,
+				accumulatedPaidFunding: 0,
 				lastFundingTimestamp: 0
 			});
 
@@ -164,7 +170,7 @@ library LibPartyBPositionsActions {
 		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
 
 		quote.lastFundingTimestamp = block.timestamp;
-		quote.paidFundingFee = LibQuote.getAccumulatedFundingFee(quoteId);
+		quote.accumulatedPaidFunding = LibQuote.getAccumulatedFundingFee(quoteId);
 
 		// check leverage (is in 18 decimals)
 		require(

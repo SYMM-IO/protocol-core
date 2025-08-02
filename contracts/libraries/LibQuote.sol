@@ -335,15 +335,15 @@ library LibQuote {
 		uint256 epochsSinceLastUpdate = currentEpoch - fundingFee.lastUpdatedEpoch;
 		uint256 epochsBeforeLastUpdate = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
 
-		int256 beforeWeightedRate = quote.positionType == PositionType.LONG ? fundingFee.weightedAvgLongRate : fundingFee.weightedAvgShortRate;
+		int256 beforeWeightedRate = quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate;
 		int256 currentRate = quote.positionType == PositionType.LONG ? fundingFee.currentLongRate : fundingFee.currentShortRate;
 		int256 currentFee = (beforeWeightedRate * int256(epochsBeforeLastUpdate)) + (currentRate * int256(epochsSinceLastUpdate));
 
 		// Subtract already paid amount
-		fee = (int256(LibQuote.quoteOpenAmount(quote)) * (currentFee - quote.paidFundingFee)) / 1e18;
+		fee = (int256(LibQuote.quoteOpenAmount(quote)) * (currentFee - quote.accumulatedPaidFunding)) / 1e18;
 
 		// Apply maximum funding rate cap
-		fee = _applyFundingRateCap(fee, quote);
+		fee = _applyFundingRateCap(fee, quote, fundingFee.epochDuration);
 	}
 
 	/**
@@ -363,8 +363,8 @@ library LibQuote {
 		quote.lastFundingPaymentTimestamp = block.timestamp;
 
 		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
-		LibFundingRate.updateWeightedAverages(fundingFee);
-		quote.paidFundingFee = quote.positionType == PositionType.LONG ? fundingFee.weightedAvgLongRate : fundingFee.weightedAvgShortRate;
+		LibFundingRate.updateAccumulatedRates(fundingFee);
+		quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate;
 
 		if (fee > 0) {
 			// Positive fee: Trader (PartyA) pays Market Maker (PartyB)
@@ -385,10 +385,10 @@ library LibQuote {
 		}
 	}
 
-	function _applyFundingRateCap(int256 fee, Quote storage quote) private view returns (int256) {
+	function _applyFundingRateCap(int256 fee, Quote storage quote, uint256 epochDuration) private view returns (int256) {
 		// Max fee = Max rate per second × Time elapsed since last payment
 		uint256 timeElapsed = block.timestamp - quote.lastFundingPaymentTimestamp;
-		int256 maxFee = int256(quote.maxFundingRate) * int256(timeElapsed);
+		int256 maxFee = int256(quote.maxFundingRate) * int256(timeElapsed / epochDuration);
 
 		if (fee > 0) {
 			// Positive fee: cap at maxFee

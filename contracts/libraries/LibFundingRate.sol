@@ -12,33 +12,30 @@ library LibFundingRate {
 		return timestamp / epochDuration;
 	}
 
-	function getUpdatedAverages(
-		FundingFee memory fundingFee,
-		uint256 newEpochs,
-		uint256 previousEpochs
-	) internal pure returns (int256 weightedAvgLongRate, int256 weightedAvgShortRate) {
-		if (previousEpochs == 0 && newEpochs == 0) {
-			weightedAvgLongRate = int256(fundingFee.weightedAvgLongRate);
-			weightedAvgShortRate = int256(fundingFee.weightedAvgShortRate);
+	function getCurrentAccumulatedRate(FundingFee memory fundingFee) internal view returns (int256 accumulatedLongRate, int256 accumulatedShortRate) {
+		uint256 currentEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
+		uint256 newEpochs = currentEpoch - fundingFee.lastUpdatedEpoch;
+		uint256 previousEpochs = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
+
+		if (previousEpochs == 0 || newEpochs == 0) {
+			accumulatedLongRate = int256(fundingFee.accumulatedLongRate);
+			accumulatedShortRate = int256(fundingFee.accumulatedShortRate);
+			return (accumulatedLongRate, accumulatedShortRate);
 		}
 
 		uint256 totalEpochs = previousEpochs + newEpochs;
 
-		weightedAvgLongRate =
-			(fundingFee.weightedAvgLongRate * int256(previousEpochs) + fundingFee.currentLongRate * int256(newEpochs)) /
+		accumulatedLongRate =
+			(fundingFee.accumulatedLongRate * int256(previousEpochs) + fundingFee.currentLongRate * int256(newEpochs)) /
 			int256(totalEpochs);
 
-		weightedAvgShortRate =
-			(fundingFee.weightedAvgShortRate * int256(previousEpochs) + fundingFee.currentShortRate * int256(newEpochs)) /
+		accumulatedShortRate =
+			(fundingFee.accumulatedShortRate * int256(previousEpochs) + fundingFee.currentShortRate * int256(newEpochs)) /
 			int256(totalEpochs);
 	}
 
-	function updateWeightedAverages(FundingFee storage fundingFee) internal {
-		uint256 currentEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
-		uint256 newEpochs = currentEpoch - fundingFee.lastUpdatedEpoch;
-		if (newEpochs == 0) return;
-		uint256 previousEpochs = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
-		(fundingFee.weightedAvgLongRate, fundingFee.weightedAvgShortRate) = getUpdatedAverages(fundingFee, newEpochs, previousEpochs);
-		fundingFee.lastUpdatedEpoch = currentEpoch;
+	function updateAccumulatedRates(FundingFee storage fundingFee) internal {
+		(fundingFee.accumulatedLongRate, fundingFee.accumulatedShortRate) = getCurrentAccumulatedRate(fundingFee);
+		fundingFee.lastUpdatedEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 	}
 }
