@@ -40,7 +40,7 @@ export function shouldBehaveLikeFundingRate(): void {
 		await hedger.lockQuote(3)
 		await hedger.openPosition(3)
 		await user.requestToClosePosition(3)
-		await hedger.fillCloseRequest(3)
+		// await hedger.fillCloseRequest(3)
 	})
 
 	it("Should fail on different length", async function () {
