@@ -2549,7 +2549,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -3120,7 +3120,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -3340,7 +3340,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -3603,7 +3603,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -3847,7 +3847,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -4057,7 +4057,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -4296,7 +4296,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -4511,7 +4511,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
@@ -4750,7 +4750,7 @@
           },
           {
             "internalType": "int256",
-            "name": "paidFundingFee",
+            "name": "accumulatedPaidFunding",
             "type": "int256"
           },
           {
