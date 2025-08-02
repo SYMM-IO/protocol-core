@@ -160,7 +160,7 @@ library FundingRateFacetImpl {
 				uint256 epochsInAverage = currentEpoch - fundingFee.startEpoch;
 				fundingFee.accumulatedLongRate = (fundingFee.accumulatedLongRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
 				fundingFee.accumulatedShortRate = (fundingFee.accumulatedShortRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
-				fundingFee.startEpoch = fundingFee.startEpoch * fundingFee.epochDuration / durations[i];
+				fundingFee.startEpoch = (fundingFee.startEpoch * fundingFee.epochDuration) / durations[i];
 			}
 
 			// Update epoch duration
@@ -226,6 +226,7 @@ library FundingRateFacetImpl {
 		// Preserve existing short rates
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
+			require(marketPrices[i] > 0, "FundingRateFacet: Invalid market price");
 			// Convert back from price-adjusted to rate
 			if (marketPrices[i] > 0) {
 				shortRates[i] = (fundingFee.currentShortRate * 1e18) / marketPrices[i];
@@ -246,6 +247,7 @@ library FundingRateFacetImpl {
 		// Preserve existing long rates
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
+			require(marketPrices[i] > 0, "FundingRateFacet: Invalid market price");
 			// Convert back from price-adjusted to rate
 			if (marketPrices[i] > 0) {
 				longRates[i] = (fundingFee.currentLongRate * 1e18) / marketPrices[i];
