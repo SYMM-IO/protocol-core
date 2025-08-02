@@ -7,6 +7,7 @@ import { resolve } from "path"
 import "solidity-docgen"
 
 import "./tasks/deploy"
+import { Wallet } from "ethers"
 
 // Load environment variables
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env"
@@ -16,8 +17,11 @@ dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) })
 const privateKey: string | undefined = process.env.PRIVATE_KEY
 if (!privateKey) throw new Error("Please set your PRIVATE_KEY in a .env file")
 
-const privateKeyList: string[] = process.env.PRIVATE_KEYS_STR?.split(",") || []
+const pk = privateKey!.startsWith("0x") ? privateKey! : `0x${privateKey!}`
+const wallet = new Wallet(pk)
+console.log(`Configured Signer: ${wallet.address}`)
 
+const privateKeyList: string[] = process.env.PRIVATE_KEYS_STR?.split(",") || []
 
 export enum TestMode {
 	STATIC = "STATIC",
@@ -171,7 +175,7 @@ const config: HardhatUserConfig = {
 			zkEvm: zkEvmApiKey,
 			opbnb: opBnbApiKey,
 			sonic: sonicApiKey,
-			bera: beraAPIKey
+			bera: beraAPIKey,
 		},
 		customChains: [
 			// {
@@ -267,8 +271,8 @@ const config: HardhatUserConfig = {
 				chainId: 146,
 				urls: {
 					apiURL: "https://api.sonicscan.org/api",
-					browserURL: "https://sonicscan.org"
-				}
+					browserURL: "https://sonicscan.org",
+				},
 			},
 		],
 	},

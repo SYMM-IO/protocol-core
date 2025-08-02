@@ -63,7 +63,8 @@ library PartyAFacetImpl {
 			require(partyBsWhiteList[i] != msg.sender, "PartyAFacet: Sender isn't allowed in partyBWhiteList");
 		}
 
-		LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
+		// NOTICE: This part is commented because in this version each user will be isolated with only one partyB
+		// LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
 
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
