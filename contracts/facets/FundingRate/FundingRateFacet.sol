@@ -72,6 +72,16 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 		emit SetEpochDuration(symbolIds, durations, msg.sender);
 	}
 
+	function updateAccumulatedFundingFee(
+		uint256[] memory symbolIds,
+		int256[] memory longRates,
+		int256[] memory shortRates,
+		int256[] memory marketPrices
+	) external whenNotPartyBActionsPaused onlyPartyB {
+		FundingRateFacetImpl.updateAccumulatedFundingFee(symbolIds, longRates, shortRates, marketPrices);
+		emit UpdateAccumulatedFundingFee(symbolIds, longRates, shortRates, marketPrices, msg.sender);
+	}
+
 	/// @notice Charges funding rates for a given Party A position.
 	/// @param partyA The address of Party A.
 	/// @param partyB The address of Party B.
@@ -87,4 +97,3 @@ contract FundingRateFacet is Accessibility, Pausable, IFundingRateFacet {
 		emit ChargeAccumulatedFundingFee(partyA, partyB, quoteIds, msg.sender);
 	}
 }
-

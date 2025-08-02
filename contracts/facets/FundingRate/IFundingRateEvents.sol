@@ -9,5 +9,6 @@ interface IFundingRateEvents {
 	event SetLongFundingFee(uint256[] symbolIds, int256[] fees, int256[] marketPrices, address partyB);
 	event SetShortFundingFee(uint256[] symbolIds, int256[] fees, int256[] marketPrices, address partyB);
 	event SetEpochDuration(uint256[] symbolIds, uint256[] durations, address partyB);
+	event UpdateAccumulatedFundingFee(uint256[] symbolIds, int256[] longRates, int256[] shortRates, int256[] marketPrices, address partyB);
 	event ChargeAccumulatedFundingFee(address partyA, address partyB, uint256[] quoteIds, address sender);
 }

@@ -939,4 +939,8 @@ contract ViewFacet is IViewFacet {
 	function getSignatureVerifier() external view returns (address) {
 		return GlobalAppStorage.layout().signatureVerifier;
 	}
+
+	function getFundingRate(uint256 symbolId, address partyB) external view returns (FundingFee memory) {
+		return SymbolStorage.layout().fundingFees[symbolId][partyB];
+	}
 }

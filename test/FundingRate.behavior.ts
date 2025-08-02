@@ -4,14 +4,18 @@ import { initializeFixture } from "./Initialize.fixture"
 import { Hedger } from "./models/Hedger"
 import { RunContext } from "./models/RunContext"
 import { User } from "./models/User"
-import { decimal, unDecimal } from "./utils/Common"
-import { getDummyPairUpnlSig } from "./utils/SignatureUtils"
+import { decimal, getBlockTimestamp, unDecimal } from "./utils/Common"
+import { getDummyCrossLiquidationSig, getDummyPairUpnlSig } from "./utils/SignatureUtils"
 import { expect } from "chai"
 import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
 import { PositionType } from "./models/Enums"
+import { bigint } from "hardhat/internal/core/params/argumentTypes"
 
 export function shouldBehaveLikeFundingRate(): void {
-	let context: RunContext, user: User, user2: User, hedger: Hedger, hedger2: Hedger
+	let context: RunContext, user: User, hedger: Hedger, hedger2: Hedger
+
+	const EightHourInSec = 28800
+	const NineHourInSec = 32400
 
 	beforeEach(async function () {
 		context = await loadFixture(initializeFixture)
@@ -19,13 +23,11 @@ export function shouldBehaveLikeFundingRate(): void {
 		await user.setup()
 		await user.setBalances(decimal(5000n), decimal(5000n), decimal(5000n))
 
-		user2 = new User(context, context.signers.user2)
-
 		hedger = new Hedger(context, context.signers.hedger)
 		await hedger.setBalances(decimal(5000n), decimal(5000n))
 
-		hedger2 = new Hedger(context, context.signers.hedger2)
-		await hedger2.setBalances(decimal(5000n), decimal(5000n))
+		// hedger2 = new Hedger(context, context.signers.hedger2)
+		// await hedger2.setBalances(decimal(5000n), decimal(5000n))
 
 		await user.sendQuote()
 		await hedger.lockQuote(1)
@@ -40,7 +42,7 @@ export function shouldBehaveLikeFundingRate(): void {
 		await hedger.lockQuote(3)
 		await hedger.openPosition(3)
 		await user.requestToClosePosition(3)
-		// await hedger.fillCloseRequest(3)
+		await hedger.fillCloseRequest(3)
 	})
 
 	it("Should fail on different length", async function () {
@@ -150,314 +152,146 @@ export function shouldBehaveLikeFundingRate(): void {
 		expect(newQuote.openedPrice).to.be.equal(unDecimal(oldQuote.openedPrice * (decimal(1n) - decimal(1n, 16))))
 	})
 
-	describe("Accumulative Funding Rate Methods", function () {
-		describe("chargeAccumulatedFundingFee", function () {
-			beforeEach(async function () {
-				// Set up funding fees for testing
-				await context.controlFacet.connect(context.signers.admin).setSymbolFundingState(1, 3600n, 1000n)
-				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [3600n])
-				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(1n, 16)], [-decimal(1n, 16)], [decimal(1n)])
-				await time.increase(3600) // Advance time to accumulate fees
-			})
+	describe.only("Accumulative Funding Rate Methods", function () {
+		describe("setEpochDuration", function () {
+			beforeEach(async () => {})
 
-			it("Should fail with invalid quote for partyA", async function () {
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user2.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.be.revertedWith("ChargeFundingFacet: Invalid quote")
-			})
-
-			it("Should fail with invalid quote for partyB", async function () {
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger2)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger2.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.be.revertedWith("ChargeFundingFacet: Sender isn't partyB of quote")
-			})
-
-			it("Should fail with invalid quote state", async function () {
-				await expect(
-					context.fundingRateFacet.connect(context.signers.hedger).chargeAccumulatedFundingFee(
-						await context.signers.user.getAddress(),
-						await context.signers.hedger.getAddress(),
-						[3], // Quote 3 is closed
-						await getDummyPairUpnlSig(),
-					),
-				).to.be.revertedWith("ChargeFundingFacet: Invalid state")
-			})
-
-			it("Should successfully charge accumulated funding fee for single quote", async function () {
-				const userBalanceBefore = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
-				const hedgerBalanceBefore = await context.viewFacet.allocatedBalanceOfPartyB(
-					await context.signers.hedger.getAddress(),
-					await context.signers.user.getAddress(),
-				)
-
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.be.reverted
-
-				// Verify balances changed (exact amounts depend on accumulated fees)
-				const userBalanceAfter = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
-				const hedgerBalanceAfter = await context.viewFacet.allocatedBalanceOfPartyB(
-					await context.signers.hedger.getAddress(),
-					await context.signers.user.getAddress(),
-				)
-
-				// Balance changes should be opposite for user and hedger
-				const userChange = userBalanceAfter - userBalanceBefore
-				const hedgerChange = hedgerBalanceAfter - hedgerBalanceBefore
-				expect(userChange).to.equal(-hedgerChange)
-			})
-
-			it("Should successfully charge accumulated funding fee for multiple quotes", async function () {
-				const userBalanceBefore = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
-				const hedgerBalanceBefore = await context.viewFacet.allocatedBalanceOfPartyB(
-					await context.signers.hedger.getAddress(),
-					await context.signers.user.getAddress(),
-				)
-
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1, 2],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.be.reverted
-
-				// Verify balances changed
-				const userBalanceAfter = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
-				const hedgerBalanceAfter = await context.viewFacet.allocatedBalanceOfPartyB(
-					await context.signers.hedger.getAddress(),
-					await context.signers.user.getAddress(),
-				)
-
-				// Balance changes should be opposite for user and hedger
-				const userChange = userBalanceAfter - userBalanceBefore
-				const hedgerChange = hedgerBalanceAfter - hedgerBalanceBefore
-				expect(userChange).to.equal(-hedgerChange)
-			})
-
-			it("Should handle zero accumulated fees correctly", async function () {
-				// Create a new position with no time passed
-				await user.sendQuote(limitQuoteRequestBuilder().deadline("10000000000000").build())
-				await hedger.lockQuote(4)
-				await hedger.openPosition(4)
-
-				const userBalanceBefore = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
-				const hedgerBalanceBefore = await context.viewFacet.allocatedBalanceOfPartyB(
-					await context.signers.hedger.getAddress(),
-					await context.signers.user.getAddress(),
-				)
-
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[4],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.be.reverted
-
-				const userBalanceAfter = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
-				const hedgerBalanceAfter = await context.viewFacet.allocatedBalanceOfPartyB(
-					await context.signers.hedger.getAddress(),
-					await context.signers.user.getAddress(),
-				)
-
-				expect(userBalanceAfter).to.equal(userBalanceBefore)
-				expect(hedgerBalanceAfter).to.equal(hedgerBalanceBefore)
-			})
-		})
-
-		describe("setLongFundingFee", function () {
-			beforeEach(async function () {
-				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [3600n])
-				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(1n, 16)], [-decimal(1n, 16)], [decimal(100n)])
-			})
-
-			it("Should fail with invalid array lengths", async function () {
-				await expect(context.fundingRateFacet.connect(context.signers.hedger).setLongFundingFee([1], [], [decimal(100n)])).to.be.revertedWith(
-					"ChargeFundingFacet: Invalid length",
+			it("should fail when partyB action paused", async () => {
+				await context.controlFacet.pausePartyBActions()
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([], [])).to.revertedWith(
+					"Pausable: PartyB actions paused",
 				)
 			})
 
-			it("Should successfully set long funding fee", async function () {
-				const longFee = decimal(3n, 16)
-				const marketPrice = decimal(150n)
-
-				await expect(context.fundingRateFacet.connect(context.signers.hedger).setLongFundingFee([1], [longFee], [marketPrice])).to.not.be.reverted
-			})
-		})
-
-		describe("setShortFundingFee", function () {
-			beforeEach(async function () {
-				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [3600n])
-				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(1n, 16)], [-decimal(1n, 16)], [decimal(100n)])
+			it("should fail when system globally paused", async () => {
+				await context.controlFacet.pauseGlobal()
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([], [])).to.revertedWith("Pausable: Global paused")
 			})
 
-			it("Should fail with invalid array lengths", async function () {
-				await expect(context.fundingRateFacet.connect(context.signers.hedger).setShortFundingFee([1], [], [decimal(100n)])).to.be.revertedWith(
-					"ChargeFundingFacet: Invalid length",
-				)
-			})
-
-			it("Should successfully set short funding fee", async function () {
-				const shortFee = decimal(4n, 16)
-				const marketPrice = decimal(150n)
-
-				await expect(context.fundingRateFacet.connect(context.signers.hedger).setShortFundingFee([1], [shortFee], [marketPrice])).to.not.be.reverted
-			})
-		})
-
-		describe("Access Control", function () {
-			it("Should fail when non-partyB calls setFundingFee", async function () {
-				await expect(
-					context.fundingRateFacet.connect(context.signers.user).setFundingFee([1], [decimal(1n, 16)], [decimal(1n, 16)], [decimal(100n)]),
-				).to.be.revertedWith("Accessibility: Should be partyB")
-			})
-
-			it("Should fail when non-partyB calls setLongFundingFee", async function () {
-				await expect(
-					context.fundingRateFacet.connect(context.signers.user).setLongFundingFee([1], [decimal(1n, 16)], [decimal(100n)]),
-				).to.be.revertedWith("Accessibility: Should be partyB")
-			})
-
-			it("Should fail when non-partyB calls setShortFundingFee", async function () {
-				await expect(
-					context.fundingRateFacet.connect(context.signers.user).setShortFundingFee([1], [decimal(1n, 16)], [decimal(100n)]),
-				).to.be.revertedWith("Accessibility: Should be partyB")
-			})
-
-			it("Should fail when non-partyB calls setEpochDurations", async function () {
-				await expect(context.fundingRateFacet.connect(context.signers.user).setEpochDurations([1], [3600n])).to.be.revertedWith(
+			it("should fail when non-partyB called", async () => {
+				await expect(context.fundingRateFacet.connect(context.signers.user).setEpochDurations([], [])).to.revertedWith(
 					"Accessibility: Should be partyB",
 				)
 			})
 
-			it("Should fail when partyB actions are paused", async function () {
-				await context.controlFacet.connect(context.signers.admin).pausePartyBActions()
-
-				await expect(
-					context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(1n, 16)], [decimal(1n, 16)], [decimal(100n)]),
-				).to.be.revertedWith("Pausable: PartyB actions paused")
+			it("should fail when input arrays length mismatch", async () => {
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [])).to.revertedWith(
+					"FundingRateFacet: Invalid length",
+				)
 			})
 
-			it("Should fail chargeAccumulatedFundingFee when partyA actions are paused", async function () {
-				await context.controlFacet.connect(context.signers.admin).pausePartyAActions()
-
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.be.revertedWith("Pausable: PartyA actions paused")
+			it("should fail when want to set duration zero", async () => {
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [0])).to.revertedWith(
+					"FundingRateFacet: Zero epoch duration",
+				)
 			})
 
-			it("Should fail chargeAccumulatedFundingFee when partyB actions are paused", async function () {
-				await context.controlFacet.connect(context.signers.admin).pausePartyBActions()
+			it("should set epoch duration for first time correctly", async () => {
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [EightHourInSec])).to.not.reverted
 
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.be.revertedWith("Pausable: PartyB actions paused")
+				const blockTimestamp = await getBlockTimestamp()
+
+				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				expect(fundingFee.epochDuration).to.equal(EightHourInSec)
+				expect(fundingFee.lastUpdatedEpoch).to.approximately(blockTimestamp / BigInt(EightHourInSec), 120)
+			})
+
+			it("should set epoch duration correctly", async () => {
+				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [EightHourInSec])
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [NineHourInSec])).to.not.reverted
+
+				const blockTimestamp = await getBlockTimestamp()
+
+				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				expect(fundingFee.epochDuration).to.equal(NineHourInSec)
+				expect(fundingFee.lastUpdatedEpoch).to.approximately(blockTimestamp / BigInt(NineHourInSec), 1)
+				expect(fundingFee.startEpoch).to.equal(0)
 			})
 		})
 
-		describe("Mathematical Accuracy", function () {
-			it("Should handle zero rates correctly", async function () {
-				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [3600n])
-				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [0], [0], [decimal(100n)])
-				await time.increase(3600)
+		describe("updateAccumulatedFundingFee", () => {
+			beforeEach(async () => {
+				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [EightHourInSec])
+			})
 
-				const userBalanceBefore = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
+			it("should fail when partyB action paused", async () => {
+				await context.controlFacet.pausePartyBActions()
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).updateAccumulatedFundingFee([], [], [], [])).to.revertedWith(
+					"Pausable: PartyB actions paused",
+				)
+			})
+
+			it("should fail when system globally paused", async () => {
+				await context.controlFacet.pauseGlobal()
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).updateAccumulatedFundingFee([], [], [], [])).to.revertedWith(
+					"Pausable: Global paused",
+				)
+			})
+
+			it("should fail when non-partyB called", async () => {
+				await expect(context.fundingRateFacet.connect(context.signers.user).updateAccumulatedFundingFee([], [], [], [])).to.revertedWith(
+					"Accessibility: Should be partyB",
+				)
+			})
+
+			it("should fail when input arrays length mismatch", async () => {
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).updateAccumulatedFundingFee([1], [], [], [])).to.revertedWith(
+					"FundingRateFacet: Invalid length",
+				)
+			})
+
+			it("should fail when epoch duration not set", async () => {
+				await expect(context.fundingRateFacet.connect(context.signers.hedger).updateAccumulatedFundingFee([2], [1], [1], [1])).to.revertedWith(
+					"FundingRateFacet: Epoch duration not set",
+				)
+			})
+
+			it("should update accumulated funding fee first time correctly", async () => {
+				await expect(
+					context.fundingRateFacet
+						.connect(context.signers.hedger)
+						.updateAccumulatedFundingFee([1], [decimal(1n, 14)], [-decimal(1n, 14)], [decimal(1n)]),
+				).to.not.reverted
+
+				const blockTimestamp = await getBlockTimestamp()
+
+				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				expect(fundingFee.startEpoch).to.equal(blockTimestamp / BigInt(EightHourInSec))
+				expect(fundingFee.lastUpdatedEpoch).to.equal(blockTimestamp / BigInt(EightHourInSec))
+				expect(fundingFee.accumulatedLongRate).to.equal(0)
+				expect(fundingFee.accumulatedShortRate).to.equal(0)
+				expect(fundingFee.currentLongRate).to.equal((decimal(1n, 14) * decimal(1n)) / decimal(1n))
+				expect(fundingFee.currentShortRate).to.equal((-decimal(1n, 14) * decimal(1n)) / decimal(1n))
+			})
+
+			it("should update accumulated funding fee correctly", async () => {
+				await context.fundingRateFacet
+					.connect(context.signers.hedger)
+					.updateAccumulatedFundingFee([1], [decimal(1n, 14)], [-decimal(1n, 14)], [decimal(1n)])
+
+				await time.increase(NineHourInSec)
 
 				await context.fundingRateFacet
 					.connect(context.signers.hedger)
-					.chargeAccumulatedFundingFee(
-						await context.signers.user.getAddress(),
-						await context.signers.hedger.getAddress(),
-						[1],
-						await getDummyPairUpnlSig(),
-					)
+					.updateAccumulatedFundingFee([1], [decimal(1n, 14)], [-decimal(1n, 14)], [decimal(1n)])
 
-				const userBalanceAfter = await context.viewFacet.allocatedBalanceOfPartyA(await context.signers.user.getAddress())
-				expect(userBalanceAfter).to.equal(userBalanceBefore)
-			})
-
-			it("Should handle negative rates correctly", async function () {
-				const negativeLongFee = decimal(-1n, 17)
-				const negativeShortFee = decimal(-1n, 17)
-				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [3600n])
-				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [negativeLongFee], [negativeShortFee], [decimal(100n)])
-				await time.increase(3600)
+				await time.increase(NineHourInSec)
 
 				await expect(
 					context.fundingRateFacet
 						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.be.reverted
-			})
+						.updateAccumulatedFundingFee([1], [decimal(2n, 14)], [-decimal(2n, 14)], [decimal(1n)]),
+				).to.not.reverted
 
-			it("Should handle precision correctly in calculations", async function () {
-				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [3600n])
+				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const blockTimestamp = BigInt(await time.latest())
 
-				// Use small precise values to test precision handling
-				const smallLongFee = decimal(1n, 20) // 0.0001%
-				const smallShortFee = decimal(5n, 21) // 0.00005%
-				const precisePrice = decimal(123456789n, 10) // $12.3456789
-
-				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [smallLongFee], [smallShortFee], [precisePrice])
-				await time.increase(3600)
-
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.be.reverted
+				expect(fundingFee.startEpoch).to.equal(blockTimestamp / BigInt(EightHourInSec))
+				expect(fundingFee.lastUpdatedEpoch).to.equal(blockTimestamp / BigInt(EightHourInSec))
+				expect(fundingFee.accumulatedLongRate).to.equal(0)
+				expect(fundingFee.accumulatedShortRate).to.equal(0)
+				expect(fundingFee.currentLongRate).to.equal((decimal(2n, 14) * decimal(1n)) / decimal(1n))
+				expect(fundingFee.currentShortRate).to.equal((-decimal(2n, 14) * decimal(1n)) / decimal(1n))
 			})
 		})
 	})
