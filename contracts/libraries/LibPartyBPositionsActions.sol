@@ -61,11 +61,14 @@ library LibPartyBPositionsActions {
 		quote.initialOpenedPrice = openedPrice;
 		quote.statusModifyTimestamp = block.timestamp;
 		quote.lastFundingPaymentTimestamp = block.timestamp;
-		(int256 accumulatedLongRate, int256 accumulatedShortRate) = LibFundingRate.getCurrentAccumulatedRate(
-			SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB]
-		);
-		quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? accumulatedLongRate : accumulatedShortRate;
 
+		if (SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB].epochDuration > 0) {
+			(int256 accumulatedLongRate, int256 accumulatedShortRate) = LibFundingRate.getCurrentAccumulatedRate(
+				SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB]
+			);
+			quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? accumulatedLongRate : accumulatedShortRate;
+		}
+		
 		LibQuote.removeFromPendingQuotes(quote);
 
 		if (quote.quantity == filledAmount) {
