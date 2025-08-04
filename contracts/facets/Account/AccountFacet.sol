@@ -180,7 +180,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	 * @param amount The amount to transfer, specified in collateral decimals
 	 * @param target The address of the target contract that will receive the collateral
 	 */
-	function externalTransfer(address receiver, uint256 amount, address target) external notSuspended(msg.sender) {
+	function externalTransfer(address receiver, uint256 amount, address target) external notSuspended(msg.sender) { // TODO ::: add needed modifier
 		AccountFacetImpl.externalTransfer(msg.sender, receiver, amount, target);
 		emit ExternalTransfer(msg.sender, receiver, amount, target);
 	}
