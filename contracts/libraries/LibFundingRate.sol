@@ -24,7 +24,7 @@ library LibFundingRate {
 		console.log("New epochs:", newEpochs);
 		console.log("Previous epochs:", previousEpochs);
 
-		if (previousEpochs == 0 || newEpochs == 0) {
+		if (previousEpochs == 0 && newEpochs == 0) {
 			accumulatedLongRate = int256(fundingFee.accumulatedLongRate);
 			accumulatedShortRate = int256(fundingFee.accumulatedShortRate);
 			console.log("Early return - Accumulated rates (long, short):", uint256(accumulatedLongRate), uint256(accumulatedShortRate));
