@@ -14,7 +14,6 @@ import "../../libraries/SharedEvents.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/muon/LibMuonLiquidation.sol";
 
-import "hardhat/console.sol";
 library ClearingHouseFacetImpl {
 	using LockedValuesOps for LockedValues;
 

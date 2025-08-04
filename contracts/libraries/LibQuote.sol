@@ -12,7 +12,6 @@ import "../storages/AccountStorage.sol";
 import "../storages/GlobalAppStorage.sol";
 import "../storages/SymbolStorage.sol";
 import "../storages/MAStorage.sol";
-import "hardhat/console.sol";
 
 library LibQuote {
 	using LockedValuesOps for LockedValues;
@@ -394,20 +393,12 @@ library LibQuote {
 		uint256 timeElapsed = block.timestamp - quote.lastFundingPaymentTimestamp;
 		int256 maxFee = int256(quote.maxFundingRate) * int256(timeElapsed / epochDuration);
 
-		console.log("Funding rate cap calculation:");
-		console.log("Time elapsed:", timeElapsed);
-		console.log("Max funding rate:", quote.maxFundingRate);
-		console.log("Epoch duration:", epochDuration);
-		console.logInt(maxFee);
-		console.logInt(fee);
-
-		int256 result;
 		if (fee > 0) {
 			// Positive fee: cap at maxFee
-			result = fee > maxFee ? maxFee : fee;
+			return fee > maxFee ? maxFee : fee;
 		} else {
 			// Negative fee: cap at -maxFee
-			result = fee < -maxFee ? -maxFee : fee;
+			return fee < -maxFee ? -maxFee : fee;
 		}
 		// If fee == 0, no action needed
 	}
