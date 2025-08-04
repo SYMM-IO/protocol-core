@@ -46,7 +46,7 @@ contract ExternalTransferRelayer is IExternalTransferRelayer, AccessControlEnume
         uint256 amount
     ) external onlyAllowedCaller {
         if (receiver == address(0)) revert InvalidAddress();
-        IERC20(collateral).safeTransfer(receiver, amount);
+        IERC20(collateral).safeTransfer(receiver, amount); // TODO :: depositFor
         emit TransferExecuted(collateral, sender, receiver, amount);
     }
 }
