@@ -135,7 +135,7 @@ interface IControlFacet is IControlEvents {
 
 	function setSymbolTypes(uint256[] calldata symbolIds, uint256[] calldata symbolTypes) external;
 
-	function addExternalTransferTarget(address target) external;
+	function addExternalTransferTargetsToRelayers(address target, address relayer) external;
 
-	function removeExternalTransferTarget(address target) external;
+	function removeExternalTransferTargetsToRelayers(address target) external;
 }
