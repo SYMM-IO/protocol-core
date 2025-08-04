@@ -40,6 +40,12 @@ abstract contract Accessibility {
 		_;
 	}
 
+	modifier notCrossLiquidatedPartyB(address partyB) {
+		require(!MAStorage.layout().crossLiquidationStatus[partyB], "Accessibility: PartyB isn't solvent");
+		_;
+	}
+
+
 	modifier notLiquidated(uint256 quoteId) {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		require(!MAStorage.layout().liquidationStatus[quote.partyA], "Accessibility: PartyA isn't solvent");

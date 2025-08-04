@@ -16,7 +16,9 @@ struct BridgeTransaction {
 enum BridgeTransactionStatus {
 	RECEIVED,
 	SUSPENDED,
-	WITHDRAWN
+	WITHDRAWN,
+	CANCEL_REQUESTED,
+	CANCELED
 }
 
 library BridgeStorage {
@@ -28,6 +30,7 @@ library BridgeStorage {
 		mapping(address => uint256[]) bridgeTransactionIds;
 		uint256 lastId;
 		address invalidBridgedAmountsPool;
+		mapping(address => bool) virtualBridges;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

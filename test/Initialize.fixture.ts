@@ -52,12 +52,15 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("DISPUTE_ROLE")))
-	context.controlFacet
+	await context.controlFacet
 		.connect(context.signers.admin)
-		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE"))),
-		await context.controlFacet
-			.connect(context.signers.admin)
-			.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("AFFILIATE_MANAGER_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("MUON_SETTER_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.liquidator.getAddress(), ethers.keccak256(toUtf8Bytes("LIQUIDATOR_ROLE")))
@@ -65,10 +68,14 @@ export async function initializeFixture(): Promise<RunContext> {
 		.connect(context.signers.admin)
 		.grantRole(context.signers.liquidator.getAddress(), ethers.keccak256(toUtf8Bytes("PARTYB_LIQUIDATOR_ROLE")))
 
+	// // Set Muon configuration with sufficient validity time for tests
+	// await context.controlFacet.connect(context.signers.admin).setMuonConfig(3600, 3600) // 1 hour validity
+	// await context.controlFacet.connect(context.signers.admin).setMuonIds(1, ethers.ZeroAddress, { x: 0, parity: 0 })
+
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.addSymbol("BTCUSDT", decimal(5n), decimal(1n, 16), decimal(1n, 16), decimal(100n), 28800, 900)
-	await context.controlFacet.connect(context.signers.admin).setSymbolType(1, 1)
+	await context.controlFacet.connect(context.signers.admin).setSymbolTypes([1], [1])
 	await context.controlFacet.setPartyBWhitelistedSymbolTypeStatus(context.signers.hedger.address, 1, true)
 	await context.controlFacet.setPartyBWhitelistedSymbolTypeStatus(context.signers.hedger2.address, 1, true)
 

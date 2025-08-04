@@ -250,47 +250,6 @@ export function shouldBehaveLikeForceClosePosition(): void {
 			expect((await context.viewFacet.getQuote(2)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
 			expect((await context.viewFacet.getQuote(1)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED)
 		})
-
-		it("Should deposit/withdraw from reserveVault correctly", async function () {
-			let beforeBalance = await hedger.getBalance()
-			await hedger.depositToReserveVault(decimal(1000n))
-			let afterBalance = await hedger.getBalance()
-			expect(beforeBalance - afterBalance).to.be.equal(decimal(1000n))
-			expect(await hedger.balanceOfReserveVault()).to.be.equal(decimal(1000n))
-			await hedger.withdrawFromReserveVault(decimal(600n))
-			let afterWithdrawBalance = await hedger.getBalance()
-			expect(await hedger.balanceOfReserveVault()).to.be.equal(decimal(400n))
-			expect(afterWithdrawBalance - afterBalance).to.be.equal(decimal(600n))
-		})
-
-		it("Should not liquidate partyB when partyB will be insolvent but has enough reserves", async function () {
-			const sigTimes = await prepareSigTimes()
-			const userAddress = await context.signers.user.getAddress()
-
-			let reserveBalance = decimal(1000n)
-			await hedger.depositToReserveVault(reserveBalance)
-			const gapRatio2 = await context.viewFacet.forceCloseGapRatio(quote2ShortOpened.symbolId)
-			const marketPrice = decimal(7n)
-			const balance = await hedger.getBalanceInfo(quote2ShortOpened.partyA)
-			const dummySig = await getDummyHighLowPriceSig(
-				sigTimes[0],  				// startTime
-				sigTimes[1],  				// endTime
-				BigInt(quote2ShortOpened.requestedClosePrice) + unDecimal(BigInt(quote2ShortOpened.requestedClosePrice) * BigInt(gapRatio2)) - decimal(1n),  // lowest
-				decimal(10n),  				// highest
-				marketPrice,   				// currentPrice
-				decimal(8n),   				// averagePrice
-				quote2ShortOpened.symbolId, // symbolId
-				0n,            				// upnlPartyB
-				0n             				// upnlPartyA
-			)
-			await user.forceClosePosition(quote2ShortOpened.id, dummySig)
-			let balanceInfo: BalanceInfo = await hedger.getBalanceInfo(userAddress)
-			expect(balanceInfo.allocatedBalances.toString()).to.not.be.equal("0")
-
-			let diff = unDecimal((marketPrice - BigInt(quote2ShortOpened.requestedClosePrice)) * quote2ShortOpened.quantity)
-			const reserveLeft = reserveBalance + balance.allocatedBalances - diff - balance.lockedCva - balance.lockedLf + quote2ShortOpened.lockedValues.cva + quote2ShortOpened.lockedValues.lf
-			expect(await hedger.balanceOfReserveVault()).to.be.equal(reserveLeft)
-		})
 	})
 
 	it("Should forceClose Quote correctly", async function () {

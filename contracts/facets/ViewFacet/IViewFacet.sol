@@ -47,7 +47,7 @@ interface IViewFacet {
 
 	function allocatedBalanceOfPartyB(address partyB, address partyA) external view returns (uint256);
 
-	function balanceOfReserveVault(address partyB) external view returns (uint256);
+	function balanceOfMasterAccount(address partyB) external view returns (uint256);
 
 	function allocatedBalanceOfPartyBs(address partyA, address[] memory partyBs) external view returns (uint256[] memory);
 
@@ -193,4 +193,12 @@ interface IViewFacet {
 	function getNextBridgeTransactionId() external view returns (uint256);
 
 	function getLiquidationInsuranceVaultParams() external view returns (address, uint256);
+
+	function getPartyBCrossLiquidationStatus(address partyB) external view returns (bool);
+
+	function getPartyBTotalCva(address partyB) external view returns (uint256);
+
+	function getPartyBTotalLf(address partyB) external view returns (uint256);
+
+	function getSignatureVerifier() external view returns (address);
 }

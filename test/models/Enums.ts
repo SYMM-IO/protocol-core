@@ -58,6 +58,8 @@ export enum BridgeTransactionStatus {
 	RECEIVED,
 	SUSPENDED,
 	WITHDRAWN,
+	CANCEL_REQUESTED,
+	CANCELED,
 }
 
 export enum BridgeStatus {

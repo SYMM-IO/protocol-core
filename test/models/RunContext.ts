@@ -3,6 +3,7 @@ import {ethers} from "hardhat"
 import {
 	AccountFacet,
 	BridgeFacet,
+	ClearingHouseFacet,
 	ControlFacet,
 	DiamondCutFacet,
 	DiamondLoupeFacet,
@@ -10,6 +11,7 @@ import {
 	FundingRateFacet,
 	LiquidationFacet,
 	PartyAFacet,
+	PartyBBatchActionsFacet,
 	PartyBPositionActionsFacet,
 	PartyBQuoteActionsFacet,
 	SettlementFacet,
@@ -23,6 +25,7 @@ export class RunContext {
 	diamondCutFacet!: DiamondCutFacet
 	diamondLoupeFacet!: DiamondLoupeFacet
 	partyAFacet!: PartyAFacet
+	partyBBatchActionsFacet!: PartyBBatchActionsFacet
 	partyBQuoteActionsFacet!: PartyBQuoteActionsFacet
 	partyBPositionActionsFacet!: PartyBPositionActionsFacet
 	bridgeFacet!: BridgeFacet
@@ -32,6 +35,7 @@ export class RunContext {
 	fundingRateFacet!: FundingRateFacet
 	settlementFacet!: SettlementFacet
 	forceActionsFacet!: ForceActionsFacet
+	clearingHouseFacet!: ClearingHouseFacet
 	signers!: {
 		admin: SignerWithAddress
 		user: SignerWithAddress
@@ -78,6 +82,7 @@ export async function createRunContext(diamond: string, collateral: string, mult
 	context.diamondCutFacet = await ethers.getContractAt("DiamondCutFacet", diamond)
 	context.diamondLoupeFacet = await ethers.getContractAt("DiamondLoupeFacet", diamond)
 	context.partyAFacet = await ethers.getContractAt("PartyAFacet", diamond)
+	context.partyBBatchActionsFacet = await ethers.getContractAt("PartyBBatchActionsFacet", diamond)
 	context.partyBQuoteActionsFacet = await ethers.getContractAt("PartyBQuoteActionsFacet", diamond)
 	context.partyBPositionActionsFacet = await ethers.getContractAt("PartyBPositionActionsFacet", diamond)
 	context.bridgeFacet = await ethers.getContractAt("BridgeFacet", diamond)
@@ -87,6 +92,7 @@ export async function createRunContext(diamond: string, collateral: string, mult
 	context.fundingRateFacet = await ethers.getContractAt("FundingRateFacet", diamond)
 	context.settlementFacet = await ethers.getContractAt("SettlementFacet", diamond)
 	context.forceActionsFacet = await ethers.getContractAt("ForceActionsFacet", diamond)
+	context.clearingHouseFacet = await ethers.getContractAt("ClearingHouseFacet", diamond)
 
 	context.manager = new TestManager(context, onlyInitialize)
 	if (!onlyInitialize) await context.manager.start()

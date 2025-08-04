@@ -30,7 +30,7 @@ library PartyBPositionActionsFacetImpl {
 		accountLayout.partyANonces[quote.partyA] += 1;
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 
-		currentId = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);
+		currentId = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);		
 		uint256[] memory quoteIds = new uint256[](1);
 		uint256[] memory filledAmounts = new uint256[](1);
 		uint256[] memory marketPrices = new uint256[](1);
@@ -46,6 +46,8 @@ library PartyBPositionActionsFacetImpl {
 			quote.partyB,
 			quote.partyA
 		);
+
+		quote.lastFundingPaymentTimestamp = block.timestamp;
 	}
 
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) internal {

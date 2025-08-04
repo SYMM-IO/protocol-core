@@ -34,6 +34,7 @@ library LibLiquidation {
 		uint256 liquidatorShare;
 		uint256 remainingLf;
 
+
 		// Determine liquidator share and remaining locked funds
 		if (uint256(-availableBalance) < accountLayout.partyBLockedBalances[partyB][partyA].lf) {
 			remainingLf = accountLayout.partyBLockedBalances[partyB][partyA].lf - uint256(-availableBalance);
@@ -54,6 +55,7 @@ library LibLiquidation {
 
 		for (uint256 index = 0; index < pendingQuotes.length; ) {
 			Quote storage quote = quoteLayout.quotes[pendingQuotes[index]];
+
 			if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING)) {
 				accountLayout.pendingLockedBalances[partyA].subQuote(quote);
 				uint256 fee = LibQuote.getTradingFee(quote.id);
@@ -68,6 +70,7 @@ library LibLiquidation {
 			}
 		}
 
+
 		// Update allocated balances for Party A
 		uint256 value = accountLayout.partyBAllocatedBalances[partyB][partyA] - remainingLf;
 		accountLayout.allocatedBalances[partyA] += value;
@@ -75,8 +78,13 @@ library LibLiquidation {
 
 		// Clear pending quotes and reset balances for Party B
 		delete quoteLayout.partyBPendingQuotes[partyB][partyA];
-		emit SharedEvents.BalanceChangePartyB(partyB, partyA, accountLayout.partyBAllocatedBalances[partyB][partyA],
-			SharedEvents.BalanceChangeType.REALIZED_PNL_OUT);
+		emit SharedEvents.BalanceChangePartyB(
+			partyB,
+			partyA,
+			accountLayout.partyBAllocatedBalances[partyB][partyA],
+			SharedEvents.BalanceChangeType.REALIZED_PNL_OUT
+		);
+
 		accountLayout.partyBAllocatedBalances[partyB][partyA] = 0;
 		accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
 		accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();

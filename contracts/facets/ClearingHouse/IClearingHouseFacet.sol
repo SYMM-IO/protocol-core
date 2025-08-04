@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: SYMM-Core-Business-Source-License-1.1
+// This contract is licensed under the SYMM Core Business Source License 1.1
+// Copyright (c) 2023 Symmetry Labs AG
+// For more information, see https://docs.symm.io/legal-disclaimer/license
+pragma solidity >=0.8.18;
+
+import "../../storages/MuonStorage.sol";
+import "./IClearingHouseFacetEvents.sol";
+
+interface IClearingHouseFacet is IClearingHouseFacetEvents {
+	function liquidateCrossPartyB(address partyB, CrossLiquidation memory liquidationSig) external;
+	function deallocateForCrossLiquidation(address partyB, address[] memory partyAs, uint256[] memory amounts) external;
+	function distribute(address partyB, address receiver, uint256 amount) external;
+	function liquidatePendingQuotes(address partyB, address[] memory partyAs) external;
+	function liquidateCrossPositionsPartyB(address partyB, address partyA, QuotePriceSig memory priceSig) external;
+}

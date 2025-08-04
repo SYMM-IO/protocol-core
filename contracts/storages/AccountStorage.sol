@@ -34,6 +34,13 @@ struct LiquidationDetail {
 	uint256 liquidationTimestamp;
 }
 
+struct CrossLiquidationDetail {
+	bytes liquidationId;
+	int256 upnl;
+	uint256 timestamp;
+	uint256 deallocateForLiquidation;
+}
+
 struct DeferredWithdraw {
 	uint256 id;
 	uint256 amount;
@@ -89,14 +96,18 @@ library AccountStorage {
 		mapping(address => uint256) partyAReimbursement;
 		// partyA => partyB => SettlementState
 		mapping(address => mapping(address => SettlementState)) settlementStates;
-		mapping(address => uint256) reserveVault;
 		mapping(address => uint8) connectedPartyBCount; // partyA => Number of partyBs connected to this partyA
 		mapping(address => BindState) bindState;
 		mapping(uint256 => DeferredWithdraw) deferredWithdraws;
 		mapping(address => uint256[]) deferredWithdrawIds;
-		uint256 lastdeferredWithdrawId;
+		uint256 lastDeferredWithdrawId;
 		// partyB => symbolType => status
 		mapping(address => mapping(uint256 => bool)) partyBWhitelistedSymbolTypes;
+		mapping(address => bool) masterAccountMode;
+		mapping(address => uint256) partyBTotalCva;
+		mapping(address => uint256) partyBTotalLf;
+		mapping(address => CrossLiquidationDetail) CrossLiquidationDetails;
+		mapping(address => address) externalTransferTargetsToRelayers;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

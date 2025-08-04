@@ -133,6 +133,18 @@ export async function pausePartyA(context: RunContext): Promise<void> {
 	await context.controlFacet.connect(context.signers.admin).pausePartyAActions()
 }
 
+export async function pauseAccounting(context: RunContext): Promise<void> {
+	await context.controlFacet.connect(context.signers.admin).pauseAccounting()
+}
+
+export async function pauseGlobal(context: RunContext): Promise<void> {
+	await context.controlFacet.connect(context.signers.admin).pauseGlobal()
+}
+
+export async function suspendAddress(context: RunContext, address: string): Promise<void> {
+	await context.controlFacet.connect(context.signers.admin).suspendedAddress(address)
+}
+
 export async function getValue<T>(pov: T | Promise<T>): Promise<T> {
 	if (pov instanceof Promise) return await pov
 	return pov

@@ -310,11 +310,20 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		symbolLayout.symbols[symbolId].tradingFee = tradingFee;
 	}
 
-	function setSymbolType(uint256 symbolId, uint256 symbolType) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+	function setSymbolTypes(uint256[] calldata symbolIds, uint256[] calldata symbolTypes) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+		require(symbolIds.length == symbolTypes.length, "ControlFacet: Array length mismatch");
+
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
-		require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
-		symbolLayout.symbolTypes[symbolId] = symbolType;
-		emit SetSymbolType(symbolId, symbolType);
+
+		for (uint256 i = 0; i < symbolIds.length; i++) {
+			uint256 symbolId = symbolIds[i];
+			uint256 symbolType = symbolTypes[i];
+
+			require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+
+			symbolLayout.symbolTypes[symbolId] = symbolType;
+			emit SetSymbolType(symbolId, symbolType);
+		}
 	}
 
 	// CoolDowns //////////////////////////////////////////////////
@@ -541,6 +550,20 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		BridgeStorage.layout().bridges[bridge] = false;
 	}
 
+	/// @notice Adds a virtual bridge.
+	/// @param bridge The address of the virtual bridge to be added.
+	function addVirtualBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		emit AddVirtualBridge(bridge);
+		BridgeStorage.layout().virtualBridges[bridge] = true;
+	}
+
+	/// @notice Removes a virtual bridge.
+	/// @param bridge The address of the virtual bridge to be removed.
+	function removeVirtualBridge(address bridge) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		emit RemoveVirtualBridge(bridge);
+		BridgeStorage.layout().virtualBridges[bridge] = false;
+	}
+
 	/// @notice Sets the params for liquidation insurance vault.
 	/// @param insuranceVault The address of the vault.
 	/// @param maxLiquidationProfit The max profit from liquidation per position.
@@ -558,5 +581,22 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		AccountStorage.layout().partyBWhitelistedSymbolTypes[partyB][symbolType] = isWhiteList;
 		emit SetPartyBWhitelistedSymbolTypeStatus(partyB, symbolType, isWhiteList);
+	}
+
+	function setSignatureVerifierAddress(address signatureVerifier) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		GlobalAppStorage.layout().signatureVerifier = signatureVerifier;
+		emit SetSignatureVerifierAddress(signatureVerifier);
+	}
+
+	function addExternalTransferTarget(address target) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		require(target != address(0), "ControlFacet: Zero address");
+		AccountStorage.layout().externalTransferTargetsToRelayers[target] = target;
+		emit AddExternalTransferTarget(target, target);
+	}
+
+	function removeExternalTransferTarget(address target) external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
+		require(target != address(0), "ControlFacet: Zero address");
+		AccountStorage.layout().externalTransferTargetsToRelayers[target] = address(0);
+		emit RemoveExternalTransferTarget(target);
 	}
 }

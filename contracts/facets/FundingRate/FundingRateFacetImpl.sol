@@ -146,10 +146,8 @@ library FundingRateFacetImpl {
 		require(symbolIds.length == durations.length, "FundingRateFacet: Invalid length");
 
 		for (uint256 i = 0; i < symbolIds.length; i++) {
-			require(durations[i] > 0, "FundingRateFacet: Zero epoch duration");
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][partyB];
 
-			uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 			uint256 currentEpochWithNewDuration = LibFundingRate.getEpochOfTimestamp(block.timestamp, durations[i]);
 
 			if (fundingFee.epochDuration != 0) {
@@ -157,6 +155,7 @@ library FundingRateFacetImpl {
 				LibFundingRate.updateAccumulatedRates(fundingFee);
 
 				// Calculate new weighted averages
+				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 				uint256 epochsInAverage = currentEpoch - fundingFee.startEpoch;
 				fundingFee.accumulatedLongRate = (fundingFee.accumulatedLongRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
 				fundingFee.accumulatedShortRate = (fundingFee.accumulatedShortRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
@@ -197,9 +196,9 @@ library FundingRateFacetImpl {
 				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 				fundingFee.startEpoch = currentEpoch;
 				fundingFee.lastUpdatedEpoch = currentEpoch;
+			} else {
+				LibFundingRate.updateAccumulatedRates(fundingFee);
 			}
-
-			LibFundingRate.updateAccumulatedRates(fundingFee);
 
 			// Convert funding rates to price-adjusted values and store
 			fundingFee.currentLongRate = (longRates[i] * marketPrices[i]) / 1e18;

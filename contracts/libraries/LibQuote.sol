@@ -195,6 +195,8 @@ library LibQuote {
 		);
 		accountLayout.lockedBalances[quote.partyA].subQuote(quote).add(lockedValues);
 		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].subQuote(quote).add(lockedValues);
+		accountLayout.partyBTotalCva[quote.partyB] -= quote.lockedValues.cva;
+		accountLayout.partyBTotalLf[quote.partyB] -= quote.lockedValues.lf;
 		quote.lockedValues = lockedValues;
 
 		if (LibQuote.quoteOpenAmount(quote) == quote.quantityToClose) {
@@ -205,7 +207,9 @@ library LibQuote {
 			);
 		}
 
-		chargeAccumulatedFundingFee(quote.id);
+		if (SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB].epochDuration > 0) {
+			chargeAccumulatedFundingFee(quote.id);
+		}
 
 		(bool hasMadeProfit, uint256 pnl) = LibQuote.getValueOfQuoteForPartyA(closedPrice, filledAmount, quote);
 
@@ -241,6 +245,7 @@ library LibQuote {
 			removeFromOpenPositions(quote.id);
 			quoteLayout.partyAPositionsCount[quote.partyA] -= 1;
 			quoteLayout.partyBPositionsCount[quote.partyB][quote.partyA] -= 1;
+			quoteLayout.partyBPositionsCount[quote.partyB][address(0)] -= 1;
 		} else if (quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING || quote.quantityToClose == 0) {
 			quote.quoteStatus = QuoteStatus.OPENED;
 			quote.statusModifyTimestamp = block.timestamp;
@@ -319,9 +324,7 @@ library LibQuote {
 
 		// Early exit conditions:
 		// 1. No epoch duration set (accumulated funding not active)
-		// 2. Position never had funding applied (new position)
-		// 3. No time has passed since funding tracking started
-		if (fundingFee.epochDuration == 0 || quote.lastFundingPaymentTimestamp == 0 || fundingFee.startEpoch == 0) return 0;
+		if (fundingFee.epochDuration == 0) return 0;
 
 		uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 
@@ -368,20 +371,20 @@ library LibQuote {
 
 		if (fee > 0) {
 			// Positive fee: Trader (PartyA) pays Market Maker (PartyB)
-			uint256 feeAmount = uint256(fee);
-			accountLayout.allocatedBalances[quote.partyA] -= feeAmount;
-			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += feeAmount;
+			uint256 feeInUint = uint256(fee);
+			accountLayout.allocatedBalances[quote.partyA] -= feeInUint;
+			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += feeInUint;
 
-			emit SharedEvents.BalanceChangePartyA(quote.partyA, feeAmount, SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
-			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, feeAmount, SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
 		} else if (fee < 0) {
 			// Negative fee: Market Maker (PartyB) pays Trader (PartyA)
-			uint256 feeAmount = uint256(-fee);
-			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] -= feeAmount;
-			accountLayout.allocatedBalances[quote.partyA] += feeAmount;
+			uint256 feeInUint = uint256(-fee);
+			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] -= feeInUint;
+			accountLayout.allocatedBalances[quote.partyA] += feeInUint;
 
-			emit SharedEvents.BalanceChangePartyA(quote.partyA, feeAmount, SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
-			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, feeAmount, SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
+			emit SharedEvents.BalanceChangePartyA(quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
+			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
 		}
 	}
 
@@ -397,5 +400,6 @@ library LibQuote {
 			// Negative fee: cap at -maxFee
 			return fee < -maxFee ? -maxFee : fee;
 		}
+		// If fee == 0, no action needed
 	}
 }

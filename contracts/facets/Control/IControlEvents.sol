@@ -42,7 +42,7 @@ interface IControlEvents {
 		uint256 oldForceCloseSecondCooldown,
 		uint256 newForceCloseSecondCooldown
 	);
-	event SetSymbolType(uint256 symbolId, uint256 symbolType);
+	event SetSymbolType(uint256 symbolIds, uint256 symbolTypes);
 	event SetForceClosePricePenalty(uint256 oldPricePenalty, uint256 newPricePenalty);
 	event SetForceCloseMinSigPeriod(uint256 oldCloseMinSigPeriod, uint256 newCloseMinSigPeriod);
 	event SetForceCancelCloseCooldown(uint256 oldForceCancelCloseCooldown, uint256 newForceCancelCloseCooldown);
@@ -77,6 +77,11 @@ interface IControlEvents {
 	event DeregisterAffiliate(address affilate);
 	event AddBridge(address bridge);
 	event RemoveBridge(address bridge);
+	event AddVirtualBridge(address bridge);
+	event RemoveVirtualBridge(address bridge);
 	event SetLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit);
 	event SetPartyBWhitelistedSymbolTypeStatus(address partyB, uint256 symbolType, bool isWhiteList);
+	event SetSignatureVerifierAddress(address SignatureVerifier);
+	event AddExternalTransferTarget(address target, address relayer);
+	event RemoveExternalTransferTarget(address target);
 }

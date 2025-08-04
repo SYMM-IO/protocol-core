@@ -13,7 +13,7 @@ interface IAccountFacet is IAccountEvents {
 
 	function depositFor(address user, uint256 amount) external;
 
-	function securedDepositFor(address user, uint256 amount) external;
+	function virtualDepositFor(address user, uint256 amount) external;
 
 	function withdraw(uint256 amount) external;
 
@@ -33,18 +33,12 @@ interface IAccountFacet is IAccountEvents {
 
 	function internalTransfer(address user, uint256 amount) external;
 
+	function externalTransfer(address receiver, uint256 amount, address target) external;
+
 	// PartyB
 	function allocateForPartyB(uint256 amount, address partyA) external;
 
 	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) external;
 
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external;
-
-	function depositToReserveVault(uint256 amount, address partyB) external;
-
-	function withdrawFromReserveVault(uint256 amount) external;
-
-	function allocateFromReserveVault(address partyA, uint256 amount) external;
-
-	function deallocateToReserveVault(address partyA, uint256 amount, SingleUpnlSig memory upnlSig) external;
 }

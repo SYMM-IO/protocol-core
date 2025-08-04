@@ -61,11 +61,14 @@ library LibPartyBPositionsActions {
 		quote.initialOpenedPrice = openedPrice;
 		quote.statusModifyTimestamp = block.timestamp;
 		quote.lastFundingPaymentTimestamp = block.timestamp;
-		(int256 accumulatedLongRate, int256 accumulatedShortRate) = LibFundingRate.getCurrentAccumulatedRate(
-			SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB]
-		);
-		quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? accumulatedLongRate : accumulatedShortRate;
 
+		if (SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB].epochDuration > 0) {
+			(int256 accumulatedLongRate, int256 accumulatedShortRate) = LibFundingRate.getCurrentAccumulatedRate(
+				SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB]
+			);
+			quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? accumulatedLongRate : accumulatedShortRate;
+		}
+		
 		LibQuote.removeFromPendingQuotes(quote);
 
 		if (quote.quantity == filledAmount) {
@@ -177,6 +180,10 @@ library LibPartyBPositionsActions {
 			(quote.quantity * quote.openedPrice) / quote.lockedValues.totalForPartyA() <= SymbolStorage.layout().symbols[quote.symbolId].maxLeverage,
 			"PartyBFacet: Leverage is high"
 		);
+
+		accountLayout.partyBTotalCva[quote.partyB] += quote.lockedValues.cva;
+		accountLayout.partyBTotalLf[quote.partyB] += quote.lockedValues.lf;
+		quoteLayout.partyBPositionsCount[quote.partyB][address(0)] += 1;
 
 		quote.quoteStatus = QuoteStatus.OPENED;
 		LibQuote.addToOpenPositions(quoteId);

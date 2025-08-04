@@ -27,14 +27,9 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit Deposit(msg.sender, user, amount);
 	}
 
-	function securedDepositFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.SECURED_DEPOSITOR_ROLE) {
-		AccountFacetImpl.securedDepositFor(user, amount);
+	function virtualDepositFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.VIRTUAL_DEPOSITOR_ROLE) {
+		AccountFacetImpl.virtualDepositFor(user, amount);
 		emit Deposit(msg.sender, user, amount);
-	}
-
-	function securedWithdrawFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.SECURED_WITHDRAWER_ROLE) {
-		AccountFacetImpl.securedWithdraw(user, amount);
-		emit Withdraw(msg.sender, user, amount);
 	}
 
 	/// @notice Allows either PartyA or PartyB to withdraw a specified amount of collateral, provided that the withdrawal cooldown period has elapsed.
@@ -71,12 +66,15 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyA(msg.sender, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
-	function depositAndAllocateFor(address user, uint256 amount) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
+	function depositAndAllocateFor(
+		address user,
+		uint256 amount
+	) external whenNotAccountingPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
 		AccountFacetImpl.deposit(user, amount);
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
 		AccountFacetImpl.allocate(user, amountWith18Decimals);
 		emit Deposit(msg.sender, user, amount);
-		emit AllocatePartyA(user, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]);
+		emit AllocatePartyA(user, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]); // TODO ::: should emit diff event when user is address zero (master account)
 		emit SharedEvents.BalanceChangePartyA(user, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
@@ -170,39 +168,20 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
-	/// @notice Allows transferring the balance of partyB to emergency reserve vault.
-	/// @param amount The precise amount of collateral to be transferred to emergency reserve vault, specified in 18 decimals.
-	function depositToReserveVault(uint256 amount, address partyB) external whenNotPartyBActionsPaused notSuspended(msg.sender) notSuspended(partyB) {
-		AccountFacetImpl.depositToReserveVault(amount, partyB);
-		emit DepositToReserveVault(msg.sender, partyB, amount);
+	function activeMasterAccountMode() external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.activeMasterAccountMode();
+		emit ActiveMasterAccountMode(msg.sender);
 	}
 
-	/// @notice Allows transferring the balance of partyB in emergency reserve vault to balance.
-	/// @param amount The precise amount of collateral to be transferred from emergency reserve vault, specified in 18 decimals.
-	function withdrawFromReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) {
-		AccountFacetImpl.withdrawFromReserveVault(amount);
-		emit WithdrawFromReserveVault(msg.sender, amount);
-	}
-
-	// TODO: add new functions to transfer between reserveVault and allocatedBalances
-	function allocateFromReserveVault(
-		address partyA,
-		uint256 amount
-	) external whenNotPartyBActionsPaused notSuspended(msg.sender) notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
-		AccountFacetImpl.allocateFromReserveVault(partyA, amount);
-		emit WithdrawFromReserveVault(msg.sender, amount);
-		emit AllocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
-		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.ALLOCATE);
-	}
-
-	function deallocateToReserveVault(
-		address partyA,
-		uint256 amount,
-		SingleUpnlSig memory upnlSig
-	) external whenNotPartyBActionsPaused notSuspended(msg.sender) notLiquidatedPartyB(msg.sender, partyA) onlyPartyB {
-		AccountFacetImpl.deallocateToReserveVault(partyA, amount, upnlSig);
-		emit DepositToReserveVault(msg.sender, msg.sender, amount);
-		emit DeallocateForPartyB(msg.sender, partyA, amount, AccountStorage.layout().partyBAllocatedBalances[msg.sender][partyA]);
-		emit SharedEvents.BalanceChangePartyB(msg.sender, partyA, amount, SharedEvents.BalanceChangeType.DEALLOCATE);
+	/**
+	 * @notice Transfers collateral from sender's available balance to whitelisted target without any cooldown
+	 * @dev sender must not be suspended for the operation to succeed
+	 * @param receiver The address of the recipient user in the target contract
+	 * @param amount The amount to transfer, specified in collateral decimals
+	 * @param target The address of the target contract that will receive the collateral
+	 */
+	function externalTransfer(address receiver, uint256 amount, address target) external notSuspended(msg.sender) {
+		AccountFacetImpl.externalTransfer(msg.sender, receiver, amount, target);
+		emit ExternalTransfer(msg.sender, receiver, amount, target);
 	}
 }

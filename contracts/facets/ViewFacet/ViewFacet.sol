@@ -25,16 +25,16 @@ contract ViewFacet is IViewFacet {
 	 * @return The address of the pendingOwner.
 	 */
 	function pendingOwner() external view virtual returns (address) {
-        return LibDiamond.diamondStorage().pendingOwner;
-    }
+		return LibDiamond.diamondStorage().pendingOwner;
+	}
 
 	/**
 	 * @notice Returns the owner of the diamond.
 	 * @return The address of the owner.
 	 */
 	function owner() external view virtual returns (address) {
-        return LibDiamond.diamondStorage().contractOwner;
-    }
+		return LibDiamond.diamondStorage().contractOwner;
+	}
 
 	/**
 	 * @notice Returns the balance of the specified user.
@@ -159,8 +159,8 @@ contract ViewFacet is IViewFacet {
 	 * @param partyB The address of Party B.
 	 * @return The balance of Party B vault.
 	 */
-	function balanceOfReserveVault(address partyB) external view returns (uint256) {
-		return AccountStorage.layout().reserveVault[partyB];
+	function balanceOfMasterAccount(address partyB) external view returns (uint256) {
+		return AccountStorage.layout().partyBAllocatedBalances[partyB][address(0)];
 	}
 
 	/**
@@ -918,5 +918,29 @@ contract ViewFacet is IViewFacet {
 	 */
 	function getLiquidationInsuranceVaultParams() external view returns (address, uint256) {
 		return (MAStorage.layout().liquidationInsuranceVault, MAStorage.layout().maxLiquidationProfitPerPosition);
+	}
+
+	function getPartyBCrossLiquidationStatus(address partyB) external view returns (bool) {
+		return MAStorage.layout().crossLiquidationStatus[partyB];
+	}
+
+	function getCrossLiquidationDetails(address partyB) external view returns (CrossLiquidationDetail memory) {
+		return AccountStorage.layout().CrossLiquidationDetails[partyB];
+	}
+
+	function getPartyBTotalCva(address partyB) external view returns (uint256) {
+		return AccountStorage.layout().partyBTotalCva[partyB];
+	}
+
+	function getPartyBTotalLf(address partyB) external view returns (uint256) {
+		return AccountStorage.layout().partyBTotalLf[partyB];
+	}
+
+	function getSignatureVerifier() external view returns (address) {
+		return GlobalAppStorage.layout().signatureVerifier;
+	}
+
+	function getFundingRate(uint256 symbolId, address partyB) external view returns (FundingFee memory) {
+		return SymbolStorage.layout().fundingFees[symbolId][partyB];
 	}
 }

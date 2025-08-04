@@ -17,7 +17,7 @@ library LibFundingRate {
 		uint256 newEpochs = currentEpoch - fundingFee.lastUpdatedEpoch;
 		uint256 previousEpochs = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
 
-		if (previousEpochs == 0 || newEpochs == 0) {
+		if (previousEpochs == 0 && newEpochs == 0) {
 			accumulatedLongRate = int256(fundingFee.accumulatedLongRate);
 			accumulatedShortRate = int256(fundingFee.accumulatedShortRate);
 			return (accumulatedLongRate, accumulatedShortRate);
