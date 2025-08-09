@@ -157,9 +157,16 @@ library FundingRateFacetImpl {
 				// Calculate new weighted averages
 				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 				uint256 epochsInAverage = currentEpoch - fundingFee.startEpoch;
-				fundingFee.accumulatedLongRate = (fundingFee.accumulatedLongRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
-				fundingFee.accumulatedShortRate = (fundingFee.accumulatedShortRate * int256(epochsInAverage)) / int256(currentEpochWithNewDuration);
 				fundingFee.startEpoch = (fundingFee.startEpoch * fundingFee.epochDuration) / durations[i];
+				uint256 epochsInNewDuration = currentEpochWithNewDuration - fundingFee.startEpoch;
+
+				uint256 epochsRatio = ((epochsInAverage * 1e18) / epochsInNewDuration) / 1e18;
+				fundingFee.accumulatedLongRate = fundingFee.accumulatedLongRate * int256(epochsRatio);
+				fundingFee.accumulatedShortRate = fundingFee.accumulatedShortRate * int256(epochsRatio);
+
+				uint256 durationRatio = ((durations[i] * 1e18) / fundingFee.epochDuration) / 1e18;
+				fundingFee.currentLongRate = fundingFee.currentLongRate * int256(durationRatio);
+				fundingFee.currentShortRate = fundingFee.currentShortRate * int256(durationRatio);
 			}
 
 			// Update epoch duration
