@@ -12,10 +12,25 @@ library LibFundingRate {
 		return timestamp / epochDuration;
 	}
 
-	function getCurrentAccumulatedRate(FundingFee memory fundingFee) internal view returns (int256 accumulatedLongRate, int256 accumulatedShortRate) {
+	function getEpochsSinceLastUpdate(FundingFee memory fundingFee) internal view returns (uint256) {
 		uint256 currentEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
-		uint256 newEpochs = currentEpoch - fundingFee.lastUpdatedEpoch;
-		uint256 previousEpochs = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
+		return currentEpoch - fundingFee.lastUpdatedEpoch;
+	}
+
+	function getEpochsSinceStart(FundingFee memory fundingFee) internal view returns (uint256) {
+		uint256 currentEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
+		return currentEpoch - fundingFee.startEpoch;
+	}
+
+	function getEpochsSince(FundingFee memory fundingFee, uint256 timestamp) internal view returns (uint256) {
+		uint256 currentEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
+		uint256 lastUpdatedEpoch = getEpochOfTimestamp(timestamp, fundingFee.epochDuration);
+		return currentEpoch - lastUpdatedEpoch;
+	}
+
+	function getCurrentAccumulatedRate(FundingFee memory fundingFee) internal view returns (int256 accumulatedLongRate, int256 accumulatedShortRate) {
+		uint256 newEpochs = getEpochsSinceLastUpdate(fundingFee);
+		uint256 previousEpochs = getEpochsSinceStart(fundingFee) - newEpochs;
 
 		if (previousEpochs == 0 && newEpochs == 0) {
 			accumulatedLongRate = int256(fundingFee.accumulatedLongRate);

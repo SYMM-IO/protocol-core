@@ -326,16 +326,12 @@ library LibQuote {
 		// 1. No epoch duration set (accumulated funding not active)
 		if (fundingFee.epochDuration == 0) return 0;
 
-		uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
-
-		// Calculate position's epochs
-		uint256 lastPaymentEpoch = quote.lastFundingPaymentTimestamp / fundingFee.epochDuration;
-		uint256 unpaidEpochs = currentEpoch - lastPaymentEpoch;
+		uint256 unpaidEpochs = LibFundingRate.getEpochsSince(fundingFee, quote.lastFundingPaymentTimestamp);
 
 		if (unpaidEpochs == 0) return 0;
 
 		// Calculate epochs in the weighted average
-		uint256 epochsSinceLastUpdate = currentEpoch - fundingFee.lastUpdatedEpoch;
+		uint256 epochsSinceLastUpdate = LibFundingRate.getEpochsSinceLastUpdate(fundingFee);
 		uint256 epochsBeforeLastUpdate = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
 
 		int256 beforeWeightedRate = quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate;
@@ -346,7 +342,16 @@ library LibQuote {
 		fee = (int256(LibQuote.quoteOpenAmount(quote)) * (currentFee - quote.accumulatedPaidFunding)) / 1e18;
 
 		// Apply maximum funding rate cap
-		fee = _applyFundingRateCap(fee, quote, fundingFee.epochDuration);
+		int256 maxFee = int256(quote.maxFundingRate) * int256(unpaidEpochs);
+
+		if (fee > 0) {
+			// Positive fee: cap at maxFee
+			fee = fee > maxFee ? maxFee : fee;
+		} else {
+			// Negative fee: cap at -maxFee
+			fee = fee < -maxFee ? -maxFee : fee;
+		}
+		// If fee == 0, no action needed
 	}
 
 	/**
@@ -367,7 +372,9 @@ library LibQuote {
 
 		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
 		LibFundingRate.updateAccumulatedRates(fundingFee);
-		quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate;
+		quote.accumulatedPaidFunding =
+			(quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate) *
+			int256(LibFundingRate.getEpochsSinceStart(fundingFee));
 
 		if (fee > 0) {
 			// Positive fee: Trader (PartyA) pays Market Maker (PartyB)
@@ -386,20 +393,5 @@ library LibQuote {
 			emit SharedEvents.BalanceChangePartyA(quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
 			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
 		}
-	}
-
-	function _applyFundingRateCap(int256 fee, Quote storage quote, uint256 epochDuration) private view returns (int256) {
-		// Max fee = Max rate per second × Time elapsed since last payment
-		uint256 timeElapsed = block.timestamp - quote.lastFundingPaymentTimestamp;
-		int256 maxFee = int256(quote.maxFundingRate) * int256(timeElapsed / epochDuration);
-
-		if (fee > 0) {
-			// Positive fee: cap at maxFee
-			return fee > maxFee ? maxFee : fee;
-		} else {
-			// Negative fee: cap at -maxFee
-			return fee < -maxFee ? -maxFee : fee;
-		}
-		// If fee == 0, no action needed
 	}
 }

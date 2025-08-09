@@ -155,8 +155,7 @@ library FundingRateFacetImpl {
 				LibFundingRate.updateAccumulatedRates(fundingFee);
 
 				// Calculate new weighted averages
-				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
-				uint256 epochsInAverage = currentEpoch - fundingFee.startEpoch;
+				uint256 epochsInAverage = LibFundingRate.getEpochsSinceStart(fundingFee);
 				fundingFee.startEpoch = (fundingFee.startEpoch * fundingFee.epochDuration) / durations[i];
 				uint256 epochsInNewDuration = currentEpochWithNewDuration - fundingFee.startEpoch;
 
@@ -170,8 +169,8 @@ library FundingRateFacetImpl {
 			}
 
 			// Update epoch duration
+			fundingFee.lastUpdatedEpoch = fundingFee.lastUpdatedEpoch * fundingFee.epochDuration / durations[i];
 			fundingFee.epochDuration = durations[i];
-			fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
 		}
 	}
 
