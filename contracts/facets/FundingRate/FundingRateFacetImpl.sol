@@ -169,7 +169,7 @@ library FundingRateFacetImpl {
 			}
 
 			// Update epoch duration
-			fundingFee.lastUpdatedEpoch = fundingFee.lastUpdatedEpoch * fundingFee.epochDuration / durations[i];
+			fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
 			fundingFee.epochDuration = durations[i];
 		}
 	}

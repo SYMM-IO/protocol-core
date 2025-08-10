@@ -63,7 +63,7 @@ library LibPartyBPositionsActions {
 		quote.lastFundingPaymentTimestamp = block.timestamp;
 
 		if (SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB].epochDuration > 0) {
-			(int256 accumulatedLongRate, int256 accumulatedShortRate) = LibFundingRate.getCurrentAccumulatedRate(
+			(int256 accumulatedLongRate, int256 accumulatedShortRate) = LibFundingRate.updateAccumulatedRates(
 				SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB]
 			);
 			quote.accumulatedPaidFunding = quote.positionType == PositionType.LONG ? accumulatedLongRate : accumulatedShortRate;
@@ -173,7 +173,6 @@ library LibPartyBPositionsActions {
 		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
 
 		quote.lastFundingTimestamp = block.timestamp;
-		quote.accumulatedPaidFunding = LibQuote.getAccumulatedFundingFee(quoteId);
 
 		// check leverage (is in 18 decimals)
 		require(
