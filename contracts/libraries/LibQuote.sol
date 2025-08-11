@@ -396,9 +396,9 @@ library LibQuote {
 	 */
 	function updateAccumulatedPaidFunding(Quote storage quote) internal {
 		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
-		LibFundingRate.updateAccumulatedRates(fundingFee);
 
 		if (fundingFee.epochDuration > 0) {
+			LibFundingRate.updateAccumulatedRates(fundingFee);
 			quote.accumulatedPaidFunding =
 				(quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate) *
 				int256(LibFundingRate.getEpochsSinceStart(fundingFee));
