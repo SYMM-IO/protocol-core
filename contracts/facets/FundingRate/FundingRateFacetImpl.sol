@@ -204,14 +204,7 @@ library FundingRateFacetImpl {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][msg.sender];
 
 			require(fundingFee.epochDuration > 0, "FundingRateFacet: Epoch duration not set");
-
-			if (fundingFee.startEpoch == 0) {
-				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
-				fundingFee.startEpoch = currentEpoch;
-				fundingFee.lastUpdatedEpoch = currentEpoch;
-			} else {
-				LibFundingRate.updateAccumulatedRates(fundingFee);
-			}
+			LibFundingRate.updateAccumulatedRates(fundingFee);
 
 			// Convert funding rates to price-adjusted values and store
 			fundingFee.currentLongRate = (longRates[i] * marketPrices[i]) / 1e18;
