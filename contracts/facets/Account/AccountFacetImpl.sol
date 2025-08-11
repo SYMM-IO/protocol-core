@@ -12,7 +12,7 @@ import "../../storages/MAStorage.sol";
 import "../../storages/MuonStorage.sol";
 import "../../libraries/muon/LibMuonAccount.sol";
 import "../../libraries/LibAccount.sol";
-import "../../interfaces/IExternalTransferTarget.sol";
+import "../../interfaces/IExternalTransferRelayer.sol";
 
 library AccountFacetImpl {
 	using SafeERC20 for IERC20;
@@ -186,6 +186,6 @@ library AccountFacetImpl {
 		accountLayout.balances[sender] -= amountWith18Decimals;
 		IERC20(appLayout.collateral).safeTransfer( relayer, amountWith18Decimals);
 
-		IExternalTransferTarget(relayer).onTransfer(appLayout.collateral, sender, receiver, amount);
+		IExternalTransferRelayer(relayer).onTransfer(appLayout.collateral, sender, receiver, amount, target);
 	}
 }

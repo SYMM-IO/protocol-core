@@ -254,4 +254,142 @@ export function shouldBehaveLikeAccountFacet(): void {
 			expect(await context.viewFacet.balanceOf(await user.getAddress())).to.be.equal("50")
 		})
 	})
+
+	describe("ExternalTransfer", async function () {
+		let mockTarget: any
+		let mockTarget2: any
+		let targetAddress: string
+		let targetAddress2: string
+
+		beforeEach(async function () {
+			const MockExternalTransferRelayer = await ethers.getContractFactory("contracts/test/MockExternalTransferTarget.sol:ExternalTransferRelayer")
+			mockTarget = await MockExternalTransferRelayer.deploy()
+			await mockTarget.waitForDeployment()
+			targetAddress = await mockTarget.getAddress()
+
+			mockTarget2 = await MockExternalTransferRelayer.deploy()
+			await mockTarget2.waitForDeployment()
+			targetAddress2 = await mockTarget2.getAddress()
+
+			await context.accountFacet.connect(context.signers.user).deposit("300")
+
+			await context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(targetAddress, targetAddress)
+		})
+
+		it("Should allow authorized users to call externalTransfer", async function () {
+			await expect(context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", targetAddress)).to.not.be
+				.reverted
+		})
+
+		it("Should fail when sender is suspended", async function () {
+			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
+
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", targetAddress),
+			).to.be.revertedWith("Accessibility: Sender is Suspended")
+		})
+
+		it("Should correctly update sender balance", async function () {
+			const initialBalance = await context.viewFacet.balanceOf(context.signers.user.address)
+			const transferAmount = "100"
+
+			await context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, transferAmount, targetAddress)
+
+			const finalBalance = await context.viewFacet.balanceOf(context.signers.user.address)
+			expect(finalBalance).to.equal(initialBalance - BigInt(transferAmount))
+		})
+
+		it("Should fail with insufficient balance", async function () {
+			const userBalance = await context.viewFacet.balanceOf(context.signers.user.address)
+			const excessiveAmount = userBalance + BigInt("100")
+
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, excessiveAmount.toString(), targetAddress),
+			).to.be.reverted
+		})
+
+		it("Should transfer collateral to relayer", async function () {
+			const initialRelayerBalance = await context.collateral.balanceOf(targetAddress)
+			const transferAmount = "100"
+
+			await context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, transferAmount, targetAddress)
+
+			const finalRelayerBalance = await context.collateral.balanceOf(targetAddress)
+			expect(finalRelayerBalance).to.equal(initialRelayerBalance + BigInt(transferAmount))
+		})
+
+		it("Should call onTransfer on relayer with correct parameters", async function () {
+			const transferAmount = "100"
+			const receiverAddress = context.signers.user2.address
+			const senderAddress = context.signers.user.address
+
+			await context.accountFacet.connect(context.signers.user).externalTransfer(receiverAddress, transferAmount, targetAddress)
+
+			const lastTransfer = await mockTarget.lastTransfer()
+			expect(lastTransfer.collateral).to.equal(await context.collateral.getAddress())
+			expect(lastTransfer.sender).to.equal(senderAddress)
+			expect(lastTransfer.receiver).to.equal(receiverAddress)
+			expect(lastTransfer.amount).to.equal(transferAmount)
+			expect(lastTransfer.target).to.equal(targetAddress)
+		})
+
+		it("Should fail with zero amount transfers", async function () {
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "0", targetAddress),
+			).to.be.revertedWith("AccountFacet: Amount is zero")
+		})
+
+		it("Should fail with zero receiver address", async function () {
+			await expect(context.accountFacet.connect(context.signers.user).externalTransfer(ethers.ZeroAddress, "100", targetAddress)).to.be.revertedWith(
+				"AccountFacet: Receiver is zero address",
+			)
+		})
+
+		it("Should fail with zero target address", async function () {
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", ethers.ZeroAddress),
+			).to.be.revertedWith("AccountFacet: Target is zero address")
+		})
+
+		it("Should handle self-transfers", async function () {
+			await expect(context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user.address, "100", targetAddress)).to.not.be
+				.reverted
+		})
+
+		it("Should fail when target is not whitelisted", async function () {
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", targetAddress2),
+			).to.be.revertedWith("AccountFacet: Target not whitelisted")
+		})
+
+		it("Should fail when relayer is removed", async function () {
+			await context.controlFacet.connect(context.signers.admin).removeExternalTransferTargetsToRelayers(targetAddress)
+
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", targetAddress),
+			).to.be.revertedWith("AccountFacet: Target not whitelisted")
+		})
+
+		it("Should handle relayer revert scenarios", async function () {
+			await mockTarget.setShouldRevert(true, "Relayer error")
+
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", targetAddress),
+			).to.be.revertedWith("Relayer error")
+		})
+
+		it("Should validate input parameters", async function () {
+			await expect(context.accountFacet.connect(context.signers.user).externalTransfer(ethers.ZeroAddress, "100", targetAddress)).to.be.revertedWith(
+				"AccountFacet: Receiver is zero address",
+			)
+
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", ethers.ZeroAddress),
+			).to.be.revertedWith("AccountFacet: Target is zero address")
+
+			await expect(
+				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "0", targetAddress),
+			).to.be.revertedWith("AccountFacet: Amount is zero")
+		})
+	})
 }

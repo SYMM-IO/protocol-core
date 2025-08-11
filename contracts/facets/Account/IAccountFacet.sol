@@ -23,6 +23,8 @@ interface IAccountFacet is IAccountEvents {
 
 	function depositAndAllocate(uint256 amount) external;
 
+	function depositAndAllocateFor(address user, uint256 amount) external;
+
 	function deallocate(uint256 amount, SingleUpnlSig memory upnlSig) external;
 
 	function deferredWithdraw(uint256 amount, address to) external;
@@ -39,6 +41,8 @@ interface IAccountFacet is IAccountEvents {
 	function allocateForPartyB(uint256 amount, address partyA) external;
 
 	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) external;
+
+	function activeMasterAccountMode() external;
 
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external;
 }

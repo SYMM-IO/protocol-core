@@ -4,18 +4,19 @@
 // For more information, see https://docs.symm.io/legal-disclaimer/license
 pragma solidity >=0.8.18;
 
-import "../interfaces/IExternalTransferTarget.sol";
+import "../interfaces/IExternalTransferRelayer.sol";
 
 /**
- * @title MockExternalTransferTarget
+ * @title ExternalTransferRelayer
  * @notice Mock contract for testing external transfer functionality
  */
-contract MockExternalTransferTarget is IExternalTransferTarget {
+contract ExternalTransferRelayer is IExternalTransferRelayer {
     struct TransferData {
         address collateral;
         address sender;
         address receiver;
         uint256 amount;
+        address target;
     }
 
     TransferData public lastTransfer;
@@ -23,7 +24,7 @@ contract MockExternalTransferTarget is IExternalTransferTarget {
     bool public shouldRevert;
     string public revertMessage;
 
-    event TransferReceived(address collateral, address sender, address receiver, uint256 amount);
+    event TransferReceived(address collateral, address sender, address receiver, uint256 amount, address target);
 
     /**
      * @notice Called when an external transfer is initiated from symmio to target
@@ -32,7 +33,7 @@ contract MockExternalTransferTarget is IExternalTransferTarget {
      * @param receiver The address receiving the transfer
      * @param amount The amount of collateral being transferred
      */
-    function onTransfer(address collateral, address sender, address receiver, uint256 amount) external override {
+    function onTransfer(address collateral, address sender, address receiver, uint256 amount, address target) external override {
         if (shouldRevert) {
             revert(revertMessage);
         }
@@ -41,12 +42,13 @@ contract MockExternalTransferTarget is IExternalTransferTarget {
             collateral: collateral,
             sender: sender,
             receiver: receiver,
-            amount: amount
+            amount: amount,
+            target: target
         });
 
         allTransfers.push(lastTransfer);
 
-        emit TransferReceived(collateral, sender, receiver, amount);
+        emit TransferReceived(collateral, sender, receiver, amount, target);
     }
 
     /**
@@ -60,7 +62,7 @@ contract MockExternalTransferTarget is IExternalTransferTarget {
      * @notice Get transfer data by index
      */
     function getTransfer(uint256 index) external view returns (TransferData memory) {
-        require(index < allTransfers.length, "MockExternalTransferTarget: Index out of bounds");
+        require(index < allTransfers.length, "ExternalTransferRelayer: Index out of bounds");
         return allTransfers[index];
     }
 
