@@ -369,12 +369,7 @@ library LibQuote {
 		int256 fee = getAccumulatedFundingFee(quoteId);
 
 		quote.lastFundingPaymentTimestamp = block.timestamp;
-
-		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
-		LibFundingRate.updateAccumulatedRates(fundingFee);
-		quote.accumulatedPaidFunding =
-			(quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate) *
-			int256(LibFundingRate.getEpochsSinceStart(fundingFee));
+		updateAccumulatedPaidFunding(quote);
 
 		if (fee > 0) {
 			// Positive fee: Trader (PartyA) pays Market Maker (PartyB)
@@ -392,6 +387,22 @@ library LibQuote {
 
 			emit SharedEvents.BalanceChangePartyA(quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_IN);
 			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, feeInUint, SharedEvents.BalanceChangeType.FUNDING_FEE_OUT);
+		}
+	}
+
+	/**
+	 * @notice Updates the accumulated paid funding for a quote
+	 * @dev Updates the accumulated paid funding for a quote
+	 * @param quote The quote to update the accumulated paid funding for
+	 */
+	function updateAccumulatedPaidFunding(Quote storage quote) internal {
+		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
+		LibFundingRate.updateAccumulatedRates(fundingFee);
+
+		if (fundingFee.epochDuration > 0) {
+			quote.accumulatedPaidFunding =
+				(quote.positionType == PositionType.LONG ? fundingFee.accumulatedLongRate : fundingFee.accumulatedShortRate) *
+				int256(LibFundingRate.getEpochsSinceStart(fundingFee));
 		}
 	}
 }
