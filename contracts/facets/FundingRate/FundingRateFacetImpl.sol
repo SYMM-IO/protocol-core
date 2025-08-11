@@ -176,7 +176,6 @@ library FundingRateFacetImpl {
 				fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp - 1, durations[i]);
 			}
 
-			fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
 			fundingFee.epochDuration = durations[i];
 		}
 	}
