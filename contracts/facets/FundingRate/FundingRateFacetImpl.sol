@@ -166,14 +166,16 @@ library FundingRateFacetImpl {
 				uint256 durationRatio = ((durations[i] * 1e18) / fundingFee.epochDuration);
 				fundingFee.currentLongRate = (fundingFee.currentLongRate * int256(durationRatio)) / 1e18;
 				fundingFee.currentShortRate = (fundingFee.currentShortRate * int256(durationRatio)) / 1e18;
-			}
 
-			// Update epoch duration
-			uint256 lastEpochTimestamp = currentEpoch * fundingFee.epochDuration;
-			if ((lastEpochTimestamp / durations[i]) * durations[i] == lastEpochTimestamp) {
-				fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp, durations[i]);
+				// Update epoch duration
+				uint256 lastEpochTimestamp = currentEpoch * fundingFee.epochDuration;
+				if ((lastEpochTimestamp / durations[i]) * durations[i] == lastEpochTimestamp) {
+					fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp, durations[i]);
+				} else {
+					fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp - 1, durations[i]);
+				}
 			} else {
-				fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp - 1, durations[i]);
+				fundingFee.startEpoch = currentEpochWithNewDuration;
 			}
 
 			fundingFee.epochDuration = durations[i];
