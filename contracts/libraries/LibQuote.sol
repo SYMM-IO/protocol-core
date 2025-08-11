@@ -315,11 +315,10 @@ library LibQuote {
 	/**
 	 * @notice Calculates the accumulated funding fee for a position
 	 * @dev Uses weighted average funding rates over time
-	 * @param quoteId The position ID to calculate funding for
+	 * @param quote The quote to calculate funding for
 	 * @return fee The net funding fee (positive = trader pays, negative = trader receives)
 	 */
-	function getAccumulatedFundingFee(uint256 quoteId) internal view returns (int256 fee) {
-		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+	function getAccumulatedFundingFee(Quote storage quote) internal view returns (int256 fee) {
 		FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[quote.symbolId][quote.partyB];
 
 		// Early exit conditions:
@@ -366,7 +365,7 @@ library LibQuote {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 
 		// Calculate the unpaid funding fee
-		int256 fee = getAccumulatedFundingFee(quoteId);
+		int256 fee = getAccumulatedFundingFee(quote);
 
 		quote.lastFundingPaymentTimestamp = block.timestamp;
 		updateAccumulatedPaidFunding(quote);
