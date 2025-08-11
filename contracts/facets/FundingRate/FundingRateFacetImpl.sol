@@ -147,7 +147,7 @@ library FundingRateFacetImpl {
 
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][partyB];
-
+			uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 			uint256 currentEpochWithNewDuration = LibFundingRate.getEpochOfTimestamp(block.timestamp, durations[i]);
 
 			if (fundingFee.epochDuration != 0) {
@@ -159,16 +159,23 @@ library FundingRateFacetImpl {
 				fundingFee.startEpoch = (fundingFee.startEpoch * fundingFee.epochDuration) / durations[i];
 				uint256 epochsInNewDuration = currentEpochWithNewDuration - fundingFee.startEpoch;
 
-				uint256 epochsRatio = ((epochsInAverage * 1e18) / epochsInNewDuration) / 1e18;
-				fundingFee.accumulatedLongRate = fundingFee.accumulatedLongRate * int256(epochsRatio);
-				fundingFee.accumulatedShortRate = fundingFee.accumulatedShortRate * int256(epochsRatio);
+				uint256 epochsRatio = ((epochsInAverage * 1e18) / epochsInNewDuration);
+				fundingFee.accumulatedLongRate = (fundingFee.accumulatedLongRate * int256(epochsRatio)) / 1e18;
+				fundingFee.accumulatedShortRate = (fundingFee.accumulatedShortRate * int256(epochsRatio)) / 1e18;
 
-				uint256 durationRatio = ((durations[i] * 1e18) / fundingFee.epochDuration) / 1e18;
-				fundingFee.currentLongRate = fundingFee.currentLongRate * int256(durationRatio);
-				fundingFee.currentShortRate = fundingFee.currentShortRate * int256(durationRatio);
+				uint256 durationRatio = ((durations[i] * 1e18) / fundingFee.epochDuration);
+				fundingFee.currentLongRate = (fundingFee.currentLongRate * int256(durationRatio)) / 1e18;
+				fundingFee.currentShortRate = (fundingFee.currentShortRate * int256(durationRatio)) / 1e18;
 			}
 
 			// Update epoch duration
+			uint256 lastEpochTimestamp = currentEpoch * fundingFee.epochDuration;
+			if ((lastEpochTimestamp / durations[i]) * durations[i] == lastEpochTimestamp) {
+				fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp, durations[i]);
+			} else {
+				fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp - 1, durations[i]);
+			}
+
 			fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
 			fundingFee.epochDuration = durations[i];
 		}
