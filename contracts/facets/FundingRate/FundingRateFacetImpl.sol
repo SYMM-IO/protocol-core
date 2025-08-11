@@ -147,10 +147,11 @@ library FundingRateFacetImpl {
 
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][partyB];
-			uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 			uint256 currentEpochWithNewDuration = LibFundingRate.getEpochOfTimestamp(block.timestamp, durations[i]);
 
 			if (fundingFee.epochDuration != 0) {
+				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
+
 				// Update weighted averages before changing epoch duration
 				LibFundingRate.updateAccumulatedRates(fundingFee);
 
@@ -176,6 +177,7 @@ library FundingRateFacetImpl {
 				}
 			} else {
 				fundingFee.startEpoch = currentEpochWithNewDuration;
+				fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
 			}
 
 			fundingFee.epochDuration = durations[i];
