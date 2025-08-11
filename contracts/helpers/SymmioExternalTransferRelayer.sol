@@ -8,24 +8,17 @@ import "../interfaces/IExternalTransferRelayer.sol";
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../facets/Account/IAccountFacet.sol";
 
 contract ExternalTransferRelayer is IExternalTransferRelayer, AccessControlEnumerable {
     using SafeERC20 for IERC20;
 
     bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
+    bytes32 public constant CALLER_ROLE = keccak256("CALLER_ROLE");
 
-    mapping(address => bool) public allowedCallers;
+    event TransferExecuted(address collateral, address sender, address receiver, uint256 amount, address target);
 
-    event CallerPermissionUpdated(address caller, bool isAllowed);
-    event TransferExecuted(address collateral, address sender, address receiver, uint256 amount);
-
-    error CallerNotAllowed();
     error InvalidAddress();
-
-    modifier onlyAllowedCaller() {
-        if (!allowedCallers[msg.sender]) revert CallerNotAllowed();
-        _;
-    }
 
     constructor(address admin) {
         if (admin == address(0)) revert InvalidAddress();
@@ -33,20 +26,16 @@ contract ExternalTransferRelayer is IExternalTransferRelayer, AccessControlEnume
         _setupRole(SETTER_ROLE, admin);
     }
 
-    function setCallerPermission(address caller, bool isAllowed) external onlyRole(SETTER_ROLE) {
-        if (caller == address(0)) revert InvalidAddress();
-        allowedCallers[caller] = isAllowed;
-        emit CallerPermissionUpdated(caller, isAllowed);
-    }
-
     function onTransfer(
         address collateral,
         address sender,
         address receiver,
-        uint256 amount
-    ) external onlyAllowedCaller {
+        uint256 amount,
+        address target
+    ) external onlyRole(CALLER_ROLE) {
         if (receiver == address(0)) revert InvalidAddress();
-        IERC20(collateral).safeTransfer(receiver, amount); // TODO :: depositFor
-        emit TransferExecuted(collateral, sender, receiver, amount);
+        IERC20(collateral).approve(target, amount);
+        IAccountFacet(target).depositFor(receiver, amount);
+        emit TransferExecuted(collateral, sender, receiver, amount, target);
     }
 }

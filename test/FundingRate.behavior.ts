@@ -153,7 +153,7 @@ export function shouldBehaveLikeFundingRate(): void {
 		expect(newQuote.openedPrice).to.be.equal(unDecimal(oldQuote.openedPrice * (decimal(1n) - decimal(1n, 16))))
 	})
 
-	describe.only("Accumulative Funding Rate Methods", function () {
+	describe("Accumulative Funding Rate Methods", function () {
 		describe("setEpochDuration", function () {
 			beforeEach(async () => {})
 

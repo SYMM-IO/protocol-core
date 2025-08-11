@@ -66,7 +66,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeLiquidationFacet()
 		})
 
-		describe.only("FundingRate", async function () {
+		describe("FundingRate", async function () {
 			shouldBehaveLikeFundingRate()
 		})
 
