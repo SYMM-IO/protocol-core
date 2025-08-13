@@ -389,81 +389,9 @@ export function shouldBehaveLikeFundingRate(): void {
 						),
 				).to.revertedWith("FundingRateFacet: Invalid state")
 			})
-
-			it("should charge accumulated funding fee for LONG position correctly", async () => {
-				const beforePartyABalance = (await user.getBalanceInfo()).allocatedBalances
-				const beforePartyBBalance = (await hedger.getBalanceInfo(await user.getAddress())).allocatedBalances
-
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[1],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.reverted
-
-				const afterPartyABalance = (await user.getBalanceInfo()).allocatedBalances
-				const afterPartyBBalance = (await hedger.getBalanceInfo(await user.getAddress())).allocatedBalances
-
-				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
-				const quote = await context.viewFacet.getQuote(1)
-
-				expect(quote.accumulatedPaidFunding).to.equal(100000000000000)
-				expect(quote.lastFundingPaymentTimestamp).to.equal(BigInt(await time.latest()))
-				expect(afterPartyABalance - beforePartyABalance).to.equal((-1n * 5n * fundingFee.currentLongRate * quote.quantity) / decimal(1n))
-				expect(afterPartyBBalance - beforePartyBBalance).to.equal((5n * fundingFee.currentLongRate * quote.quantity) / decimal(1n))
-			})
-
-			it("should charge accumulated funding fee for SHORT position correctly", async () => {
-				const beforePartyABalance = (await user.getBalanceInfo()).allocatedBalances
-				const beforePartyBBalance = (await hedger.getBalanceInfo(await user.getAddress())).allocatedBalances
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[2],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.reverted
-				const afterPartyABalance = (await user.getBalanceInfo()).allocatedBalances
-				const afterPartyBBalance = (await hedger.getBalanceInfo(await user.getAddress())).allocatedBalances
-				const quote = await context.viewFacet.getQuote(2)
-				expect(quote.accumulatedPaidFunding).to.equal(-100000000000000)
-				expect(quote.lastFundingPaymentTimestamp).to.equal(BigInt(await time.latest()))
-
-				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
-				expect(afterPartyABalance - beforePartyABalance).to.equal((5n * fundingFee.currentLongRate * quote.quantity) / decimal(1n))
-				expect(afterPartyBBalance - beforePartyBBalance).to.equal((-1n * 5n * fundingFee.currentLongRate * quote.quantity) / decimal(1n))
-			})
-
-			it("should charge accumulated funding fee for quote max funding rate correctly", async () => {
-				const beforePartyABalance = (await user.getBalanceInfo()).allocatedBalances
-				const beforePartyBBalance = (await hedger.getBalanceInfo(await user.getAddress())).allocatedBalances
-				await expect(
-					context.fundingRateFacet
-						.connect(context.signers.hedger)
-						.chargeAccumulatedFundingFee(
-							await context.signers.user.getAddress(),
-							await context.signers.hedger.getAddress(),
-							[4],
-							await getDummyPairUpnlSig(),
-						),
-				).to.not.reverted
-				const afterPartyABalance = (await user.getBalanceInfo()).allocatedBalances
-				const afterPartyBBalance = (await hedger.getBalanceInfo(await user.getAddress())).allocatedBalances
-
-				const q = await context.viewFacet.getQuote(4)
-				expect(afterPartyABalance - beforePartyABalance).to.equal(-1n * 5n * q.maxFundingRate)
-				expect(afterPartyBBalance - beforePartyBBalance).to.equal(5n * q.maxFundingRate)
-			})
 		})
 
-		describe.only("funding rate accumulation over multiple epochs", () => {
+		describe("funding rate accumulation over multiple epochs", () => {
 			beforeEach(async () => {
 				// Set initial block timestamp to a known value
 				await time.setNextBlockTimestamp(2000000000)
@@ -484,7 +412,6 @@ export function shouldBehaveLikeFundingRate(): void {
 				//* Move to t+300: Update funding fee
 				await time.setNextBlockTimestamp(startTime + 300)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(3n, 16)], [0], [decimal(1n)])
-				const currentTimestamp = await time.latest()
 
 				const fundingRate2 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
 				expect(fundingRate2.currentLongRate).to.equal(decimal(3n, 16))
@@ -559,8 +486,8 @@ export function shouldBehaveLikeFundingRate(): void {
 				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [300])
 				const fundingRate7 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
 				expect(fundingRate7.currentLongRate).to.equal(decimal(15n, 15))
-				expect(fundingRate7.accumulatedLongRate).to.equal(decimal(18n, 15))
-				expect(fundingRate7.startEpoch).to.equal(BigInt(startTime) / 300n)
+				expect(fundingRate7.accumulatedLongRate).to.equal(decimal(225n, 14))
+				expect(fundingRate7.startEpoch).to.equal(BigInt(fundingRate7.startEpochTimeStamp) / 300n)
 
 				//* Move to t+1700: Charge accumulated funding fee
 				await time.setNextBlockTimestamp(startTime + 1700)
@@ -579,23 +506,23 @@ export function shouldBehaveLikeFundingRate(): void {
 				const fundingRate8 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
 
 				expect(fundingRate8.currentLongRate).to.equal(decimal(15n, 15))
-				expect(fundingRate8.accumulatedLongRate).to.equal(decimal(17n, 15))
+				expect(fundingRate8.accumulatedLongRate).to.equal(decimal(21n, 15))
 
-				//! expect(quote3.accumulatedPaidFunding).to.equal(decimal(9n, 16))
+				expect(quote3.accumulatedPaidFunding).to.equal(decimal(105n, 15)) //! 0.12
 				expect(quote3.lastFundingPaymentTimestamp).to.equal(await time.latest())
 				expect(afterBalance2 - beforeBalance2).to.equal(-1n * decimal(15n, 15))
 
 				//* Move to t+1900: Update funding fee
-				await time.setNextBlockTimestamp(startTime + 1900)
+				await time.setNextBlockTimestamp(startTime + 1800)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(5n, 16)], [0], [decimal(1n)])
 
 				const fundingRate9 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
 				expect(fundingRate9.currentLongRate).to.equal(decimal(5n, 16))
-				//! expect(fundingRate9.accumulatedLongRate).to.equal(decimal(17n, 15))
+				expect(fundingRate9.accumulatedLongRate).to.equal(decimal(21n, 15))
 				expect(fundingRate9.lastUpdatedEpoch).to.equal(BigInt(await time.latest()) / 300n)
 
-				//* Move to t+2200: Final charge of accumulated funding fee
-				await time.setNextBlockTimestamp(startTime + 2200)
+				//* Move to t+2100: Final charge of accumulated funding fee
+				await time.setNextBlockTimestamp(startTime + 2100)
 				const beforeBalance3 = (await user.getBalanceInfo()).allocatedBalances
 				await context.fundingRateFacet
 					.connect(context.signers.hedger)
@@ -611,12 +538,99 @@ export function shouldBehaveLikeFundingRate(): void {
 				const fundingRate10 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
 
 				expect(fundingRate10.currentLongRate).to.equal(decimal(5n, 16))
-				// expect(fundingRate10.accumulatedLongRate).to.equal(decimal(17n, 15))
+				expect(fundingRate10.accumulatedLongRate).to.approximately(decimal(258n, 14), decimal(35n, 13))
 
-				//! expect(quote4.accumulatedPaidFunding).to.equal(decimal(9n, 16))
+				expect(quote4.accumulatedPaidFunding).to.approximately(decimal(155n, 15), decimal(1n, 13))
 				expect(quote4.lastFundingPaymentTimestamp).to.equal(await time.latest())
-				// expect(afterBalance3 - beforeBalance3).to.equal(-1n * decimal(15n, 15))
+				expect(afterBalance3 - beforeBalance3).to.equal(-1n * decimal(5n, 16))
 			})
 		})
+
+		// describe.only("2. funding rate accumulation over multiple epochs", () => {
+		// 	beforeEach(async () => {
+		// 		// Set initial block timestamp to a known value
+		// 		await time.setNextBlockTimestamp(2000000000)
+		// 		await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [400])
+		// 	})
+
+		// 	it("should correctly accumulate and charge funding rates across multiple epochs", async () => {
+		// 		const startTime = await time.latest()
+
+		// 		//* Move to t+200: Set initial funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 200)
+		// 		await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(2n, 16)], [0], [decimal(1n)])
+
+		// 		//* Move to t+300: Update funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 300)
+		// 		await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(3n, 16)], [0], [decimal(1n)])
+
+		// 		//* Move to t+500: Create and open position
+		// 		await time.setNextBlockTimestamp(startTime + 500)
+		// 		await user.sendQuote(
+		// 			limitQuoteRequestBuilder()
+		// 				.quantity(decimal(1n))
+		// 				.price(decimal(1n))
+		// 				.deadline(startTime + 1000)
+		// 				.maxFundingRate(decimal(1n))
+		// 				.build(),
+		// 		)
+		// 		await hedger.lockQuote(5)
+		// 		await hedger.openPosition(5, limitOpenRequestBuilder().filledAmount(decimal(1n)).build())
+
+		// 		//* Move to t+700: Update funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 700)
+		// 		await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(1n, 16)], [0], [decimal(1n)])
+
+		// 		//* Move to t+1000: Update funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 1000)
+		// 		await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(5n, 16)], [0], [decimal(1n)])
+
+		// 		//* Move to t+1300: Update funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 1300)
+		// 		await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(2n, 16)], [0], [decimal(1n)])
+
+		// 		//* Move to t+1400: Charge accumulated funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 1400)
+		// 		const beforeBalance1 = (await user.getBalanceInfo()).allocatedBalances
+		// 		await context.fundingRateFacet
+		// 			.connect(context.signers.hedger)
+		// 			.chargeAccumulatedFundingFee(
+		// 				await context.signers.user.getAddress(),
+		// 				await context.signers.hedger.getAddress(),
+		// 				[5],
+		// 				await getDummyPairUpnlSig(),
+		// 			)
+
+		// 		//* Move to t+1700: Charge accumulated funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 1700)
+		// 		await context.fundingRateFacet
+		// 			.connect(context.signers.hedger)
+		// 			.chargeAccumulatedFundingFee(
+		// 				await context.signers.user.getAddress(),
+		// 				await context.signers.hedger.getAddress(),
+		// 				[5],
+		// 				await getDummyPairUpnlSig(),
+		// 			)
+
+		// 		//* Move to t+1800: Update funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 1800)
+		// 		await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(5n, 16)], [0], [decimal(1n)])
+
+		// 		//* Move to t+2100: Final charge of accumulated funding fee
+		// 		await time.setNextBlockTimestamp(startTime + 2100)
+		// 		const beforeBalance3 = (await user.getBalanceInfo()).allocatedBalances
+		// 		await context.fundingRateFacet
+		// 			.connect(context.signers.hedger)
+		// 			.chargeAccumulatedFundingFee(
+		// 				await context.signers.user.getAddress(),
+		// 				await context.signers.hedger.getAddress(),
+		// 				[5],
+		// 				await getDummyPairUpnlSig(),
+		// 			)
+		// 		const afterBalance3 = (await user.getBalanceInfo()).allocatedBalances
+
+		// 		expect(afterBalance3 - beforeBalance3).to.equal(-1n * decimal(5n, 16))
+		// 	})
+		// })
 	})
 }

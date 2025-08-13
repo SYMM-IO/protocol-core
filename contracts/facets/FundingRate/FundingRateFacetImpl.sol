@@ -150,34 +150,24 @@ library FundingRateFacetImpl {
 			uint256 currentEpochWithNewDuration = LibFundingRate.getEpochOfTimestamp(block.timestamp, durations[i]);
 
 			if (fundingFee.epochDuration != 0) {
-				uint256 currentEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
-
 				// Update weighted averages before changing epoch duration
 				LibFundingRate.updateAccumulatedRates(fundingFee);
 
 				// Calculate new weighted averages
-				uint256 epochsInAverage = LibFundingRate.getEpochsSinceStart(fundingFee);
-				fundingFee.startEpoch = (fundingFee.startEpoch * fundingFee.epochDuration) / durations[i];
-				uint256 epochsInNewDuration = currentEpochWithNewDuration - fundingFee.startEpoch;
-
-				uint256 epochsRatio = ((epochsInAverage * 1e18) / epochsInNewDuration);
-				fundingFee.accumulatedLongRate = (fundingFee.accumulatedLongRate * int256(epochsRatio)) / 1e18;
-				fundingFee.accumulatedShortRate = (fundingFee.accumulatedShortRate * int256(epochsRatio)) / 1e18;
+				fundingFee.startEpoch = fundingFee.startEpochTimeStamp / durations[i];
 
 				uint256 durationRatio = ((durations[i] * 1e18) / fundingFee.epochDuration);
+				fundingFee.accumulatedLongRate = (fundingFee.accumulatedLongRate * int256(durationRatio)) / 1e18;
+				fundingFee.accumulatedShortRate = (fundingFee.accumulatedShortRate * int256(durationRatio)) / 1e18;
+
 				fundingFee.currentLongRate = (fundingFee.currentLongRate * int256(durationRatio)) / 1e18;
 				fundingFee.currentShortRate = (fundingFee.currentShortRate * int256(durationRatio)) / 1e18;
 
 				// Update epoch duration
-				uint256 lastEpochTimestamp = currentEpoch * fundingFee.epochDuration;
-				if ((lastEpochTimestamp / durations[i]) * durations[i] == lastEpochTimestamp) {
-					fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp, durations[i]);
-				} else {
-					fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(lastEpochTimestamp - 1, durations[i]);
-				}
+				fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(fundingFee.lastUpdatedTimeStamp, durations[i]);
 			} else {
-				fundingFee.startEpoch = currentEpochWithNewDuration;
 				fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
+				fundingFee.lastUpdatedTimeStamp = block.timestamp;
 			}
 
 			fundingFee.epochDuration = durations[i];
@@ -212,6 +202,11 @@ library FundingRateFacetImpl {
 			// Convert funding rates to price-adjusted values and store
 			fundingFee.currentLongRate = (longRates[i] * marketPrices[i]) / 1e18;
 			fundingFee.currentShortRate = (shortRates[i] * marketPrices[i]) / 1e18;
+
+			if(fundingFee.startEpoch == 0){
+				fundingFee.startEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
+				fundingFee.startEpochTimeStamp = block.timestamp;
+			}
 		}
 	}
 

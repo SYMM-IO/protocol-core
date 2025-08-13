@@ -30,6 +30,8 @@ struct FundingFee {
 	int256 accumulatedShortRate; // Historical weighted average for shorts
 	// Epoch tracking
 	uint256 lastUpdatedEpoch; // Epoch number when rates were last updated
+	uint256 lastUpdatedTimeStamp;
+	uint256 startEpochTimeStamp;
 	uint256 startEpoch; // Epoch when funding tracking started
 	uint256 epochDuration; // Duration of each funding period in seconds
 }
