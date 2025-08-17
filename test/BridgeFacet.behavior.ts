@@ -478,7 +478,6 @@ export function shouldBehaveLikeBridgeFacet(): void {
 
 		describe("completeVirtualBridge", async function () {
 			beforeEach(async function () {
-				// Grant VIRTUAL_DEPOSITOR_ROLE to admin for virtual bridge operations
 				await context.controlFacet.grantRole(await context.signers.admin.getAddress(), ethers.keccak256(ethers.toUtf8Bytes("VIRTUAL_DEPOSITOR_ROLE")))
 
 				// Create a virtual bridge transaction

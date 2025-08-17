@@ -134,7 +134,7 @@ library BridgeFacetImpl {
 		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
 	}
 
-	function transferToVirtualBridge(address user, uint256 amount, address bridge, bytes data) internal returns (uint256 currentId) {
+	function transferToVirtualBridge(address user, uint256 amount, address bridge, bytes memory data) internal returns (uint256 currentId) {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 
@@ -162,7 +162,7 @@ library BridgeFacetImpl {
 		IVirtualBridge(bridge).onTransferToBridge(user, amount, appLayout.collateral, data);
 	}
 
-	function completeVirtualBridge(uint256 bridgeId) internal {
+	function completeVirtualBridge(uint256 transactionId) internal {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");

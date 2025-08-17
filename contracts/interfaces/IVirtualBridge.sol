@@ -5,6 +5,6 @@
 pragma solidity >=0.8.18;
 
 interface IVirtualBridge {
-	function onTransferToBridge(address user, uint256 amount, address collateral, bytes data) external;
-	function onBridgeComplete(address user, uint256 amount, address collateral, bytes data) external;
+	function onTransferToBridge(address user, uint256 amount, address collateral, bytes memory data) external;
+	function onBridgeComplete(address user, uint256 amount, address collateral, bytes memory data) external;
 }
