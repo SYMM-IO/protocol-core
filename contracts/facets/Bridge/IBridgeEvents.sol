@@ -6,6 +6,7 @@ pragma solidity >=0.8.18;
 
 interface IBridgeEvents {
 	event TransferToBridge(address user, uint256 amount, address bridgeAddress, uint256 transactionId);
+	event TransferToVirtualBridge(address user, uint256 amount, address bridgeAddress, bytes data, uint256 transactionId);
 	event WithdrawReceivedBridgeValue(uint256 transactionId);
 	event SuspendBridgeTransaction(uint256 transactionId);
 	event RestoreBridgeTransaction(uint256 transactionId, uint256 validAmount);
@@ -13,4 +14,5 @@ interface IBridgeEvents {
 	event RequestToCancelBridgeTransaction(address user, uint256 transactionId);
 	event AcceptCancelBridgeTransaction(address bridge, uint256 transactionId);
 	event RejectCancelBridgeTransaction(address bridge, uint256 transactionId);
+	event CompleteVirtualBridge(uint256 transactionId);
 }

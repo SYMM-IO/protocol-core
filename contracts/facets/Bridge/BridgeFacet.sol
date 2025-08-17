@@ -62,8 +62,13 @@ contract BridgeFacet is Accessibility, Pausable, IBridgeFacet {
 		emit RejectCancelBridgeTransaction(msg.sender, transactionId);
 	}
 
+	function transferToVirtualBridge(uint256 amount, address bridge, bytes memory data) external whenNotAccountingPaused notSuspended(msg.sender) {
+		uint256 transactionId = BridgeFacetImpl.transferToVirtualBridge(msg.sender, amount, bridge, data);
+		emit TransferToVirtualBridge(msg.sender, amount, bridge, data, transactionId);
+	}
+
 	function completeVirtualBridge(uint256 transactionId) external whenNotAccountingPaused notSuspended(msg.sender) {
 		BridgeFacetImpl.completeVirtualBridge(transactionId);
-		emit WithdrawReceivedBridgeValue(transactionId);
+		emit CompleteVirtualBridge(transactionId);
 	}
 }
