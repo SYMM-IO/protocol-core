@@ -49,10 +49,18 @@ library BridgeFacetImpl {
 
 		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
 		require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
-		require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
+
+		if (bridgeLayout.bridges[bridgeTransaction.bridge]) {
+			require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
+			IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
+		} else if (bridgeLayout.virtualBridges[bridgeTransaction.bridge]) {
+			bytes memory data = bridgeLayout.bridgesData[transactionId];
+			IVirtualBridge(bridgeTransaction.bridge).onBridgeComplete(bridgeTransaction.user, bridgeTransaction.amount, appLayout.collateral, data);
+		} else {
+			revert();
+		}
 
 		bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
-		IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
 	}
 
 	function withdrawReceivedBridgeValues(uint256[] memory transactionIds) internal {
@@ -160,21 +168,5 @@ library BridgeFacetImpl {
 		bridgeLayout.bridgeTransactionIds[bridge].push(currentId);
 
 		IVirtualBridge(bridge).onTransferToBridge(user, amount, appLayout.collateral, data);
-	}
-
-	function completeVirtualBridge(uint256 transactionId) internal {
-		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
-		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
-		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
-
-		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
-		bytes memory data = bridgeLayout.bridgesData[transactionId];
-
-		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: invalid state");
-		require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
-
-		IVirtualBridge(bridgeTransaction.bridge).onBridgeComplete(bridgeTransaction.user, bridgeTransaction.amount, appLayout.collateral, data);
-
-		bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
 	}
 }
