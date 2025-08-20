@@ -45,7 +45,6 @@ library LiquidationFacetImpl {
 			disputed: false,
 			liquidationTimestamp: liquidationSig.timestamp
 		});
-		accountLayout.connectedPartyBCount[partyA] = 0;
 		accountLayout.liquidators[partyA].push(msg.sender);
 	}
 
@@ -391,7 +390,6 @@ library LiquidationFacetImpl {
 			maLayout.partyBLiquidationStatus[partyB][partyA] = false;
 			maLayout.partyBLiquidationTimestamp[partyB][partyA] = 0;
 			accountLayout.partyBNonces[partyB][partyA] += 1;
-			accountLayout.connectedPartyBCount[partyA] -= 1;
 		}
 		return (liquidatedAmounts, closeIds);
 	}

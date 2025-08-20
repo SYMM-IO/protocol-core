@@ -101,8 +101,6 @@ library ClearingHouseFacetImpl {
 				accountLayout.partyBLockedBalances[partyB][partyA].makeZero();
 				accountLayout.partyBPendingLockedBalances[partyB][partyA].makeZero();
 				accountLayout.partyANonces[partyA] += 1;
-
-				accountLayout.connectedPartyBCount[partyA] -= 1;
 			}
 		}
 	}
@@ -160,7 +158,6 @@ library ClearingHouseFacetImpl {
 
 		if (quoteLayout.partyBPositionsCount[partyB][partyA] == 0) {
 			accountLayout.partyBNonces[partyB][partyA] += 1;
-			accountLayout.connectedPartyBCount[partyA] -= 1;
 		}
 
 		if (quoteLayout.partyBPositionsCount[partyB][address(0)] == 0) {
