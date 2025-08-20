@@ -184,8 +184,53 @@ library AccountFacetImpl {
 
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
 		accountLayout.balances[sender] -= amountWith18Decimals;
-		IERC20(appLayout.collateral).safeTransfer( relayer, amountWith18Decimals);
+		IERC20(appLayout.collateral).safeTransfer(relayer, amountWith18Decimals);
 
 		IExternalTransferRelayer(relayer).onTransfer(appLayout.collateral, sender, receiver, amount, target);
+	}
+
+	function bindToPartyB(address partyB) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(partyB != address(0), "AccountFacet: PartyB is zero address");
+		require(accountLayout.bindState[msg.sender].partyB == address(0), "AccountFacet: Already bound");
+
+		accountLayout.bindState[msg.sender].partyB = partyB;
+		accountLayout.bindState[msg.sender].status = BindStatus.BINDED;
+		accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
+	}
+
+	function unbindFromPartyB() internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(accountLayout.bindState[msg.sender].partyB != address(0), "AccountFacet: Not bound");
+		require(accountLayout.bindState[msg.sender].status == BindStatus.BINDED ', "AccountFacet: Not bound");
+
+		accountLayout.bindState[msg.sender].status = BindStatus.UNBIND_PENDING;
+		accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
+	}
+
+	function cancelUnbindFromPartyB() internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(accountLayout.bindState[msg.sender].status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
+		accountLayout.bindState[msg.sender].status = BindStatus.BINDED;
+		accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
+	}
+
+	function acceptUnbindFromPartyB(address partyA) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(accountLayout.bindState[partyA].status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
+		require(accountLayout.bindState[partyA].partyB == msg.sender, "AccountFacet: Not bound to this partyB");
+
+		accountLayout.bindState[partyA].partyB = address(0);
+		accountLayout.bindState[partyA].status = BindStatus.UNBINDED;
+		accountLayout.bindState[partyA].modifyTimestamp = block.timestamp;
+	}
+
+	function rejectUnbindFromPartyB(address partyA) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(accountLayout.bindState[partyA].status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
+		require(accountLayout.bindState[partyA].partyB == msg.sender, "AccountFacet: Not bound to this partyB");
+
+		accountLayout.bindState[partyA].status = BindStatus.BINDED;
+		accountLayout.bindState[partyA].modifyTimestamp = block.timestamp;
 	}
 }

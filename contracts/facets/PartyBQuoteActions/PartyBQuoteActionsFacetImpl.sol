@@ -7,6 +7,7 @@ pragma solidity >=0.8.18;
 import "../../libraries/muon/LibMuonPartyB.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/LibPartyBQuoteActions.sol";
+import "../../storages/AccountStorage.sol";
 
 library PartyBQuoteActionsFacetImpl {
 	using LockedValuesOps for LockedValues;
@@ -14,6 +15,10 @@ library PartyBQuoteActionsFacetImpl {
 	function lockQuote(uint256 quoteId, SingleUpnlSig memory upnlSig) internal {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
+
+		if (accountLayout.bindState[msg.sender].partyB != address(0)) {
+			require(AccountStorage.layout().bindState[quote.partyA].partyB == msg.sender, "PartyBFacet: PartyB is not bounded to this partyA");
+		}
 
 		LibMuonPartyB.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
 		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, quote.partyA);
