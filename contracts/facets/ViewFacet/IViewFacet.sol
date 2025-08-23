@@ -177,6 +177,7 @@ interface IViewFacet {
 			bool partyBActionsPaused,
 			bool partyAActionsPaused,
 			bool internalTransferPaused,
+			bool externalTransferPaused,
 			bool emergencyMode
 		);
 

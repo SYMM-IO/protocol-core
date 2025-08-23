@@ -99,6 +99,10 @@ interface IControlFacet is IControlEvents {
 
 	function pausePartyBActions() external;
 
+	function pauseInternalTransfer() external;
+
+	function pauseExternalTransfer() external;
+
 	function activeEmergencyMode() external;
 
 	function unpauseGlobal() external;
@@ -110,6 +114,10 @@ interface IControlFacet is IControlEvents {
 	function unpausePartyAActions() external;
 
 	function unpausePartyBActions() external;
+
+	function unpauseInternalTransfer() external;
+
+	function unpauseExternalTransfer() external;
 
 	function setLiquidationTimeout(uint256 liquidationTimeout) external;
 

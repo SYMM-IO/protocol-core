@@ -447,6 +447,12 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit PauseInternalTransfer();
 	}
 
+	/// @notice Pauses external transfers.
+	function pauseExternalTransfer() external onlyRole(LibAccessibility.PAUSER_ROLE) {
+		GlobalAppStorage.layout().externalTransferPaused = true;
+		emit PauseExternalTransfer();
+	}
+
 	/// @notice Activates emergency mode.
 	function activeEmergencyMode() external onlyRole(LibAccessibility.DEFAULT_ADMIN_ROLE) {
 		GlobalAppStorage.layout().emergencyMode = true;
@@ -487,6 +493,12 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	function unpauseInternalTransfer() external onlyRole(LibAccessibility.UNPAUSER_ROLE) {
 		GlobalAppStorage.layout().internalTransferPaused = false;
 		emit UnpauseInternalTransfer();
+	}
+
+	/// @notice Unpauses external transfers.
+	function unpauseExternalTransfer() external onlyRole(LibAccessibility.UNPAUSER_ROLE) {
+		GlobalAppStorage.layout().externalTransferPaused = false;
+		emit UnpauseExternalTransfer();
 	}
 
 	/// @notice Sets the timeout duration for liquidation.

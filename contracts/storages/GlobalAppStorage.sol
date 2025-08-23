@@ -24,6 +24,7 @@ library GlobalAppStorage {
 		bool internalTransferPaused;
 		mapping(address => address) affiliateFeeCollector;
 		address signatureVerifier;
+		bool externalTransferPaused;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

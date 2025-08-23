@@ -41,4 +41,10 @@ abstract contract Pausable {
 		require(!GlobalAppStorage.layout().accountingPaused, "Pausable: Accounting paused");
 		_;
 	}
+
+	modifier whenNotExternalTransferPaused() {
+		require(!GlobalAppStorage.layout().externalTransferPaused, "Pausable: External transfer paused");
+		require(!GlobalAppStorage.layout().accountingPaused, "Pausable: Accounting paused");
+		_;
+	}
 }

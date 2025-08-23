@@ -74,7 +74,7 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(GlobalAppStorage.layout().collateral).decimals());
 		AccountFacetImpl.allocate(user, amountWith18Decimals);
 		emit Deposit(msg.sender, user, amount);
-		emit AllocatePartyA(user, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]); // TODO ::: should emit diff event when user is address zero (master account)
+		emit AllocatePartyA(user, amountWith18Decimals, AccountStorage.layout().allocatedBalances[msg.sender]);
 		emit SharedEvents.BalanceChangePartyA(user, amountWith18Decimals, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
@@ -175,13 +175,12 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 
 	/**
 	 * @notice Transfers collateral from sender's available balance to whitelisted target without any cooldown
-	 * @dev sender must not be suspended for the operation to succeed
+	 * @dev sender must not be suspended/liquidated for the operation to succeed
 	 * @param receiver The address of the recipient user in the target contract
 	 * @param amount The amount to transfer, specified in collateral decimals
 	 * @param target The address of the target contract that will receive the collateral
 	 */
-	function externalTransfer(address receiver, uint256 amount, address target) external notSuspended(msg.sender) {
-		// TODO ::: add needed modifier
+	function externalTransfer(address receiver, uint256 amount, address target) external whenNotExternalTransferPaused notSuspended(msg.sender) notLiquidatedPartyA(msg.sender)  {
 		AccountFacetImpl.externalTransfer(msg.sender, receiver, amount, target);
 		emit ExternalTransfer(msg.sender, receiver, amount, target);
 	}
