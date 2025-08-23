@@ -16,14 +16,15 @@ library PartyBQuoteActionsFacetImpl {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 
-		if (accountLayout.bindState[msg.sender].partyB != address(0)) {
+		if (AccountStorage.layout().bindState[msg.sender].partyB != address(0)) {
 			require(AccountStorage.layout().bindState[quote.partyA].partyB == msg.sender, "PartyBFacet: PartyB is not bounded to this partyA");
+		} else {
+			LibMuonPartyB.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
+			int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, quote.partyA);
+			require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
+			require(uint256(availableBalance) >= quote.lockedValues.totalForPartyB(), "PartyBFacet: insufficient available balance");
 		}
 
-		LibMuonPartyB.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);
-		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, quote.partyA);
-		require(availableBalance >= 0, "PartyBFacet: Available balance is lower than zero");
-		require(uint256(availableBalance) >= quote.lockedValues.totalForPartyB(), "PartyBFacet: insufficient available balance");
 		LibPartyBQuoteActions.lockQuote(quoteId);
 	}
 

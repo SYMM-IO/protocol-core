@@ -26,7 +26,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeDiamond()
 		})
 
-		describe("AccountFacet", async function () {
+		describe.only("AccountFacet", async function () {
 			shouldBehaveLikeAccountFacet()
 		})
 
@@ -74,7 +74,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeSpecificScenario()
 		})
 
-		describe.only("BridgeFacet", async function () {
+		describe("BridgeFacet", async function () {
 			shouldBehaveLikeBridgeFacet()
 		})
 

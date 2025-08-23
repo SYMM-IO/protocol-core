@@ -41,15 +41,15 @@ contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
 	}
 
 	/**
-	 * @notice Transfers assets to PartyA during liquidation.
+	 * @notice Transfers assets to PartyAs during liquidation.
 	 */
 	function distribute(
 		address partyB,
-		address receiver,
-		uint256 amount
+		address[] memory receivers,
+		uint256[] memory amounts
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-		ClearingHouseFacetImpl.distribute(partyB, receiver, amount);
-		emit Distribute(partyB, receiver, amount);
+		ClearingHouseFacetImpl.distribute(partyB, receivers, amounts);
+		emit Distribute(partyB, receivers, amounts);
 	}
 
 	/**

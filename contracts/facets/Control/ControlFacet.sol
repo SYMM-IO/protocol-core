@@ -330,7 +330,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 
 	/// @notice Sets the cooldown period for deallocation, requiring users to wait before they can proceed with withdrawals.
 	/// @param deallocateCooldown The new cooldown period for deallocation, specified in seconds.
-	function setDeallocateCooldown(uint256 deallocateCooldown) external onlyRole(LibAccessibility.SETTER_ROLE) {
+	function setDeallocateCooldown(uint256 deallocateCooldown) external onlyRole(LibAccessibility.DEALLOCATE_COOLDOWN_SETTER_ROLE) {
 		emit SetDeallocateCooldown(MAStorage.layout().deallocateCooldown, deallocateCooldown);
 		MAStorage.layout().deallocateCooldown = deallocateCooldown;
 	}
@@ -567,7 +567,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @notice Sets the params for liquidation insurance vault.
 	/// @param insuranceVault The address of the vault.
 	/// @param maxLiquidationProfit The max profit from liquidation per position.
-	function setLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit) external {
+	function setLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		require(insuranceVault != address(0), "ControlFacet: Zero address");
 		MAStorage.layout().liquidationInsuranceVault = insuranceVault;
 		MAStorage.layout().maxLiquidationProfitPerPosition = maxLiquidationProfit;

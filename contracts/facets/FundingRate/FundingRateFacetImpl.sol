@@ -32,7 +32,7 @@ library FundingRateFacetImpl {
 	 */
 	function chargeFundingRate(address partyA, uint256[] memory quoteIds, int256[] memory rates, PairUpnlSig memory upnlSig) internal {
 		// Verify the signature contains valid unrealized PnL data
-		LibMuonFundingRate.verifyPairUpnl(upnlSig, msg.sender, partyA);
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(quoteIds.length == rates.length && quoteIds.length > 0, "ChargeFundingFacet: Length not match");
 
 		int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, msg.sender, partyA);
@@ -126,9 +126,13 @@ library FundingRateFacetImpl {
 			quote.lastFundingPaymentTimestamp = paidTimestamp;
 		}
 
-		// Ensure neither party becomes insolvent after funding payments
-		require(partyAAvailableBalance >= 0, "ChargeFundingFacet: PartyA will be insolvent");
-		require(partyBAvailableBalance >= 0, "ChargeFundingFacet: PartyB will be insolvent");
+		if (accountLayout.bindState[msg.sender].partyB != msg.sender) {
+			LibMuonFundingRate.verifyPairUpnl(upnlSig, msg.sender, partyA);
+
+			// Ensure neither party becomes insolvent after funding payments
+			require(partyAAvailableBalance >= 0, "ChargeFundingFacet: PartyA will be insolvent");
+			require(partyBAvailableBalance >= 0, "ChargeFundingFacet: PartyB will be insolvent");
+		}
 
 		// Increment nonces for replay protection
 		AccountStorage.layout().partyBNonces[msg.sender][partyA] += 1;
@@ -203,7 +207,7 @@ library FundingRateFacetImpl {
 			fundingFee.currentLongRate = (longRates[i] * marketPrices[i]) / 1e18;
 			fundingFee.currentShortRate = (shortRates[i] * marketPrices[i]) / 1e18;
 
-			if(fundingFee.startEpoch == 0){
+			if (fundingFee.startEpoch == 0) {
 				fundingFee.startEpoch = LibFundingRate.getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 				fundingFee.startEpochTimeStamp = block.timestamp;
 			}

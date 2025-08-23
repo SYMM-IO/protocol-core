@@ -202,7 +202,7 @@ library AccountFacetImpl {
 	function unbindFromPartyB() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(accountLayout.bindState[msg.sender].partyB != address(0), "AccountFacet: Not bound");
-		require(accountLayout.bindState[msg.sender].status == BindStatus.BINDED ', "AccountFacet: Not bound");
+		require(accountLayout.bindState[msg.sender].status == BindStatus.BINDED, "AccountFacet: Not bound");
 
 		accountLayout.bindState[msg.sender].status = BindStatus.UNBIND_PENDING;
 		accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;

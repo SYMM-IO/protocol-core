@@ -8,6 +8,7 @@ import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
 import { Hedger } from "./models/Hedger"
 import { decimal, unDecimal } from "./utils/Common"
 import { ethers } from "hardhat"
+import { ZeroAddress } from "ethers"
 
 export function shouldBehaveLikeAccountFacet(): void {
 	let context: RunContext, user: User, user2: User, hedger: Hedger
@@ -257,10 +258,6 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 	describe("ExternalTransfer", async function () {
 		let mockTarget: any
-		let mockTarget2: any
-		let targetAddress: string
-		let targetAddress2: string
-
 		beforeEach(async function () {
 			const MockExternalTransferRelayer = await ethers.getContractFactory("contracts/test/MockExternalTransferTarget.sol:ExternalTransferRelayer")
 			mockTarget = await MockExternalTransferRelayer.deploy()
@@ -390,6 +387,178 @@ export function shouldBehaveLikeAccountFacet(): void {
 			await expect(
 				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "0", targetAddress),
 			).to.be.revertedWith("AccountFacet: Amount is zero")
+		})
+	})
+
+	describe("bindToPartyB", () => {
+		it("should failed when user suspended", async () => {
+			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
+			await expect(context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)).to.be.revertedWith(
+				"Accessibility: Sender is Suspended",
+			)
+		})
+
+		it("should failed when user is not partyA", async () => {
+			await expect(context.accountFacet.connect(context.signers.hedger).bindToPartyB(context.signers.hedger.address)).to.be.revertedWith(
+				"Accessibility: Shouldn't be partyB",
+			)
+		})
+
+		it("should failed when partyB be zero address", async () => {
+			await expect(context.accountFacet.connect(context.signers.user).bindToPartyB(ZeroAddress)).to.be.revertedWith(
+				"AccountFacet: PartyB is zero address",
+			)
+		})
+
+		it("should failed when bound", async () => {
+			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+			await expect(context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)).to.be.revertedWith(
+				"AccountFacet: Already bound",
+			)
+		})
+
+		it("should bind successfully", async () => {
+			await expect(context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)).to.not.reverted
+			const bindState = await context.viewFacet.getBindState(context.signers.user.address)
+			expect(bindState.partyB).to.equal(context.signers.hedger.address)
+			expect(bindState.status).to.equal(1)
+		})
+	})
+
+	describe("unbindFromPartyB", () => {
+		it("should failed when user suspended", async () => {
+			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
+			await expect(context.accountFacet.connect(context.signers.user).unbindFromPartyB()).to.be.revertedWith("Accessibility: Sender is Suspended")
+		})
+
+		it("should failed when user is not partyA", async () => {
+			await expect(context.accountFacet.connect(context.signers.hedger).unbindFromPartyB()).to.be.revertedWith("Accessibility: Shouldn't be partyB")
+		})
+
+		it("should failed when not bound", async () => {
+			await expect(context.accountFacet.connect(context.signers.user).unbindFromPartyB()).to.be.revertedWith("AccountFacet: Not bound")
+		})
+
+		it("should failed when request to unbound before", async () => {
+			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+			await context.accountFacet.connect(context.signers.user).unbindFromPartyB()
+			await expect(context.accountFacet.connect(context.signers.user).unbindFromPartyB()).to.be.revertedWith("AccountFacet: Not bound")
+		})
+
+		it("should request unbind successfully", async () => {
+			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+			await expect(context.accountFacet.connect(context.signers.user).unbindFromPartyB()).to.not.reverted
+			const bindState = await context.viewFacet.getBindState(context.signers.user.address)
+			expect(bindState.status).to.equal(2)
+			expect(bindState.partyB).to.equal(context.signers.hedger.address)
+		})
+	})
+
+	describe("cancelUnbindFromPartyB", () => {
+		it("should failed when user suspended", async () => {
+			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindFromPartyB()).to.be.revertedWith(
+				"Accessibility: Sender is Suspended",
+			)
+		})
+
+		it("should failed when user is not partyA", async () => {
+			await expect(context.accountFacet.connect(context.signers.hedger).cancelUnbindFromPartyB()).to.be.revertedWith(
+				"Accessibility: Shouldn't be partyB",
+			)
+		})
+
+		it("should failed when not request to unbound", async () => {
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindFromPartyB()).to.be.revertedWith("AccountFacet: Not pending unbind")
+		})
+
+		it("should cancel request unbind successfully", async () => {
+			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+			await context.accountFacet.connect(context.signers.user).unbindFromPartyB()
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindFromPartyB()).to.not.reverted
+			const bindState = await context.viewFacet.getBindState(context.signers.user.address)
+			expect(bindState.status).to.equal(1)
+			expect(bindState.partyB).to.equal(context.signers.hedger.address)
+		})
+	})
+
+	describe("acceptUnbindFromPartyB", () => {
+		beforeEach(async () => {
+			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+		})
+
+		it("should failed when user suspended", async () => {
+			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.hedger.address)
+			await expect(context.accountFacet.connect(context.signers.hedger).acceptUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"Accessibility: Sender is Suspended",
+			)
+		})
+
+		it("should failed when user is not partyB", async () => {
+			await expect(context.accountFacet.connect(context.signers.user).acceptUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"Accessibility: Should be partyB",
+			)
+		})
+
+		it("should failed when not request to unbound", async () => {
+			await expect(context.accountFacet.connect(context.signers.hedger).acceptUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"AccountFacet: Not pending unbind",
+			)
+		})
+
+		it("should failed when the bind state partyB not same as caller", async () => {
+			await context.accountFacet.connect(context.signers.user).unbindFromPartyB()
+			await expect(context.accountFacet.connect(context.signers.hedger2).acceptUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"AccountFacet: Not bound to this partyB",
+			)
+		})
+
+		it("should accept request unbind successfully", async () => {
+			await context.accountFacet.connect(context.signers.user).unbindFromPartyB()
+			await expect(context.accountFacet.connect(context.signers.hedger).acceptUnbindFromPartyB(context.signers.user.address)).to.not.reverted
+			const bindState = await context.viewFacet.getBindState(context.signers.user.address)
+			expect(bindState.status).to.equal(0)
+			expect(bindState.partyB).to.equal(ZeroAddress)
+		})
+	})
+
+	describe("rejectUnbindFromPartyB", () => {
+		beforeEach(async () => {
+			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+		})
+
+		it("should failed when user suspended", async () => {
+			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.hedger.address)
+			await expect(context.accountFacet.connect(context.signers.hedger).rejectUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"Accessibility: Sender is Suspended",
+			)
+		})
+
+		it("should failed when user is not partyB", async () => {
+			await expect(context.accountFacet.connect(context.signers.user).rejectUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"Accessibility: Should be partyB",
+			)
+		})
+
+		it("should failed when not request to unbound", async () => {
+			await expect(context.accountFacet.connect(context.signers.hedger).rejectUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"AccountFacet: Not pending unbind",
+			)
+		})
+
+		it("should failed when the bind state partyB not same as caller", async () => {
+			await context.accountFacet.connect(context.signers.user).unbindFromPartyB()
+			await expect(context.accountFacet.connect(context.signers.hedger2).rejectUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+				"AccountFacet: Not bound to this partyB",
+			)
+		})
+
+		it("should accept request unbind successfully", async () => {
+			await context.accountFacet.connect(context.signers.user).unbindFromPartyB()
+			await expect(context.accountFacet.connect(context.signers.hedger).rejectUnbindFromPartyB(context.signers.user.address)).to.not.reverted
+			const bindState = await context.viewFacet.getBindState(context.signers.user.address)
+			expect(bindState.status).to.equal(1)
+			expect(bindState.partyB).to.equal(context.signers.hedger.address)
 		})
 	})
 }

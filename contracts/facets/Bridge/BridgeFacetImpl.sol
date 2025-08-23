@@ -47,7 +47,7 @@ library BridgeFacetImpl {
 
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
-		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
+		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid state");
 		require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
 
 		if (bridgeLayout.bridges[bridgeTransaction.bridge]) {
@@ -57,7 +57,7 @@ library BridgeFacetImpl {
 			bytes memory data = bridgeLayout.bridgesData[transactionId];
 			IVirtualBridge(bridgeTransaction.bridge).onBridgeComplete(bridgeTransaction.user, bridgeTransaction.amount, appLayout.collateral, data);
 		} else {
-			revert();
+			revert("BridgeFacet: Invalid bridge");
 		}
 
 		bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
@@ -71,7 +71,7 @@ library BridgeFacetImpl {
 		for (uint256 i = transactionIds.length; i != 0; i--) {
 			require(transactionIds[i - 1] <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 			BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i - 1]];
-			require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Already withdrawn");
+			require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid state");
 			require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
 			require(bridgeTransaction.bridge == msg.sender, "BridgeFacet: Sender is not the transaction's bridge");
 

@@ -46,7 +46,7 @@ library ClearingHouseFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 
-		require(partyAs.length == amounts.length, "");
+		require(partyAs.length == amounts.length, "ClearingHouseFacet: Invalid length");
 		require(maLayout.crossLiquidationStatus[partyB], "ClearingHouseFacet: PartyB is solvent");
 		for (uint256 i = 0; i < partyAs.length; i++) {
 			address partyA = partyAs[i];
@@ -57,17 +57,22 @@ library ClearingHouseFacetImpl {
 		}
 	}
 
-	function distribute(address partyB, address receiver, uint256 amount) internal {
+	function distribute(address partyB, address[] memory receivers, uint256[] memory amounts) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 
+		require(receivers.length == amounts.length, "ClearingHouseFacet: Invalid length");
 		require(maLayout.crossLiquidationStatus[partyB] == true, "ClearingHouseFacet: PartyB is solvent");
-		require(
-			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation >= amount,
-			"ClearingHouseFacet: Insufficient allocated balance"
-		);
-		accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation -= amount;
-		accountLayout.allocatedBalances[receiver] += amount;
+
+		for (uint256 i = 0; i < receivers.length; i++) {
+			require(
+				accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation >= amounts[i],
+				"ClearingHouseFacet: Insufficient allocated balance"
+			);
+
+			accountLayout.CrossLiquidationDetails[partyB].deallocateForLiquidation -= amounts[i];
+			accountLayout.allocatedBalances[receivers[i]] += amounts[i];
+		}
 	}
 
 	function liquidatePendingQuotes(address partyB, address[] memory partyAs) internal {

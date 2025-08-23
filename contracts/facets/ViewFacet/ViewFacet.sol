@@ -943,4 +943,8 @@ contract ViewFacet is IViewFacet {
 	function getFundingRate(uint256 symbolId, address partyB) external view returns (FundingFee memory) {
 		return SymbolStorage.layout().fundingFees[symbolId][partyB];
 	}
+
+	function getBindState(address user) external view returns (BindState memory) {
+		return AccountStorage.layout().bindState[user];
+	}
 }

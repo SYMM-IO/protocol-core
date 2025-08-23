@@ -376,32 +376,32 @@ export function shouldBehaveLikeControlFacet(): void {
 
 	describe("ExternalTransfer methods", function () {
 		it("Should allow admin to add external transfer targets", async function () {
-			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(context.signers.others[0].address)).to.not.reverted
+			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)).to.not.reverted
 		})
 
 		it("Should allow admin to remove external transfer targets", async function () {
-			await context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(context.signers.others[0].address)
+			await context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
 
-			await expect(context.controlFacet.connect(context.signers.admin).removeExternalTransferTarget(context.signers.others[0].address)).to.not
+			await expect(context.controlFacet.connect(context.signers.admin).removeExternalTransferTargetsToRelayers(context.signers.others[0].address)).to.not
 				.reverted
 		})
 
 		it("Should fail when non-admin tries to add external transfer target", async function () {
 			await expect(
-				context.controlFacet.connect(context.signers.user).addExternalTransferTarget(context.signers.others[0].address),
+				context.controlFacet.connect(context.signers.user).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
 			).to.be.revertedWith("Accessibility: Must has role")
 		})
 
 		it("Should fail when non-admin tries to remove external transfer target", async function () {
-			await context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(context.signers.others[0].address)
+			await context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
 
 			await expect(
-				context.controlFacet.connect(context.signers.user).removeExternalTransferTarget(context.signers.others[0].address),
+				context.controlFacet.connect(context.signers.user).removeExternalTransferTargetsToRelayers(context.signers.others[0].address),
 			).to.be.revertedWith("Accessibility: Must has role")
 		})
 
 		it("Should fail to add zero address as external transfer target", async function () {
-			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTarget(ethers.ZeroAddress)).to.be.revertedWith(
+			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)).to.be.revertedWith(
 				"ControlFacet: Zero address",
 			)
 		})

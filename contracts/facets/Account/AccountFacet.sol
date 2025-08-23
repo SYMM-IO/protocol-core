@@ -180,8 +180,34 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	 * @param amount The amount to transfer, specified in collateral decimals
 	 * @param target The address of the target contract that will receive the collateral
 	 */
-	function externalTransfer(address receiver, uint256 amount, address target) external notSuspended(msg.sender) { // TODO ::: add needed modifier
+	function externalTransfer(address receiver, uint256 amount, address target) external notSuspended(msg.sender) {
+		// TODO ::: add needed modifier
 		AccountFacetImpl.externalTransfer(msg.sender, receiver, amount, target);
 		emit ExternalTransfer(msg.sender, receiver, amount, target);
+	}
+
+	function bindToPartyB(address partyB) external notSuspended(msg.sender) userNotPartyB(msg.sender) {
+		AccountFacetImpl.bindToPartyB(partyB);
+		emit BindToPartyB(partyB, msg.sender);
+	}
+
+	function unbindFromPartyB() external notSuspended(msg.sender) userNotPartyB(msg.sender) {
+		AccountFacetImpl.unbindFromPartyB();
+		emit RequestToUnbindFromPartyB(msg.sender);
+	}
+
+	function cancelUnbindFromPartyB() external notSuspended(msg.sender) userNotPartyB(msg.sender) {
+		AccountFacetImpl.cancelUnbindFromPartyB();
+		emit CancelUnbindFromPartyB(msg.sender);
+	}
+
+	function acceptUnbindFromPartyB(address partyA) external notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.acceptUnbindFromPartyB(partyA);
+		emit UnbindFromPartyB(partyA, msg.sender);
+	}
+
+	function rejectUnbindFromPartyB(address partyA) external notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.rejectUnbindFromPartyB(partyA);
+		emit RejectUnbindFromPartyB(partyA, msg.sender);
 	}
 }

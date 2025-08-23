@@ -67,6 +67,9 @@ export async function initializeFixture(): Promise<RunContext> {
 	await context.controlFacet
 		.connect(context.signers.admin)
 		.grantRole(context.signers.liquidator.getAddress(), ethers.keccak256(toUtf8Bytes("PARTYB_LIQUIDATOR_ROLE")))
+	await context.controlFacet
+		.connect(context.signers.admin)
+		.grantRole(context.signers.admin.getAddress(), ethers.keccak256(toUtf8Bytes("DEALLOCATE_COOLDOWN_SETTER_ROLE")))
 
 	// // Set Muon configuration with sufficient validity time for tests
 	// await context.controlFacet.connect(context.signers.admin).setMuonConfig(3600, 3600) // 1 hour validity

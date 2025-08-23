@@ -215,7 +215,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 			await context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(1)
 
 			await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(1)).to.be.revertedWith(
-				"BridgeFacet: Already withdrawn",
+				"BridgeFacet: Invalid state",
 			)
 		})
 
@@ -297,7 +297,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 			await context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValue(1)
 
 			await expect(context.bridgeFacet.connect(context.signers.bridge).withdrawReceivedBridgeValues([1, 2])).to.be.revertedWith(
-				"BridgeFacet: Already withdrawn",
+				"BridgeFacet: Invalid state",
 			)
 		})
 

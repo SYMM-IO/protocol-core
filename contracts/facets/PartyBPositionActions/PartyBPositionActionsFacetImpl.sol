@@ -26,52 +26,57 @@ library PartyBPositionActionsFacetImpl {
 		require(!accountLayout.suspendedAddresses[msg.sender], "PartyBFacet: Sender is Suspended");
 		require(!appLayout.partyBEmergencyStatus[quote.partyB], "PartyBFacet: PartyB is in emergency mode");
 		require(!appLayout.emergencyMode, "PartyBFacet: System is in emergency mode");
-		LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+
 		accountLayout.partyANonces[quote.partyA] += 1;
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 
-		currentId = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);		
-		uint256[] memory quoteIds = new uint256[](1);
-		uint256[] memory filledAmounts = new uint256[](1);
-		uint256[] memory marketPrices = new uint256[](1);
-		quoteIds[0] = quoteId;
-		filledAmounts[0] = filledAmount;
-		marketPrices[0] = upnlSig.price;
-		LibSolvency.isSolventAfterOpenPosition(
-			quoteIds,
-			filledAmounts,
-			marketPrices,
-			upnlSig.upnlPartyB,
-			upnlSig.upnlPartyA,
-			quote.partyB,
-			quote.partyA
-		);
+		currentId = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);
+		if (accountLayout.bindState[msg.sender].partyB != quote.partyB) {
+			LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 
+			uint256[] memory quoteIds = new uint256[](1);
+			uint256[] memory filledAmounts = new uint256[](1);
+			uint256[] memory marketPrices = new uint256[](1);
+			quoteIds[0] = quoteId;
+			filledAmounts[0] = filledAmount;
+			marketPrices[0] = upnlSig.price;
+			LibSolvency.isSolventAfterOpenPosition(
+				quoteIds,
+				filledAmounts,
+				marketPrices,
+				upnlSig.upnlPartyB,
+				upnlSig.upnlPartyA,
+				quote.partyB,
+				quote.partyA
+			);
+		}
 		quote.lastFundingPaymentTimestamp = block.timestamp;
 	}
 
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-		LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
-		uint256[] memory quoteIds = new uint256[](1);
-		uint256[] memory filledAmounts = new uint256[](1);
-		uint256[] memory closedPrices = new uint256[](1);
-		uint256[] memory marketPrices = new uint256[](1);
-		quoteIds[0] = quoteId;
-		filledAmounts[0] = filledAmount;
-		closedPrices[0] = closedPrice;
-		marketPrices[0] = upnlSig.price;
-		LibSolvency.isSolventAfterClosePosition(
-			quoteIds,
-			filledAmounts,
-			closedPrices,
-			marketPrices,
-			upnlSig.upnlPartyB,
-			upnlSig.upnlPartyA,
-			quote.partyB,
-			quote.partyA
-		);
+		if (accountLayout.bindState[msg.sender].partyB != msg.sender) {
+			LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
+			uint256[] memory quoteIds = new uint256[](1);
+			uint256[] memory filledAmounts = new uint256[](1);
+			uint256[] memory closedPrices = new uint256[](1);
+			uint256[] memory marketPrices = new uint256[](1);
+			quoteIds[0] = quoteId;
+			filledAmounts[0] = filledAmount;
+			closedPrices[0] = closedPrice;
+			marketPrices[0] = upnlSig.price;
+			LibSolvency.isSolventAfterClosePosition(
+				quoteIds,
+				filledAmounts,
+				closedPrices,
+				marketPrices,
+				upnlSig.upnlPartyB,
+				upnlSig.upnlPartyA,
+				quote.partyB,
+				quote.partyA
+			);
+		}
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 		accountLayout.partyANonces[quote.partyA] += 1;
 		LibPartyBPositionsActions.fillCloseRequest(quoteId, filledAmount, closedPrice);
