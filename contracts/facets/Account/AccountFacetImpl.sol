@@ -106,10 +106,12 @@ library AccountFacetImpl {
 	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(accountLayout.partyBAllocatedBalances[msg.sender][partyA] >= amount, "AccountFacet: Insufficient allocated balance");
-		LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
-		int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, partyA);
-		require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
-		require(uint256(availableBalance) >= amount, "AccountFacet: Will be liquidatable");
+
+		// NOTICE: This part is commented because in this version each user will be isolated with only one partyB
+		// LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, partyA);
+		// int256 availableBalance = LibAccount.partyBAvailableForQuote(upnlSig.upnl, msg.sender, partyA);
+		// require(availableBalance >= 0, "AccountFacet: Available balance is lower than zero");
+		// require(uint256(availableBalance) >= amount, "AccountFacet: Will be liquidatable");
 
 		accountLayout.partyBAllocatedBalances[msg.sender][partyA] -= amount;
 		accountLayout.balances[msg.sender] += amount;
