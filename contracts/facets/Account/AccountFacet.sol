@@ -171,6 +171,8 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
+	/// @notice Allows Party B to activate the master account mode.
+	/// @dev This function can only be called by Party B when Party B actions are not paused and Party B is not suspended.
 	function activeMasterAccountMode() external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
 		AccountFacetImpl.activeMasterAccountMode();
 		emit ActiveMasterAccountMode(msg.sender);

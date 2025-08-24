@@ -172,7 +172,7 @@ library AccountFacetImpl {
 
 	function activeMasterAccountMode() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(!accountLayout.masterAccountMode[msg.sender], "AccountFacet: master account mode is active");
+		require(!accountLayout.masterAccountMode[msg.sender], "AccountFacet: Master account mode is active");
 		accountLayout.masterAccountMode[msg.sender] = true;
 	}
 
@@ -181,14 +181,13 @@ library AccountFacetImpl {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
 		require(amount > 0, "AccountFacet: Amount is zero");
-		require(receiver != address(0), "AccountFacet: Receiver is zero address");
-		require(target != address(0), "AccountFacet: Target is zero address");
+		require(receiver != address(0) || target != address(0), "AccountFacet: Zero receiver or target");
 		address relayer = accountLayout.externalTransferTargetsToRelayers[target];
 		require(relayer != address(0), "AccountFacet: Target not whitelisted");
 
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
 		accountLayout.balances[sender] -= amountWith18Decimals;
-		IERC20(appLayout.collateral).safeTransfer(relayer, amountWith18Decimals);
+		IERC20(appLayout.collateral).safeTransfer(relayer, amount);
 
 		IExternalTransferRelayer(relayer).onTransfer(appLayout.collateral, sender, receiver, amount, target);
 	}
