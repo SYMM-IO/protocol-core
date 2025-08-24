@@ -25,7 +25,7 @@ export function shouldBehaveLikeControlFacet(): void {
 
 	beforeEach(async function () {
 		context = await loadFixture(initializeFixture)
-		owner = context.signers.user
+		owner = context.signers.admin
 		user2 = context.signers.user2
 		hedger = context.signers.hedger
 		hedger2 = context.signers.hedger2
@@ -376,24 +376,34 @@ export function shouldBehaveLikeControlFacet(): void {
 
 	describe("ExternalTransfer methods", function () {
 		it("Should allow admin to add external transfer targets", async function () {
-			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)).to.not.reverted
+			await expect(
+				context.controlFacet
+					.connect(context.signers.admin)
+					.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
+			).to.not.reverted
 		})
 
 		it("Should allow admin to remove external transfer targets", async function () {
-			await context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
+			await context.controlFacet
+				.connect(context.signers.admin)
+				.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
 
-			await expect(context.controlFacet.connect(context.signers.admin).removeExternalTransferTargetsToRelayers(context.signers.others[0].address)).to.not
-				.reverted
+			await expect(context.controlFacet.connect(context.signers.admin).removeExternalTransferTargetsToRelayers(context.signers.others[0].address)).to
+				.not.reverted
 		})
 
 		it("Should fail when non-admin tries to add external transfer target", async function () {
 			await expect(
-				context.controlFacet.connect(context.signers.user).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
+				context.controlFacet
+					.connect(context.signers.user)
+					.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
 			).to.be.revertedWith("Accessibility: Must has role")
 		})
 
 		it("Should fail when non-admin tries to remove external transfer target", async function () {
-			await context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
+			await context.controlFacet
+				.connect(context.signers.admin)
+				.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
 
 			await expect(
 				context.controlFacet.connect(context.signers.user).removeExternalTransferTargetsToRelayers(context.signers.others[0].address),
@@ -401,9 +411,144 @@ export function shouldBehaveLikeControlFacet(): void {
 		})
 
 		it("Should fail to add zero address as external transfer target", async function () {
-			await expect(context.controlFacet.connect(context.signers.admin).addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)).to.be.revertedWith(
-				"ControlFacet: Zero address",
-			)
+			await expect(
+				context.controlFacet
+					.connect(context.signers.admin)
+					.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
+			).to.be.revertedWith("ControlFacet: Zero address")
+		})
+	})
+
+	describe("setSymbolType", () => {
+		it("Should setSymbolType successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setSymbolType(1, 2)).to.not.be.reverted
+			expect((await context.viewFacet.getSymbolWithType(1)).symbolType).to.be.equal(2)
+		})
+
+		it("Should not setSymbolType if invalid symbol id", async function () {
+			await expect(context.controlFacet.connect(owner).setSymbolType(0, 1)).to.be.revertedWith("ControlFacet: Invalid id")
+			await expect(context.controlFacet.connect(owner).setSymbolType(3, 1)).to.be.revertedWith("ControlFacet: Invalid id")
+		})
+	})
+
+	describe("addSymbolWithType", () => {
+		it("Should addSymbolWithType successfully", async function () {
+			const windowTime = BigInt(28800)
+			const period = BigInt(900)
+			const baseUnit = BigInt(4000000000000000)
+			const quoteUnit = BigInt(1000000000000000)
+			const minQty = BigInt("100000000000000000000")
+			const maxQty = BigInt("60000000000000000000")
+			const symbolType = 2
+
+			await expect(
+				context.controlFacet.connect(owner).addSymbolWithType("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period, symbolType),
+			).to.not.be.reverted
+			expect((await context.viewFacet.getSymbol(2)).name).to.be.equal("ETHUSDT")
+			expect((await context.viewFacet.getSymbolWithType(2)).symbolType).to.be.equal(symbolType)
+		})
+
+		it("Should not addSymbolWithType if windowTime be high", async function () {
+			const windowTime = BigInt(800)
+			const period = BigInt(900)
+			const baseUnit = BigInt(4000000000000000)
+			const quoteUnit = BigInt(1000000000000000)
+			const minQty = BigInt("100000000000000000000")
+			const maxQty = BigInt("60000000000000000000")
+			const symbolType = 1
+
+			await expect(
+				context.controlFacet.connect(owner).addSymbolWithType("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period, symbolType),
+			).to.be.revertedWith("ControlFacet: High window time")
+		})
+
+		it("Should not addSymbolWithType if tradingFee be high", async function () {
+			const windowTime = BigInt(28800)
+			const period = BigInt(900)
+			const baseUnit = BigInt(4000000000000000)
+			const quoteUnit = BigInt("100000000000000000000")
+			const minQty = BigInt("100000000000000000000")
+			const maxQty = BigInt("60000000000000000000")
+			const symbolType = 1
+
+			await expect(
+				context.controlFacet.connect(owner).addSymbolWithType("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period, symbolType),
+			).to.be.revertedWith("ControlFacet: High trading fee")
+		})
+	})
+
+	describe("addSymbolsWithType", () => {
+		it("Should addSymbolsWithType successfully", async function () {
+			const symbolsWithType = [
+				{
+					symbolId: 0,
+					name: "ETHUSDT",
+					isValid: true,
+					minAcceptableQuoteValue: BigInt("100000000000000000000"),
+					minAcceptablePortionLF: BigInt(4000000000000000),
+					tradingFee: BigInt(1000000000000000),
+					maxLeverage: BigInt("60000000000000000000"),
+					fundingRateEpochDuration: BigInt(28800),
+					fundingRateWindowTime: BigInt(900),
+					symbolType: 2,
+				},
+				{
+					symbolId: 0,
+					name: "ADAUSDT",
+					isValid: true,
+					minAcceptableQuoteValue: BigInt("50000000000000000000"),
+					minAcceptablePortionLF: BigInt(3000000000000000),
+					tradingFee: BigInt(800000000000000),
+					maxLeverage: BigInt("50000000000000000000"),
+					fundingRateEpochDuration: BigInt(28800),
+					fundingRateWindowTime: BigInt(900),
+					symbolType: 3,
+				},
+			]
+
+			await expect(context.controlFacet.connect(owner).addSymbolsWithType(symbolsWithType)).to.not.be.reverted
+			expect((await context.viewFacet.getSymbol(2)).name).to.be.equal("ETHUSDT")
+			expect((await context.viewFacet.getSymbolWithType(2)).symbolType).to.be.equal(2)
+			expect((await context.viewFacet.getSymbol(3)).name).to.be.equal("ADAUSDT")
+			expect((await context.viewFacet.getSymbolWithType(3)).symbolType).to.be.equal(3)
+		})
+
+		it("Should not addSymbolsWithType if windowTime be high", async function () {
+			const symbolsWithType = [
+				{
+					symbolId: 0,
+					name: "ETHUSDT",
+					isValid: true,
+					minAcceptableQuoteValue: BigInt("100000000000000000000"),
+					minAcceptablePortionLF: BigInt(4000000000000000),
+					tradingFee: BigInt(1000000000000000),
+					maxLeverage: BigInt("60000000000000000000"),
+					fundingRateEpochDuration: BigInt(900),
+					fundingRateWindowTime: BigInt(800),
+					symbolType: 1,
+				},
+			]
+
+			await expect(context.controlFacet.connect(owner).addSymbolsWithType(symbolsWithType)).to.be.revertedWith("ControlFacet: High window time")
+		})
+
+		it("Should not addSymbolsWithType if tradingFee be high", async function () {
+			const symbolsWithType = [
+				{
+					symbolId: 0,
+					name: "ETHUSDT",
+					isValid: true,
+					minAcceptableQuoteValue: BigInt("100000000000000000000"),
+					minAcceptablePortionLF: BigInt(4000000000000000),
+					tradingFee: BigInt("100000000000000000000"),
+					maxLeverage: BigInt("60000000000000000000"),
+					fundingRateEpochDuration: BigInt(28800),
+					fundingRateWindowTime: BigInt(900),
+					symbolType: 1,
+				},
+			]
+
+			await expect(context.controlFacet.connect(owner).addSymbolsWithType(symbolsWithType)).to.be.revertedWith("ControlFacet: High trading fee")
 		})
 	})
 }

@@ -264,6 +264,30 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Returns the details of a symbol along with its type.
+	 * @param symbolId The ID of the symbol to retrieve.
+	 * @return A SymbolWithType struct containing the symbol details and its type.
+	 */
+	function getSymbolWithType(uint256 symbolId) external view returns (SymbolWithType memory) {
+		Symbol memory symbol = SymbolStorage.layout().symbols[symbolId];
+		uint256 symbolType = SymbolStorage.layout().symbolTypes[symbolId];
+
+		return
+			SymbolWithType(
+				symbol.symbolId,
+				symbol.name,
+				symbol.isValid,
+				symbol.minAcceptableQuoteValue,
+				symbol.minAcceptablePortionLF,
+				symbol.tradingFee,
+				symbol.maxLeverage,
+				symbol.fundingRateEpochDuration,
+				symbol.fundingRateWindowTime,
+				symbolType
+			);
+	}
+
+	/**
 	 * @notice Returns an array of symbols starting from a specific index.
 	 * @param start The starting index.
 	 * @param size The size of the array.

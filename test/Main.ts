@@ -26,7 +26,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeDiamond()
 		})
 
-		describe.only("AccountFacet", async function () {
+		describe("AccountFacet", async function () {
 			shouldBehaveLikeAccountFacet()
 		})
 
@@ -82,7 +82,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeMultiAccount()
 		})
 
-		describe("ControlFacet", async function () {
+		describe.only("ControlFacet", async function () {
 			shouldBehaveLikeControlFacet()
 		})
 
