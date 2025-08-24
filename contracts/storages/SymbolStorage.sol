@@ -16,6 +16,19 @@ struct Symbol {
 	uint256 fundingRateWindowTime;
 }
 
+struct SymbolWithType {
+	uint256 symbolId;
+	string name;
+	bool isValid;
+	uint256 minAcceptableQuoteValue;
+	uint256 minAcceptablePortionLF;
+	uint256 tradingFee;
+	uint256 maxLeverage;
+	uint256 fundingRateEpochDuration;
+	uint256 fundingRateWindowTime;
+	uint256 symbolType;
+}
+
 /**
  * @notice Tracks funding rates and their weighted averages over time
  * @dev Funding rates are stored as price-adjusted values (rate * marketPrice)

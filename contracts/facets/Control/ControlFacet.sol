@@ -221,6 +221,49 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		);
 	}
 
+	/// @notice Adds a new trading symbol with its type.
+	/// @param name The name of the trading symbol.
+	/// @param minAcceptableQuoteValue The minimum acceptable quote value for the symbol.
+	/// @param minAcceptablePortionLF The minimum acceptable portion of liquidation fee in quote.
+	/// @param tradingFee The trading fee for the symbol.
+	/// @param maxLeverage The maximum leverage allowed for the symbol.
+	/// @param fundingRateEpochDuration The duration of each funding rate epoch for the symbol.
+	/// @param fundingRateWindowTime The window time for calculating the funding rate.
+	/// @param symbolType The type of the symbol to be added.
+	function addSymbolWithType(
+		string memory name,
+		uint256 minAcceptableQuoteValue,
+		uint256 minAcceptablePortionLF,
+		uint256 tradingFee,
+		uint256 maxLeverage,
+		uint256 fundingRateEpochDuration,
+		uint256 fundingRateWindowTime,
+		uint256 symbolType
+	) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+		addSymbol(name, minAcceptableQuoteValue, minAcceptablePortionLF, tradingFee, maxLeverage, fundingRateEpochDuration, fundingRateWindowTime);
+		uint256 lastId = SymbolStorage.layout().lastId;
+		setSymbolType(lastId, symbolType);
+	}
+
+	/// @notice Adds multiple symbols with their types in one call.
+	/// @param symbolsWithType An array of symbolType structs containing details of each symbol and its type to be added.
+	function addSymbolsWithType(SymbolWithType[] memory symbolsWithType) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+		for (uint256 i; i < symbolsWithType.length; i++) {
+			addSymbol(
+				symbolsWithType[i].name,
+				symbolsWithType[i].minAcceptableQuoteValue,
+				symbolsWithType[i].minAcceptablePortionLF,
+				symbolsWithType[i].tradingFee,
+				symbolsWithType[i].maxLeverage,
+				symbolsWithType[i].fundingRateEpochDuration,
+				symbolsWithType[i].fundingRateWindowTime
+			);
+
+			uint256 lastId = SymbolStorage.layout().lastId;
+			setSymbolType(lastId, symbolsWithType[i].symbolType);
+		}
+	}
+
 	/// @notice Adds multiple symbols in one call.
 	/// @param symbols An array of Symbol structs containing details of each symbol to be added.
 	function addSymbols(Symbol[] memory symbols) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
@@ -306,19 +349,23 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		symbolLayout.symbols[symbolId].tradingFee = tradingFee;
 	}
 
+	function setSymbolType(uint256 symbolId, uint256 symbolType) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+
+		require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
+
+		symbolLayout.symbolTypes[symbolId] = symbolType;
+		emit SetSymbolType(symbolId, symbolType);
+	}
+
 	function setSymbolTypes(uint256[] calldata symbolIds, uint256[] calldata symbolTypes) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
 		require(symbolIds.length == symbolTypes.length, "ControlFacet: Array length mismatch");
-
-		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			uint256 symbolId = symbolIds[i];
 			uint256 symbolType = symbolTypes[i];
 
-			require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
-
-			symbolLayout.symbolTypes[symbolId] = symbolType;
-			emit SetSymbolType(symbolId, symbolType);
+			setSymbolType(symbolId, symbolType);
 		}
 	}
 

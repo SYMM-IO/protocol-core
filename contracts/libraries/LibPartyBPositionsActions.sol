@@ -64,6 +64,7 @@ library LibPartyBPositionsActions {
 
 		LibQuote.updateAccumulatedPaidFunding(quote);
 		LibQuote.removeFromPendingQuotes(quote);
+		quote.lastFundingPaymentTimestamp = block.timestamp;
 
 		if (quote.quantity == filledAmount) {
 			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
