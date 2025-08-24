@@ -27,6 +27,9 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit Deposit(msg.sender, user, amount);
 	}
 
+	/// @notice Allows the virtual depositor role to deposit collateral on behalf of another user without actual fund transfer.
+	/// @param user The recipient address for the deposit.
+	/// @param amount The amount of collateral to be deposited, specified in collateral decimals.
 	function virtualDepositFor(address user, uint256 amount) external whenNotAccountingPaused onlyRole(LibAccessibility.VIRTUAL_DEPOSITOR_ROLE) {
 		AccountFacetImpl.virtualDepositFor(user, amount);
 		emit Deposit(msg.sender, user, amount);

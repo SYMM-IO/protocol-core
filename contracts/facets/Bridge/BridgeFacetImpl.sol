@@ -16,15 +16,20 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 library BridgeFacetImpl {
 	using SafeERC20 for IERC20;
 
-	function transferToBridge(address user, uint256 amount, address bridge) internal returns (uint256 currentId) {
+	function _createBridgeTransaction(address user, uint256 amount, address bridge, bool isVirtualBridge) private returns (uint256 currentId) {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(bridgeLayout.bridges[bridge], "BridgeFacet: Invalid bridge");
+		if (isVirtualBridge) {
+			require(bridgeLayout.virtualBridges[bridge], "BridgeFacet: Invalid bridge");
+		} else {
+			require(bridgeLayout.bridges[bridge], "BridgeFacet: Invalid bridge");
+		}
 		require(bridge != user, "BridgeFacet: Bridge and user can't be the same");
 
 		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
-		require(AccountStorage.layout().balances[user] >= amountWith18Decimals, "BridgeFacet: Insufficient balance");
+		require(accountLayout.balances[user] >= amountWith18Decimals, "BridgeFacet: Insufficient balance");
 
 		currentId = ++bridgeLayout.lastId;
 		BridgeTransaction memory bridgeTransaction = BridgeTransaction({
@@ -35,9 +40,24 @@ library BridgeFacetImpl {
 			timestamp: block.timestamp,
 			status: BridgeTransactionStatus.RECEIVED
 		});
-		AccountStorage.layout().balances[user] -= amountWith18Decimals;
+
+		accountLayout.balances[user] -= amountWith18Decimals;
 		bridgeLayout.bridgeTransactions[currentId] = bridgeTransaction;
 		bridgeLayout.bridgeTransactionIds[bridge].push(currentId);
+	}
+
+	function transferToBridge(address user, uint256 amount, address bridge) internal returns (uint256 currentId) {
+		currentId = _createBridgeTransaction(user, amount, bridge, false);
+	}
+
+	function transferToVirtualBridge(address user, uint256 amount, address bridge, bytes memory data) internal returns (uint256 currentId) {
+		currentId = _createBridgeTransaction(user, amount, bridge, true);
+
+		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
+		bridgeLayout.bridgesData[currentId] = data;
+
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+		IVirtualBridge(bridge).onTransferToBridge(user, amount, appLayout.collateral, data);
 	}
 
 	function withdrawReceivedBridgeValue(uint256 transactionId) internal {
@@ -47,7 +67,10 @@ library BridgeFacetImpl {
 
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
-		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid state");
+		require(
+			bridgeTransaction.status == BridgeTransactionStatus.RECEIVED || bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED,
+			"BridgeFacet: Invalid state"
+		);
 		require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
 
 		if (bridgeLayout.bridges[bridgeTransaction.bridge]) {
@@ -71,11 +94,27 @@ library BridgeFacetImpl {
 		for (uint256 i = transactionIds.length; i != 0; i--) {
 			require(transactionIds[i - 1] <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 			BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionIds[i - 1]];
-			require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid state");
+			require(
+				bridgeTransaction.status == BridgeTransactionStatus.RECEIVED || bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED,
+				"BridgeFacet: Invalid state"
+			);
 			require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
-			require(bridgeTransaction.bridge == msg.sender, "BridgeFacet: Sender is not the transaction's bridge");
 
-			totalAmount += bridgeTransaction.amount;
+			if (bridgeLayout.bridges[bridgeTransaction.bridge]) {
+				require(bridgeTransaction.bridge == msg.sender, "BridgeFacet: Sender is not the transaction's bridge");
+				totalAmount += bridgeTransaction.amount;
+			} else if (bridgeLayout.virtualBridges[bridgeTransaction.bridge]) {
+				bytes memory data = bridgeLayout.bridgesData[transactionIds[i - 1]];
+				IVirtualBridge(bridgeTransaction.bridge).onBridgeComplete(
+					bridgeTransaction.user,
+					bridgeTransaction.amount,
+					appLayout.collateral,
+					data
+				);
+			} else {
+				revert("BridgeFacet: Invalid bridge");
+			}
+
 			bridgeTransaction.status = BridgeTransactionStatus.WITHDRAWN;
 		}
 
@@ -112,8 +151,8 @@ library BridgeFacetImpl {
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
 		require(msg.sender == bridgeTransaction.user, "BridgeFacet: Sender is not the transaction's user");
-		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 		require(bridgeTransaction.status == BridgeTransactionStatus.RECEIVED, "BridgeFacet: Invalid status");
+
 		bridgeTransaction.status = BridgeTransactionStatus.CANCEL_REQUESTED;
 	}
 
@@ -124,49 +163,10 @@ library BridgeFacetImpl {
 		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
 
 		require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
-		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
 		require(bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED, "BridgeFacet: Invalid status");
+
 		bridgeTransaction.status = BridgeTransactionStatus.CANCELED;
 		uint256 amountWith18Decimals = (bridgeTransaction.amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
 		AccountStorage.layout().balances[bridgeTransaction.user] += amountWith18Decimals;
-	}
-
-	function rejectCancelBridgeTransaction(uint256 transactionId) internal {
-		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
-
-		BridgeTransaction storage bridgeTransaction = bridgeLayout.bridgeTransactions[transactionId];
-
-		require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
-		require(transactionId <= bridgeLayout.lastId, "BridgeFacet: Invalid transactionId");
-		require(bridgeTransaction.status == BridgeTransactionStatus.CANCEL_REQUESTED, "BridgeFacet: Invalid status");
-		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
-	}
-
-	function transferToVirtualBridge(address user, uint256 amount, address bridge, bytes memory data) internal returns (uint256 currentId) {
-		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
-		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
-
-		require(bridgeLayout.virtualBridges[bridge], "BridgeFacet: Invalid bridge");
-		require(bridge != user, "BridgeFacet: Bridge and user can't be the same");
-
-		uint256 amountWith18Decimals = (amount * 1e18) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
-		require(AccountStorage.layout().balances[user] >= amountWith18Decimals, "BridgeFacet: Insufficient balance");
-
-		currentId = ++bridgeLayout.lastId;
-		BridgeTransaction memory bridgeTransaction = BridgeTransaction({
-			id: currentId,
-			amount: amount,
-			user: user,
-			bridge: bridge,
-			timestamp: block.timestamp,
-			status: BridgeTransactionStatus.RECEIVED
-		});
-		bridgeLayout.bridgesData[currentId] = data;
-
-		AccountStorage.layout().balances[user] -= amountWith18Decimals;
-		bridgeLayout.bridgeTransactions[currentId] = bridgeTransaction;
-		bridgeLayout.bridgeTransactionIds[bridge].push(currentId);
-
-		IVirtualBridge(bridge).onTransferToBridge(user, amount, appLayout.collateral, data);
 	}
 }

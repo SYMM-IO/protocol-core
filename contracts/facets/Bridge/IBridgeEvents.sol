@@ -13,5 +13,4 @@ interface IBridgeEvents {
 	event WithdrawReceivedBridgeValues(uint256[] transactionIds);
 	event RequestToCancelBridgeTransaction(address user, uint256 transactionId);
 	event AcceptCancelBridgeTransaction(address bridge, uint256 transactionId);
-	event RejectCancelBridgeTransaction(address bridge, uint256 transactionId);
 }
