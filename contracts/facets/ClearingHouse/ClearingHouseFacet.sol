@@ -8,12 +8,8 @@ import "../../utils/Pausable.sol";
 import "../../utils/Accessibility.sol";
 import "./IClearingHouseFacet.sol";
 import "./ClearingHouseFacetImpl.sol";
-import "../../storages/AccountStorage.sol";
-import "../../storages/MAStorage.sol";
 
 contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
-	using LockedValuesOps for LockedValues;
-
 	/**
 	 * @notice Initiates clearing house liquidation for a PartyB.
 	 * @param partyB The address of Party B.
@@ -21,15 +17,17 @@ contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
 	 */
 	function liquidateCrossPartyB(
 		address partyB,
-		CrossLiquidation memory liquidationSig
+		CrossLiquidationSig memory liquidationSig
 	) external whenNotLiquidationPaused notCrossLiquidatedPartyB(partyB) onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
 		ClearingHouseFacetImpl.liquidateCrossPartyB(partyB, liquidationSig);
-
 		emit LiquidateCrossPartyB(msg.sender, partyB, liquidationSig.liquidationId, liquidationSig.upnl, liquidationSig.timestamp);
 	}
 
 	/**
 	 * @notice Deallocates PartyB balance for liquidation purposes.
+	 * @param partyB The address of Party B.
+	 * @param partyAs The addresses of Party A.
+	 * @param amounts The amounts to deallocate.
 	 */
 	function deallocateForCrossLiquidation(
 		address partyB,
@@ -37,45 +35,53 @@ contract ClearingHouseFacet is Pausable, Accessibility, IClearingHouseFacet {
 		uint256[] memory amounts
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
 		ClearingHouseFacetImpl.deallocateForCrossLiquidation(partyB, partyAs, amounts);
-		emit DeallocateForLiquidation(partyB, partyAs, amounts);
+		emit DeallocateForCrossLiquidation(partyB, partyAs, amounts);
 	}
 
 	/**
 	 * @notice Transfers assets to PartyAs during liquidation.
+	 * @param partyB The address of Party B.
+	 * @param receivers The addresses of Party A.
+	 * @param amounts The amounts to distribute.
 	 */
-	function distribute(
+	function distributeForCrossLiquidation(
 		address partyB,
 		address[] memory receivers,
 		uint256[] memory amounts
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-		ClearingHouseFacetImpl.distribute(partyB, receivers, amounts);
-		emit Distribute(partyB, receivers, amounts);
+		ClearingHouseFacetImpl.distributeForCrossLiquidation(partyB, receivers, amounts);
+		emit DistributeForCrossLiquidation(partyB, receivers, amounts);
 	}
 
 	/**
 	 * @notice Liquidates all pending quotes from PartyB to PartyA.
+	 * @param partyB The address of Party B.
+	 * @param partyAs The addresses of Party A.
 	 */
-	function liquidatePendingQuotes(
+	function liquidatePendingPositionsForCrossLiquidation(
 		address partyB,
 		address[] memory partyAs
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-		ClearingHouseFacetImpl.liquidatePendingQuotes(partyB, partyAs);
-		emit LiquidatePendingQuotes(partyB, partyAs);
+		ClearingHouseFacetImpl.liquidatePendingPositionsForCrossLiquidation(partyB, partyAs);
+		emit LiquidatePendingPositionsForCrossLiquidation(partyB, partyAs);
 	}
 
 	/**
 	 * @notice Liquidates active positions of PartyB with PartyA.
+	 * @param partyB The address of Party B.
+	 * @param partyA The address of Party A.
+	 * @param priceSig The price signature.
 	 */
-	function liquidateCrossPositionsPartyB(
+	function liquidatePositionsForCrossLiquidation(
 		address partyB,
 		address partyA,
 		QuotePriceSig memory priceSig
 	) external whenNotLiquidationPaused onlyRole(LibAccessibility.CLEARING_HOUSE_ROLE) {
-		(uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = ClearingHouseFacetImpl.liquidateCrossPositionsPartyB(
+		(uint256[] memory liquidatedAmounts, uint256[] memory closeIds) = ClearingHouseFacetImpl.liquidatePositionsForCrossLiquidation(
 			partyB,
 			partyA,
 			priceSig
 		);
-		emit LiquidateCrossPositionsPartyB(partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
+		emit LiquidatePositionsForCrossLiquidation(partyB, partyA, priceSig.quoteIds, liquidatedAmounts, closeIds);
 	}
 }

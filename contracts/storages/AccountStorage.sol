@@ -39,6 +39,7 @@ struct CrossLiquidationDetail {
 	int256 upnl;
 	uint256 timestamp;
 	uint256 deallocateForLiquidation;
+	bool inProgress;
 }
 
 struct DeferredWithdraw {
@@ -105,7 +106,7 @@ library AccountStorage {
 		mapping(address => bool) masterAccountMode;
 		mapping(address => uint256) partyBTotalCva;
 		mapping(address => uint256) partyBTotalLf;
-		mapping(address => CrossLiquidationDetail) CrossLiquidationDetails;
+		mapping(address => CrossLiquidationDetail) crossLiquidationDetails;
 		mapping(address => address) externalTransferTargetsToRelayers;
 	}
 

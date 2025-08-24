@@ -132,7 +132,7 @@ struct SettlementSig {
 	SchnorrSign sigs;
 }
 
-struct CrossLiquidation {
+struct CrossLiquidationSig {
 	bytes reqId; // Unique identifier for the liquidation request
 	bytes liquidationId; // Unique identifier for the liquidation event
 	uint256 timestamp; // Timestamp when the liquidation signature was created

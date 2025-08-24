@@ -924,11 +924,11 @@ contract ViewFacet is IViewFacet {
 	}
 
 	function getPartyBCrossLiquidationStatus(address partyB) external view returns (bool) {
-		return MAStorage.layout().crossLiquidationStatus[partyB];
+		return AccountStorage.layout().crossLiquidationDetails[partyB].inProgress;
 	}
 
 	function getCrossLiquidationDetails(address partyB) external view returns (CrossLiquidationDetail memory) {
-		return AccountStorage.layout().CrossLiquidationDetails[partyB];
+		return AccountStorage.layout().crossLiquidationDetails[partyB];
 	}
 
 	function getPartyBTotalCva(address partyB) external view returns (uint256) {

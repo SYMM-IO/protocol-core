@@ -8,9 +8,9 @@ import "../../storages/MuonStorage.sol";
 import "./IClearingHouseFacetEvents.sol";
 
 interface IClearingHouseFacet is IClearingHouseFacetEvents {
-	function liquidateCrossPartyB(address partyB, CrossLiquidation memory liquidationSig) external;
+	function liquidateCrossPartyB(address partyB, CrossLiquidationSig memory liquidationSig) external;
 	function deallocateForCrossLiquidation(address partyB, address[] memory partyAs, uint256[] memory amounts) external;
-	function distribute(address partyB, address[] memory receivers, uint256[] memory amount) external;
-	function liquidatePendingQuotes(address partyB, address[] memory partyAs) external;
-	function liquidateCrossPositionsPartyB(address partyB, address partyA, QuotePriceSig memory priceSig) external;
+	function distributeForCrossLiquidation(address partyB, address[] memory receivers, uint256[] memory amount) external;
+	function liquidatePendingPositionsForCrossLiquidation(address partyB, address[] memory partyAs) external;
+	function liquidatePositionsForCrossLiquidation(address partyB, address partyA, QuotePriceSig memory priceSig) external;
 }
