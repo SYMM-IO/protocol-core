@@ -170,6 +170,22 @@ library AccountFacetImpl {
 		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
 	}
 
+	function depositToReserveVault(uint256 amount, address partyB) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(amount <= accountLayout.balances[msg.sender], "AccountFacet: Insufficient balance");
+		require(MAStorage.layout().partyBStatus[partyB], "AccountFacet: Should be partyB");
+		accountLayout.balances[msg.sender] -= amount;
+		accountLayout.reserveVault[partyB] += amount;
+	}
+
+	function withdrawFromReserveVault(uint256 amount) internal {
+		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		require(amount > 0 && amount <= accountLayout.reserveVault[msg.sender], "AccountFacet: Insufficient balance");
+		accountLayout.reserveVault[msg.sender] -= amount;
+		accountLayout.balances[msg.sender] += amount;
+		accountLayout.withdrawCooldown[msg.sender] = block.timestamp;
+	}
+
 	function activeMasterAccountMode() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(!accountLayout.masterAccountMode[msg.sender], "AccountFacet: Master account mode is active");

@@ -171,8 +171,22 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit SharedEvents.BalanceChangePartyB(msg.sender, recipient, amount, SharedEvents.BalanceChangeType.ALLOCATE);
 	}
 
-	/// @notice Allows Party B to activate the master account mode.
-	/// @dev This function can only be called by Party B when Party B actions are not paused and Party B is not suspended.
+	/// @notice Allows transferring the balance of partyB to emergency reserve vault.
+	/// @param amount The precise amount of collateral to be transferred to emergency reserve vault, specified in 18 decimals.
+	function depositToReserveVault(uint256 amount, address partyB) external whenNotPartyBActionsPaused notSuspended(msg.sender) notSuspended(partyB) {
+		AccountFacetImpl.depositToReserveVault(amount, partyB);
+		emit DepositToReserveVault(msg.sender, partyB, amount);
+	}
+
+	/// @notice Allows transferring the balance of partyB in emergency reserve vault to balance.
+	/// @param amount The precise amount of collateral to be transferred from emergency reserve vault, specified in 18 decimals.
+	function withdrawFromReserveVault(uint256 amount) external whenNotPartyBActionsPaused notSuspended(msg.sender) {
+		AccountFacetImpl.withdrawFromReserveVault(amount);
+		emit WithdrawFromReserveVault(msg.sender, amount);
+	}
+
+	/// @notice Activates master account mode for Party B
+	/// @dev Can only be called by Party B when not paused and not suspended
 	function activeMasterAccountMode() external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
 		AccountFacetImpl.activeMasterAccountMode();
 		emit ActiveMasterAccountMode(msg.sender);
@@ -185,7 +199,11 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 	 * @param amount The amount to transfer, specified in collateral decimals
 	 * @param target The address of the target contract that will receive the collateral
 	 */
-	function externalTransfer(address receiver, uint256 amount, address target) external whenNotExternalTransferPaused notSuspended(msg.sender) notLiquidatedPartyA(msg.sender)  {
+	function externalTransfer(
+		address receiver,
+		uint256 amount,
+		address target
+	) external whenNotExternalTransferPaused notSuspended(msg.sender) notLiquidatedPartyA(msg.sender) {
 		AccountFacetImpl.externalTransfer(msg.sender, receiver, amount, target);
 		emit ExternalTransfer(msg.sender, receiver, amount, target);
 	}

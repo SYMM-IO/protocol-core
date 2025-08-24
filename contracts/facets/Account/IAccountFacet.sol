@@ -45,4 +45,8 @@ interface IAccountFacet is IAccountEvents {
 	function activeMasterAccountMode() external;
 
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external;
+
+	function depositToReserveVault(uint256 amount, address partyB) external;
+
+	function withdrawFromReserveVault(uint256 amount) external;
 }
