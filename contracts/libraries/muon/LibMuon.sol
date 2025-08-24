@@ -5,11 +5,10 @@
 pragma solidity >=0.8.18;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "../LibMuonV04ClientBase.sol";
 import "../../storages/MuonStorage.sol";
 import "../../storages/GlobalAppStorage.sol";
 import "../../storages/AccountStorage.sol";
-import "../../helpers/ISymmioSignatureVerifier.sol";
+import "../../helpers/IMuonSignatureVerifier.sol";
 
 library LibMuon {
 	using ECDSA for bytes32;
@@ -27,9 +26,9 @@ library LibMuon {
 	// Essentially, during testing, we temporarily disable the code sections responsible for validating these signatures. The sections I'm referring to are located within the LibMuon file. Specifically, the body of the 'verifyTSSAndGateway' method is a prime candidate for temporary disablement. In addition, several 'require' statements within other functions of this file, which examine the signatures' expiration status, also need to be temporarily disabled.
 	// However, it is crucial to note that these lines should not be disabled in the production deployed version.
 	// We emphasize this because they are only disabled for testing purposes.
-	function verifyTSSAndGateway(bytes32 hash, SchnorrSign memory sign, bytes memory gatewaySignature) internal view {
+	function verifyTSSAndGateway(bytes32 hash, IMuonSignatureVerifier.SchnorrSign memory sign, bytes memory gatewaySignature) internal view {
 		// == SignatureCheck( ==
-		ISignatureVerifier(GlobalAppStorage.layout().signatureVerifier).verify(hash, sign, gatewaySignature);
+		IMuonSignatureVerifier(GlobalAppStorage.layout().signatureVerifier).verify(hash, sign, gatewaySignature);
 		// == ) ==
 	}
 

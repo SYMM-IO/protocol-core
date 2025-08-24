@@ -8,7 +8,7 @@ interface IControlEvents {
 	event RoleGranted(bytes32 role, address user);
 	event RoleRevoked(bytes32 role, address user);
 	event SetMuonConfig(uint256 upnlValidTime, uint256 priceValidTime);
-	event SetMuonIds(uint256 muonAppId, address gateway, uint256 x, uint8 parity);
+	event SetMuonIds(uint256 muonAppId);
 	event SetCollateral(address collateral);
 	event AddSymbol(
 		uint256 symbolId,

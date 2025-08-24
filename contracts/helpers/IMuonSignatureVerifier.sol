@@ -5,20 +5,32 @@
 
 pragma solidity >=0.8.18;
 
-import "../storages/MuonStorage.sol";
+interface IMuonSignatureVerifier {
+	struct PublicKey {
+		uint256 x;
+		uint8 parity;
+	}
 
-interface ISignatureVerifier {
+	struct SchnorrSign {
+		uint256 signature;
+		address owner;
+		address nonce;
+	}
 
 	// === Signature Verification ===
 	function verify(bytes32 hash, SchnorrSign memory sign, bytes calldata gatewaySignature) external view;
 
 	// === Public Key Management ===
 	function addPublicKey(PublicKey memory pubKey) external;
+
 	function removePublicKey(PublicKey memory pubKey) external;
+
 	function getAllPublicKeys() external view returns (PublicKey[] memory);
 
 	// === Gateway Signer Management ===
 	function addGatewaySigner(address signer) external;
+
 	function removeGatewaySigner(address signer) external;
+
 	function getAllGatewaySigners() external view returns (address[] memory);
 }

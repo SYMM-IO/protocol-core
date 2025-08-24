@@ -5,24 +5,14 @@
 pragma solidity >=0.8.18;
 
 import "../libraries/LibLockedValues.sol";
-
-struct SchnorrSign {
-	uint256 signature;
-	address owner;
-	address nonce;
-}
-
-struct PublicKey {
-	uint256 x;
-	uint8 parity;
-}
+import "../helpers/IMuonSignatureVerifier.sol";
 
 struct SingleUpnlSig {
 	bytes reqId;
 	uint256 timestamp;
 	int256 upnl;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct SingleUpnlAndPriceSig {
@@ -31,7 +21,7 @@ struct SingleUpnlAndPriceSig {
 	int256 upnl;
 	uint256 price;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct PairUpnlSig {
@@ -40,7 +30,7 @@ struct PairUpnlSig {
 	int256 upnlPartyA;
 	int256 upnlPartyB;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct PairUpnlAndPriceSig {
@@ -50,7 +40,7 @@ struct PairUpnlAndPriceSig {
 	int256 upnlPartyB;
 	uint256 price;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct PairUpnlAndPricesSig {
@@ -61,7 +51,7 @@ struct PairUpnlAndPricesSig {
 	uint256[] symbolIds;
 	uint256[] prices;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct DeferredLiquidationSig {
@@ -76,7 +66,7 @@ struct DeferredLiquidationSig {
 	uint256[] symbolIds; // List of symbol IDs involved in the liquidation
 	uint256[] prices; // Corresponding prices of the symbols involved in the liquidation
 	bytes gatewaySignature; // Signature from the gateway for verification
-	SchnorrSign sigs; // Schnorr signature for additional verification
+	IMuonSignatureVerifier.SchnorrSign sigs; // Schnorr signature for additional verification
 }
 
 struct LiquidationSig {
@@ -88,7 +78,7 @@ struct LiquidationSig {
 	uint256[] symbolIds; // List of symbol IDs involved in the liquidation
 	uint256[] prices; // Corresponding prices of the symbols involved in the liquidation
 	bytes gatewaySignature; // Signature from the gateway for verification
-	SchnorrSign sigs; // Schnorr signature for additional verification
+	IMuonSignatureVerifier.SchnorrSign sigs; // Schnorr signature for additional verification
 }
 
 struct QuotePriceSig {
@@ -97,7 +87,7 @@ struct QuotePriceSig {
 	uint256[] quoteIds;
 	uint256[] prices;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct HighLowPriceSig {
@@ -113,7 +103,7 @@ struct HighLowPriceSig {
 	int256 upnlPartyA;
 	uint256 currentPrice;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct QuoteSettlementData {
@@ -129,7 +119,7 @@ struct SettlementSig {
 	int256[] upnlPartyBs;
 	int256 upnlPartyA;
 	bytes gatewaySignature;
-	SchnorrSign sigs;
+	IMuonSignatureVerifier.SchnorrSign sigs;
 }
 
 struct CrossLiquidationSig {
@@ -141,7 +131,7 @@ struct CrossLiquidationSig {
 	uint256 totalAllocatedBalance; // User's allocated balance at the time of insolvency
 	int256 upnl; // User's unrealized profit and loss at the time of insolvency
 	bytes gatewaySignature; // Signature from the gateway for verification
-	SchnorrSign sigs; // Schnorr signature for additional verification
+	IMuonSignatureVerifier.SchnorrSign sigs; // Schnorr signature for additional verification
 }
 
 library MuonStorage {
@@ -152,7 +142,7 @@ library MuonStorage {
 		uint256 priceValidTime;
 		uint256 priceQuantityValidTime; // UNUSED: Should be deleted later
 		uint256 muonAppId;
-		PublicKey muonPublicKey;
+		IMuonSignatureVerifier.PublicKey muonPublicKey;
 		address validGateway;
 	}
 

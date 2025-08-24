@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.18;
 
-import "../storages/MuonStorage.sol";
+import "./IMuonSignatureVerifier.sol";
 
 library LibMuonV04ClientBase {
     // See https://en.bitcoin.it/wiki/Secp256k1 for this constant.
@@ -150,8 +150,8 @@ library LibMuonV04ClientBase {
 
     function muonVerify(
         uint256 hash,
-        SchnorrSign memory signature,
-        PublicKey memory pubKey
+        IMuonSignatureVerifier.SchnorrSign memory signature,
+        IMuonSignatureVerifier.PublicKey memory pubKey
     ) internal pure returns (bool) {
         if (!verifySignature(pubKey.x, pubKey.parity,
             signature.signature,

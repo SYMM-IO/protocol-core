@@ -115,14 +115,10 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 
 	/// @notice Sets the Muon application ID, valid gateway address, and public key.
 	/// @param muonAppId The Muon application ID.
-	/// @param validGateway The address of the valid gateway.
-	/// @param publicKey The public key for Muon
-	function setMuonIds(uint256 muonAppId, address validGateway, PublicKey memory publicKey) external onlyRole(LibAccessibility.MUON_SETTER_ROLE) {
+	function setMuonIds(uint256 muonAppId) external onlyRole(LibAccessibility.MUON_SETTER_ROLE) {
 		MuonStorage.Layout storage muonLayout = MuonStorage.layout();
 		muonLayout.muonAppId = muonAppId;
-		muonLayout.validGateway = validGateway;
-		muonLayout.muonPublicKey = publicKey;
-		emit SetMuonIds(muonAppId, validGateway, publicKey.x, publicKey.parity);
+		emit SetMuonIds(muonAppId);
 	}
 
 	/// @notice Sets the address of the collateral token.
@@ -579,7 +575,10 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @notice Sets the params for liquidation insurance vault.
 	/// @param insuranceVault The address of the vault.
 	/// @param maxLiquidationProfit The max profit from liquidation per position.
-	function setLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit) external onlyRole(LibAccessibility.SETTER_ROLE) {
+	function setLiquidationInsuranceVaultParams(
+		address insuranceVault,
+		uint256 maxLiquidationProfit
+	) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		require(insuranceVault != address(0), "ControlFacet: Zero address");
 		MAStorage.layout().liquidationInsuranceVault = insuranceVault;
 		MAStorage.layout().maxLiquidationProfitPerPosition = maxLiquidationProfit;

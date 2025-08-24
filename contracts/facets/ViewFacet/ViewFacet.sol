@@ -20,6 +20,7 @@ import "./IViewFacet.sol";
 
 contract ViewFacet is IViewFacet {
 	using LockedValuesOps for LockedValues;
+
 	/**
 	 * @notice Returns the pending owner of the diamond.
 	 * @return The address of the pendingOwner.
@@ -806,13 +807,9 @@ contract ViewFacet is IViewFacet {
 	/**
 	 * @notice Retrieves the IDs and configuration parameters of the Muon system.
 	 * @return muonAppId The Muon application ID.
-	 * @return muonPublicKey The public key used by the Muon system.
-	 * @return validGateway The address of the valid Muon gateway.
 	 */
-	function getMuonIds() external view returns (uint256 muonAppId, PublicKey memory muonPublicKey, address validGateway) {
+	function getMuonIds() external view returns (uint256 muonAppId) {
 		muonAppId = MuonStorage.layout().muonAppId;
-		muonPublicKey = MuonStorage.layout().muonPublicKey;
-		validGateway = MuonStorage.layout().validGateway;
 	}
 
 	/**
@@ -876,7 +873,7 @@ contract ViewFacet is IViewFacet {
 	 * @param sign The Schnorr signature.
 	 * @param gatewaySignature The Muon signature from the gateway.
 	 */
-	function verifyMuonTSSAndGateway(bytes32 hash, SchnorrSign memory sign, bytes memory gatewaySignature) external view {
+	function verifyMuonTSSAndGateway(bytes32 hash, IMuonSignatureVerifier.SchnorrSign memory sign, bytes memory gatewaySignature) external view {
 		LibMuon.verifyTSSAndGateway(hash, sign, gatewaySignature);
 	}
 

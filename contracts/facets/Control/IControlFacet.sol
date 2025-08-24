@@ -29,7 +29,7 @@ interface IControlFacet is IControlEvents {
 
 	function setMuonConfig(uint256 upnlValidTime, uint256 priceValidTime) external;
 
-	function setMuonIds(uint256 muonAppId, address validGateway, PublicKey memory publicKey) external;
+	function setMuonIds(uint256 muonAppId) external;
 
 	function setCollateral(address collateral) external;
 

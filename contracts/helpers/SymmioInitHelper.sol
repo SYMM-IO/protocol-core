@@ -68,15 +68,13 @@ contract SymmioInitHelper is AccessControlEnumerable {
 	function setPlatformParameters(
 		address partyB,
 		uint256 muonAppId,
-		address validGateway,
-		PublicKey memory publicKey,
 		address collateral,
 		uint256 liquidatorShare,
 		uint256 pendingQuotesValidLength,
 		uint256 balanceLimitPerUser
 	) external onlyRole(SETTER_ROLE) {
 		ISymmio(symmioAddress).registerPartyB(partyB);
-		ISymmio(symmioAddress).setMuonIds(muonAppId, validGateway, publicKey);
+		ISymmio(symmioAddress).setMuonIds(muonAppId);
 		ISymmio(symmioAddress).setCollateral(collateral);
 		ISymmio(symmioAddress).setLiquidatorShare(liquidatorShare);
 		ISymmio(symmioAddress).setPendingQuotesValidLength(pendingQuotesValidLength);

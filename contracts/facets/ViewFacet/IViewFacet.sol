@@ -165,7 +165,7 @@ interface IViewFacet {
 
 	function getMuonConfig() external view returns (uint256 upnlValidTime, uint256 priceValidTime);
 
-	function getMuonIds() external view returns (uint256 muonAppId, PublicKey memory muonPublicKey, address validGateway);
+	function getMuonIds() external view returns (uint256 muonAppId);
 
 	function pauseState()
 		external
@@ -185,7 +185,7 @@ interface IViewFacet {
 
 	function getBalanceLimitPerUser() external view returns (uint256);
 
-	function verifyMuonTSSAndGateway(bytes32 hash, SchnorrSign memory sign, bytes memory gatewaySignature) external view;
+	function verifyMuonTSSAndGateway(bytes32 hash, IMuonSignatureVerifier.SchnorrSign memory sign, bytes memory gatewaySignature) external view;
 
 	function getNextQuoteId() external view returns (uint256);
 
