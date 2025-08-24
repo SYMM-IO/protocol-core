@@ -5,7 +5,7 @@
 pragma solidity >=0.8.18;
 
 import "../libraries/LibLockedValues.sol";
-import "../helpers/IMuonSignatureVerifier.sol";
+import "../interfaces/IMuonSignatureVerifier.sol";
 
 struct SingleUpnlSig {
 	bytes reqId;

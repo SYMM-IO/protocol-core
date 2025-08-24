@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.18;
 
-import "./IMuonSignatureVerifier.sol";
+import "../interfaces/IMuonSignatureVerifier.sol";
 
 library LibMuonV04ClientBase {
     // See https://en.bitcoin.it/wiki/Secp256k1 for this constant.

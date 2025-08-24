@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../../storages/MuonStorage.sol";
 import "../../storages/GlobalAppStorage.sol";
 import "../../storages/AccountStorage.sol";
-import "../../helpers/IMuonSignatureVerifier.sol";
+import "../../interfaces/IMuonSignatureVerifier.sol";
 
 library LibMuon {
 	using ECDSA for bytes32;
