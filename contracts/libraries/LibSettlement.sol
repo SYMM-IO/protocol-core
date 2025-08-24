@@ -84,7 +84,8 @@ library LibSettlement {
 				"LibSettlement: PartyB should be solvent"
 			);
 			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "LibSettlement: PartyB is in liquidation process");
-
+			require(!accountLayout.crossLiquidationDetails[partyB].inProgress, "LibSettlement: PartyB is in cross liquidation process");
+			
 			if (!isForceClose && msg.sender != partyB) {
 				require(
 					block.timestamp >=

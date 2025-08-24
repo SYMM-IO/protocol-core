@@ -142,6 +142,7 @@ library LiquidationFacetImpl {
 				"LiquidationFacet: Invalid state"
 			);
 			require(!maLayout.partyBLiquidationStatus[quote.partyB][partyA], "LiquidationFacet: PartyB is in liquidation process");
+			require(!accountLayout.crossLiquidationDetails[quote.partyB].inProgress, "LiquidationFacet: PartyB is in cross liquidation process");
 			require(quote.partyA == partyA, "LiquidationFacet: Invalid party");
 			require(
 				accountLayout.symbolsPrices[partyA][quote.symbolId].timestamp == accountLayout.liquidationDetails[partyA].timestamp,

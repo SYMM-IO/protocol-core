@@ -37,6 +37,7 @@ abstract contract Accessibility {
 
 	modifier notLiquidatedPartyB(address partyB, address partyA) {
 		require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "Accessibility: PartyB isn't solvent");
+		require(!AccountStorage.layout().crossLiquidationDetails[partyB].inProgress, "Accessibility: PartyB isn't solvent");
 		_;
 	}
 
@@ -49,6 +50,7 @@ abstract contract Accessibility {
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		require(!MAStorage.layout().liquidationStatus[quote.partyA], "Accessibility: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[quote.partyB][quote.partyA], "Accessibility: PartyB isn't solvent");
+		require(!AccountStorage.layout().crossLiquidationDetails[quote.partyB].inProgress, "Accessibility: PartyB isn't solvent");
 		require(
 			quote.quoteStatus != QuoteStatus.LIQUIDATED &&
 				quote.quoteStatus != QuoteStatus.LIQUIDATED_PENDING &&

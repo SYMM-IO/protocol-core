@@ -118,8 +118,10 @@ library AccountFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(!maLayout.partyBLiquidationStatus[msg.sender][origin], "PartyBFacet: PartyB isn't solvent");
 		require(!maLayout.partyBLiquidationStatus[msg.sender][recipient], "PartyBFacet: PartyB isn't solvent");
-		require(!MAStorage.layout().liquidationStatus[origin], "PartyBFacet: Origin isn't solvent");
-		require(!MAStorage.layout().liquidationStatus[recipient], "PartyBFacet: Recipient isn't solvent");
+		require(!maLayout.liquidationStatus[origin], "PartyBFacet: Origin isn't solvent");
+		require(!maLayout.liquidationStatus[recipient], "PartyBFacet: Recipient isn't solvent");
+		require(!accountLayout.crossLiquidationDetails[msg.sender].inProgress, "PartyBFacet: PartyB isn't solvent");
+
 		// deallocate from origin
 		require(accountLayout.partyBAllocatedBalances[msg.sender][origin] >= amount, "PartyBFacet: Insufficient locked balance");
 		LibMuonAccount.verifyPartyBUpnl(upnlSig, msg.sender, origin);
@@ -149,6 +151,8 @@ library AccountFacetImpl {
 
 		require(accountLayout.balances[msg.sender] >= amount, "AccountFacet: Insufficient balance");
 		require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][partyA], "AccountFacet: PartyB isn't solvent");
+		require(!accountLayout.crossLiquidationDetails[msg.sender].inProgress, "AccountFacet: PartyB isn't solvent");
+		
 		accountLayout.balances[msg.sender] -= amount;
 		accountLayout.partyBAllocatedBalances[msg.sender][partyA] += amount;
 	}

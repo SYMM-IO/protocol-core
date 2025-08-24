@@ -32,6 +32,8 @@ library PartyBBatchActionsFacetImpl {
 		require(!appLayout.emergencyMode, "PartyBFacet: System is in emergency mode");
 		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
+		require(!accountLayout.crossLiquidationDetails[firstQuote.partyB].inProgress, "PartyBFacet: PartyB is in cross liquidation process");
+
 		LibMuonPartyBBatchActions.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
@@ -85,6 +87,8 @@ library PartyBBatchActionsFacetImpl {
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
 		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
+		require(!accountLayout.crossLiquidationDetails[firstQuote.partyB].inProgress, "PartyBFacet: PartyB is in cross liquidation process");
+		
 		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];

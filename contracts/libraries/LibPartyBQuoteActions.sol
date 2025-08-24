@@ -27,6 +27,7 @@ library LibPartyBQuoteActions {
 			"PartyBFacet: symbol type is not whitelisted"
 		);
 		require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][quote.partyA], "PartyBFacet: PartyB isn't solvent");
+		require(!accountLayout.crossLiquidationDetails[msg.sender].inProgress, "PartyBFacet: PartyB is in cross liquidation process");
 		bool isValidPartyB;
 		if (quote.partyBsWhiteList.length == 0) {
 			require(msg.sender != quote.partyA, "PartyBFacet: PartyA can't be partyB too");

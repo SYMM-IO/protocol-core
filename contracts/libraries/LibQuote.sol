@@ -275,6 +275,8 @@ library LibQuote {
 		);
 		require(!MAStorage.layout().liquidationStatus[quote.partyA], "LibQuote: PartyA isn't solvent");
 		require(!MAStorage.layout().partyBLiquidationStatus[quote.partyB][quote.partyA], "LibQuote: PartyB isn't solvent");
+		require(!accountLayout.crossLiquidationDetails[quote.partyB].inProgress, "LibQuote: PartyB is in cross liquidation process");
+
 		if (quote.quoteStatus == QuoteStatus.PENDING || quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING) {
 			quote.statusModifyTimestamp = block.timestamp;
 			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
