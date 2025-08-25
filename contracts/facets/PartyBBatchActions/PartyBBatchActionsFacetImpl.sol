@@ -21,31 +21,42 @@ library PartyBBatchActionsFacetImpl {
 	) internal returns (uint256[] memory currentIds) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
+		MAStorage.Layout storage maLayout = MAStorage.layout();
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+
 		require(
 			quoteIds.length == filledAmounts.length && quoteIds.length == openedPrices.length && quoteIds.length > 0,
 			"PartyBFacet: Invalid length"
 		);
-		Quote storage firstQuote = QuoteStorage.layout().quotes[quoteIds[0]];
-		require(accountLayout.suspendedAddresses[firstQuote.partyA] == false, "PartyBFacet: PartyA is suspended");
+		
+		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
+		
+		// PartyA and PartyB are not suspended
+		require(!accountLayout.suspendedAddresses[firstQuote.partyA], "PartyBFacet: PartyA is Suspended");
 		require(!accountLayout.suspendedAddresses[firstQuote.partyB], "PartyBFacet: Sender is Suspended");
+
+		// PartyB is not in emergency mode
 		require(!appLayout.partyBEmergencyStatus[firstQuote.partyB], "PartyBFacet: PartyB is in emergency mode");
 		require(!appLayout.emergencyMode, "PartyBFacet: System is in emergency mode");
-		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
-		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
+
+		// Solvency checks
+		require(!maLayout.liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
+		require(!maLayout.partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
 		require(!accountLayout.crossLiquidationDetails[firstQuote.partyB].inProgress, "PartyBFacet: PartyB is in cross liquidation process");
 
+		// Verify the upnl and prices
 		LibMuonPartyBBatchActions.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
+
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
+
 		currentIds = new uint256[](quoteIds.length);
 		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
-			uint256 filledAmount = filledAmounts[i];
-			uint256 openedPrice = openedPrices[i];
-			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+			Quote storage quote = quoteLayout.quotes[quoteId];
 			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be the partyB");
 			require(firstQuote.partyA == quote.partyA, "PartyBFacet: All positions should belong to one partyA");
-			currentIds[i] = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);
+			currentIds[i] = LibPartyBPositionsActions.openPosition(quoteId, filledAmounts[i], openedPrices[i]);
 		}
 		LibSolvency.isSolventAfterOpenPosition(
 			quoteIds,
@@ -65,14 +76,19 @@ library PartyBBatchActionsFacetImpl {
 		PairUpnlAndPricesSig memory upnlSig
 	) internal returns (QuoteStatus[] memory quoteStatuses, uint256[] memory closeIds) {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+		MAStorage.Layout storage maLayout = MAStorage.layout();
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+
 		require(
 			quoteIds.length == filledAmounts.length && quoteIds.length == closedPrices.length && quoteIds.length > 0,
 			"PartyBFacet: Invalid length"
 		);
-		quoteStatuses = new QuoteStatus[](quoteIds.length);
-		closeIds = new uint256[](quoteIds.length);
-		Quote storage firstQuote = QuoteStorage.layout().quotes[quoteIds[0]];
+
+		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
+		
+		// Verify the upnl and prices
 		LibMuonPartyBBatchActions.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
+		
 		LibSolvency.isSolventAfterClosePosition(
 			quoteIds,
 			filledAmounts,
@@ -83,22 +99,25 @@ library PartyBBatchActionsFacetImpl {
 			firstQuote.partyB,
 			firstQuote.partyA
 		);
+
+		// Solvency checks
+		require(!maLayout.liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
+		require(!maLayout.partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
+		require(!accountLayout.crossLiquidationDetails[firstQuote.partyB].inProgress, "PartyBFacet: PartyB is in cross liquidation process");
+
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
-		require(!MAStorage.layout().liquidationStatus[firstQuote.partyA], "PartyBFacet: PartyA isn't solvent");
-		require(!MAStorage.layout().partyBLiquidationStatus[firstQuote.partyB][firstQuote.partyA], "PartyBFacet: PartyB isn't solvent");
-		require(!accountLayout.crossLiquidationDetails[firstQuote.partyB].inProgress, "PartyBFacet: PartyB is in cross liquidation process");
 		
+		quoteStatuses = new QuoteStatus[](quoteIds.length);
+		closeIds = new uint256[](quoteIds.length);
 		for (uint256 i = 0; i < quoteIds.length; i++) {
 			uint256 quoteId = quoteIds[i];
-			uint256 filledAmount = filledAmounts[i];
-			uint256 closedPrice = closedPrices[i];
-			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+			Quote storage quote = quoteLayout.quotes[quoteId];
 			require(quote.partyB == msg.sender, "PartyBFacet: Sender should be the partyB");
 			require(firstQuote.partyA == quote.partyA, "PartyBFacet: All positions should belong to one partyA");
-			LibPartyBPositionsActions.fillCloseRequest(quoteId, filledAmount, closedPrice);
+			LibPartyBPositionsActions.fillCloseRequest(quoteId, filledAmounts[i], closedPrices[i]);
 			quoteStatuses[i] = quote.quoteStatus;
-			closeIds[i] = QuoteStorage.layout().closeIds[quoteId];
+			closeIds[i] = quoteLayout.closeIds[quoteId];
 		}
 	}
 }

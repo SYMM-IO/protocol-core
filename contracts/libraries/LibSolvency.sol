@@ -31,6 +31,7 @@ library LibSolvency {
 		address partyB,
 		address partyA
 	) internal view returns (bool) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		int256 partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlPartyB, partyB, partyA);
 		int256 partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
 			upnlPartyA,
@@ -41,7 +42,9 @@ library LibSolvency {
 			uint256 quoteId = quoteIds[i];
 			uint256 filledAmount = filledAmounts[i];
 			uint256 marketPrice = marketPrices[i];
-			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+
+			Quote storage quote = quoteLayout.quotes[quoteId];
+
 			if (quote.positionType == PositionType.LONG) {
 				if (quote.openedPrice >= marketPrice) {
 					uint256 diff = (filledAmount * (quote.openedPrice - marketPrice)) / 1e18;
@@ -91,6 +94,8 @@ library LibSolvency {
 		address partyB,
 		address partyA
 	) internal view returns (int256 partyBAvailableBalance, int256 partyAAvailableBalance) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+
 		partyBAvailableBalance = LibAccount.partyBAvailableBalanceForLiquidation(upnlPartyB, partyB, partyA);
 		partyAAvailableBalance = LibAccount.partyAAvailableBalanceForLiquidation(
 			upnlPartyA,
@@ -102,11 +107,11 @@ library LibSolvency {
 			uint256 filledAmount = filledAmounts[i];
 			uint256 closedPrice = closedPrices[i];
 			uint256 marketPrice = marketPrices[i];
-			Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+
+			Quote storage quote = quoteLayout.quotes[quoteId];
 			uint256 unlockedAmount = (filledAmount * (quote.lockedValues.cva + quote.lockedValues.lf)) / LibQuote.quoteOpenAmount(quote);
 
 			partyBAvailableBalance += int256(unlockedAmount);
-
 			partyAAvailableBalance += int256(unlockedAmount);
 
 			if (quote.positionType == PositionType.LONG) {
