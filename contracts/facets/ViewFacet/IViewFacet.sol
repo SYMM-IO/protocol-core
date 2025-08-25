@@ -202,4 +202,10 @@ interface IViewFacet {
 	function getPartyBTotalLf(address partyB) external view returns (uint256);
 
 	function getSignatureVerifier() external view returns (address);
+
+	function getFundingFeesOfPartyB(uint256 symbolId, address partyB) external view returns (FundingFee memory);
+
+	function getAccumulatedFundingFees(uint256[] memory quoteIds) external view returns (int256[] memory fees);
+
+	function getBindState(address user) external view returns (BindState memory);
 }

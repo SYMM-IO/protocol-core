@@ -944,31 +944,79 @@ contract ViewFacet is IViewFacet {
 		return (MAStorage.layout().liquidationInsuranceVault, MAStorage.layout().maxLiquidationProfitPerPosition);
 	}
 
+	/**
+	 * @notice Retrieves the cross liquidation status of a party B.
+	 * @param partyB The address of the party B.
+	 * @return inProgress The cross liquidation status of the party B.
+	 */
 	function getPartyBCrossLiquidationStatus(address partyB) external view returns (bool) {
 		return AccountStorage.layout().crossLiquidationDetails[partyB].inProgress;
 	}
 
+	/**
+	 * @notice Retrieves the cross liquidation details of a party B.
+	 * @param partyB The address of the party B.
+	 * @return details The cross liquidation details of the party B.
+	 */
 	function getCrossLiquidationDetails(address partyB) external view returns (CrossLiquidationDetail memory) {
 		return AccountStorage.layout().crossLiquidationDetails[partyB];
 	}
 
+	/**
+	 * @notice Retrieves the total CVA of a party B.
+	 * @param partyB The address of the party B.
+	 * @return totalCva The total CVA of the party B.
+	 */
 	function getPartyBTotalCva(address partyB) external view returns (uint256) {
 		return AccountStorage.layout().partyBTotalCva[partyB];
 	}
 
+	/**
+	 * @notice Retrieves the total LF of a party B.
+	 * @param partyB The address of the party B.
+	 * @return totalLf The total LF of the party B.
+	 */
 	function getPartyBTotalLf(address partyB) external view returns (uint256) {
 		return AccountStorage.layout().partyBTotalLf[partyB];
 	}
 
+	/**
+	 * @notice Retrieves the signature verifier.
+	 * @return signatureVerifier The signature verifier.
+	 */
 	function getSignatureVerifier() external view returns (address) {
 		return GlobalAppStorage.layout().signatureVerifier;
 	}
 
-	function getFundingRate(uint256 symbolId, address partyB) external view returns (FundingFee memory) {
+	/**
+	 * @notice Retrieves the funding rate of a party B.
+	 * @param symbolId The ID of the symbol.
+	 * @param partyB The address of the party B.
+	 * @return fundingFee The funding rate of the party B.
+	 */
+	function getFundingFeesOfPartyB(uint256 symbolId, address partyB) external view returns (FundingFee memory) {
 		return SymbolStorage.layout().fundingFees[symbolId][partyB];
 	}
 
+	/**
+	 * @notice Retrieves the bind state of a user.
+	 * @param user The address of the user.
+	 * @return bindState The bind state of the user.
+	 */
 	function getBindState(address user) external view returns (BindState memory) {
 		return AccountStorage.layout().bindState[user];
+	}
+
+	/**
+	 * @notice Gets the accumulated funding fees for a list of quotes
+	 * @dev Returns the funding fee each position should pay (positive) or receive (negative)
+	 * @param quoteIds Array of quote IDs to calculate funding fees for
+	 * @return fees Array of funding fees in the same order as quoteIds
+	 */
+	function getAccumulatedFundingFees(uint256[] memory quoteIds) external view returns (int256[] memory fees) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		fees = new int256[](quoteIds.length);
+		for (uint256 i = 0; i < quoteIds.length; i++) fees[i] = LibQuote.getAccumulatedFundingFee(quoteLayout.quotes[quoteIds[i]]);
+		return fees;
 	}
 }
