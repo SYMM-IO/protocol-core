@@ -345,6 +345,16 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Checks if a symbol type is whitelisted for a party B.
+	 * @param partyB The address of party B.
+	 * @param symbolType The type of the symbol.
+	 * @return A boolean indicating whether the symbol type is whitelisted for the party B.
+	 */
+	function isWhitelistedSymbolType(address partyB, uint256 symbolType) external view returns (bool) {
+		return AccountStorage.layout().partyBWhitelistedSymbolTypes[partyB][symbolType];
+	}
+
+	/**
 	 * @notice Returns the details of a quote by its ID.
 	 * @param quoteId The ID of the quote.
 	 * @return The details of the quote.

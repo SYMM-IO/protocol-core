@@ -80,6 +80,8 @@ interface IViewFacet {
 
 	function symbolNameById(uint256[] memory symbolIds) external view returns (string[] memory);
 
+	function isWhitelistedSymbolType(address partyB, uint256 symbolType) external view returns (bool);
+
 	////////////////////////////////////
 
 	// Quotes
