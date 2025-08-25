@@ -31,7 +31,7 @@ library PartyBPositionActionsFacetImpl {
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 
 		currentId = LibPartyBPositionsActions.openPosition(quoteId, filledAmount, openedPrice);
-		if (accountLayout.bindState[msg.sender].partyB != quote.partyB) {
+		if (accountLayout.bindState[quote.partyA].partyB != quote.partyB) {
 			LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 
 			uint256[] memory quoteIds = new uint256[](1);
@@ -55,7 +55,7 @@ library PartyBPositionActionsFacetImpl {
 	function fillCloseRequest(uint256 quoteId, uint256 filledAmount, uint256 closedPrice, PairUpnlAndPriceSig memory upnlSig) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
-		if (accountLayout.bindState[msg.sender].partyB != msg.sender) {
+		if (accountLayout.bindState[quote.partyA].partyB != msg.sender) {
 			LibMuonPartyB.verifyPairUpnlAndPrice(upnlSig, quote.partyB, quote.partyA, quote.symbolId);
 			uint256[] memory quoteIds = new uint256[](1);
 			uint256[] memory filledAmounts = new uint256[](1);

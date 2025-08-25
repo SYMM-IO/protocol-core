@@ -37,6 +37,12 @@ interface IAccountFacet is IAccountEvents {
 
 	function externalTransfer(address receiver, uint256 amount, address target) external;
 
+	function bindToPartyB(address partyB) external;
+
+	function unbindFromPartyB() external;
+
+	function cancelUnbindFromPartyB() external;
+
 	// PartyB
 	function allocateForPartyB(uint256 amount, address partyA) external;
 
@@ -49,4 +55,6 @@ interface IAccountFacet is IAccountEvents {
 	function depositToReserveVault(uint256 amount, address partyB) external;
 
 	function withdrawFromReserveVault(uint256 amount) external;
+
+	function completeUnbindFromPartyB(address partyA) external;
 }

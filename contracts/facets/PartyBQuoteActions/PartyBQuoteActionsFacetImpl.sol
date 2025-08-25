@@ -16,7 +16,7 @@ library PartyBQuoteActionsFacetImpl {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 
-		if (AccountStorage.layout().bindState[msg.sender].partyB != address(0)) {
+		if (AccountStorage.layout().bindState[quote.partyA].partyB != address(0)) {
 			require(AccountStorage.layout().bindState[quote.partyA].partyB == msg.sender, "PartyBFacet: PartyB is not bounded to this partyA");
 		} else {
 			LibMuonPartyB.verifyPartyBUpnl(upnlSig, msg.sender, quote.partyA);

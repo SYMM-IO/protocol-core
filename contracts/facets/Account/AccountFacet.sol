@@ -223,13 +223,8 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit CancelUnbindFromPartyB(msg.sender);
 	}
 
-	function acceptUnbindFromPartyB(address partyA) external notSuspended(msg.sender) onlyPartyB {
-		AccountFacetImpl.acceptUnbindFromPartyB(partyA);
+	function completeUnbindFromPartyB(address partyA) external notSuspended(msg.sender) {
+		AccountFacetImpl.completeUnbindFromPartyB(partyA);
 		emit UnbindFromPartyB(partyA, msg.sender);
-	}
-
-	function rejectUnbindFromPartyB(address partyA) external notSuspended(msg.sender) onlyPartyB {
-		AccountFacetImpl.rejectUnbindFromPartyB(partyA);
-		emit RejectUnbindFromPartyB(partyA, msg.sender);
 	}
 }
