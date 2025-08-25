@@ -165,6 +165,15 @@ contract ViewFacet is IViewFacet {
 	}
 
 	/**
+	 * @notice Checks if a party B is in master account mode.
+	 * @param partyB The address of Party B.
+	 * @return A boolean indicating whether the party B is in master account mode.
+	 */
+	function isInMasterAccountMode(address partyB) external view returns (bool) {
+		return AccountStorage.layout().masterAccountMode[partyB];
+	}
+
+	/**
 	 * @notice Returns the allocated balances of Party Bs for a specific Party A.
 	 * @param partyA The address of Party A.
 	 * @param partyBs The addresses of Party Bs.
