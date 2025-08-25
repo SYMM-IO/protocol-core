@@ -1038,4 +1038,8 @@ contract ViewFacet is IViewFacet {
 		for (uint256 i = 0; i < quoteIds.length; i++) fees[i] = LibQuote.getAccumulatedFundingFee(quoteLayout.quotes[quoteIds[i]]);
 		return fees;
 	}
+
+	function getHook(address affiliate) external view returns (address) {
+		return AccountStorage.layout().affiliateToHooks[affiliate];
+	}
 }

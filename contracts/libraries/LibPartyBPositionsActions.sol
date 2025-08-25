@@ -181,5 +181,15 @@ library LibPartyBPositionsActions {
 
 		quote.quoteStatus = QuoteStatus.OPENED;
 		LibQuote.addToOpenPositions(quoteId);
+
+		address affiliateHook = accountLayout.affiliateToHooks[quote.affiliate];
+		address systemHook = accountLayout.affiliateToHooks[address(0)];
+
+		if (affiliateHook != address(0)) {
+			try ISymmioHook(affiliateHook).onOpenPosition(quoteId, filledAmount, openedPrice, quote.partyA, quote.partyB) {} catch {}
+		}
+		if (systemHook != address(0)) {
+			try ISymmioHook(systemHook).onOpenPosition(quoteId, filledAmount, openedPrice, quote.partyA, quote.partyB) {} catch {}
+		}
 	}
 }

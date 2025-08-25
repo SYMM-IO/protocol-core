@@ -252,6 +252,16 @@ library LibQuote {
 			quote.requestedClosePrice = 0;
 			quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
 		}
+
+		address affiliateHook = accountLayout.affiliateToHooks[quote.affiliate];
+		address systemHook = accountLayout.affiliateToHooks[address(0)];
+
+		if (affiliateHook != address(0)) {
+			try ISymmioHook(affiliateHook).onClosePosition(quoteId, filledAmount, openedPrice, quote.partyA, quote.partyB) {} catch {}
+		}
+		if (systemHook != address(0)) {
+			try ISymmioHook(systemHook).onClosePosition(quoteId, filledAmount, openedPrice, quote.partyA, quote.partyB) {} catch {}
+		}
 	}
 
 	/**

@@ -86,4 +86,5 @@ interface IControlEvents {
 	event SetSignatureVerifierAddress(address SignatureVerifier);
 	event AddRelayerForExternalTransferTarget(address target, address relayer);
 	event RemoveRelayerForExternalTransferTarget(address target);
+	event SetHook(address affiliate, address hook);
 }

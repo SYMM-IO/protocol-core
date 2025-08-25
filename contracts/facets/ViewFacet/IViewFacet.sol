@@ -212,4 +212,6 @@ interface IViewFacet {
 	function getAccumulatedFundingFees(uint256[] memory quoteIds) external view returns (int256[] memory fees);
 
 	function getBindState(address user) external view returns (BindState memory);
+
+	function getHook(address affiliate) external view returns (address);
 }

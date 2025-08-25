@@ -674,4 +674,9 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		AccountStorage.layout().externalTransferTargetsRelayers[target] = address(0);
 		emit RemoveRelayerForExternalTransferTarget(target);
 	}
+
+	function setHook(address affiliate, address hook) external onlyRole(LibAccessibility.SETTER_ROLE) {
+		AccountStorage.layout().affiliateToHooks[affiliate] = hook;
+		emit SetHook(affiliate, hook);
+	}
 }
