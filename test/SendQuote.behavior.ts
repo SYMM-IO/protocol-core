@@ -1,14 +1,14 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {expect} from "chai"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
 
-import {initializeFixture} from "./Initialize.fixture"
-import {QuoteStatus} from "./models/Enums"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {limitQuoteRequestBuilder, marketQuoteRequestBuilder} from "./models/requestModels/QuoteRequest"
-import {SendQuoteValidator} from "./models/validators/SendQuoteValidator"
-import {decimal, getBlockTimestamp, pausePartyA} from "./utils/Common"
-import {getDummySingleUpnlAndPriceSig} from "./utils/SignatureUtils"
+import { initializeFixture } from "./Initialize.fixture"
+import { QuoteStatus } from "./models/Enums"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { limitQuoteRequestBuilder, marketQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
+import { SendQuoteValidator } from "./models/validators/SendQuoteValidator"
+import { decimal, getBlockTimestamp, pausePartyA } from "./utils/Common"
+import { getDummySingleUpnlAndPriceSig } from "./utils/SignatureUtils"
 
 export function shouldBehaveLikeSendQuote(): void {
 	let user: User, context: RunContext
@@ -100,16 +100,16 @@ export function shouldBehaveLikeSendQuote(): void {
 
 	it("Should run successfully for limit", async function () {
 		let validator = new SendQuoteValidator()
-		const before = await validator.before(context, {user: user})
+		const before = await validator.before(context, { user: user })
 		let qId = await user.sendQuote()
-		await validator.after(context, {user: user, quoteId: qId, beforeOutput: before})
+		await validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
 	})
 
 	it("Should run successfully for market", async function () {
 		let validator = new SendQuoteValidator()
-		const before = await validator.before(context, {user: user})
+		const before = await validator.before(context, { user: user })
 		let qId = await user.sendQuote(marketQuoteRequestBuilder().build())
-		await validator.after(context, {user: user, quoteId: qId, beforeOutput: before})
+		await validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
 	})
 
 	it("Should fail on more sent quotes than the allowed range", async function () {
@@ -120,5 +120,28 @@ export function shouldBehaveLikeSendQuote(): void {
 			if (validPending == 0n) break
 		}
 		await expect(user.sendQuote()).to.be.revertedWith("PartyAFacet: Number of pending quotes out of range")
+	})
+
+	it("Should fail when bind to a partyB and the partyB is not in the whitelisted partyBs", async function () {
+		await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.user2.getAddress())
+		await expect(
+			user.sendQuote(
+				limitQuoteRequestBuilder()
+					.upnlSig(getDummySingleUpnlAndPriceSig(decimal(16n)))
+					.partyBWhiteList([await context.signers.hedger2.getAddress()])
+					.build(),
+			),
+		).to.be.revertedWith("PartyAFacet: PartyA is bound to a specific PartyB")
+	})
+
+	it("Should not check the partyBsWhiteList when not bind to a partyB", async function () {
+		await expect(
+			user.sendQuote(
+				limitQuoteRequestBuilder()
+					.upnlSig(getDummySingleUpnlAndPriceSig(decimal(16n), decimal(-1000n)))
+					.partyBWhiteList([await context.signers.hedger2.getAddress()])
+					.build(),
+			),
+		).to.not.reverted
 	})
 }

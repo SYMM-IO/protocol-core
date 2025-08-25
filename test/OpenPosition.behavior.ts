@@ -1,14 +1,14 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {expect} from "chai"
-import {initializeFixture} from "./Initialize.fixture"
-import {PositionType, QuoteStatus} from "./models/Enums"
-import {Hedger} from "./models/Hedger"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {limitOpenRequestBuilder, marketOpenRequestBuilder} from "./models/requestModels/OpenRequest"
-import {limitQuoteRequestBuilder, marketQuoteRequestBuilder} from "./models/requestModels/QuoteRequest"
-import {OpenPositionValidator} from "./models/validators/OpenPositionValidator"
-import {decimal, getQuoteQuantity, pausePartyB} from "./utils/Common"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
+import { initializeFixture } from "./Initialize.fixture"
+import { PositionType, QuoteStatus } from "./models/Enums"
+import { Hedger } from "./models/Hedger"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { limitOpenRequestBuilder, marketOpenRequestBuilder } from "./models/requestModels/OpenRequest"
+import { limitQuoteRequestBuilder, marketQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
+import { OpenPositionValidator } from "./models/validators/OpenPositionValidator"
+import { decimal, getQuoteQuantity, pausePartyB } from "./utils/Common"
 
 export function shouldBehaveLikeOpenPosition(): void {
 	let context: RunContext, user: User, hedger: Hedger, hedger2: Hedger
@@ -237,5 +237,34 @@ export function shouldBehaveLikeOpenPosition(): void {
 			fillAmount: filledAmount,
 			beforeOutput: beforeOut,
 		})
+	})
+
+	it("Should check sig when not bind", async function () {
+		await expect(
+			hedger.openPosition(
+				1,
+				limitOpenRequestBuilder()
+					.filledAmount(await getQuoteQuantity(context, 1n))
+					.openPrice(decimal(1n))
+					.price(decimal(1n, 17))
+					.upnlPartyB(decimal(-1000n))
+					.build(),
+			),
+		).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
+	})
+
+	it("Should skip check sig when bind", async function () {
+		await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+		await expect(
+			hedger.openPosition(
+				1,
+				limitOpenRequestBuilder()
+					.filledAmount(await getQuoteQuantity(context, 1n))
+					.openPrice(decimal(1n))
+					.price(decimal(1n, 17))
+					.upnlPartyB(decimal(-1000n))
+					.build(),
+			),
+		).to.not.reverted
 	})
 }

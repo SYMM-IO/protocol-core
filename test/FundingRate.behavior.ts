@@ -153,6 +153,44 @@ export function shouldBehaveLikeFundingRate(): void {
 		expect(newQuote.openedPrice).to.be.equal(unDecimal(oldQuote.openedPrice * (decimal(1n) - decimal(1n, 16))))
 	})
 
+	it("should check sig when not bound", async function () {
+		let symbol = await context.viewFacet.getSymbol(1)
+		let duration = symbol.fundingRateEpochDuration
+		let window = symbol.fundingRateWindowTime
+		let currentEpoch = (BigInt(await time.latest()) / duration) * duration
+		let targetTime = duration * 2n + window - 1n + currentEpoch
+
+		await time.setNextBlockTimestamp(targetTime)
+		await expect(
+			hedger.chargeFundingRate(
+				await context.signers.user.getAddress(),
+				[1],
+				[decimal(1n, 15)],
+				await getDummyPairUpnlSig(BigInt(0), decimal(4970n) * -1n),
+			),
+		).to.be.revertedWith("ChargeFundingFacet: PartyB will be insolvent")
+	})
+
+	it("should skip check sig when bound", async function () {
+		await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+
+		let symbol = await context.viewFacet.getSymbol(1)
+		let duration = symbol.fundingRateEpochDuration
+		let window = symbol.fundingRateWindowTime
+		let currentEpoch = (BigInt(await time.latest()) / duration) * duration
+		let targetTime = duration * 2n + window - 1n + currentEpoch
+
+		await time.setNextBlockTimestamp(targetTime)
+		await expect(
+			hedger.chargeFundingRate(
+				await context.signers.user.getAddress(),
+				[1],
+				[decimal(1n, 15)],
+				await getDummyPairUpnlSig(BigInt(0), decimal(4970n) * -1n),
+			),
+		).not.reverted
+	})
+
 	describe("Accumulative Funding Rate Methods", function () {
 		describe("setEpochDuration", function () {
 			beforeEach(async () => {})
@@ -192,7 +230,7 @@ export function shouldBehaveLikeFundingRate(): void {
 
 				const blockTimestamp = await getBlockTimestamp()
 
-				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingFee = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingFee.epochDuration).to.equal(EightHourInSec)
 				expect(fundingFee.lastUpdatedEpoch).to.approximately(blockTimestamp / BigInt(EightHourInSec), 120)
 			})
@@ -203,7 +241,7 @@ export function shouldBehaveLikeFundingRate(): void {
 
 				const blockTimestamp = await getBlockTimestamp()
 
-				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingFee = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingFee.epochDuration).to.equal(NineHourInSec)
 				expect(fundingFee.lastUpdatedEpoch).to.approximately(blockTimestamp / BigInt(NineHourInSec), 1)
 				expect(fundingFee.startEpoch).to.equal(0)
@@ -256,7 +294,7 @@ export function shouldBehaveLikeFundingRate(): void {
 
 				const blockTimestamp = await getBlockTimestamp()
 
-				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingFee = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingFee.startEpoch).to.equal(blockTimestamp / BigInt(EightHourInSec))
 				expect(fundingFee.lastUpdatedEpoch).to.equal(blockTimestamp / BigInt(EightHourInSec))
 				expect(fundingFee.accumulatedLongRate).to.equal(0)
@@ -287,7 +325,7 @@ export function shouldBehaveLikeFundingRate(): void {
 						.updateAccumulatedFundingFee([1], [decimal(2n, 14)], [-decimal(2n, 14)], [decimal(1n)]),
 				).to.not.reverted
 
-				const fundingFee = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingFee = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				const blockTimestamp = BigInt(await time.latest())
 
 				expect(fundingFee.lastUpdatedEpoch).to.equal(blockTimestamp / BigInt(EightHourInSec))
@@ -405,7 +443,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				await time.setNextBlockTimestamp(startTime + 200)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(2n, 16)], [0], [decimal(1n)])
 
-				const fundingRate1 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate1 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingRate1.currentLongRate).to.equal(decimal(2n, 16))
 				expect(fundingRate1.accumulatedLongRate).to.equal(0)
 
@@ -413,7 +451,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				await time.setNextBlockTimestamp(startTime + 300)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(3n, 16)], [0], [decimal(1n)])
 
-				const fundingRate2 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate2 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingRate2.currentLongRate).to.equal(decimal(3n, 16))
 				expect(fundingRate2.accumulatedLongRate).to.equal(0)
 
@@ -430,7 +468,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				await hedger.lockQuote(5)
 				await hedger.openPosition(5, limitOpenRequestBuilder().filledAmount(decimal(1n)).build())
 
-				const fundingRate3 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate3 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				const quote1 = await context.viewFacet.getQuote(5)
 				expect(fundingRate3.currentLongRate).to.equal(decimal(3n, 16))
 				expect(fundingRate3.accumulatedLongRate).to.equal(decimal(3n, 16))
@@ -440,7 +478,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				await time.setNextBlockTimestamp(startTime + 700)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(1n, 16)], [0], [decimal(1n)])
 
-				const fundingRate4 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate4 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingRate4.currentLongRate).to.equal(decimal(1n, 16))
 				expect(fundingRate4.accumulatedLongRate).to.equal(decimal(3n, 16))
 				expect(fundingRate4.lastUpdatedEpoch).to.equal(BigInt(await time.latest()) / 400n)
@@ -449,7 +487,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				await time.setNextBlockTimestamp(startTime + 1000)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(5n, 16)], [0], [decimal(1n)])
 
-				const fundingRate5 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate5 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingRate5.currentLongRate).to.equal(decimal(5n, 16))
 				expect(fundingRate5.accumulatedLongRate).to.equal(decimal(2n, 16))
 				expect(fundingRate5.lastUpdatedEpoch).to.equal(BigInt(await time.latest()) / 400n)
@@ -458,7 +496,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				await time.setNextBlockTimestamp(startTime + 1300)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(2n, 16)], [0], [decimal(1n)])
 
-				const fundingRate6 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate6 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingRate6.currentLongRate).to.equal(decimal(2n, 16))
 				expect(fundingRate6.accumulatedLongRate).to.equal(decimal(3n, 16))
 				expect(fundingRate6.lastUpdatedEpoch).to.equal(BigInt(await time.latest()) / 400n)
@@ -484,7 +522,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				//* Move to t+1500: Update epoch duration
 				await time.setNextBlockTimestamp(startTime + 1500)
 				await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [300])
-				const fundingRate7 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate7 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingRate7.currentLongRate).to.equal(decimal(15n, 15))
 				expect(fundingRate7.accumulatedLongRate).to.equal(decimal(225n, 14))
 				expect(fundingRate7.startEpoch).to.equal(BigInt(fundingRate7.startEpochTimeStamp) / 300n)
@@ -503,7 +541,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				const afterBalance2 = (await user.getBalanceInfo()).allocatedBalances
 
 				const quote3 = await context.viewFacet.getQuote(5)
-				const fundingRate8 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate8 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 
 				expect(fundingRate8.currentLongRate).to.equal(decimal(15n, 15))
 				expect(fundingRate8.accumulatedLongRate).to.equal(decimal(21n, 15))
@@ -516,7 +554,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				await time.setNextBlockTimestamp(startTime + 1800)
 				await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(5n, 16)], [0], [decimal(1n)])
 
-				const fundingRate9 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate9 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 				expect(fundingRate9.currentLongRate).to.equal(decimal(5n, 16))
 				expect(fundingRate9.accumulatedLongRate).to.equal(decimal(21n, 15))
 				expect(fundingRate9.lastUpdatedEpoch).to.equal(BigInt(await time.latest()) / 300n)
@@ -535,7 +573,7 @@ export function shouldBehaveLikeFundingRate(): void {
 				const afterBalance3 = (await user.getBalanceInfo()).allocatedBalances
 
 				const quote4 = await context.viewFacet.getQuote(5)
-				const fundingRate10 = await context.viewFacet.getFundingRate(1, context.signers.hedger)
+				const fundingRate10 = await context.viewFacet.getFundingFeesOfPartyB(1, context.signers.hedger)
 
 				expect(fundingRate10.currentLongRate).to.equal(decimal(5n, 16))
 				expect(fundingRate10.accumulatedLongRate).to.approximately(decimal(258n, 14), decimal(35n, 13))
@@ -546,7 +584,7 @@ export function shouldBehaveLikeFundingRate(): void {
 			})
 		})
 
-		// describe.only("2. funding rate accumulation over multiple epochs", () => {
+		// describe("2. funding rate accumulation over multiple epochs", () => {
 		// 	beforeEach(async () => {
 		// 		// Set initial block timestamp to a known value
 		// 		await time.setNextBlockTimestamp(2000000000)

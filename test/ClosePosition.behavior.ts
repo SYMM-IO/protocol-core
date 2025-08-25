@@ -1,13 +1,13 @@
-import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers"
-import {expect} from "chai"
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
+import { expect } from "chai"
 
-import {initializeFixture} from "./Initialize.fixture"
-import {OrderType, PositionType, QuoteStatus} from "./models/Enums"
-import {Hedger} from "./models/Hedger"
-import {RunContext} from "./models/RunContext"
-import {User} from "./models/User"
-import {limitCloseRequestBuilder, marketCloseRequestBuilder} from "./models/requestModels/CloseRequest"
-import {limitQuoteRequestBuilder} from "./models/requestModels/QuoteRequest"
+import { initializeFixture } from "./Initialize.fixture"
+import { OrderType, PositionType, QuoteStatus } from "./models/Enums"
+import { Hedger } from "./models/Hedger"
+import { RunContext } from "./models/RunContext"
+import { User } from "./models/User"
+import { limitCloseRequestBuilder, marketCloseRequestBuilder } from "./models/requestModels/CloseRequest"
+import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
 import {
 	decimal,
 	getBlockTimestamp,
@@ -18,17 +18,19 @@ import {
 	pausePartyB,
 	unDecimal,
 } from "./utils/Common"
-import {CloseRequestValidator} from "./models/validators/CloseRequestValidator"
-import {limitFillCloseRequestBuilder, marketFillCloseRequestBuilder} from "./models/requestModels/FillCloseRequest"
-import {FillCloseRequestValidator} from "./models/validators/FillCloseRequestValidator"
-import {CancelCloseRequestValidator} from "./models/validators/CancelCloseRequestValidator"
-import {AcceptCancelCloseRequestValidator} from "./models/validators/AcceptCancelCloseRequestValidator"
-import {QuoteStructOutput} from "../src/types/contracts/interfaces/ISymmio"
+import { CloseRequestValidator } from "./models/validators/CloseRequestValidator"
+import { limitFillCloseRequestBuilder, marketFillCloseRequestBuilder } from "./models/requestModels/FillCloseRequest"
+import { FillCloseRequestValidator } from "./models/validators/FillCloseRequestValidator"
+import { CancelCloseRequestValidator } from "./models/validators/CancelCloseRequestValidator"
+import { AcceptCancelCloseRequestValidator } from "./models/validators/AcceptCancelCloseRequestValidator"
+import { QuoteStructOutput } from "../src/types/contracts/interfaces/ISymmio"
 
 export function shouldBehaveLikeClosePosition(): void {
 	let user: User, hedger: Hedger, hedger2: Hedger
 	let context: RunContext
-	let quote1LongOpened: QuoteStructOutput, quote2ShortOpened: QuoteStructOutput, quote3JustSent: QuoteStructOutput,
+	let quote1LongOpened: QuoteStructOutput,
+		quote2ShortOpened: QuoteStructOutput,
+		quote3JustSent: QuoteStructOutput,
 		quote4LongOpened: QuoteStructOutput
 
 	beforeEach(async function () {
@@ -351,10 +353,11 @@ export function shouldBehaveLikeClosePosition(): void {
 			let quantity = await getQuoteQuantity(context, 1n)
 			let price = decimal(11n, 17)
 			let closePrice = decimal(1n)
-			let userAvailable = this.user_allocated
-				- (await getTotalLockedValuesForQuoteIds(context, [2n, 4n], false))
-				- (await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n]))
-				- (unDecimal(quantity * (price - closePrice)))
+			let userAvailable =
+				this.user_allocated -
+				(await getTotalLockedValuesForQuoteIds(context, [2n, 4n], false)) -
+				(await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])) -
+				unDecimal(quantity * (price - closePrice))
 
 			await expect(
 				hedger.fillCloseRequest(
@@ -362,7 +365,7 @@ export function shouldBehaveLikeClosePosition(): void {
 					limitFillCloseRequestBuilder()
 						.filledAmount(quantity)
 						.closedPrice(closePrice)
-						.upnlPartyA((userAvailable + (decimal(1n))) * (-1n))
+						.upnlPartyA((userAvailable + decimal(1n)) * -1n)
 						.price(price)
 						.build(),
 				),
@@ -371,10 +374,11 @@ export function shouldBehaveLikeClosePosition(): void {
 			quantity = await getQuoteQuantity(context, 1n)
 			price = decimal(1n, 17)
 			closePrice = decimal(1n)
-			userAvailable = this.user_allocated
-				- (await getTotalLockedValuesForQuoteIds(context, [1n, 4n], false))
-				- (await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n]))
-				- (unDecimal(quantity * (closePrice - price)))
+			userAvailable =
+				this.user_allocated -
+				(await getTotalLockedValuesForQuoteIds(context, [1n, 4n], false)) -
+				(await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])) -
+				unDecimal(quantity * (closePrice - price))
 
 			await expect(
 				hedger.fillCloseRequest(
@@ -382,7 +386,7 @@ export function shouldBehaveLikeClosePosition(): void {
 					limitFillCloseRequestBuilder()
 						.filledAmount(quantity)
 						.closedPrice(closePrice)
-						.upnlPartyA((userAvailable + (decimal(1n))) * (-1n))
+						.upnlPartyA((userAvailable + decimal(1n)) * -1n)
 						.price(price)
 						.build(),
 				),
@@ -462,6 +466,35 @@ export function shouldBehaveLikeClosePosition(): void {
 				fillAmount: filledAmount,
 				beforeOutput: beforeOut,
 			})
+		})
+
+		it("Should check sig when not bind", async function () {
+			let closePrice = decimal(11n, 17)
+			await expect(
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1n))
+						.closedPrice(closePrice)
+						.upnlPartyB(decimal(-1000n))
+						.build(),
+				),
+			).to.be.revertedWith("LibSolvency: Available balance is lower than zero")
+		})
+
+		it("Should skip check sig when bind", async function () {
+			let closePrice = decimal(11n, 17)
+			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
+			await expect(
+				hedger.fillCloseRequest(
+					1,
+					limitFillCloseRequestBuilder()
+						.filledAmount(await getQuoteQuantity(context, 1n))
+						.closedPrice(closePrice)
+						.upnlPartyB(decimal(-1000n))
+						.build(),
+				),
+			).not.reverted
 		})
 	})
 

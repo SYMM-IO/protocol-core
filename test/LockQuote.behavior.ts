@@ -10,7 +10,7 @@ import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
 import { LockQuoteValidator } from "./models/validators/LockQuoteValidator"
 import { UnlockQuoteValidator } from "./models/validators/UnlockQuoteValidator"
 import { decimal, pausePartyB } from "./utils/Common"
-import { getDummySingleUpnlSig } from "./utils/SignatureUtils"
+import { getDummySingleUpnlAndPriceSig, getDummySingleUpnlSig } from "./utils/SignatureUtils"
 import { QuoteStruct } from "../src/types/contracts/interfaces/ISymmio"
 
 export function shouldBehaveLikeLockQuote(): void {
@@ -105,6 +105,20 @@ export function shouldBehaveLikeLockQuote(): void {
 			quoteId: BigInt(1),
 			beforeOutput: beforeOut,
 		})
+	})
+
+	it("Should check bind partyB when bound", async function () {
+		await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.getAddress())
+		await expect(hedger2.lockQuote(1)).to.be.revertedWith("PartyBFacet: PartyB is not bounded to this partyA")
+	})
+
+	it("Should skip sig check when not bound", async function () {
+		await user.sendQuote(
+			limitQuoteRequestBuilder()
+				.upnlSig(getDummySingleUpnlAndPriceSig(decimal(16n)))
+				.build(),
+		)
+		await expect(hedger2.lockQuote(1, decimal(-1000n))).to.be.revertedWith("PartyBFacet: Available balance is lower than zero")
 	})
 
 	describe("Unlock Quote", async function () {

@@ -390,7 +390,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 		})
 	})
 
-	describe.only("bindToPartyB", () => {
+	describe("bindToPartyB", () => {
 		it("should failed when user suspended", async () => {
 			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
 			await expect(context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)).to.be.revertedWith(
@@ -425,7 +425,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 		})
 	})
 
-	describe.only("unbindFromPartyB", () => {
+	describe("unbindFromPartyB", () => {
 		it("should failed when user suspended", async () => {
 			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
 			await expect(context.accountFacet.connect(context.signers.user).unbindFromPartyB()).to.be.revertedWith("Accessibility: Sender is Suspended")
@@ -454,7 +454,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 		})
 	})
 
-	describe.only("cancelUnbindFromPartyB", () => {
+	describe("cancelUnbindFromPartyB", () => {
 		it("should failed when user suspended", async () => {
 			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
 			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindFromPartyB()).to.be.revertedWith(
@@ -482,7 +482,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 		})
 	})
 
-	describe.only("acceptUnbindFromPartyB", () => {
+	describe("acceptUnbindFromPartyB", () => {
 		beforeEach(async () => {
 			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
 			await context.controlFacet.connect(context.signers.admin).setUnbindCooldown(100)
