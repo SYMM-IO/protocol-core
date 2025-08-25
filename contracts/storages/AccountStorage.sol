@@ -108,7 +108,7 @@ library AccountStorage {
 		mapping(address => uint256) partyBTotalCva;
 		mapping(address => uint256) partyBTotalLf;
 		mapping(address => CrossLiquidationDetail) crossLiquidationDetails;
-		mapping(address => address) externalTransferTargetsToRelayers;
+		mapping(address => address) externalTransferTargetsRelayers;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

@@ -47,6 +47,19 @@ interface IControlFacet is IControlEvents {
 
 	function addSymbols(Symbol[] memory symbols) external;
 
+	function addSymbolWithType(
+		string memory name,
+		uint256 minAcceptableQuoteValue,
+		uint256 minAcceptablePortionLF,
+		uint256 tradingFee,
+		uint256 maxLeverage,
+		uint256 fundingRateEpochDuration,
+		uint256 fundingRateWindowTime,
+		uint256 symbolType
+	) external;
+
+	function addSymbolsWithType(SymbolWithType[] memory symbolsWithType) external;
+
 	function setSymbolFundingState(uint256 symbolId, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime) external;
 
 	function setSymbolValidationState(uint256 symbolId, bool isValid) external;
@@ -86,6 +99,7 @@ interface IControlFacet is IControlEvents {
 	function setSettlementCooldown(uint256 settlementCooldown) external;
 
 	function setUnbindCooldown(uint256 unbindCooldown) external;
+
 	// Pause State
 	function setFeeCollector(address affiliate, address feeCollector) external;
 
@@ -143,7 +157,7 @@ interface IControlFacet is IControlEvents {
 
 	function setSymbolTypes(uint256[] calldata symbolIds, uint256[] calldata symbolTypes) external;
 
-	function addExternalTransferTargetsToRelayers(address target, address relayer) external;
+	function addRelayerForExternalTransferTarget(address target, address relayer) external;
 
-	function removeExternalTransferTargetsToRelayers(address target) external;
+	function removeRelayerForExternalTransferTarget(address target) external;
 }

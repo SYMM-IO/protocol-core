@@ -241,8 +241,8 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		uint256 symbolType
 	) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
 		addSymbol(name, minAcceptableQuoteValue, minAcceptablePortionLF, tradingFee, maxLeverage, fundingRateEpochDuration, fundingRateWindowTime);
-		uint256 lastId = SymbolStorage.layout().lastId;
-		setSymbolType(lastId, symbolType);
+		uint256 id = SymbolStorage.layout().lastId;
+		setSymbolType(id, symbolType);
 	}
 
 	/// @notice Adds multiple symbols with their types in one call.
@@ -259,8 +259,8 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 				symbolsWithType[i].fundingRateWindowTime
 			);
 
-			uint256 lastId = SymbolStorage.layout().lastId;
-			setSymbolType(lastId, symbolsWithType[i].symbolType);
+			uint256 id = SymbolStorage.layout().lastId;
+			setSymbolType(id, symbolsWithType[i].symbolType);
 		}
 	}
 
@@ -349,7 +349,10 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		symbolLayout.symbols[symbolId].tradingFee = tradingFee;
 	}
 
-	function setSymbolType(uint256 symbolId, uint256 symbolType) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+	/// @notice Sets the type of a symbol.
+	/// @param symbolId The ID of the symbol whose type is to be set.
+	/// @param symbolType The new type of the symbol.
+	function setSymbolType(uint256 symbolId, uint256 symbolType) internal {
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 
 		require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
@@ -358,6 +361,9 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit SetSymbolType(symbolId, symbolType);
 	}
 
+	/// @notice Sets the types of multiple symbols.
+	/// @param symbolIds The IDs of the symbols whose types are to be set.
+	/// @param symbolTypes The new types of the symbols.
 	function setSymbolTypes(uint256[] calldata symbolIds, uint256[] calldata symbolTypes) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
 		require(symbolIds.length == symbolTypes.length, "ControlFacet: Array length mismatch");
 
@@ -632,6 +638,10 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit SetLiquidationInsuranceVaultParams(insuranceVault, maxLiquidationProfit);
 	}
 
+	/// @notice Sets the whitelisted symbol type status for a party B.
+	/// @param partyB The address of the party B.
+	/// @param symbolType The type of the symbol.
+	/// @param isWhiteList The status of the symbol type.
 	function setPartyBWhitelistedSymbolTypeStatus(
 		address partyB,
 		uint256 symbolType,
@@ -641,20 +651,27 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		emit SetPartyBWhitelistedSymbolTypeStatus(partyB, symbolType, isWhiteList);
 	}
 
+	/// @notice Sets the signature verifier address.
+	/// @param signatureVerifier The address of the signature verifier.
 	function setSignatureVerifierAddress(address signatureVerifier) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		GlobalAppStorage.layout().signatureVerifier = signatureVerifier;
 		emit SetSignatureVerifierAddress(signatureVerifier);
 	}
 
-	function addExternalTransferTargetsToRelayers(address target, address relayer) external onlyRole(LibAccessibility.SETTER_ROLE) {
+	/// @notice Adds a relayer for an external transfer target.
+	/// @param target The address of the target.
+	/// @param relayer The address of the relayer.
+	function addRelayerForExternalTransferTarget(address target, address relayer) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		require(target != address(0), "ControlFacet: Zero address");
-		AccountStorage.layout().externalTransferTargetsToRelayers[target] = relayer;
-		emit AddExternalTransferTarget(target, relayer);
+		AccountStorage.layout().externalTransferTargetsRelayers[target] = relayer;
+		emit AddRelayerForExternalTransferTarget(target, relayer);
 	}
 
-	function removeExternalTransferTargetsToRelayers(address target) external onlyRole(LibAccessibility.SETTER_ROLE) {
+	/// @notice Removes a relayer for an external transfer target.
+	/// @param target The address of the target.
+	function removeRelayerForExternalTransferTarget(address target) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		require(target != address(0), "ControlFacet: Zero address");
-		AccountStorage.layout().externalTransferTargetsToRelayers[target] = address(0);
-		emit RemoveExternalTransferTarget(target);
+		AccountStorage.layout().externalTransferTargetsRelayers[target] = address(0);
+		emit RemoveRelayerForExternalTransferTarget(target);
 	}
 }
