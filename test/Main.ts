@@ -16,6 +16,7 @@ import { shouldBehaveLikeSpecificScenario } from "./SpecificScenario.behavior"
 import { shouldBehaveLikeBridgeFacet } from "./BridgeFacet.behavior"
 import { shouldBehaveLikeMultiAccount } from "./MultiAccount.behavior"
 import { shouldBehaveLikeControlFacet } from "./ControlFacet.behavior"
+import { shouldBehaveLikeHooks } from "./Hooks.behavior"
 import { shouldBehaveLikeSettlement } from "./Settlement.behavior"
 import { shouldBehaveLikeClearingHouseFacet } from "./ClearingHouseFacet.behavior"
 import { shouldBehaveLikePartyBBatchActionsFacet } from "./PartyBBatchActionsFacet.behavior"
@@ -76,6 +77,10 @@ describe("UnitTests", function () {
 
 		describe("BridgeFacet", async function () {
 			shouldBehaveLikeBridgeFacet()
+		})
+
+		describe.only("Hooks", async function () {
+			shouldBehaveLikeHooks()
 		})
 
 		describe("MultiAccount", async function () {

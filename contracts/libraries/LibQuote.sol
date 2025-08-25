@@ -12,6 +12,7 @@ import "../storages/AccountStorage.sol";
 import "../storages/GlobalAppStorage.sol";
 import "../storages/SymbolStorage.sol";
 import "../storages/MAStorage.sol";
+import "../interfaces/ISymmioHook.sol";
 
 library LibQuote {
 	using LockedValuesOps for LockedValues;
@@ -257,10 +258,10 @@ library LibQuote {
 		address systemHook = accountLayout.affiliateToHooks[address(0)];
 
 		if (affiliateHook != address(0)) {
-			try ISymmioHook(affiliateHook).onClosePosition(quoteId, filledAmount, openedPrice, quote.partyA, quote.partyB) {} catch {}
+			try ISymmioHook(affiliateHook).onClosePosition(quote.id, filledAmount, closedPrice, quote.partyA, quote.partyB) {} catch {}
 		}
 		if (systemHook != address(0)) {
-			try ISymmioHook(systemHook).onClosePosition(quoteId, filledAmount, openedPrice, quote.partyA, quote.partyB) {} catch {}
+			try ISymmioHook(systemHook).onClosePosition(quote.id, filledAmount, closedPrice, quote.partyA, quote.partyB) {} catch {}
 		}
 	}
 

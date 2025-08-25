@@ -15,6 +15,7 @@ import "../../storages/QuoteStorage.sol";
 import "../../storages/MuonStorage.sol";
 import "../../storages/AccountStorage.sol";
 import "../../storages/SymbolStorage.sol";
+import "../../interfaces/ISymmioHook.sol";
 
 library LiquidationFacetImpl {
 	using LockedValuesOps for LockedValues;
@@ -235,12 +236,12 @@ library LiquidationFacetImpl {
 			address systemHook = accountLayout.affiliateToHooks[address(0)];
 			if (affiliateHook != address(0)) {
 				try
-					ISymmioHook(affiliateHook).onClosePosition(quote.id, liquidatedAmounts[i], quote.avgClosedPrice, quote.partyA, quote.partyB)
+					ISymmioHook(affiliateHook).onClosePosition(quote.id, liquidatedAmounts[index], quote.avgClosedPrice, quote.partyA, quote.partyB)
 				{} catch {}
 			}
 			if (systemHook != address(0)) {
 				try
-					ISymmioHook(systemHook).onClosePosition(quote.id, liquidatedAmounts[i], quote.avgClosedPrice, quote.partyA, quote.partyB)
+					ISymmioHook(systemHook).onClosePosition(quote.id, liquidatedAmounts[index], quote.avgClosedPrice, quote.partyA, quote.partyB)
 				{} catch {}
 			}
 		}
