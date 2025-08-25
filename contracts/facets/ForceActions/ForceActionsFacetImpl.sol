@@ -88,7 +88,13 @@ library ForceActionsFacetImpl {
 		}
 		accountLayout.partyANonces[quote.partyA] += 1;
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
-		uint256 reservedBalance = accountLayout.partyBAllocatedBalances[quote.partyB][address(0)];
+
+		uint256 reservedBalance;
+		if (AccountStorage.layout().masterAccountMode[quote.partyB]) {
+			reservedBalance = accountLayout.partyBAllocatedBalances[quote.partyB][address(0)];
+		} else {
+			reservedBalance = accountLayout.reserveVault[quote.partyB];
+		}
 
 		uint256[] memory quoteIds = new uint256[](1);
 		uint256[] memory filledAmounts = new uint256[](1);
@@ -116,7 +122,12 @@ library ForceActionsFacetImpl {
 			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		} else if (partyBAvailableBalance + int256(reservedBalance) >= 0) {
 			uint256 available = uint256(-partyBAvailableBalance);
-			accountLayout.partyBAllocatedBalances[quote.partyB][address(0)] -= available;
+			if (AccountStorage.layout().masterAccountMode[quote.partyB]) {
+				accountLayout.partyBAllocatedBalances[quote.partyB][address(0)] -= available;
+			} else {
+				accountLayout.reserveVault[quote.partyB] -= available;
+			}
+
 			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += available;
 			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, available, SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 			if (updatedPrices.length > 0) {
@@ -124,7 +135,11 @@ library ForceActionsFacetImpl {
 			}
 			LibQuote.closeQuote(quote, quote.quantityToClose, closePrice);
 		} else {
-			accountLayout.partyBAllocatedBalances[quote.partyB][address(0)] = 0;
+			if (AccountStorage.layout().masterAccountMode[quote.partyB]) {
+				accountLayout.partyBAllocatedBalances[quote.partyB][address(0)] = 0;
+			} else {
+				accountLayout.reserveVault[quote.partyB] = 0;
+			}
 			accountLayout.partyBAllocatedBalances[quote.partyB][quote.partyA] += reservedBalance;
 			emit SharedEvents.BalanceChangePartyB(quote.partyB, quote.partyA, reservedBalance, SharedEvents.BalanceChangeType.REALIZED_PNL_IN);
 			int256 diff = (int256(quote.quantityToClose) * (int256(closePrice) - int256(sig.currentPrice))) / 1e18;
