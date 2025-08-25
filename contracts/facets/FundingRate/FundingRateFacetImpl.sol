@@ -126,7 +126,7 @@ library FundingRateFacetImpl {
 			quote.lastFundingPaymentTimestamp = paidTimestamp;
 		}
 
-		if (accountLayout.bindState[msg.sender].partyB != msg.sender) {
+		if (accountLayout.bindState[partyA].partyB != msg.sender) {
 			LibMuonFundingRate.verifyPairUpnl(upnlSig, msg.sender, partyA);
 
 			// Ensure neither party becomes insolvent after funding payments

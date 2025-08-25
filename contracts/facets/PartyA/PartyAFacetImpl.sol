@@ -58,22 +58,18 @@ library PartyAFacetImpl {
 			"PartyAFacet: LF is not enough"
 		);
 
+		require(lockedValues.totalForPartyA() >= symbolLayout.symbols[symbolId].minAcceptableQuoteValue, "PartyAFacet: Quote value is low");
+		for (uint8 i = 0; i < partyBsWhiteList.length; i++) {
+			require(partyBsWhiteList[i] != msg.sender, "PartyAFacet: Sender isn't allowed in partyBWhiteList");
+		}
+
 		if (accountLayout.bindState[msg.sender].partyB != address(0)) {
 			require(
 				partyBsWhiteList.length == 1 && partyBsWhiteList[0] == accountLayout.bindState[msg.sender].partyB,
 				"PartyAFacet: PartyA is bounded"
 			);
-			if (accountLayout.bindState[msg.sender].status == BindStatus.UNBIND_PENDING) {
-				accountLayout.bindState[msg.sender].status = BindStatus.BINDED;
-				accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
-			}
 		} else {
 			LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
-		}
-
-		require(lockedValues.totalForPartyA() >= symbolLayout.symbols[symbolId].minAcceptableQuoteValue, "PartyAFacet: Quote value is low");
-		for (uint8 i = 0; i < partyBsWhiteList.length; i++) {
-			require(partyBsWhiteList[i] != msg.sender, "PartyAFacet: Sender isn't allowed in partyBWhiteList");
 		}
 
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);

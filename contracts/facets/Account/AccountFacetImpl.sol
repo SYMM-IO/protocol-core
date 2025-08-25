@@ -152,7 +152,7 @@ library AccountFacetImpl {
 		require(accountLayout.balances[msg.sender] >= amount, "AccountFacet: Insufficient balance");
 		require(!MAStorage.layout().partyBLiquidationStatus[msg.sender][partyA], "AccountFacet: PartyB isn't solvent");
 		require(!accountLayout.crossLiquidationDetails[msg.sender].inProgress, "AccountFacet: PartyB isn't solvent");
-		
+
 		accountLayout.balances[msg.sender] -= amount;
 		accountLayout.partyBAllocatedBalances[msg.sender][partyA] += amount;
 	}
@@ -211,45 +211,45 @@ library AccountFacetImpl {
 	function bindToPartyB(address partyB) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		require(partyB != address(0), "AccountFacet: PartyB is zero address");
-		require(accountLayout.bindState[msg.sender].partyB == address(0), "AccountFacet: Already bound");
+		BindState storage bindState = accountLayout.bindState[msg.sender];
+		require(bindState.partyB == address(0), "AccountFacet: Already bound");
 
-		accountLayout.bindState[msg.sender].partyB = partyB;
-		accountLayout.bindState[msg.sender].status = BindStatus.BINDED;
-		accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
+		bindState.partyB = partyB;
+		bindState.status = BindStatus.BINDED;
+		bindState.modifyTimestamp = block.timestamp;
 	}
 
 	function unbindFromPartyB() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.bindState[msg.sender].partyB != address(0), "AccountFacet: Not bound");
-		require(accountLayout.bindState[msg.sender].status == BindStatus.BINDED, "AccountFacet: Not bound");
+		BindState storage bindState = accountLayout.bindState[msg.sender];
+		require(bindState.partyB != address(0), "AccountFacet: Not bound");
+		require(bindState.status == BindStatus.BINDED, "AccountFacet: Not bound");
 
-		accountLayout.bindState[msg.sender].status = BindStatus.UNBIND_PENDING;
-		accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
+		bindState.status = BindStatus.UNBIND_PENDING;
+		bindState.modifyTimestamp = block.timestamp;
 	}
 
 	function cancelUnbindFromPartyB() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.bindState[msg.sender].status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
-		accountLayout.bindState[msg.sender].status = BindStatus.BINDED;
-		accountLayout.bindState[msg.sender].modifyTimestamp = block.timestamp;
+		BindState storage bindState = accountLayout.bindState[msg.sender];
+
+		require(bindState.status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
+
+		bindState.status = BindStatus.BINDED;
+		bindState.modifyTimestamp = block.timestamp;
 	}
 
-	function acceptUnbindFromPartyB(address partyA) internal {
+	function completeUnbindFromPartyB(address partyA) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.bindState[partyA].status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
-		require(accountLayout.bindState[partyA].partyB == msg.sender, "AccountFacet: Not bound to this partyB");
+		BindState storage bindState = accountLayout.bindState[partyA];
 
-		accountLayout.bindState[partyA].partyB = address(0);
-		accountLayout.bindState[partyA].status = BindStatus.UNBINDED;
-		accountLayout.bindState[partyA].modifyTimestamp = block.timestamp;
-	}
+		require(bindState.status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
+		if(msg.sender != bindState.partyB){
+			require(block.timestamp >= bindState.modifyTimestamp + MAStorage.layout().unbindCooldown, "AccountFacet: Cooldown not reached");
+		}
 
-	function rejectUnbindFromPartyB(address partyA) internal {
-		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(accountLayout.bindState[partyA].status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
-		require(accountLayout.bindState[partyA].partyB == msg.sender, "AccountFacet: Not bound to this partyB");
-
-		accountLayout.bindState[partyA].status = BindStatus.BINDED;
-		accountLayout.bindState[partyA].modifyTimestamp = block.timestamp;
+		bindState.partyB = address(0);
+		bindState.status = BindStatus.UNBINDED;
+		bindState.modifyTimestamp = block.timestamp;
 	}
 }
