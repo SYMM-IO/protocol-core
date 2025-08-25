@@ -77,19 +77,19 @@ library ClearingHouseFacetImpl {
 		for (uint256 j = 0; j < partyAs.length; j++) {
 			address partyA = partyAs[j];
 			uint256[] storage pendingQuotes = quoteLayout.partyAPendingQuotes[partyA];
-			for (uint256 index = 0; index < pendingQuotes.length; ) {
-				Quote storage quote = quoteLayout.quotes[pendingQuotes[index]];
+			for (uint256 i = 0; i < pendingQuotes.length; ) {
+				Quote storage quote = quoteLayout.quotes[pendingQuotes[i]];
 				if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING)) {
 					accountLayout.pendingLockedBalances[partyA].subQuote(quote);
 					uint256 fee = LibQuote.getTradingFee(quote.id);
 					accountLayout.allocatedBalances[partyA] += fee;
 					emit SharedEvents.BalanceChangePartyA(partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
-					pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];
+					pendingQuotes[i] = pendingQuotes[pendingQuotes.length - 1];
 					pendingQuotes.pop();
 					quote.quoteStatus = QuoteStatus.LIQUIDATED_PENDING;
 					quote.statusModifyTimestamp = block.timestamp;
 				} else {
-					index++;
+					i++;
 				}
 			}
 
@@ -125,8 +125,8 @@ library ClearingHouseFacetImpl {
 		liquidatedAmounts = new uint256[](priceSig.quoteIds.length);
 		closeIds = new uint256[](priceSig.quoteIds.length);
 
-		for (uint256 index = 0; index < priceSig.quoteIds.length; index++) {
-			Quote storage quote = quoteLayout.quotes[priceSig.quoteIds[index]];
+		for (uint256 i = 0; i < priceSig.quoteIds.length; i++) {
+			Quote storage quote = quoteLayout.quotes[priceSig.quoteIds[i]];
 			require(
 				quote.quoteStatus == QuoteStatus.OPENED ||
 					quote.quoteStatus == QuoteStatus.CLOSE_PENDING ||
@@ -135,15 +135,15 @@ library ClearingHouseFacetImpl {
 			);
 			require(quote.partyA == partyA && quote.partyB == partyB, "ClearingHouseFacet: Invalid party");
 
-			liquidatedAmounts[index] = quote.quantity - quote.closedAmount;
-			closeIds[index] = quoteLayout.closeIds[quote.id];
+			liquidatedAmounts[i] = quote.quantity - quote.closedAmount;
+			closeIds[i] = quoteLayout.closeIds[quote.id];
 			quote.quoteStatus = QuoteStatus.LIQUIDATED;
 			quote.statusModifyTimestamp = block.timestamp;
 
 			accountLayout.lockedBalances[partyA].subQuote(quote);
 
 			quote.avgClosedPrice =
-				(quote.avgClosedPrice * quote.closedAmount + LibQuote.quoteOpenAmount(quote) * priceSig.prices[index]) /
+				(quote.avgClosedPrice * quote.closedAmount + LibQuote.quoteOpenAmount(quote) * priceSig.prices[i]) /
 				(quote.closedAmount + LibQuote.quoteOpenAmount(quote));
 			quote.closedAmount = quote.quantity;
 
@@ -153,6 +153,19 @@ library ClearingHouseFacetImpl {
 			quoteLayout.partyAPositionsCount[partyA] -= 1;
 			quoteLayout.partyBPositionsCount[partyB][partyA] -= 1;
 			quoteLayout.partyBPositionsCount[partyB][address(0)] -= 1;
+
+			address affiliateHook = accountLayout.affiliateToHooks[quote.affiliate];
+			address systemHook = accountLayout.affiliateToHooks[address(0)];
+			if (affiliateHook != address(0)) {
+				try
+					ISymmioHook(affiliateHook).onClosePosition(quote.id, liquidatedAmounts[i], priceSig.prices[i], quote.partyA, quote.partyB)
+				{} catch {}
+			}
+			if (systemHook != address(0)) {
+				try
+					ISymmioHook(systemHook).onClosePosition(quote.id, liquidatedAmounts[i], priceSig.prices[i], quote.partyA, quote.partyB)
+				{} catch {}
+			}
 		}
 
 		if (quoteLayout.partyBPositionsCount[partyB][partyA] == 0) {
