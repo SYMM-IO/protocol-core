@@ -82,10 +82,10 @@ library DeferredLiquidationFacetImpl {
 		if (detail.liquidationType == LiquidationType.NONE) {
 			if (uint256(-availableBalance) < accountLayout.lockedBalances[partyA].lf) {
 				uint256 remainingLf = accountLayout.lockedBalances[partyA].lf - uint256(-availableBalance);
-				uint256 maxProfit = maLayout.maxLiquidationProfitPerPosition * QuoteStorage.layout().partyAPositionsCount[partyA];
-				if (remainingLf > maxProfit) {
-					accountLayout.balances[maLayout.liquidationInsuranceVault] += maxProfit - remainingLf;
-					remainingLf = maxProfit;
+				uint256 maxLf = maLayout.maxLiquidationProfitPerPosition * QuoteStorage.layout().partyAPositionsCount[partyA];
+				if (remainingLf > maxLf) {
+					accountLayout.balances[maLayout.liquidationInsuranceVault] += remainingLf - maxLf;
+					remainingLf = maxLf;
 				}
 				detail.liquidationType = LiquidationType.NORMAL;
 				detail.liquidationFee = remainingLf;

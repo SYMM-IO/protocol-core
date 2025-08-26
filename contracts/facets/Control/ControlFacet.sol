@@ -623,8 +623,9 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		uint256 maxLiquidationProfit
 	) external onlyRole(LibAccessibility.SETTER_ROLE) {
 		require(insuranceVault != address(0), "ControlFacet: Zero address");
-		MAStorage.layout().liquidationInsuranceVault = insuranceVault;
-		MAStorage.layout().maxLiquidationProfitPerPosition = maxLiquidationProfit;
+		MAStorage.Layout storage maLayout = MAStorage.layout();
+		maLayout.liquidationInsuranceVault = insuranceVault;
+		maLayout.maxLiquidationProfitPerPosition = maxLiquidationProfit;
 		emit SetLiquidationInsuranceVaultParams(insuranceVault, maxLiquidationProfit);
 	}
 
