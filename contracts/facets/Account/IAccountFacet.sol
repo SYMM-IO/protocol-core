@@ -42,7 +42,7 @@ interface IAccountFacet is IAccountEvents {
 
 	function deallocateForPartyB(uint256 amount, address partyA, SingleUpnlSig memory upnlSig) external;
 
-	function activeMasterAccountMode() external;
+	function activateMasterAccountMode() external;
 
 	function transferAllocation(uint256 amount, address origin, address recipient, SingleUpnlSig memory upnlSig) external;
 

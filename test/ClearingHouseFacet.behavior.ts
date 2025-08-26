@@ -78,7 +78,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				.grantRole(context.signers.user2.address, ethers.keccak256(toUtf8Bytes("CLEARING_HOUSE_ROLE")))
 
 			// Activate master mode for hedger
-			await context.accountFacet.connect(context.signers.hedger).activeMasterAccountMode()
+			await context.accountFacet.connect(context.signers.hedger).activateMasterAccountMode()
 
 			await expect(
 				context.clearingHouseFacet
@@ -122,7 +122,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 
 		describe("With Master Mode Active", () => {
 			beforeEach(async () => {
-				await context.accountFacet.connect(context.signers.hedger).activeMasterAccountMode()
+				await context.accountFacet.connect(context.signers.hedger).activateMasterAccountMode()
 			})
 
 			it("Should fail on partyB being solvent", async function () {
@@ -178,7 +178,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 
 	describe("deallocateForCrossLiquidation", () => {
 		beforeEach(async () => {
-			await context.accountFacet.connect(context.signers.hedger).activeMasterAccountMode()
+			await context.accountFacet.connect(context.signers.hedger).activateMasterAccountMode()
 		})
 
 		it("should failed when partyB not marked as cross liquid", async () => {

@@ -165,9 +165,9 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 
 	/// @notice Activates master account mode for Party B
 	/// @dev Can only be called by Party B when not paused and not suspended
-	function activeMasterAccountMode() external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
-		AccountFacetImpl.activeMasterAccountMode();
-		emit ActiveMasterAccountMode(msg.sender);
+	function activateMasterAccountMode() external whenNotPartyBActionsPaused notSuspended(msg.sender) onlyPartyB {
+		AccountFacetImpl.activateMasterAccountMode();
+		emit ActivateMasterAccountMode(msg.sender);
 	}
 
 	/**
