@@ -213,5 +213,5 @@ interface IViewFacet {
 
 	function getBindState(address user) external view returns (BindState memory);
 
-	function getHook(address affiliate) external view returns (address);
+	function getAffiliateHook(address affiliate) external view returns (address hook);
 }

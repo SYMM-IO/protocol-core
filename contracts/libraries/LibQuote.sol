@@ -254,8 +254,8 @@ library LibQuote {
 			quote.quantityToClose = 0; // for CANCEL_CLOSE_PENDING status
 		}
 
-		address affiliateHook = accountLayout.affiliateToHooks[quote.affiliate];
-		address systemHook = accountLayout.affiliateToHooks[address(0)];
+		address affiliateHook = accountLayout.affiliateHooks[quote.affiliate];
+		address systemHook = accountLayout.affiliateHooks[address(0)];
 
 		if (affiliateHook != address(0)) {
 			try ISymmioHook(affiliateHook).onClosePosition(quote.id, filledAmount, closedPrice, quote.partyA, quote.partyB) {} catch {}

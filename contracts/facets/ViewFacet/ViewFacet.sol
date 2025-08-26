@@ -1039,7 +1039,12 @@ contract ViewFacet is IViewFacet {
 		return fees;
 	}
 
-	function getHook(address affiliate) external view returns (address) {
-		return AccountStorage.layout().affiliateToHooks[affiliate];
+	/**
+	 * @notice Retrieves the affiliate hook of an affiliate.
+	 * @param affiliate The address of the affiliate.
+	 * @return hook The affiliate hook of the affiliate.
+	 */
+	function getAffiliateHook(address affiliate) external view returns (address hook) {
+		return AccountStorage.layout().affiliateHooks[affiliate];
 	}
 }

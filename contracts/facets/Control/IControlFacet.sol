@@ -161,5 +161,5 @@ interface IControlFacet is IControlEvents {
 
 	function removeRelayerForExternalTransferTarget(address target) external;
 
-	function setHook(address affiliate, address hook) external;
+	function registerHook(address affiliate, address hook) external;
 }
