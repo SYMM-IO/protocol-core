@@ -117,7 +117,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				context.clearingHouseFacet
 					.connect(context.signers.liquidator)
 					.liquidateCrossPartyB(context.signers.hedger.getAddress(), await getDummyCrossLiquidationSig()),
-			).to.be.revertedWith("ClearingHouseFacet: partyB masterMode is not active")
+			).to.be.revertedWith("ClearingHouseFacet: partyB is not using master account mode")
 		})
 
 		describe("With Master Mode Active", () => {
@@ -265,7 +265,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 
 			it("should fail when amount be more than deallocated for liquidation", async () => {
 				await expect(
-					context.clearingHouseFacet.connect(context.signers.liquidator).distribute(context.signers.hedger, context.signers.user, 1001n),
+					context.clearingHouseFacet.connect(context.signers.liquidator).distributeForCrossLiquidation(context.signers.hedger, [context.signers.user], [1001n]),
 				).to.revertedWith("ClearingHouseFacet: Insufficient allocated balance")
 			})
 
@@ -276,7 +276,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				await expect(
 					context.clearingHouseFacet
 						.connect(context.signers.liquidator)
-						.distribute(context.signers.hedger, context.signers.user, transferAmount),
+						.distributeForCrossLiquidation(context.signers.hedger, [context.signers.user], [transferAmount]),
 				).to.not.reverted
 
 				const details = await context.viewFacet.getCrossLiquidationDetails(context.signers.hedger)
@@ -292,7 +292,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 
 				await context.clearingHouseFacet
 					.connect(context.signers.liquidator)
-					.distribute(context.signers.hedger, context.signers.user, partialAmount)
+					.distributeForCrossLiquidation(context.signers.hedger, [context.signers.user], [partialAmount])
 
 				const detailsAfter = await context.viewFacet.getCrossLiquidationDetails(context.signers.hedger)
 				expect(detailsAfter.deallocateForLiquidation).to.equal(detailsBefore.deallocateForLiquidation - partialAmount)
@@ -300,7 +300,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 
 			it("should fail when partyB is not liquidated", async () => {
 				await expect(
-					context.clearingHouseFacet.connect(context.signers.liquidator).distribute(context.signers.hedger2, context.signers.user, 1n),
+					context.clearingHouseFacet.connect(context.signers.liquidator).distributeForCrossLiquidation(context.signers.hedger2, [context.signers.user], [1n]),
 				).to.be.revertedWith("ClearingHouseFacet: PartyB is solvent")
 			})
 		})
@@ -330,7 +330,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				}
 
 				await expect(
-					context.clearingHouseFacet.connect(context.signers.liquidator).liquidatePendingQuotes(context.signers.hedger, [context.signers.user]),
+					context.clearingHouseFacet.connect(context.signers.liquidator).liquidatePendingPositionsForCrossLiquidation(context.signers.hedger, [context.signers.user]),
 				).to.not.reverted
 
 				const newUserPendingQuotes = await context.viewFacet.getPartyAPendingQuotes(context.signers.user)
@@ -347,7 +347,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				const oldUser2PendingQuotes = await context.viewFacet.getPartyAPendingQuotes(context.signers.user2)
 
 				await expect(
-					context.clearingHouseFacet.connect(context.signers.liquidator).liquidatePendingQuotes(context.signers.hedger, [context.signers.user, context.signers.user2]),
+					context.clearingHouseFacet.connect(context.signers.liquidator).liquidatePendingPositionsForCrossLiquidation(context.signers.hedger, [context.signers.user, context.signers.user2]),
 				).to.not.reverted
 
 				const newUserPendingQuotes = await context.viewFacet.getPartyAPendingQuotes(context.signers.user)
@@ -359,7 +359,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 
 			it("should fail when partyB is not liquidated", async () => {
 				await expect(
-					context.clearingHouseFacet.connect(context.signers.liquidator).liquidatePendingQuotes(context.signers.hedger2, [context.signers.user]),
+					context.clearingHouseFacet.connect(context.signers.liquidator).liquidatePendingPositionsForCrossLiquidation(context.signers.hedger2, [context.signers.user]),
 				).to.be.revertedWith("ClearingHouseFacet: PartyB is solvent")
 			})
 		})
@@ -380,7 +380,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				await expect(
 					context.clearingHouseFacet
 						.connect(context.signers.liquidator)
-						.liquidateCrossPositionsPartyB(context.signers.hedger, context.signers.user, priceSig),
+						.liquidatePositionsForCrossLiquidation(context.signers.hedger, context.signers.user, priceSig),
 				).to.not.reverted
 
 				const quote1: QuoteStructOutput = await context.viewFacet.getQuote(1)
@@ -394,7 +394,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				await expect(
 					context.clearingHouseFacet
 						.connect(context.signers.liquidator)
-						.liquidateCrossPositionsPartyB(context.signers.hedger2, context.signers.user, priceSig),
+						.liquidatePositionsForCrossLiquidation(context.signers.hedger2, context.signers.user, priceSig),
 				).to.be.revertedWith("ClearingHouseFacet: PartyB is solvent")
 			})
 
@@ -409,7 +409,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 
 				await context.clearingHouseFacet
 					.connect(context.signers.liquidator)
-					.liquidateCrossPositionsPartyB(context.signers.hedger, context.signers.user, priceSig)
+					.liquidatePositionsForCrossLiquidation(context.signers.hedger, context.signers.user, priceSig)
 
 				const quote1After: QuoteStructOutput = await context.viewFacet.getQuote(1)
 				const quote4After: QuoteStructOutput = await context.viewFacet.getQuote(4)

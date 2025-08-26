@@ -670,7 +670,6 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @param affiliate The address of the affiliate.
 	/// @param hook The address of the hook.
 	function registerHook(address affiliate, address hook) external onlyRole(LibAccessibility.SETTER_ROLE) {
-		require(hook != address(0), "ControlFacet: Zero address");
 		AccountStorage.layout().affiliateHooks[affiliate] = hook;
 		emit RegisterHook(affiliate, hook);
 	}

@@ -88,7 +88,7 @@ export function shouldBehaveLikeLockQuote(): void {
 		await expect(hedger.lockQuote(1)).to.be.revertedWith("PartyBFacet: Quote is expired")
 	})
 
-	it("Should fail when ", async function () {
+	it("Should fail when symbol type is not whitelisted", async function () {
 		await context.controlFacet.setPartyBWhitelistedSymbolTypeStatus(context.signers.hedger.address, 1, false)
 		await expect(hedger.lockQuote(1)).to.be.revertedWith("PartyBFacet: symbol type is not whitelisted")
 	})

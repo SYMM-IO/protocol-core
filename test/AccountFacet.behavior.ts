@@ -270,7 +270,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 			await context.accountFacet.connect(context.signers.user).deposit("300")
 
-			await context.controlFacet.connect(context.signers.admin).addRelayerForExternalTransferTarget(targetAddress)
+			await context.controlFacet.connect(context.signers.admin).addRelayerForExternalTransferTarget(targetAddress, targetAddress)
 		})
 
 		it("Should allow authorized users to call externalTransfer", async function () {
@@ -338,14 +338,14 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 		it("Should fail with zero receiver address", async function () {
 			await expect(context.accountFacet.connect(context.signers.user).externalTransfer(ethers.ZeroAddress, "100", targetAddress)).to.be.revertedWith(
-				"AccountFacet: Receiver is zero address",
-			)
+				"AccountFacet: Zero receiver or target",
+			) 
 		})
 
 		it("Should fail with zero target address", async function () {
 			await expect(
 				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", ethers.ZeroAddress),
-			).to.be.revertedWith("AccountFacet: Target is zero address")
+			).to.be.revertedWith("AccountFacet: Zero receiver or target")
 		})
 
 		it("Should handle self-transfers", async function () {
@@ -375,19 +375,6 @@ export function shouldBehaveLikeAccountFacet(): void {
 			).to.be.revertedWith("Relayer error")
 		})
 
-		it("Should validate input parameters", async function () {
-			await expect(context.accountFacet.connect(context.signers.user).externalTransfer(ethers.ZeroAddress, "100", targetAddress)).to.be.revertedWith(
-				"AccountFacet: Receiver is zero address",
-			)
-
-			await expect(
-				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "100", ethers.ZeroAddress),
-			).to.be.revertedWith("AccountFacet: Target is zero address")
-
-			await expect(
-				context.accountFacet.connect(context.signers.user).externalTransfer(context.signers.user2.address, "0", targetAddress),
-			).to.be.revertedWith("AccountFacet: Amount is zero")
-		})
 	})
 
 	describe("bindToPartyB", () => {
@@ -406,14 +393,14 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 		it("should failed when partyB be zero address", async () => {
 			await expect(context.accountFacet.connect(context.signers.user).bindToPartyB(ZeroAddress)).to.be.revertedWith(
-				"AccountFacet: PartyB is zero address",
+				"AccountFacet: Zero address",
 			)
 		})
 
 		it("should failed when bound", async () => {
 			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
 			await expect(context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)).to.be.revertedWith(
-				"AccountFacet: Already bound",
+				"AccountFacet: Invalid state",
 			)
 		})
 
@@ -428,21 +415,25 @@ export function shouldBehaveLikeAccountFacet(): void {
 	describe("unbindFromPartyB", () => {
 		it("should failed when user suspended", async () => {
 			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
-			await expect(context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()).to.be.revertedWith("Accessibility: Sender is Suspended")
+			await expect(context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()).to.be.revertedWith(
+				"Accessibility: Sender is Suspended",
+			)
 		})
 
 		it("should failed when user is not partyA", async () => {
-			await expect(context.accountFacet.connect(context.signers.hedger).requestToUnbindFromPartyB()).to.be.revertedWith("Accessibility: Shouldn't be partyB")
+			await expect(context.accountFacet.connect(context.signers.hedger).requestToUnbindFromPartyB()).to.be.revertedWith(
+				"Accessibility: Shouldn't be partyB",
+			)
 		})
 
 		it("should failed when not bound", async () => {
-			await expect(context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()).to.be.revertedWith("AccountFacet: Not bound")
+			await expect(context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()).to.be.revertedWith("AccountFacet: Invalid state")
 		})
 
 		it("should failed when request to unbound before", async () => {
 			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
 			await context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()
-			await expect(context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()).to.be.revertedWith("AccountFacet: Not bound")
+			await expect(context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()).to.be.revertedWith("AccountFacet: Invalid state")
 		})
 
 		it("should request unbind successfully", async () => {
@@ -457,9 +448,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 	describe("cancelUnbindFromPartyB", () => {
 		it("should failed when user suspended", async () => {
 			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
-			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindRequest()).to.be.revertedWith(
-				"Accessibility: Sender is Suspended",
-			)
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindRequest()).to.be.revertedWith("Accessibility: Sender is Suspended")
 		})
 
 		it("should failed when user is not partyA", async () => {
@@ -469,7 +458,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 		})
 
 		it("should failed when not request to unbound", async () => {
-			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindRequest()).to.be.revertedWith("AccountFacet: Not pending unbind")
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindRequest()).to.be.revertedWith("AccountFacet: Invalid state")
 		})
 
 		it("should cancel request unbind successfully", async () => {
@@ -497,7 +486,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 		it("should failed when not request to unbound", async () => {
 			await expect(context.accountFacet.connect(context.signers.hedger).completeUnbindRequest(context.signers.user.address)).to.be.revertedWith(
-				"AccountFacet: Not pending unbind",
+				"AccountFacet: Invalid state",
 			)
 		})
 

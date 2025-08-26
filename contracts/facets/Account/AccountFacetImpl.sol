@@ -152,7 +152,7 @@ library AccountFacetImpl {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
 		require(amount > 0, "AccountFacet: Amount is zero");
-		require(receiver != address(0) || target != address(0), "AccountFacet: Zero receiver or target");
+		require(receiver != address(0) && target != address(0), "AccountFacet: Zero receiver or target");
 		address relayer = accountLayout.externalTransferTargetsRelayers[target];
 		require(relayer != address(0), "AccountFacet: Target not whitelisted");
 

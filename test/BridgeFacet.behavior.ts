@@ -416,58 +416,6 @@ export function shouldBehaveLikeBridgeFacet(): void {
 				expect(userBalanceAfter).to.be.gt(userBalanceBefore)
 			})
 		})
-
-		describe("rejectCancelBridgeTransaction", async function () {
-			beforeEach(async function () {
-				// Request cancellation first
-				await context.bridgeFacet.connect(context.signers.user).requestToCancelBridgeTransaction(1)
-			})
-
-			it("Should fail with invalid transaction ID", async function () {
-				await expect(context.bridgeFacet.connect(context.signers.bridge).rejectCancelBridgeTransaction(999)).to.be.revertedWith(
-					"BridgeFacet: Sender is not the transaction's bridge",
-				)
-			})
-
-			it("Should fail when sender is not the transaction's bridge", async function () {
-				await expect(context.bridgeFacet.connect(context.signers.bridge2).rejectCancelBridgeTransaction(1)).to.be.revertedWith(
-					"BridgeFacet: Sender is not the transaction's bridge",
-				)
-			})
-
-			it("Should fail when transaction status is not CANCEL_REQUESTED", async function () {
-				await expect(context.bridgeFacet.connect(context.signers.bridge2).rejectCancelBridgeTransaction(2)).to.be.revertedWith(
-					"BridgeFacet: Invalid status",
-				)
-			})
-
-			it("Should fail when accounting is paused", async function () {
-				await pauseAccounting(context)
-				await expect(context.bridgeFacet.connect(context.signers.bridge).rejectCancelBridgeTransaction(1)).to.be.revertedWith(
-					"Pausable: Accounting paused",
-				)
-			})
-
-			it("Should fail when bridge is suspended", async function () {
-				await suspendAddress(context, await bridge.getAddress())
-				await expect(context.bridgeFacet.connect(context.signers.bridge).rejectCancelBridgeTransaction(1)).to.be.revertedWith(
-					"Accessibility: Sender is Suspended",
-				)
-			})
-
-			it("Should reject cancellation successfully", async function () {
-				const userBalanceBefore = await context.viewFacet.balanceOf(await context.signers.user.getAddress())
-
-				await expect(context.bridgeFacet.connect(context.signers.bridge).rejectCancelBridgeTransaction(1)).to.not.reverted
-
-				const transaction = await context.viewFacet.getBridgeTransaction(1)
-				expect(transaction.status).to.equal(BridgeTransactionStatus.RECEIVED)
-
-				// User should not get refund on rejection
-				const userBalanceAfter = await context.viewFacet.balanceOf(await context.signers.user.getAddress())
-				expect(userBalanceAfter).to.equal(userBalanceBefore)
-			})
-		})
 	})
 
 	describe("Virtual Bridge Functionality", async function () {

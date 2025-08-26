@@ -41,17 +41,17 @@ export function shouldBehaveLikeHooks(): void {
       await expect(
         context.controlFacet
           .connect(context.signers.user)
-          .setHook(context.multiAccount, await mockHook.getAddress()),
+          .registerHook(context.multiAccount, await mockHook.getAddress()),
       ).to.be.revertedWith("Accessibility: Must has role")
 
       // Admin has SETTER_ROLE in fixture
       await expect(
         context.controlFacet
           .connect(context.signers.admin)
-          .setHook(context.multiAccount, await mockHook.getAddress()),
+          .registerHook(context.multiAccount, await mockHook.getAddress()),
       ).to.not.reverted
 
-      const current = await context.viewFacet.getHook(context.multiAccount)
+      const current = await context.viewFacet.getAffiliateHook(context.multiAccount)
       expect(current).to.equal(await mockHook.getAddress())
     })
 
@@ -63,10 +63,10 @@ export function shouldBehaveLikeHooks(): void {
       await expect(
         context.controlFacet
           .connect(context.signers.admin)
-          .setHook(ethers.ZeroAddress, await mockHook.getAddress()),
+          .registerHook(ethers.ZeroAddress, await mockHook.getAddress()),
       ).to.not.reverted
 
-      const current = await context.viewFacet.getHook(ethers.ZeroAddress)
+      const current = await context.viewFacet.getAffiliateHook(ethers.ZeroAddress)
       expect(current).to.equal(await mockHook.getAddress())
     })
 
@@ -77,13 +77,13 @@ export function shouldBehaveLikeHooks(): void {
 
       await context.controlFacet
         .connect(context.signers.admin)
-        .setHook(context.multiAccount, await mockHook.getAddress())
+        .registerHook(context.multiAccount, await mockHook.getAddress())
 
       await context.controlFacet
         .connect(context.signers.admin)
-        .setHook(context.multiAccount, ethers.ZeroAddress)
+        .registerHook(context.multiAccount, ethers.ZeroAddress)
 
-      const current = await context.viewFacet.getHook(context.multiAccount)
+      const current = await context.viewFacet.getAffiliateHook(context.multiAccount)
       expect(current).to.equal(ethers.ZeroAddress)
     })
   })
@@ -97,8 +97,8 @@ export function shouldBehaveLikeHooks(): void {
       await systemHook.waitForDeployment()
 
       // Configure hooks
-      await context.controlFacet.connect(context.signers.admin).setHook(context.multiAccount, await affiliateHook.getAddress())
-      await context.controlFacet.connect(context.signers.admin).setHook(ethers.ZeroAddress, await systemHook.getAddress())
+      await context.controlFacet.connect(context.signers.admin).registerHook(context.multiAccount, await affiliateHook.getAddress())
+      await context.controlFacet.connect(context.signers.admin).registerHook(ethers.ZeroAddress, await systemHook.getAddress())
 
       // Prepare a LONG quote with this affiliate
       await user.sendQuote(limitQuoteRequestBuilder().positionType(PositionType.LONG).build())
@@ -144,8 +144,8 @@ export function shouldBehaveLikeHooks(): void {
       const systemHook = await MockHook.deploy()
       await systemHook.waitForDeployment()
 
-      await context.controlFacet.connect(context.signers.admin).setHook(context.multiAccount, await affiliateHook.getAddress())
-      await context.controlFacet.connect(context.signers.admin).setHook(ethers.ZeroAddress, await systemHook.getAddress())
+      await context.controlFacet.connect(context.signers.admin).registerHook(context.multiAccount, await affiliateHook.getAddress())
+      await context.controlFacet.connect(context.signers.admin).registerHook(ethers.ZeroAddress, await systemHook.getAddress())
 
       // Open a position first
       await user.sendQuote(limitQuoteRequestBuilder().positionType(PositionType.LONG).build())

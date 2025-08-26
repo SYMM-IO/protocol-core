@@ -5,6 +5,7 @@ import { expect } from "chai"
 import { keccak256 } from "js-sha3"
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
 import { ethers } from "hardhat"
+import { ZeroAddress } from "ethers"
 
 const DISPUTE_ROLE = `0x${keccak256("DISPUTE_ROLE")}`
 const PARTY_B_MANAGER_ROLE = `0x${keccak256("PARTY_B_MANAGER_ROLE")}`
@@ -379,16 +380,16 @@ export function shouldBehaveLikeControlFacet(): void {
 			await expect(
 				context.controlFacet
 					.connect(context.signers.admin)
-					.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
+					.addRelayerForExternalTransferTarget(context.signers.others[0].address, context.signers.others[1].address),
 			).to.not.reverted
 		})
 
 		it("Should allow admin to remove external transfer targets", async function () {
 			await context.controlFacet
 				.connect(context.signers.admin)
-				.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
+				.addRelayerForExternalTransferTarget(context.signers.others[0].address, context.signers.others[1].address)
 
-			await expect(context.controlFacet.connect(context.signers.admin).removeExternalTransferTargetsToRelayers(context.signers.others[0].address)).to
+			await expect(context.controlFacet.connect(context.signers.admin).removeRelayerForExternalTransferTarget(context.signers.others[0].address)).to
 				.not.reverted
 		})
 
@@ -396,17 +397,17 @@ export function shouldBehaveLikeControlFacet(): void {
 			await expect(
 				context.controlFacet
 					.connect(context.signers.user)
-					.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
+					.addRelayerForExternalTransferTarget(context.signers.others[0].address, context.signers.others[1].address),
 			).to.be.revertedWith("Accessibility: Must has role")
 		})
 
 		it("Should fail when non-admin tries to remove external transfer target", async function () {
 			await context.controlFacet
 				.connect(context.signers.admin)
-				.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address)
+				.addRelayerForExternalTransferTarget(context.signers.others[0].address, context.signers.others[1].address)
 
 			await expect(
-				context.controlFacet.connect(context.signers.user).removeExternalTransferTargetsToRelayers(context.signers.others[0].address),
+				context.controlFacet.connect(context.signers.user).removeRelayerForExternalTransferTarget(context.signers.others[0].address),
 			).to.be.revertedWith("Accessibility: Must has role")
 		})
 
@@ -414,20 +415,20 @@ export function shouldBehaveLikeControlFacet(): void {
 			await expect(
 				context.controlFacet
 					.connect(context.signers.admin)
-					.addExternalTransferTargetsToRelayers(context.signers.others[0].address, context.signers.others[1].address),
+					.addRelayerForExternalTransferTarget(ZeroAddress, context.signers.others[1].address),
 			).to.be.revertedWith("ControlFacet: Zero address")
 		})
 	})
 
-	describe("setSymbolType", () => {
-		it("Should setSymbolType successfully", async function () {
-			await expect(context.controlFacet.connect(owner).setSymbolType(1, 2)).to.not.be.reverted
+	describe("setSymbolTypes", () => {
+		it("Should setSymbolTypes successfully", async function () {
+			await expect(context.controlFacet.connect(owner).setSymbolTypes([1], [2])).to.not.be.reverted
 			expect((await context.viewFacet.getSymbolWithType(1)).symbolType).to.be.equal(2)
 		})
 
-		it("Should not setSymbolType if invalid symbol id", async function () {
-			await expect(context.controlFacet.connect(owner).setSymbolType(0, 1)).to.be.revertedWith("ControlFacet: Invalid id")
-			await expect(context.controlFacet.connect(owner).setSymbolType(3, 1)).to.be.revertedWith("ControlFacet: Invalid id")
+		it("Should not setSymbolTypes if invalid symbol id", async function () {
+			await expect(context.controlFacet.connect(owner).setSymbolTypes([0], [1])).to.be.revertedWith("ControlFacet: Invalid id")
+			await expect(context.controlFacet.connect(owner).setSymbolTypes([3], [1])).to.be.revertedWith("ControlFacet: Invalid id")
 		})
 	})
 

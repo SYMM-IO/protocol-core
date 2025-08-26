@@ -79,7 +79,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeBridgeFacet()
 		})
 
-		describe.only("Hooks", async function () {
+		describe("Hooks", async function () {
 			shouldBehaveLikeHooks()
 		})
 
