@@ -99,9 +99,6 @@ library AccountStorage {
 		mapping(address => mapping(address => SettlementState)) settlementStates;
 		mapping(address => uint256) reserveVault;
 		mapping(address => BindState) bindState;
-		mapping(uint256 => DeferredWithdraw) deferredWithdraws;
-		mapping(address => uint256[]) deferredWithdrawIds;
-		uint256 lastDeferredWithdrawId;
 		// partyB => symbolType => status
 		mapping(address => mapping(uint256 => bool)) partyBWhitelistedSymbolTypes;
 		mapping(address => bool) masterAccountMode;
