@@ -156,7 +156,7 @@ library BridgeFacetImpl {
 		bridgeTransaction.status = BridgeTransactionStatus.CANCEL_REQUESTED;
 	}
 
-	function acceptCancelBridgeTransaction(uint256 transactionId) internal {
+	function acceptCancelBridgeTransactionRequest(uint256 transactionId) internal {
 		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 		BridgeStorage.Layout storage bridgeLayout = BridgeStorage.layout();
 

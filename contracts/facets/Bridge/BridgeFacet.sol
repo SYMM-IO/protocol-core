@@ -56,9 +56,9 @@ contract BridgeFacet is Accessibility, Pausable, IBridgeFacet {
 
 	/// @notice Accepts a cancelled bridge transaction.
 	/// @param transactionId The transaction ID of the bridge transaction to be accepted.
-	function acceptCancelBridgeTransaction(uint256 transactionId) external whenNotAccountingPaused notSuspended(msg.sender) {
-		BridgeFacetImpl.acceptCancelBridgeTransaction(transactionId);
-		emit AcceptCancelBridgeTransaction(msg.sender, transactionId);
+	function acceptCancelBridgeTransactionRequest(uint256 transactionId) external whenNotAccountingPaused notSuspended(msg.sender) {
+		BridgeFacetImpl.acceptCancelBridgeTransactionRequest(transactionId);
+		emit AcceptCancelBridgeTransactionRequest(msg.sender, transactionId);
 	}
 	
 	/// @notice Transfers to a virtual bridge.

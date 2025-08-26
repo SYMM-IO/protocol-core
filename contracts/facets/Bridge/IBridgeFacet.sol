@@ -19,5 +19,5 @@ interface IBridgeFacet is IBridgeEvents {
 
 	function requestToCancelBridgeTransaction(uint256 transactionId) external;
 
-	function acceptCancelBridgeTransaction(uint256 transactionId) external;
+	function acceptCancelBridgeTransactionRequest(uint256 transactionId) external;
 }

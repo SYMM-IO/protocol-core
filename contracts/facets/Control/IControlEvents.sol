@@ -75,12 +75,10 @@ interface IControlEvents {
 	event SetBalanceLimitPerUser(uint256 balanceLimitPerUser);
 	event RegisterPartyB(address partyB);
 	event DeregisterPartyB(address partyB, uint256 index);
-	event RegisterAffiliate(address affilate);
-	event DeregisterAffiliate(address affilate);
-	event AddBridge(address bridge);
+	event RegisterAffiliate(address affiliate);
+	event DeregisterAffiliate(address affiliate);
+	event AddBridge(address bridge, bool isVirtual);
 	event RemoveBridge(address bridge);
-	event AddVirtualBridge(address bridge);
-	event RemoveVirtualBridge(address bridge);
 	event SetLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit);
 	event SetPartyBWhitelistedSymbolTypeStatus(address partyB, uint256 symbolType, bool isWhiteList);
 	event SetSignatureVerifierAddress(address SignatureVerifier);

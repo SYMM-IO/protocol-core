@@ -145,13 +145,9 @@ interface IControlFacet is IControlEvents {
 
 	function setPartyBEmergencyStatus(address[] memory partyBs, bool status) external;
 
-	function addBridge(address bridge) external;
+	function addBridge(address bridge, bool isVirtual) external;
 
 	function removeBridge(address bridge) external;
-
-	function addVirtualBridge(address bridge) external;
-
-	function removeVirtualBridge(address bridge) external;
 
 	function setLiquidationInsuranceVaultParams(address insuranceVault, uint256 maxLiquidationProfit) external;
 
