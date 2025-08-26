@@ -203,16 +203,16 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 
 	/// @notice Allows Party A to cancel the unbind request from Party B
 	/// @dev Can only be called by Party A when not suspended
-	function cancelUnbindFromPartyB() external notSuspended(msg.sender) userNotPartyB(msg.sender) {
-		AccountFacetImpl.cancelUnbindFromPartyB();
-		emit CancelUnbindFromPartyB(msg.sender);
+	function cancelUnbindRequest() external notSuspended(msg.sender) userNotPartyB(msg.sender) {
+		AccountFacetImpl.cancelUnbindRequest();
+		emit CancelUnbindRequest(msg.sender);
 	}
 
 	/// @notice Allows Party B to complete the unbind request from Party A
 	/// @dev Can be called by PartyA after cooldown or partyB right away
 	/// @param partyA The address of Party A
-	function completeUnbindFromPartyB(address partyA) external notSuspended(msg.sender) {
-		AccountFacetImpl.completeUnbindFromPartyB(partyA);
-		emit UnbindFromPartyB(partyA, msg.sender);
+	function completeUnbindRequest(address partyA) external notSuspended(msg.sender) {
+		AccountFacetImpl.completeUnbindRequest(partyA);
+		emit CompleteUnbindRequest(partyA, msg.sender);
 	}
 }

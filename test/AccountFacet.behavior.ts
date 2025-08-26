@@ -457,25 +457,25 @@ export function shouldBehaveLikeAccountFacet(): void {
 	describe("cancelUnbindFromPartyB", () => {
 		it("should failed when user suspended", async () => {
 			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.user.address)
-			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindFromPartyB()).to.be.revertedWith(
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindRequest()).to.be.revertedWith(
 				"Accessibility: Sender is Suspended",
 			)
 		})
 
 		it("should failed when user is not partyA", async () => {
-			await expect(context.accountFacet.connect(context.signers.hedger).cancelUnbindFromPartyB()).to.be.revertedWith(
+			await expect(context.accountFacet.connect(context.signers.hedger).cancelUnbindRequest()).to.be.revertedWith(
 				"Accessibility: Shouldn't be partyB",
 			)
 		})
 
 		it("should failed when not request to unbound", async () => {
-			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindFromPartyB()).to.be.revertedWith("AccountFacet: Not pending unbind")
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindRequest()).to.be.revertedWith("AccountFacet: Not pending unbind")
 		})
 
 		it("should cancel request unbind successfully", async () => {
 			await context.accountFacet.connect(context.signers.user).bindToPartyB(context.signers.hedger.address)
 			await context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()
-			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindFromPartyB()).to.not.reverted
+			await expect(context.accountFacet.connect(context.signers.user).cancelUnbindRequest()).to.not.reverted
 			const bindState = await context.viewFacet.getBindState(context.signers.user.address)
 			expect(bindState.status).to.equal(1)
 			expect(bindState.partyB).to.equal(context.signers.hedger.address)
@@ -490,27 +490,27 @@ export function shouldBehaveLikeAccountFacet(): void {
 
 		it("should failed when user suspended", async () => {
 			await context.controlFacet.connect(context.signers.admin).suspendedAddress(context.signers.hedger.address)
-			await expect(context.accountFacet.connect(context.signers.hedger).completeUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+			await expect(context.accountFacet.connect(context.signers.hedger).completeUnbindRequest(context.signers.user.address)).to.be.revertedWith(
 				"Accessibility: Sender is Suspended",
 			)
 		})
 
 		it("should failed when not request to unbound", async () => {
-			await expect(context.accountFacet.connect(context.signers.hedger).completeUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+			await expect(context.accountFacet.connect(context.signers.hedger).completeUnbindRequest(context.signers.user.address)).to.be.revertedWith(
 				"AccountFacet: Not pending unbind",
 			)
 		})
 
 		it("should failed when the bind state partyB not same as caller", async () => {
 			await context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()
-			await expect(context.accountFacet.connect(context.signers.hedger2).completeUnbindFromPartyB(context.signers.user.address)).to.be.revertedWith(
+			await expect(context.accountFacet.connect(context.signers.hedger2).completeUnbindRequest(context.signers.user.address)).to.be.revertedWith(
 				"AccountFacet: Cooldown not reached",
 			)
 		})
 
 		it("should complete unbind successfully by partyB", async () => {
 			await context.accountFacet.connect(context.signers.user).requestToUnbindFromPartyB()
-			await expect(context.accountFacet.connect(context.signers.hedger).completeUnbindFromPartyB(context.signers.user.address)).to.not.reverted
+			await expect(context.accountFacet.connect(context.signers.hedger).completeUnbindRequest(context.signers.user.address)).to.not.reverted
 			const bindState = await context.viewFacet.getBindState(context.signers.user.address)
 			expect(bindState.status).to.equal(0)
 			expect(bindState.partyB).to.equal(ZeroAddress)
@@ -521,7 +521,7 @@ export function shouldBehaveLikeAccountFacet(): void {
 			const unbindCooldown = await context.viewFacet.unbindCooldown()
 			console.log(unbindCooldown)
 			await time.increase(unbindCooldown + 1n)
-			await expect(context.accountFacet.connect(context.signers.user2).completeUnbindFromPartyB(context.signers.user.address)).to.not.reverted
+			await expect(context.accountFacet.connect(context.signers.user2).completeUnbindRequest(context.signers.user.address)).to.not.reverted
 			const bindState2 = await context.viewFacet.getBindState(context.signers.user.address)
 			expect(bindState2.status).to.equal(0)
 			expect(bindState2.partyB).to.equal(ZeroAddress)

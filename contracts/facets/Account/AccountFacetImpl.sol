@@ -185,7 +185,7 @@ library AccountFacetImpl {
 		bindState.modifyTimestamp = block.timestamp;
 	}
 
-	function cancelUnbindFromPartyB() internal {
+	function cancelUnbindRequest() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
 		BindState storage bindState = accountLayout.bindState[msg.sender];
@@ -195,7 +195,7 @@ library AccountFacetImpl {
 		bindState.modifyTimestamp = block.timestamp;
 	}
 
-	function completeUnbindFromPartyB(address partyA) internal {
+	function completeUnbindRequest(address partyA) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		BindState storage bindState = accountLayout.bindState[partyA];
 

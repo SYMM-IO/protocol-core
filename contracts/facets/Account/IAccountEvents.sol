@@ -24,8 +24,7 @@ interface IAccountEvents {
 	event ActivateMasterAccountMode(address user);
 	event ExternalTransfer(address indexed sender, address indexed receiver, uint256 amount, address target);
 	event BindToPartyB(address partyA, address partyB);
-	event UnbindFromPartyB(address partyA, address partyB);
-	event CancelUnbindFromPartyB(address partyA);
-	event RejectUnbindFromPartyB(address partyA, address partyB);
+	event CancelUnbindRequest(address partyA);
+	event CompleteUnbindRequest(address partyA, address partyB);
 	event RequestToUnbindFromPartyB(address partyA);
 }
