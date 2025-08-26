@@ -33,7 +33,7 @@ interface IAccountFacet is IAccountEvents {
 
 	function bindToPartyB(address partyB) external;
 
-	function unbindFromPartyB() external;
+	function requestToUnbindFromPartyB() external;
 
 	function cancelUnbindFromPartyB() external;
 

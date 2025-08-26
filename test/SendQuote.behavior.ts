@@ -131,7 +131,7 @@ export function shouldBehaveLikeSendQuote(): void {
 					.partyBWhiteList([await context.signers.hedger2.getAddress()])
 					.build(),
 			),
-		).to.be.revertedWith("PartyAFacet: PartyA is bound to a specific PartyB")
+		).to.be.revertedWith("PartyAFacet: PartyA is bound to a different PartyB")
 	})
 
 	it("Should not check the partyBsWhiteList when not bind to a partyB", async function () {

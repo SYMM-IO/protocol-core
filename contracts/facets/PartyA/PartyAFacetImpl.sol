@@ -66,7 +66,7 @@ library PartyAFacetImpl {
 		if (accountLayout.bindState[msg.sender].partyB != address(0)) {
 			require(
 				partyBsWhiteList.length == 1 && partyBsWhiteList[0] == accountLayout.bindState[msg.sender].partyB,
-				"PartyAFacet: PartyA is bound to a specific PartyB"
+				"PartyAFacet: PartyA is bound to a different PartyB"
 			);
 		} else {
 			LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);

@@ -186,21 +186,31 @@ contract AccountFacet is Accessibility, Pausable, IAccountFacet {
 		emit ExternalTransfer(msg.sender, receiver, amount, target);
 	}
 
+	/// @notice Allows Party A to bind to Party B
+	/// @dev Can only be called by Party A when not suspended
+	/// @param partyB The address of Party B
 	function bindToPartyB(address partyB) external notSuspended(msg.sender) userNotPartyB(msg.sender) {
 		AccountFacetImpl.bindToPartyB(partyB);
 		emit BindToPartyB(partyB, msg.sender);
 	}
 
-	function unbindFromPartyB() external notSuspended(msg.sender) userNotPartyB(msg.sender) {
-		AccountFacetImpl.unbindFromPartyB();
+	/// @notice Allows Party A to request to unbind from Party B
+	/// @dev Can only be called by Party A when not suspended
+	function requestToUnbindFromPartyB() external notSuspended(msg.sender) userNotPartyB(msg.sender) {
+		AccountFacetImpl.requestToUnbindFromPartyB();
 		emit RequestToUnbindFromPartyB(msg.sender);
 	}
 
+	/// @notice Allows Party A to cancel the unbind request from Party B
+	/// @dev Can only be called by Party A when not suspended
 	function cancelUnbindFromPartyB() external notSuspended(msg.sender) userNotPartyB(msg.sender) {
 		AccountFacetImpl.cancelUnbindFromPartyB();
 		emit CancelUnbindFromPartyB(msg.sender);
 	}
 
+	/// @notice Allows Party B to complete the unbind request from Party A
+	/// @dev Can be called by PartyA after cooldown or partyB right away
+	/// @param partyA The address of Party A
 	function completeUnbindFromPartyB(address partyA) external notSuspended(msg.sender) {
 		AccountFacetImpl.completeUnbindFromPartyB(partyA);
 		emit UnbindFromPartyB(partyA, msg.sender);

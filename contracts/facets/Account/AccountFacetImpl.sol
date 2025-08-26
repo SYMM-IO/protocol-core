@@ -165,32 +165,33 @@ library AccountFacetImpl {
 
 	function bindToPartyB(address partyB) internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		require(partyB != address(0), "AccountFacet: PartyB is zero address");
+		require(partyB != address(0), "AccountFacet: Zero address");
+
 		BindState storage bindState = accountLayout.bindState[msg.sender];
-		require(bindState.partyB == address(0), "AccountFacet: Already bound");
+		require(bindState.status == BindStatus.NOT_BOUND, "AccountFacet: Invalid state");
 
 		bindState.partyB = partyB;
-		bindState.status = BindStatus.BINDED;
+		bindState.status = BindStatus.BOUND;
 		bindState.modifyTimestamp = block.timestamp;
 	}
 
-	function unbindFromPartyB() internal {
+	function requestToUnbindFromPartyB() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
-		BindState storage bindState = accountLayout.bindState[msg.sender];
-		require(bindState.partyB != address(0), "AccountFacet: Not bound");
-		require(bindState.status == BindStatus.BINDED, "AccountFacet: Not bound");
 
-		bindState.status = BindStatus.UNBIND_PENDING;
+		BindState storage bindState = accountLayout.bindState[msg.sender];
+		require(bindState.status == BindStatus.BOUND, "AccountFacet: Invalid state");
+
+		bindState.status = BindStatus.PENDING_UNBIND;
 		bindState.modifyTimestamp = block.timestamp;
 	}
 
 	function cancelUnbindFromPartyB() internal {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
+
 		BindState storage bindState = accountLayout.bindState[msg.sender];
+		require(bindState.status == BindStatus.PENDING_UNBIND, "AccountFacet: Invalid state");
 
-		require(bindState.status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
-
-		bindState.status = BindStatus.BINDED;
+		bindState.status = BindStatus.BOUND;
 		bindState.modifyTimestamp = block.timestamp;
 	}
 
@@ -198,13 +199,13 @@ library AccountFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		BindState storage bindState = accountLayout.bindState[partyA];
 
-		require(bindState.status == BindStatus.UNBIND_PENDING, "AccountFacet: Not pending unbind");
-		if(msg.sender != bindState.partyB){
+		require(bindState.status == BindStatus.PENDING_UNBIND, "AccountFacet: Invalid state");
+
+		if (msg.sender != bindState.partyB)
 			require(block.timestamp >= bindState.modifyTimestamp + MAStorage.layout().unbindCooldown, "AccountFacet: Cooldown not reached");
-		}
 
 		bindState.partyB = address(0);
-		bindState.status = BindStatus.UNBINDED;
+		bindState.status = BindStatus.NOT_BOUND;
 		bindState.modifyTimestamp = block.timestamp;
 	}
 }

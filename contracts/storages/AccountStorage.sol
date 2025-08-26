@@ -64,9 +64,9 @@ struct BindState {
 }
 
 enum BindStatus {
-	UNBINDED,
-	BINDED,
-	UNBIND_PENDING
+	NOT_BOUND,
+	BOUND,
+	PENDING_UNBIND
 }
 
 struct Price {
@@ -106,7 +106,7 @@ library AccountStorage {
 		mapping(address => uint256) partyBTotalLf;
 		mapping(address => CrossLiquidationDetail) crossLiquidationDetails;
 		mapping(address => address) externalTransferTargetsRelayers;
-		mapping (address => address) affiliateToHooks;
+		mapping(address => address) affiliateToHooks;
 	}
 
 	function layout() internal pure returns (Layout storage l) {

@@ -76,9 +76,4 @@ abstract contract Accessibility {
 		require(!AccountStorage.layout().suspendedAddresses[user], "Accessibility: Sender is Suspended");
 		_;
 	}
-
-	modifier isBounded(address partyB, address partyA) {
-		require(AccountStorage.layout().bindState[partyA].partyB == partyB, "Accessibility: PartyB is not bounded to this partyA");
-		_;
-	}
 }
