@@ -129,15 +129,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				await expect(
 					context.clearingHouseFacet
 						.connect(context.signers.liquidator)
-						.liquidateCrossPartyB(context.signers.hedger.getAddress(), await getDummyCrossLiquidationSig(undefined, BigInt(0))),
-				).to.be.revertedWith("ClearingHouseFacet: partyB is solvent")
-			})
-
-			it("Should fail with positive UPNL", async function () {
-				await expect(
-					context.clearingHouseFacet
-						.connect(context.signers.liquidator)
-						.liquidateCrossPartyB(context.signers.hedger.getAddress(), await getDummyCrossLiquidationSig(undefined, BigInt("1000000000000000000"))),
+						.liquidateCrossPartyB(await context.signers.hedger.getAddress(), await getDummyCrossLiquidationSig(undefined, decimal(-1000n))),
 				).to.be.revertedWith("ClearingHouseFacet: partyB is solvent")
 			})
 

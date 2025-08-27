@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "../interfaces/IVirtualBridge.sol";
-
+import "../facets/Bridge/IBridgeFacet.sol";
 /**
  * @title MockVirtualBridge
  * @notice Test helper that implements IVirtualBridge and exposes
@@ -58,6 +58,7 @@ contract MockVirtualBridge is IVirtualBridge {
 			string memory msg_ = bytes(revertMessageOnComplete).length > 0 ? revertMessageOnComplete : "MockVirtualBridge: revert on complete";
 			revert(msg_);
 		}
+
 		completeCallCount += 1;
 		_lastCompleteCall = CallData({ user: user, amount: amount, collateral: collateral, data: data });
 
@@ -74,5 +75,9 @@ contract MockVirtualBridge is IVirtualBridge {
 	function getLastCompleteCall() external view returns (address user, uint256 amount, address collateral, bytes memory data, uint256 callCount) {
 		CallData memory c = _lastCompleteCall;
 		return (c.user, c.amount, c.collateral, c.data, completeCallCount);
+	}
+
+	function withdrawReceivedBridgeValue(uint256 bridgeId, address symmioAddress) public {
+		IBridgeFacet(symmioAddress).withdrawReceivedBridgeValue(bridgeId);
 	}
 }

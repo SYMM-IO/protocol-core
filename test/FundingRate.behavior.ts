@@ -304,21 +304,18 @@ export function shouldBehaveLikeFundingRate(): void {
 			})
 
 			it("should update accumulated funding fee correctly", async () => {
-				console.log("first update")
 				await context.fundingRateFacet
 					.connect(context.signers.hedger)
 					.updateAccumulatedFundingFee([1], [decimal(1n, 14)], [-decimal(1n, 14)], [decimal(1n)])
 
 				await time.increase(NineHourInSec)
 
-				console.log("second update")
 				await context.fundingRateFacet
 					.connect(context.signers.hedger)
 					.updateAccumulatedFundingFee([1], [decimal(1n, 14)], [-decimal(1n, 14)], [decimal(1n)])
 
 				await time.increase(NineHourInSec * 2)
 
-				console.log("third update")
 				await expect(
 					context.fundingRateFacet
 						.connect(context.signers.hedger)

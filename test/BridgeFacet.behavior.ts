@@ -29,8 +29,8 @@ export function shouldBehaveLikeBridgeFacet(): void {
 		await user2.setBalances(decimal(3000n), decimal(3000n), decimal(500n))
 
 		// Setup bridges
-		await context.controlFacet.addBridge(await bridge.getAddress())
-		await context.controlFacet.addBridge(await bridge2.getAddress())
+		await context.controlFacet.addBridge(await bridge.getAddress(), false)
+		await context.controlFacet.addBridge(await bridge2.getAddress(), false)
 	})
 
 	describe("transferToBridge", async function () {
@@ -406,7 +406,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 			it("Should accept cancellation successfully", async function () {
 				const userBalanceBefore = await context.viewFacet.balanceOf(await context.signers.user.getAddress())
 
-				await expect(context.bridgeFacet.connect(context.signers.bridge).acceptCancelBridgeTransaction(1)).to.not.reverted
+				await expect(context.bridgeFacet.connect(context.signers.bridge).acceptCancelBridgeTransactionRequest(1)).to.not.reverted
 
 				const transaction = await context.viewFacet.getBridgeTransaction(1)
 				expect(transaction.status).to.equal(BridgeTransactionStatus.CANCELED)
@@ -429,9 +429,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 		describe("transferToVirtualBridge", async function () {
 			it("Should fail when bridge is not registered as virtual", async function () {
 				await expect(
-					context.bridgeFacet
-						.connect(context.signers.user)
-						.transferToVirtualBridge(decimal(100n), await context.signers.bridge.getAddress(), "0x"),
+					context.bridgeFacet.connect(context.signers.user).transferToVirtualBridge(decimal(100n), await context.signers.bridge.getAddress(), "0x"),
 				).to.be.revertedWith("BridgeFacet: Invalid bridge")
 			})
 
@@ -441,9 +439,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 
 				const data = "0x1234"
 				await expect(
-					context.bridgeFacet
-						.connect(context.signers.user)
-						.transferToVirtualBridge(decimal(100n), await mockVirtualBridge.getAddress(), data),
+					context.bridgeFacet.connect(context.signers.user).transferToVirtualBridge(decimal(100n), await mockVirtualBridge.getAddress(), data),
 				).to.not.reverted
 
 				const createdTx = await context.viewFacet.getBridgeTransaction(nextId + 1n)
@@ -467,9 +463,7 @@ export function shouldBehaveLikeBridgeFacet(): void {
 		describe("completeVirtualBridge", async function () {
 			beforeEach(async function () {
 				// Create a virtual bridge transaction
-				await context.bridgeFacet
-					.connect(context.signers.user)
-					.transferToVirtualBridge(decimal(100n), await mockVirtualBridge.getAddress(), "0x")
+				await context.bridgeFacet.connect(context.signers.user).transferToVirtualBridge(decimal(100n), await mockVirtualBridge.getAddress(), "0x")
 			})
 
 			it("Should fail with invalid transaction ID", async function () {
@@ -488,12 +482,14 @@ export function shouldBehaveLikeBridgeFacet(): void {
 			it("Should fail when accounting is paused", async function () {
 				await time.increase(43250) // cooldown
 				await pauseAccounting(context)
-				await expect(context.bridgeFacet.connect(context.signers.user).withdrawReceivedBridgeValue(1)).to.be.revertedWith("Pausable: Accounting paused")
+				await expect(context.bridgeFacet.connect(context.signers.user).withdrawReceivedBridgeValue(1)).to.be.revertedWith(
+					"Pausable: Accounting paused",
+				)
 			})
 
 			it("Should complete virtual bridge successfully and call the callback", async function () {
 				await time.increase(43250) // cooldown
-				await expect(context.bridgeFacet.connect(context.signers.user).withdrawReceivedBridgeValue(1)).to.not.reverted
+				await expect(mockVirtualBridge.withdrawReceivedBridgeValue(1, await context.bridgeFacet.getAddress())).to.not.reverted
 
 				const transaction = await context.viewFacet.getBridgeTransaction(1)
 				expect(transaction.status).to.equal(BridgeTransactionStatus.WITHDRAWN)

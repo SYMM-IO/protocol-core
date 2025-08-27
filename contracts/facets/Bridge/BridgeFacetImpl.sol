@@ -9,7 +9,6 @@ import "../../storages/AccountStorage.sol";
 import "../../storages/BridgeStorage.sol";
 import "../../storages/MAStorage.sol";
 import "../../interfaces/IVirtualBridge.sol";
-
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -73,12 +72,12 @@ library BridgeFacetImpl {
 		);
 		require(block.timestamp >= MAStorage.layout().deallocateCooldown + bridgeTransaction.timestamp, "BridgeFacet: Cooldown hasn't reached");
 
-		if (bridgeLayout.bridges[bridgeTransaction.bridge]) {
-			require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
-			IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
-		} else if (bridgeLayout.virtualBridges[bridgeTransaction.bridge]) {
+		if (bridgeLayout.virtualBridges[bridgeTransaction.bridge]) {
 			bytes memory data = bridgeLayout.bridgesData[transactionId];
 			IVirtualBridge(bridgeTransaction.bridge).onBridgeComplete(bridgeTransaction.user, bridgeTransaction.amount, appLayout.collateral, data);
+		} else if (bridgeLayout.bridges[bridgeTransaction.bridge]) {
+			require(msg.sender == bridgeTransaction.bridge, "BridgeFacet: Sender is not the transaction's bridge");
+			IERC20(appLayout.collateral).safeTransfer(bridgeTransaction.bridge, bridgeTransaction.amount);
 		} else {
 			revert("BridgeFacet: Invalid bridge");
 		}

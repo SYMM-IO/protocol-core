@@ -135,13 +135,14 @@ export function shouldBehaveLikeSendQuote(): void {
 	})
 
 	it("Should not check the partyBsWhiteList when not bind to a partyB", async function () {
-		await expect(
-			user.sendQuote(
-				limitQuoteRequestBuilder()
-					.upnlSig(getDummySingleUpnlAndPriceSig(decimal(16n), decimal(-1000n)))
-					.partyBWhiteList([await context.signers.hedger2.getAddress()])
-					.build(),
-			),
-		).to.not.reverted
+		let validator = new SendQuoteValidator()
+		const before = await validator.before(context, { user: user })
+		let qId = await user.sendQuote(
+			limitQuoteRequestBuilder()
+				.upnlSig(getDummySingleUpnlAndPriceSig(decimal(16n), decimal(-1000n)))
+				.partyBWhiteList([await context.signers.hedger2.getAddress()])
+				.build(),
+		)
+		await validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
 	})
 }
