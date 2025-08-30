@@ -71,7 +71,7 @@ library FundingRateFacetImpl {
 			windowTime = SymbolStorage.layout().symbols[quote.symbolId].fundingRateWindowTime;
 
 			// Calculate which epoch we're paying for
-			uint256 latestEpochTimestamp = (block.timestamp / epochDuration) * epochDuration;
+			uint256 latestEpochTimestamp = (block.timestamp / epochDuration) * epochDuration; //! 1000
 			uint256 paidTimestamp;
 
 			// Check if we're within the current epoch's payment window
@@ -151,7 +151,7 @@ library FundingRateFacetImpl {
 
 		for (uint256 i = 0; i < symbolIds.length; i++) {
 			FundingFee storage fundingFee = SymbolStorage.layout().fundingFees[symbolIds[i]][partyB];
-			uint256 currentEpochWithNewDuration = LibFundingRate.getEpochOfTimestamp(block.timestamp, durations[i]);
+			uint256 timestampForEpoch = 0;
 
 			if (fundingFee.epochDuration != 0) {
 				// Update weighted averages before changing epoch duration
@@ -167,13 +167,14 @@ library FundingRateFacetImpl {
 				fundingFee.currentLongRate = (fundingFee.currentLongRate * int256(durationRatio)) / 1e18;
 				fundingFee.currentShortRate = (fundingFee.currentShortRate * int256(durationRatio)) / 1e18;
 
-				// Update epoch duration
-				fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(fundingFee.lastUpdatedTimeStamp, durations[i]);
+				timestampForEpoch = fundingFee.lastUpdatedTimeStamp;
 			} else {
-				fundingFee.lastUpdatedEpoch = currentEpochWithNewDuration;
+				timestampForEpoch = block.timestamp;
 				fundingFee.lastUpdatedTimeStamp = block.timestamp;
 			}
-
+			
+			// Update epoch duration
+			fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(timestampForEpoch, durations[i]);
 			fundingFee.epochDuration = durations[i];
 		}
 	}

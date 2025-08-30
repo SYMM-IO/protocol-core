@@ -114,8 +114,7 @@ library PartyAFacetImpl {
 			deadline: deadline,
 			tradingFee: symbolLayout.symbols[symbolId].tradingFee,
 			affiliate: affiliate,
-			accumulatedPaidFunding: 0,
-			lastFundingTimestamp: 0
+			accumulatedPaidFunding: 0
 		});
 		quoteLayout.quoteIdsOf[msg.sender].push(currentId);
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);

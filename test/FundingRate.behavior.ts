@@ -668,4 +668,75 @@ export function shouldBehaveLikeFundingRate(): void {
 		// 	})
 		// })
 	})
+
+	describe("normal and accumulated charge funding rate integration", function () {
+		it("should not be able to charge normal when epoch duration set", async () => {
+			await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [EightHourInSec])
+			await expect(
+				hedger.chargeFundingRate(await context.signers.user.getAddress(), [1], [decimal(1n, 16)], await getDummyPairUpnlSig()),
+			).to.be.revertedWith("ChargeFundingFacet: Use accumulated funding fee")
+		})
+
+		it("should set last charge funding rate timestamp when open position correctly", async () => {
+			await user.sendQuote(
+				limitQuoteRequestBuilder()
+					.quantity(decimal(1n))
+					.price(decimal(1n))
+					.deadline((await getBlockTimestamp()) + 1000n)
+					.maxFundingRate(decimal(1n))
+					.build(),
+			)
+
+			await hedger.lockQuote(5)
+			const latestBlockTime = await getBlockTimestamp()
+			await hedger.openPosition(5, limitOpenRequestBuilder().filledAmount(decimal(1n)).build())
+
+			const quote = await context.viewFacet.getQuote(1)
+			expect(quote.lastFundingPaymentTimestamp).to.approximately(latestBlockTime, 30)
+		})
+
+		it("should be able normal charge funding rate and then set accumulated and charge accumulative", async () => {
+			await context.controlFacet.connect(context.signers.admin).setSymbolFundingState(1, 28800, 100)
+			await user.sendQuote(
+				limitQuoteRequestBuilder()
+					.quantity(decimal(1n))
+					.price(decimal(1n))
+					.deadline((await getBlockTimestamp()) + 1000n)
+					.maxFundingRate(decimal(1n))
+					.build(),
+			)
+			await hedger.lockQuote(5)
+			await hedger.openPosition(5, limitOpenRequestBuilder().filledAmount(decimal(1n)).build())
+
+			const symbol = await context.viewFacet.getSymbol(1)
+			let duration = symbol.fundingRateEpochDuration
+			let window = symbol.fundingRateWindowTime
+			let currentEpoch = (BigInt(await time.latest()) / duration) * duration
+			let targetTime = duration * 2n + window - 1n + currentEpoch
+
+			await time.setNextBlockTimestamp(targetTime)
+			await expect(
+				context.fundingRateFacet
+					.connect(context.signers.hedger)
+					.chargeFundingRate(await context.signers.user.getAddress(), [5], [decimal(1n, 16)], await getDummyPairUpnlSig()),
+			).to.not.reverted
+
+			await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [EightHourInSec])
+
+			await expect(
+				context.fundingRateFacet.connect(context.signers.hedger).chargeFundingRate(await context.signers.user.getAddress(), [5], [decimal(1n, 16)], await getDummyPairUpnlSig()),
+			).to.revertedWith("ChargeFundingFacet: Use accumulated funding fee")
+
+			await expect(
+				context.fundingRateFacet
+					.connect(context.signers.hedger)
+					.chargeAccumulatedFundingFee(
+						await context.signers.user.getAddress(),
+						await context.signers.hedger.getAddress(),
+						[5],
+						await getDummyPairUpnlSig(),
+					),
+			).to.not.reverted
+		})
+	})
 }

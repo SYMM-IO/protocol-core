@@ -60,7 +60,6 @@ library LibPartyBPositionsActions {
 		quote.openedPrice = openedPrice;
 		quote.initialOpenedPrice = openedPrice;
 		quote.statusModifyTimestamp = block.timestamp;
-		quote.lastFundingPaymentTimestamp = block.timestamp;
 
 		LibQuote.updateAccumulatedPaidFunding(quote);
 		LibQuote.removeFromPendingQuotes(quote);
@@ -137,8 +136,7 @@ library LibPartyBPositionsActions {
 				deadline: quote.deadline,
 				tradingFee: quote.tradingFee,
 				affiliate: quote.affiliate,
-				accumulatedPaidFunding: 0,
-				lastFundingTimestamp: 0
+				accumulatedPaidFunding: 0
 			});
 
 			quoteLayout.quoteIdsOf[quote.partyA].push(currentId);
@@ -166,8 +164,6 @@ library LibPartyBPositionsActions {
 		// lock with amount of filledAmount
 		accountLayout.lockedBalances[quote.partyA].addQuote(quote);
 		accountLayout.partyBLockedBalances[quote.partyB][quote.partyA].addQuote(quote);
-
-		quote.lastFundingTimestamp = block.timestamp;
 
 		// check leverage (is in 18 decimals)
 		require(
