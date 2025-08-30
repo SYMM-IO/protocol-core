@@ -259,6 +259,20 @@ export class User {
 		return sign
 	}
 
+	public async deferredLiquidateAndSetSymbolPrices(
+		symbolIds: bigint[],
+		prices: bigint[],
+		liquidator: SignerWithAddress = this.context.signers.liquidator,
+	): Promise<LiquidationSigStruct> {
+		const upnl = await this.getUpnl(getPriceFetcher(symbolIds, prices))
+		const totalUnrealizedLoss = await this.getTotalUnrealisedLoss(getPriceFetcher(symbolIds, prices))
+		const allocatedBalance = (await this.getBalanceInfo()).allocatedBalances
+		const sign = await getDummyLiquidationSig("0x10", upnl, symbolIds, prices, totalUnrealizedLoss, allocatedBalance)
+		await this.context.liquidationFacet.connect(liquidator).deferredLiquidatePartyA(this.getAddress(), sign)
+		await this.context.liquidationFacet.connect(liquidator).deferredSetSymbolsPrice(this.getAddress(), sign)
+		return sign
+	}
+
 	public async liquidatePendingPositions(liquidator: SignerWithAddress = this.context.signers.liquidator) {
 		await this.context.liquidationFacet.connect(liquidator).liquidatePendingPositionsPartyA(this.getAddress())
 	}

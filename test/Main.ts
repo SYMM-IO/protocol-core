@@ -99,7 +99,7 @@ describe("UnitTests", function () {
 			shouldBehaveLikeFeeDistributor()
 		})
 
-		describe.only("ClearingHouseFacet", async function () {
+		describe("ClearingHouseFacet", async function () {
 			shouldBehaveLikeClearingHouseFacet()
 		})
 

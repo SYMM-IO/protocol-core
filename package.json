@@ -69,7 +69,6 @@
     "coverage": "hardhat coverage --testfiles \"test/**/*.ts\" && yarn typechain",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "solhint --config ./.solhint.json --solcoverjs ./.solcover.js --max-warnings 0 \"contracts/**/*.sol\"",
-    "postinstall": "DOTENV_CONFIG_PATH=./.env yarn typechain",
     "test": "hardhat test",
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "test:uncheck-muon": "./utils/runTests.sh"

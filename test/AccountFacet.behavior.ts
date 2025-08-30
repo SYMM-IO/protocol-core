@@ -1,5 +1,5 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers"
-import { expect } from "chai"
+import { expect, use } from "chai";
 
 import { initializeFixture } from "./Initialize.fixture"
 import { RunContext } from "./models/RunContext"
@@ -9,6 +9,7 @@ import { Hedger } from "./models/Hedger"
 import { decimal, unDecimal } from "./utils/Common"
 import { ethers } from "hardhat"
 import { ZeroAddress } from "ethers"
+import { toUtf8Bytes } from "ethers";
 
 export function shouldBehaveLikeAccountFacet(): void {
 	let context: RunContext, user: User, user2: User, hedger: Hedger
@@ -51,6 +52,45 @@ export function shouldBehaveLikeAccountFacet(): void {
 			expect(await context.viewFacet.balanceOf(user2Address)).to.equal("300")
 			expect(await context.collateral.balanceOf(userAddress)).to.equal("200")
 		})
+
+		it("Should fail to virtual deposit when accounting is paused", async function () {
+			await context.controlFacet.connect(context.signers.admin).grantRole(
+				context.signers.admin,
+				ethers.keccak256(toUtf8Bytes("VIRTUAL_DEPOSITOR_ROLE"))
+			)
+
+			await context.controlFacet.pauseAccounting()
+			await expect(context.accountFacet.connect(context.signers.admin).virtualDepositFor(
+				await user.getAddress(),
+				decimal(1n)
+			)).to.be.revertedWith("Pausable: Accounting paused")
+		})
+
+		it("Should fail to virtual deposit when calling without role", async function () {
+			await expect(context.accountFacet.connect(context.signers.user).virtualDepositFor(
+				await user.getAddress(),
+				decimal(1n)
+			)).to.be.revertedWith("Accessibility: Must has role")
+		})
+
+
+		it("Should virtual deposit for user", async function () {
+			await context.controlFacet.connect(context.signers.admin).grantRole(
+				context.signers.admin,
+				ethers.keccak256(toUtf8Bytes("VIRTUAL_DEPOSITOR_ROLE"))
+			)
+			const userAddress = await user.getAddress()
+			const beforeBalance = await context.viewFacet.balanceOf(userAddress)
+			expect(await context.accountFacet.connect(context.signers.admin).virtualDepositFor(
+				userAddress,
+				decimal(1n)
+			)).not.reverted
+			const afterBalance = await context.viewFacet.balanceOf(userAddress)
+			expect(afterBalance - beforeBalance).to.equal(decimal(1n))
+
+		})
+
+
 	})
 
 	describe("Withdraw", async function () {
@@ -118,6 +158,15 @@ export function shouldBehaveLikeAccountFacet(): void {
 			const userAddress = context.signers.user.getAddress()
 
 			await context.accountFacet.connect(context.signers.user).depositAndAllocate("200")
+			expect(await context.viewFacet.balanceOf(userAddress)).to.equal("300")
+			expect(await context.viewFacet.allocatedBalanceOfPartyA(userAddress)).to.equal("200")
+			expect(await context.collateral.balanceOf(userAddress)).to.equal("0")
+		})
+
+		it("Should deposit and allocate collateral for user", async function () {
+			const userAddress = context.signers.user.getAddress()
+
+			await context.accountFacet.connect(context.signers.user).depositAndAllocateFor(userAddress,"200")
 			expect(await context.viewFacet.balanceOf(userAddress)).to.equal("300")
 			expect(await context.viewFacet.allocatedBalanceOfPartyA(userAddress)).to.equal("200")
 			expect(await context.collateral.balanceOf(userAddress)).to.equal("0")
