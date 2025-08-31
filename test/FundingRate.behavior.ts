@@ -103,6 +103,66 @@ export function shouldBehaveLikeFundingRate(): void {
 		).to.be.revertedWith("ChargeFundingFacet: PartyA will be insolvent")
 	})
 
+	it("should failed when the caller is not same as partyB of quote", async function () {
+		await expect(
+			context.fundingRateFacet
+				.connect(context.signers.hedger2)
+				.chargeFundingRate(await context.signers.user.getAddress(), [1], [decimal(1n, 16)], await getDummyPairUpnlSig()),
+		).to.be.revertedWith("ChargeFundingFacet: Sender isn't partyB of quote")
+	})
+
+	it("allows rate exactly equal to maxFundingRate (positive & negative)", async () => {
+		const q = await context.viewFacet.getQuote(4)
+		const max = q.maxFundingRate
+
+		let s = await context.viewFacet.getSymbol(1)
+		let dur = s.fundingRateEpochDuration
+		let win = s.fundingRateWindowTime
+		let latest = (BigInt(await time.latest()) / dur) * dur
+		await time.setNextBlockTimestamp(Number(latest + dur * 2n + win - 1n))
+
+		await expect(hedger.chargeFundingRate(await context.signers.user.getAddress(), [4], [max], await getDummyPairUpnlSig())).to.not.reverted
+
+		s = await context.viewFacet.getSymbol(1)
+		dur = s.fundingRateEpochDuration
+		win = s.fundingRateWindowTime
+		latest = (BigInt(await time.latest()) / dur) * dur
+		await time.setNextBlockTimestamp(Number(latest + dur * 2n + win - 1n))
+
+		await expect(hedger.chargeFundingRate(await context.signers.user.getAddress(), [4], [max], await getDummyPairUpnlSig())).to.not.reverted
+	})
+
+	it("reverts accumulated charge if it makes partyA insolvent", async () => {
+		// set epoch + fees
+		await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [EightHourInSec])
+		await context.fundingRateFacet.connect(context.signers.hedger).setFundingFee([1], [decimal(5n, 16)], [0], [decimal(1n)])
+		await time.increase(EightHourInSec * 6) // accumulate some
+
+		await expect(
+			context.fundingRateFacet.connect(context.signers.hedger).chargeAccumulatedFundingFee(
+				await context.signers.user.getAddress(),
+				await context.signers.hedger.getAddress(),
+				[1],
+				await getDummyPairUpnlSig(decimal(10_000n) * -1n, BigInt(0)), // make A look poor
+			),
+		).to.be.revertedWith("FundingRateFacet: PartyA will be insolvent")
+	})
+
+	it("reverts on paying twice in the same window", async () => {
+		let symbol = await context.viewFacet.getSymbol(1)
+		let duration = symbol.fundingRateEpochDuration
+		let window = symbol.fundingRateWindowTime
+		let currentEpoch = (BigInt(await time.latest()) / duration) * duration
+		let targetTime = duration * 2n + window - 1n + currentEpoch
+
+		await time.setNextBlockTimestamp(targetTime)
+		await hedger.chargeFundingRate(await context.signers.user.getAddress(), [1], [decimal(1n, 16)], await getDummyPairUpnlSig())
+
+		await expect(
+			hedger.chargeFundingRate(await context.signers.user.getAddress(), [1], [decimal(1n, 16)], await getDummyPairUpnlSig()),
+		).to.be.revertedWith("ChargeFundingFacet: Funding already paid for this window")
+	})
+
 	it("Should fail on insolvent partyB", async function () {
 		let symbol = await context.viewFacet.getSymbol(1)
 		let duration = symbol.fundingRateEpochDuration
@@ -724,7 +784,9 @@ export function shouldBehaveLikeFundingRate(): void {
 			await context.fundingRateFacet.connect(context.signers.hedger).setEpochDurations([1], [EightHourInSec])
 
 			await expect(
-				context.fundingRateFacet.connect(context.signers.hedger).chargeFundingRate(await context.signers.user.getAddress(), [5], [decimal(1n, 16)], await getDummyPairUpnlSig()),
+				context.fundingRateFacet
+					.connect(context.signers.hedger)
+					.chargeFundingRate(await context.signers.user.getAddress(), [5], [decimal(1n, 16)], await getDummyPairUpnlSig()),
 			).to.revertedWith("ChargeFundingFacet: Use accumulated funding fee")
 
 			await expect(
