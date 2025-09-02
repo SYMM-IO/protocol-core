@@ -231,8 +231,6 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 					await user.settleLiquidation()
 					expect(await context.viewFacet.allocatedBalanceOfPartyB(hedgerAddress, userAddress)).to.be.equal(partyBAfter)
 					let balanceInfoOfLiquidator = await liquidator.getBalanceInfo()
-					console.log(await context.viewFacet.balanceOf(await liquidator.getAddress()))
-					console.log("balanceInfoOfLiquidator1",balanceInfoOfLiquidator)
 					expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(diff)
 				})
 			})

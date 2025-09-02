@@ -6,7 +6,7 @@ import { HighLowPriceSigStruct } from "../../src/types/contracts/facets/ForceAct
 import { DeferredLiquidationSigStruct, PairUpnlAndPriceSigStruct, SingleUpnlSigStruct } from "../../src/types/contracts/interfaces/ISymmio"
 import { ethers } from "hardhat"
 import { QuoteSettlementDataStructOutput, SettlementSigStructOutput } from "../../src/types/contracts/facets/Settlement/ISettlementFacet"
-import { CrossLiquidationStruct } from "../../src/types/contracts/facets/ClearingHouse/ClearingHouseFacet"
+import { CrossLiquidationSigStruct } from "../../src/types/contracts/facets/ClearingHouse/ClearingHouseFacet"
 
 export async function getDummySingleUpnlSig(upnl: bigint = 0n): Promise<SingleUpnlSigStruct> {
 	return {
@@ -170,9 +170,8 @@ export async function getDummyPriceSig(quoteIds: bigint[] = [], prices: bigint[]
 export async function getDummyCrossLiquidationSig(
 	liquidationId: string = "0x",
 	upnl: bigint = 0n,
-	totalUnrealizedLoss: bigint = 0n,
 	allocatedBalance: bigint = 0n,
-): Promise<CrossLiquidationStruct> {
+): Promise<CrossLiquidationSigStruct> {
 	return {
 		reqId: "0x",
 		liquidationId: liquidationId,

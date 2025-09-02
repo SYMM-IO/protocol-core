@@ -129,7 +129,7 @@ export function shouldBehaveLikeClearingHouseFacet(): void {
 				await expect(
 					context.clearingHouseFacet
 						.connect(context.signers.liquidator)
-						.liquidateCrossPartyB(await context.signers.hedger.getAddress(), await getDummyCrossLiquidationSig(undefined, decimal(-1000n))),
+						.liquidateCrossPartyB(await context.signers.hedger.getAddress(), await getDummyCrossLiquidationSig(undefined, decimal(1000n))),
 				).to.be.revertedWith("ClearingHouseFacet: partyB is solvent")
 			})
 
