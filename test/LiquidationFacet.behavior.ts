@@ -183,6 +183,8 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 		describe("Test normal branch", async function () {
 			const price = decimal(572n, 16)
 			beforeEach(async function () {
+				await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin, ethers.keccak256(toUtf8Bytes("SETTER_ROLE")))
+				await context.controlFacet.connect(context.signers.admin).setLiquidationInsuranceVaultParams(context.signers.others[0].address , decimal(100n))
 				this.signature1 = await user.liquidateAndSetSymbolPrices([1n], [price])
 				const liquidationState = await user.getLiquidatedStateOfPartyA()
 				expect(liquidationState["liquidationType"]).to.be.equal(LiquidationType.NORMAL)
@@ -215,20 +217,16 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 					await user.liquidatePositions([1])
 				})
 
-				it("Should settle liquidation", async function () {
+				it.only("Should settle liquidation", async function () {
 					let userAddress = context.signers.user.getAddress()
 					let hedgerAddress = context.signers.hedger.getAddress()
 
 					const hedgerBalance = await hedger.getBalanceInfo(await user.getAddress())
-					console.log("hedgerBalance1" , hedgerBalance)
 					const userBalance = await user.getBalanceInfo()
-					console.log("userBalance1" , userBalance)
-					const available = userBalance.allocatedBalances - userBalance.lockedCva
-					console.log("available1" , available)
-					const pnl = unDecimal((price - decimal(1n)) * decimal(100n))
-					console.log("pnl1" , pnl)
-					const diff = available - pnl
-					const partyBAfter = hedgerBalance.allocatedBalances + pnl + userBalance.lockedCva
+					const upnl = unDecimal((decimal(1n) - price) * decimal(100n))
+					const available = userBalance.allocatedBalances - userBalance.lockedCva - userBalance.lockedLf + upnl
+					const diff = userBalance.lockedLf - (-available)
+					const partyBAfter = hedgerBalance.allocatedBalances - upnl + userBalance.lockedCva
 
 					await user.settleLiquidation()
 					expect(await context.viewFacet.allocatedBalanceOfPartyB(hedgerAddress, userAddress)).to.be.equal(partyBAfter)
@@ -282,6 +280,8 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 	describe("Test normal branch deferred", async function () {
 		const price = decimal(572n, 16)
 		beforeEach(async function () {
+			await context.controlFacet.connect(context.signers.admin).grantRole(context.signers.admin, ethers.keccak256(toUtf8Bytes("SETTER_ROLE")))
+			await context.controlFacet.connect(context.signers.admin).setLiquidationInsuranceVaultParams(context.signers.others[0].address , decimal(100n))
 			this.signature1 = await user.deferredLiquidateAndSetSymbolPrices([1n], [price])
 			const liquidationState = await user.getLiquidatedStateOfPartyA()
 			expect(liquidationState["liquidationType"]).to.be.equal(LiquidationType.NORMAL)
@@ -314,26 +314,21 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 				await user.liquidatePositions([1])
 			})
 
-			it("Should settle liquidation deferred", async function () {
+			it.only("Should settle liquidation deferred", async function () {
 				let userAddress = context.signers.user.getAddress()
 				let hedgerAddress = context.signers.hedger.getAddress()
 
 				const hedgerBalance = await hedger.getBalanceInfo(await user.getAddress())
-				console.log("hedgerBalance" , hedgerBalance)
 				const userBalance = await user.getBalanceInfo()
-				console.log("userBalance" , userBalance)
-				const available = userBalance.allocatedBalances - userBalance.lockedCva
-				console.log("available" , available)
-				const pnl = unDecimal((price - decimal(1n)) * decimal(100n))
-				console.log("pnl" , pnl)
-				const diff = available - pnl
-				const partyBAfter = hedgerBalance.allocatedBalances + pnl + userBalance.lockedCva
+				const upnl = unDecimal((decimal(1n) - price) * decimal(100n))
+				const available = userBalance.allocatedBalances - userBalance.lockedCva - userBalance.lockedLf + upnl
+				const diff = userBalance.lockedLf - (-available)
+				const partyBAfter = hedgerBalance.allocatedBalances - upnl + userBalance.lockedCva
 
 				await user.settleLiquidation()
 				expect(await context.viewFacet.allocatedBalanceOfPartyB(hedgerAddress, userAddress)).to.be.equal(partyBAfter)
 				let balanceInfoOfLiquidator = await liquidator.getBalanceInfo()
-				console.log(await context.viewFacet.balanceOf(await liquidator.getAddress()))
-				console.log("balanceInfoOfLiquidator",balanceInfoOfLiquidator)
+
 				expect(balanceInfoOfLiquidator.allocatedBalances).to.be.equal(diff)
 			})
 		})
