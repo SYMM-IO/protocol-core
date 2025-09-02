@@ -217,7 +217,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 					await user.liquidatePositions([1])
 				})
 
-				it.only("Should settle liquidation", async function () {
+				it("Should settle liquidation", async function () {
 					let userAddress = context.signers.user.getAddress()
 					let hedgerAddress = context.signers.hedger.getAddress()
 
@@ -314,7 +314,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 				await user.liquidatePositions([1])
 			})
 
-			it.only("Should settle liquidation deferred", async function () {
+			it("Should settle liquidation deferred", async function () {
 				let userAddress = context.signers.user.getAddress()
 				let hedgerAddress = context.signers.hedger.getAddress()
 

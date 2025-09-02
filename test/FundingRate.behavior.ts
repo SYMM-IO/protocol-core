@@ -691,7 +691,7 @@ export function shouldBehaveLikeFundingRate(): void {
 			const latestBlockTime = await getBlockTimestamp()
 			await hedger.openPosition(5, limitOpenRequestBuilder().filledAmount(decimal(1n)).build())
 
-			const quote = await context.viewFacet.getQuote(1)
+			const quote = await context.viewFacet.getQuote(5)
 			expect(quote.lastFundingPaymentTimestamp).to.approximately(latestBlockTime, 30)
 		})
 
