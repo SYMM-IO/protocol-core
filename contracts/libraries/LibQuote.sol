@@ -149,19 +149,50 @@ library LibQuote {
 		}
 	}
 
+//	/**
+//	 * @notice Gets the trading fee for a quote.
+//	 * @param quoteId The ID of the quote for which to get the trading fee.
+//	 * @return fee The trading fee for the quote.
+//	 */
+//	function getTradingFee(uint256 quoteId) internal view returns (uint256 fee) {
+//		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+//		Quote storage quote = quoteLayout.quotes[quoteId];
+//		if (quote.orderType == OrderType.LIMIT) {
+//			fee = (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
+//		} else {
+//			fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee) / 1e36;
+//		}
+//	}
+
 	/**
-	 * @notice Gets the trading fee for a quote.
-	 * @param quoteId The ID of the quote for which to get the trading fee.
-	 * @return fee The trading fee for the quote.
+	 * @notice Gets the open fee for a quote.
+	 * @param quoteId The ID of the quote for which to get the open fee.
+	 * @return fee The open fee for the quote.
 	 */
-	function getTradingFee(uint256 quoteId) internal view returns (uint256 fee) {
+	function getOpenFee(uint256 quoteId) internal view returns (uint256 fee) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		if (quote.orderType == OrderType.LIMIT) {
-			fee = (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
+			fee = (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee.openFee) / 1e36;
 		} else {
-			fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee) / 1e36;
+			fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee.openFee) / 1e36;
 		}
+	}
+
+	/**
+	 * @notice Gets the close fee for a quote.
+	 * @param quoteId The ID of the quote for which to get the close fee.
+	 * @return fee The close fee for the quote.
+	 */
+	function getCloseFee(uint256 quoteId) internal view returns (uint256 fee) {
+		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
+		Quote storage quote = quoteLayout.quotes[quoteId];
+		fee = (quote.quantityToClose * quote.requestedClosePrice * quote.tradingFee.closeFee) / 1e36;
+//		if (quote.orderType == OrderType.LIMIT) {
+//			fee = (quote.quantityToClose * quote.requestedClosePrice * quote.closeFee) / 1e36;
+//		} else {
+//			fee = (quote.quantityToClose * quote.marketPrice * quote.closeFee) / 1e36;
+//		}
 	}
 
 	/**
@@ -292,8 +323,8 @@ library LibQuote {
 			quote.statusModifyTimestamp = block.timestamp;
 			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
 
-			// send trading Fee back to partyA
-			uint256 fee = LibQuote.getTradingFee(quote.id);
+			// send Open Fee back to partyA
+			uint256 fee = LibQuote.getOpenFee(quote.id);
 			accountLayout.allocatedBalances[quote.partyA] += fee;
 			emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 

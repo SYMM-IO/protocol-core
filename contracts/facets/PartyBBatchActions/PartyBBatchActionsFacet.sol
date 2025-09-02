@@ -46,7 +46,7 @@ contract PartyBBatchActionsFacet is Accessibility, Pausable, IPartyBBatchActions
 						newQuote.lockedValues.lf,
 						newQuote.lockedValues.partyAmm,
 						newQuote.lockedValues.partyBmm,
-						newQuote.tradingFee,
+						Fee(newQuote.tradingFee.openFee,newQuote.tradingFee.closeFee),
 						newQuote.deadline
 					);
 				} else if (newQuote.quoteStatus == QuoteStatus.CANCELED) {

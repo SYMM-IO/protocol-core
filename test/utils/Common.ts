@@ -105,18 +105,18 @@ export async function getTotalLockedValuesForQuoteIds(
 	return getTotalPartyALockedValuesForQuotes(quotes, includeMM, returnAfterOpened)
 }
 
-export async function getTradingFeeForQuotes(context: RunContext, quoteIds: bigint[]): Promise<bigint> {
+export async function getDefaultFeeForQuotes(context: RunContext, quoteIds: bigint[]): Promise<bigint> {
 	let out = 0n
 	for (const quoteId of quoteIds) {
 		let q = await context.viewFacet.getQuote(quoteId)
-		let tf = (await context.viewFacet.getSymbol(q.symbolId)).tradingFee
+		let tf = (await context.viewFacet.getSymbol(q.symbolId)).defaultFee
 		if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(q.quantity * q.requestedOpenPrice * tf, 36)
 		else out += unDecimal(q.quantity * q.marketPrice * tf, 36)
 	}
 	return out
 }
 
-export async function getTradingFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
+export async function getDefaultFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
 	let out = 0n
 	let q = await context.viewFacet.getQuote(quoteId)
 	let tf = (await context.viewFacet.getSymbol(q.symbolId)).tradingFee

@@ -288,7 +288,7 @@ contract ViewFacet is IViewFacet {
 				symbol.isValid,
 				symbol.minAcceptableQuoteValue,
 				symbol.minAcceptablePortionLF,
-				symbol.tradingFee,
+				symbol.defaultFee,
 				symbol.maxLeverage,
 				symbol.fundingRateEpochDuration,
 				symbol.fundingRateWindowTime,

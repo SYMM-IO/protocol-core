@@ -44,7 +44,8 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		uint256 maxFundingRate,
 		uint256 deadline,
 		address affiliate,
-		SingleUpnlAndPriceSig memory upnlSig
+		SingleUpnlAndPriceSig memory upnlSig,
+		Fee memory tradingFee
 	) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) returns (uint256 quoteId) {
 		quoteId = PartyAFacetImpl.sendQuote(
 			partyBsWhiteList,
@@ -60,7 +61,8 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			maxFundingRate,
 			deadline,
 			affiliate,
-			upnlSig
+			upnlSig,
+			tradingFee
 		);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		emit SendQuote(
@@ -77,7 +79,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			quote.lockedValues.lf,
 			quote.lockedValues.partyAmm,
 			quote.lockedValues.partyBmm,
-			quote.tradingFee,
+			Fee(quote.tradingFee.openFee, quote.tradingFee.closeFee),
 			deadline
 		);
 	}
@@ -114,7 +116,8 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 		uint256 partyBmm,
 		uint256 maxFundingRate,
 		uint256 deadline,
-		SingleUpnlAndPriceSig memory upnlSig
+		SingleUpnlAndPriceSig memory upnlSig,
+		Fee memory tradingFee
 	) external whenNotPartyAActionsPaused notLiquidatedPartyA(msg.sender) notSuspended(msg.sender) {
 		uint256 quoteId = PartyAFacetImpl.sendQuote(
 			partyBsWhiteList,
@@ -130,7 +133,8 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			maxFundingRate,
 			deadline,
 			address(0),
-			upnlSig
+			upnlSig,
+			tradingFee
 		);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
 		emit SendQuote(
@@ -147,7 +151,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			quote.lockedValues.lf,
 			quote.lockedValues.partyAmm,
 			quote.lockedValues.partyBmm,
-			quote.tradingFee,
+			Fee(quote.tradingFee.openFee, quote.tradingFee.closeFee),
 			deadline
 		);
 	}

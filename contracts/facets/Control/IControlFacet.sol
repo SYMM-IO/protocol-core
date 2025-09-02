@@ -39,7 +39,7 @@ interface IControlFacet is IControlEvents {
 		string memory name,
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF,
-		uint256 tradingFee,
+		uint256 defaultFee,
 		uint256 maxLeverage,
 		uint256 fundingRateEpochDuration,
 		uint256 fundingRateWindowTime
@@ -51,7 +51,7 @@ interface IControlFacet is IControlEvents {
 		string memory name,
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF,
-		uint256 tradingFee,
+		uint256 defaultFee,
 		uint256 maxLeverage,
 		uint256 fundingRateEpochDuration,
 		uint256 fundingRateWindowTime,
@@ -68,7 +68,7 @@ interface IControlFacet is IControlEvents {
 
 	function setSymbolAcceptableValues(uint256 symbolId, uint256 minAcceptableQuoteValue, uint256 minAcceptablePortionLF) external;
 
-	function setSymbolTradingFee(uint256 symbolId, uint256 tradingFee) external;
+	function setSymbolDefaultFee(uint256 symbolId, uint256 defaultFee) external;
 
 	/////////////////////////////////////
 

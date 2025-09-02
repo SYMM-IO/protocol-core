@@ -181,7 +181,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @param name The name of the trading symbol.
 	/// @param minAcceptableQuoteValue The minimum acceptable quote value for the symbol.
 	/// @param minAcceptablePortionLF The minimum acceptable portion of liquidation fee in quote.
-	/// @param tradingFee The trading fee for the symbol.
+	/// @param defaultFee The trading fee for the symbol.
 	/// @param maxLeverage The maximum leverage allowed for the symbol.
 	/// @param fundingRateEpochDuration The duration of each funding rate epoch for the symbol.
 	/// @param fundingRateWindowTime The window time for calculating the funding rate.
@@ -189,13 +189,13 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		string memory name,
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF,
-		uint256 tradingFee,
+		uint256 defaultFee,
 		uint256 maxLeverage,
 		uint256 fundingRateEpochDuration,
 		uint256 fundingRateWindowTime
 	) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
 		require(fundingRateWindowTime < fundingRateEpochDuration / 2, "ControlFacet: High window time");
-		require(tradingFee <= 1e18, "ControlFacet: High trading fee");
+		require(defaultFee <= 1e18, "ControlFacet: High default fee");
 		uint256 lastId = ++SymbolStorage.layout().lastId;
 		Symbol memory symbol = Symbol(
 			lastId,
@@ -203,7 +203,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 			true,
 			minAcceptableQuoteValue,
 			minAcceptablePortionLF,
-			tradingFee,
+			defaultFee,
 			maxLeverage,
 			fundingRateEpochDuration,
 			fundingRateWindowTime
@@ -214,7 +214,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 			name,
 			minAcceptableQuoteValue,
 			minAcceptablePortionLF,
-			tradingFee,
+			defaultFee,
 			maxLeverage,
 			fundingRateEpochDuration,
 			fundingRateWindowTime
@@ -225,7 +225,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 	/// @param name The name of the trading symbol.
 	/// @param minAcceptableQuoteValue The minimum acceptable quote value for the symbol.
 	/// @param minAcceptablePortionLF The minimum acceptable portion of liquidation fee in quote.
-	/// @param tradingFee The trading fee for the symbol.
+	/// @param defaultFee The default fee for the symbol.
 	/// @param maxLeverage The maximum leverage allowed for the symbol.
 	/// @param fundingRateEpochDuration The duration of each funding rate epoch for the symbol.
 	/// @param fundingRateWindowTime The window time for calculating the funding rate.
@@ -234,13 +234,13 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		string memory name,
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF,
-		uint256 tradingFee,
+		uint256 defaultFee,
 		uint256 maxLeverage,
 		uint256 fundingRateEpochDuration,
 		uint256 fundingRateWindowTime,
 		uint256 symbolType
 	) public onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
-		addSymbol(name, minAcceptableQuoteValue, minAcceptablePortionLF, tradingFee, maxLeverage, fundingRateEpochDuration, fundingRateWindowTime);
+		addSymbol(name, minAcceptableQuoteValue, minAcceptablePortionLF, defaultFee, maxLeverage, fundingRateEpochDuration, fundingRateWindowTime);
 		uint256 id = SymbolStorage.layout().lastId;
 		setSymbolType(id, symbolType);
 	}
@@ -253,7 +253,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 				symbolsWithType[i].name,
 				symbolsWithType[i].minAcceptableQuoteValue,
 				symbolsWithType[i].minAcceptablePortionLF,
-				symbolsWithType[i].tradingFee,
+				symbolsWithType[i].defaultFee,
 				symbolsWithType[i].maxLeverage,
 				symbolsWithType[i].fundingRateEpochDuration,
 				symbolsWithType[i].fundingRateWindowTime
@@ -272,7 +272,7 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 				symbols[i].name,
 				symbols[i].minAcceptableQuoteValue,
 				symbols[i].minAcceptablePortionLF,
-				symbols[i].tradingFee,
+				symbols[i].defaultFee,
 				symbols[i].maxLeverage,
 				symbols[i].fundingRateEpochDuration,
 				symbols[i].fundingRateWindowTime
@@ -339,14 +339,14 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		symbolLayout.symbols[symbolId].minAcceptablePortionLF = minAcceptablePortionLF;
 	}
 
-	/// @notice Sets the trading fee for a specific symbol.
-	/// @param symbolId The ID of the symbol whose trading fee is to be set.
-	/// @param tradingFee The new trading fee for the symbol.
-	function setSymbolTradingFee(uint256 symbolId, uint256 tradingFee) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
+	/// @notice Sets the default fee for a specific symbol.
+	/// @param symbolId The ID of the symbol whose default fee is to be set.
+	/// @param defaultFee The new trading fee for the symbol.
+	function setSymbolDefaultFee(uint256 symbolId, uint256 defaultFee) external onlyRole(LibAccessibility.SYMBOL_MANAGER_ROLE) {
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
 		require(symbolId >= 1 && symbolId <= symbolLayout.lastId, "ControlFacet: Invalid id");
-		emit SetSymbolTradingFee(symbolId, symbolLayout.symbols[symbolId].tradingFee, tradingFee);
-		symbolLayout.symbols[symbolId].tradingFee = tradingFee;
+		emit SetSymbolDefaultFee(symbolId, symbolLayout.symbols[symbolId].defaultFee, defaultFee);
+		symbolLayout.symbols[symbolId].defaultFee = defaultFee;
 	}
 
 	/// @notice Sets the type of a symbol.

@@ -21,7 +21,8 @@ interface IPartyAFacet is IPartyAEvents {
 		uint256 partyBmm,
 		uint256 maxFundingRate,
 		uint256 deadline,
-		SingleUpnlAndPriceSig memory upnlSig
+		SingleUpnlAndPriceSig memory upnlSig,
+		Fee memory tradingFee
 	) external;
 
 	function sendQuoteWithAffiliate(
@@ -38,7 +39,8 @@ interface IPartyAFacet is IPartyAEvents {
 		uint256 maxFundingRate,
 		uint256 deadline,
 		address affiliate,
-		SingleUpnlAndPriceSig memory upnlSig
+		SingleUpnlAndPriceSig memory upnlSig,
+		Fee memory tradingFee
 	) external returns (uint256);
 
 	function expireQuote(uint256[] memory expiredQuoteIds) external;

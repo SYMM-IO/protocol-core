@@ -36,7 +36,8 @@ library PartyAFacetImpl {
 		uint256 maxFundingRate,
 		uint256 deadline,
 		address affiliate,
-		SingleUpnlAndPriceSig memory upnlSig
+		SingleUpnlAndPriceSig memory upnlSig,
+		Fee memory tradingFee
 	) internal returns (uint256 currentId) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
@@ -72,11 +73,25 @@ library PartyAFacetImpl {
 			LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
 		}
 
+		uint256 openFee;
+		uint256 closeFee;
+		if(tradingFee.openFee > 0){
+			openFee = tradingFee.openFee;
+		} else {
+			openFee = symbolLayout.symbols[symbolId].defaultFee;
+		}
+		if(tradingFee.closeFee > 0){
+			closeFee = tradingFee.closeFee;
+		} else {
+			closeFee = symbolLayout.symbols[symbolId].defaultFee;
+		}
+
+
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
 		require(
 			uint256(availableBalance) >=
-				lockedValues.totalForPartyA() + ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
+				lockedValues.totalForPartyA() + ((quantity * tradingPrice * openFee) / 1e36),
 			"PartyAFacet: insufficient available balance"
 		);
 		require(maLayout.affiliateStatus[affiliate] || affiliate == address(0), "PartyAFacet: Invalid affiliate");
@@ -112,7 +127,9 @@ library PartyAFacetImpl {
 			quantityToClose: 0,
 			lastFundingPaymentTimestamp: 0,
 			deadline: deadline,
-			tradingFee: symbolLayout.symbols[symbolId].tradingFee,
+			tradingFee:Fee(openFee,closeFee),
+//			openFee: openFee,
+//			closeFee: closeFee,
 			affiliate: affiliate,
 			accumulatedPaidFunding: 0
 		});
@@ -120,7 +137,7 @@ library PartyAFacetImpl {
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
 		quoteLayout.quotes[currentId] = quote;
 
-		uint256 fee = LibQuote.getTradingFee(currentId);
+		uint256 fee = LibQuote.getOpenFee(currentId);
 		accountLayout.allocatedBalances[msg.sender] -= fee;
 		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
 	}
@@ -135,7 +152,7 @@ library PartyAFacetImpl {
 			result = LibQuote.expireQuote(quoteId);
 		} else if (quote.quoteStatus == QuoteStatus.PENDING) {
 			quote.quoteStatus = QuoteStatus.CANCELED;
-			uint256 fee = LibQuote.getTradingFee(quote.id);
+			uint256 fee = LibQuote.getOpenFee(quote.id);
 			accountLayout.allocatedBalances[quote.partyA] += fee;
 			emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
@@ -173,6 +190,11 @@ library PartyAFacetImpl {
 		quote.quantityToClose = quantityToClose;
 		quote.orderType = orderType;
 		quote.deadline = deadline;
+
+		uint256 fee = LibQuote.getCloseFee(quoteId);
+		AccountStorage.layout().allocatedBalances[msg.sender] -= fee;
+		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
+
 	}
 
 	function requestToCancelCloseRequest(uint256 quoteId) internal returns (QuoteStatus) {

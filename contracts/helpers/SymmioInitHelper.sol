@@ -54,14 +54,14 @@ contract SymmioInitHelper is AccessControlEnumerable {
 		uint256 maxLeverage,
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF,
-		uint256 tradingFee,
+		uint256 defaultFee,
 		uint256 fundingRateEpochDuration,
 		uint256 fundingRateWindowTime
 	) external onlyRole(SETTER_ROLE) {
 		ISymmio(symmioAddress).setSymbolValidationState(symbolId, isValid);
 		ISymmio(symmioAddress).setSymbolMaxLeverage(symbolId, maxLeverage);
 		ISymmio(symmioAddress).setSymbolAcceptableValues(symbolId, minAcceptableQuoteValue, minAcceptablePortionLF);
-		ISymmio(symmioAddress).setSymbolTradingFee(symbolId, tradingFee);
+		ISymmio(symmioAddress).setSymbolDefaultFee(symbolId, defaultFee);
 		ISymmio(symmioAddress).setSymbolFundingState(symbolId, fundingRateEpochDuration, fundingRateWindowTime);
 	}
 
