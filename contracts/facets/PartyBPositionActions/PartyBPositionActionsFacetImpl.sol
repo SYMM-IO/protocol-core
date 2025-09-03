@@ -86,9 +86,9 @@ library PartyBPositionActionsFacetImpl {
 		Quote storage quote = quoteLayout.quotes[quoteId];
 
 		require(quote.quoteStatus == QuoteStatus.CANCEL_CLOSE_PENDING, "PartyBFacet: Invalid state");
-		uint256 fee = LibQuote.getCloseFee(quoteId);
-		AccountStorage.layout().allocatedBalances[quote.partyA] += fee;
-		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
+//		uint256 fee = LibQuote.getCloseFee(quoteId);
+//		AccountStorage.layout().allocatedBalances[quote.partyA] += fee;
+//		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 		quote.statusModifyTimestamp = block.timestamp;
 		quote.quoteStatus = QuoteStatus.OPENED;
 		quote.requestedClosePrice = 0;
@@ -117,9 +117,9 @@ library PartyBPositionActionsFacetImpl {
 			"PartyBFacet: PartyB should be solvent"
 		);
 
-		uint256 fee = LibQuote.getCloseFee(quoteId);
-		accountLayout.allocatedBalances[msg.sender] -= fee;
-		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
+//		uint256 fee = LibQuote.getCloseFee(quoteId);
+//		accountLayout.allocatedBalances[msg.sender] -= fee;
+//		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
 
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 		accountLayout.partyANonces[quote.partyA] += 1;

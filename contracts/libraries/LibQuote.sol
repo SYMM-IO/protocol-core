@@ -267,6 +267,10 @@ library LibQuote {
 
 		quote.avgClosedPrice = (quote.avgClosedPrice * quote.closedAmount + filledAmount * closedPrice) / (quote.closedAmount + filledAmount);
 
+		uint256 fee = (filledAmount * closedPrice * quote.tradingFee.closeFee) / 1e36;
+		accountLayout.allocatedBalances[quote.partyA] -= fee;
+		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
+
 		quote.closedAmount += filledAmount;
 		quote.quantityToClose -= filledAmount;
 

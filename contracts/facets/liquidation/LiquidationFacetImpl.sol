@@ -179,6 +179,7 @@ library LiquidationFacetImpl {
 				}
 				accountLayout.settlementStates[partyA][quote.partyB].expectedAmount = accountLayout
 				.settlementStates[partyA][quote.partyB].actualAmount;
+
 			} else if (accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.LATE) {
 				accountLayout.settlementStates[partyA][quote.partyB].cva +=
 					quote.lockedValues.cva -
@@ -204,10 +205,16 @@ library LiquidationFacetImpl {
 				}
 			}
 			accountLayout.partyBLockedBalances[quote.partyB][partyA].subQuote(quote);
+
 			uint256 liquidationPrice = accountLayout.symbolsPrices[partyA][quote.symbolId].price;
+
 			quote.avgClosedPrice =
 				(quote.avgClosedPrice * quote.closedAmount + LibQuote.quoteOpenAmount(quote) * liquidationPrice) /
 				(quote.closedAmount + LibQuote.quoteOpenAmount(quote));
+
+			uint256 fee = ((quote.quantity - quote.closedAmount) * liquidationPrice * quote.tradingFee.closeFee) / 1e36;
+			accountLayout.settlementStates[partyA][quote.partyB].closeFee += fee;
+
 			quote.closedAmount = quote.quantity;
 
 			LibQuote.removeFromOpenPositions(quote.id);
@@ -290,6 +297,33 @@ library LiquidationFacetImpl {
 			accountLayout.liquidationDetails[partyA].involvedPartyBCounts -= 1;
 
 			int256 settleAmount = accountLayout.settlementStates[partyA][partyB].actualAmount;
+
+			if(accountLayout.settlementStates[partyA][partyB].closeFee < accountLayout.settlementStates[partyA][partyB].cva){
+				accountLayout.settlementStates[partyA][partyB].cva -= accountLayout.settlementStates[partyA][partyB].closeFee;
+			} else {
+				accountLayout.settlementStates[partyA][partyB].closeFee -= accountLayout.settlementStates[partyA][partyB].cva;
+				accountLayout.settlementStates[partyA][partyB].cva = 0;
+			}
+
+			if(accountLayout.settlementStates[partyA][partyB].closeFee != 0){
+				if(accountLayout.settlementStates[partyA][partyB].closeFee < accountLayout.liquidationDetails[partyA].liquidationFee){
+					accountLayout.liquidationDetails[partyA].liquidationFee -= accountLayout.settlementStates[partyA][partyB].closeFee;
+				} else {
+					accountLayout.settlementStates[partyA][partyB].closeFee -= accountLayout.liquidationDetails[partyA].liquidationFee;
+					accountLayout.liquidationDetails[partyA].liquidationFee = 0;
+				}
+			}
+
+			if(accountLayout.settlementStates[partyA][partyB].closeFee != 0){
+				if(settleAmount < 0){
+					settleAmount += int256(accountLayout.settlementStates[partyA][partyB].closeFee);
+				} else {
+					settleAmount -= int256(accountLayout.settlementStates[partyA][partyB].closeFee);
+				}
+				accountLayout.settlementStates[partyA][partyB].closeFee = 0;
+			}
+
+
 			accountLayout.partyBAllocatedBalances[partyB][partyA] += accountLayout.settlementStates[partyA][partyB].cva;
 			emit SharedEvents.BalanceChangePartyB(
 				partyB,

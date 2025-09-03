@@ -180,9 +180,9 @@ library PartyAFacetImpl {
 		quote.orderType = orderType;
 		quote.deadline = deadline;
 
-		uint256 fee = LibQuote.getCloseFee(quoteId);
-		AccountStorage.layout().allocatedBalances[msg.sender] -= fee;
-		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
+//		uint256 fee = LibQuote.getCloseFee(quoteId);
+//		AccountStorage.layout().allocatedBalances[msg.sender] -= fee;
+//		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
 
 	}
 
