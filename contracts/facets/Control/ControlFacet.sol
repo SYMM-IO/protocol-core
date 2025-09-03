@@ -153,6 +153,16 @@ contract ControlFacet is Accessibility, Ownable, IControlFacet {
 		GlobalAppStorage.layout().affiliateFeeCollector[affiliate] = feeCollector;
 	}
 
+	/// @notice Sets the open and close trading fees for an specific affiliate in the system.
+	/// @param affiliate The address of affiliate.
+	/// @param openFee The open trading fee.
+	/// @param closeFee The open trading fee.
+	function setAffiliateFee(address affiliate, uint256 openFee, uint256 closeFee) external onlyRole(LibAccessibility.AFFILIATE_MANAGER_ROLE) {
+		require(MAStorage.layout().affiliateStatus[affiliate], "ControlFacet: Invalid affiliate");
+		emit SetAffiliateFee(affiliate, openFee,closeFee);
+		GlobalAppStorage.layout().affiliateFee[affiliate] = Fee(openFee,closeFee);
+	}
+
 	/// @notice Sets the address of the default fee collector.
 	/// @param feeCollector The address of fee collector.
 	function setDefaultFeeCollector(address feeCollector) external onlyRole(LibAccessibility.SETTER_ROLE) {

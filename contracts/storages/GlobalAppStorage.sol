@@ -23,6 +23,7 @@ library GlobalAppStorage {
 		mapping(address => mapping(bytes32 => bool)) hasRole;
 		bool internalTransferPaused;
 		mapping(address => address) affiliateFeeCollector;
+		mapping(address => Fee) affiliateFee;
 		address signatureVerifier;
 		bool externalTransferPaused;
 	}

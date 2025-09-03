@@ -36,8 +36,7 @@ library PartyAFacetImpl {
 		uint256 maxFundingRate,
 		uint256 deadline,
 		address affiliate,
-		SingleUpnlAndPriceSig memory upnlSig,
-		Fee memory tradingFee
+		SingleUpnlAndPriceSig memory upnlSig
 	) internal returns (uint256 currentId) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
@@ -73,19 +72,9 @@ library PartyAFacetImpl {
 			LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
 		}
 
-		uint256 openFee;
-		uint256 closeFee;
-		if(tradingFee.openFee > 0){
-			openFee = tradingFee.openFee;
-		} else {
-			openFee = symbolLayout.symbols[symbolId].defaultFee;
-		}
-		if(tradingFee.closeFee > 0){
-			closeFee = tradingFee.closeFee;
-		} else {
-			closeFee = symbolLayout.symbols[symbolId].defaultFee;
-		}
-
+		Fee memory affiliateFee = GlobalAppStorage.layout().affiliateFee[affiliate];
+		uint256 openFee = affiliateFee.openFee > 0 ? affiliateFee.openFee : symbolLayout.symbols[symbolId].defaultFee;
+		uint256 closeFee = affiliateFee.closeFee > 0 ? affiliateFee.closeFee : symbolLayout.symbols[symbolId].defaultFee;
 
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
