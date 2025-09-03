@@ -205,8 +205,9 @@ library LibQuote {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
-		require(
+	require(
 			quote.lockedValues.cva == 0 || (quote.lockedValues.cva * filledAmount) / LibQuote.quoteOpenAmount(quote) > 0,
 			"LibQuote: Low filled amount"
 		);
@@ -270,7 +271,10 @@ library LibQuote {
 		uint256 fee = (filledAmount * closedPrice * quote.tradingFee.closeFee) / 1e36;
 		accountLayout.allocatedBalances[quote.partyA] -= fee;
 		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
-
+		address feeCollector = appLayout.affiliateFeeCollector[quote.affiliate] == address(0)
+			? appLayout.defaultFeeCollector
+			: appLayout.affiliateFeeCollector[quote.affiliate];
+		accountLayout.balances[feeCollector] += fee;
 		quote.closedAmount += filledAmount;
 		quote.quantityToClose -= filledAmount;
 
