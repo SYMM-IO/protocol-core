@@ -11,9 +11,10 @@ import { limitQuoteRequestBuilder } from "./models/requestModels/QuoteRequest"
 import {
 	decimal,
 	getBlockTimestamp,
+	getCloseTradingFeeForQuotes,
+	getOpenTradingFeeForQuotes,
 	getQuoteQuantity,
 	getTotalLockedValuesForQuoteIds,
-	getTradingFeeForQuotes,
 	pausePartyA,
 	pausePartyB,
 	unDecimal,
@@ -356,7 +357,7 @@ export function shouldBehaveLikeClosePosition(): void {
 			let userAvailable =
 				this.user_allocated -
 				(await getTotalLockedValuesForQuoteIds(context, [2n, 4n], false)) -
-				(await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])) -
+				(await getCloseTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])) -
 				unDecimal(quantity * (price - closePrice))
 
 			await expect(
@@ -377,7 +378,7 @@ export function shouldBehaveLikeClosePosition(): void {
 			userAvailable =
 				this.user_allocated -
 				(await getTotalLockedValuesForQuoteIds(context, [1n, 4n], false)) -
-				(await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])) -
+				(await getCloseTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])) -
 				unDecimal(quantity * (closePrice - price))
 
 			await expect(

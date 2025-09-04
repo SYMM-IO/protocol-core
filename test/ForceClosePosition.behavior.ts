@@ -11,9 +11,9 @@ import {limitQuoteRequestBuilder} from "./models/requestModels/QuoteRequest"
 import {
 	decimal,
 	getBlockTimestamp,
+	getCloseTradingFeeForQuotes,
 	getQuoteQuantity,
 	getTotalLockedValuesForQuoteIds,
-	getTradingFeeForQuotes,
 	unDecimal,
 } from "./utils/Common"
 import {getDummyHighLowPriceSig, getDummyPriceSig} from "./utils/SignatureUtils"
@@ -196,7 +196,7 @@ export function shouldBehaveLikeForceClosePosition(): void {
 
 		let userAvailable = (this.user_allocated
 			- (await getTotalLockedValuesForQuoteIds(context, [1n, 4n], false))
-			- (await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n]))
+			- (await getCloseTradingFeeForQuotes(context, [1n, 2n, 3n, 4n]))
 			- (unDecimal(quantity * (decimal(1n) - decimal(1n))))
 			+ (decimal(1n))
 		) * (-1n)

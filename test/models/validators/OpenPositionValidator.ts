@@ -3,10 +3,10 @@ import {expect} from "chai"
 
 import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
 import {
+	getOpenTradingFeeForQuotes,
+	getOpenTradingFeeForQuoteWithFilledAmount,
 	getTotalPartyALockedValuesForQuotes,
 	getTotalPartyBLockedValuesForQuotes,
-	getTradingFeeForQuotes,
-	getTradingFeeForQuoteWithFilledAmount
 } from "../../utils/Common"
 import {logger} from "../../utils/LoggerUtils"
 import {expectToBeApproximately} from "../../utils/SafeMath"
@@ -62,7 +62,7 @@ export class OpenPositionValidator implements TransactionValidator {
 		expect(newQuote.quantity).to.be.equal(arg.fillAmount)
 
 		const newCollectorBalance = await context.viewFacet.balanceOf(await context.viewFacet.getFeeCollector(newQuote.affiliate))
-		expect(newCollectorBalance).to.be.equal(arg.beforeOutput.feeCollectorBalance + await getTradingFeeForQuoteWithFilledAmount(context, newQuote.id!, arg.fillAmount))
+		expect(newCollectorBalance).to.be.equal(arg.beforeOutput.feeCollectorBalance + await getOpenTradingFeeForQuoteWithFilledAmount(context, newQuote.id!, arg.fillAmount))
 
 		const oldLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([oldQuote])
 		const newLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([newQuote])
@@ -104,7 +104,7 @@ export class OpenPositionValidator implements TransactionValidator {
 		expectToBeApproximately(newBalanceInfoPartyA.totalLockedPartyA, oldBalanceInfoPartyA.totalLockedPartyA + partialWithPriceLockedValuesPartyA)
 		if (arg.newQuoteTargetStatus == QuoteStatus.CANCELED) {
 			expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(
-				(oldBalanceInfoPartyA.allocatedBalances + (await getTradingFeeForQuotes(context, [arg.newQuoteId!]))).toString(),
+				(oldBalanceInfoPartyA.allocatedBalances + (await getOpenTradingFeeForQuotes(context, [arg.newQuoteId!]))).toString(),
 			)
 		} else {
 			expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances.toString())

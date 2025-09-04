@@ -1,15 +1,15 @@
-import {time} from "@nomicfoundation/hardhat-network-helpers"
-import {JsonSerializer} from "typescript-json-serializer"
+import { time } from "@nomicfoundation/hardhat-network-helpers"
+import { JsonSerializer } from "typescript-json-serializer"
 
-import {OrderType, QuoteStatus} from "../models/Enums"
-import {RunContext} from "../models/RunContext"
-import {safeDiv} from "./SafeMath"
-import {network} from "hardhat"
-import {QuoteStructOutput, SymbolStructOutput} from "../../src/types/contracts/interfaces/ISymmio"
+import { OrderType, QuoteStatus } from "../models/Enums"
+import { RunContext } from "../models/RunContext"
+import { safeDiv } from "./SafeMath"
+import { network } from "hardhat"
+import { QuoteStructOutput, SymbolStructOutput } from "../../src/types/contracts/interfaces/ISymmio"
 
 const defaultSerializer = new JsonSerializer()
 
-export type PromiseOrValue<T> = T | Promise<T>;
+export type PromiseOrValue<T> = T | Promise<T>
 
 export function decimal(value: bigint, decimal: number = 18): bigint {
 	return value * 10n ** BigInt(decimal)
@@ -119,9 +119,49 @@ export async function getDefaultFeeForQuotes(context: RunContext, quoteIds: bigi
 export async function getDefaultFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
 	let out = 0n
 	let q = await context.viewFacet.getQuote(quoteId)
-	let tf = (await context.viewFacet.getSymbol(q.symbolId)).tradingFee
+	let tf = (await context.viewFacet.getSymbol(q.symbolId)).defaultFee
 	if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(filledAmounts * q.requestedOpenPrice * tf, 36)
 	else out += unDecimal(filledAmounts * q.marketPrice * tf, 36)
+	return out
+}
+
+export async function getOpenTradingFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
+	let out = 0n
+	let q = await context.viewFacet.getQuote(quoteId)
+	let tf = q.tradingFee.openFee
+	if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(filledAmounts * q.requestedOpenPrice * tf, 36)
+	else out += unDecimal(filledAmounts * q.marketPrice * tf, 36)
+	return out
+}
+
+export async function getCloseTradingFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
+	let out = 0n
+	let q = await context.viewFacet.getQuote(quoteId)
+	let tf = q.tradingFee.closeFee
+	if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(filledAmounts * q.requestedOpenPrice * tf, 36)
+	else out += unDecimal(filledAmounts * q.marketPrice * tf, 36)
+	return out
+}
+
+export async function getCloseTradingFeeForQuotes(context: RunContext, quoteIds: bigint[]): Promise<bigint> {
+	let out = 0n
+	for (const quoteId of quoteIds) {
+		let q = await context.viewFacet.getQuote(quoteId)
+		let tf = q.tradingFee.closeFee
+		if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(q.quantity * q.requestedOpenPrice * tf, 36)
+		else out += unDecimal(q.quantity * q.marketPrice * tf, 36)
+	}
+	return out
+}
+
+export async function getOpenTradingFeeForQuotes(context: RunContext, quoteIds: bigint[]): Promise<bigint> {
+	let out = 0n
+	for (const quoteId of quoteIds) {
+		let q = await context.viewFacet.getQuote(quoteId)
+		let tf = q.tradingFee.openFee
+		if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(q.quantity * q.requestedOpenPrice * tf, 36)
+		else out += unDecimal(q.quantity * q.marketPrice * tf, 36)
+	}
 	return out
 }
 

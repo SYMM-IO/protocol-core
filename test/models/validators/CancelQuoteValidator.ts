@@ -1,7 +1,7 @@
 import {expect} from "chai"
 
 import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
-import {getTotalPartyALockedValuesForQuotes, getTradingFeeForQuotes} from "../../utils/Common"
+import {getOpenTradingFeeForQuotes, getTotalPartyALockedValuesForQuotes} from "../../utils/Common"
 import {logger} from "../../utils/LoggerUtils"
 import {expectToBeApproximately} from "../../utils/SafeMath"
 import {QuoteStatus} from "../Enums"
@@ -57,7 +57,7 @@ export class CancelQuoteValidator implements TransactionValidator {
 
 		expect(newBalanceInfoPartyA.totalPendingLockedPartyA.toString()).to.equal((oldBalanceInfoPartyA.totalPendingLockedPartyA - lockedValues).toString())
 		expect(newBalanceInfoPartyA.totalLockedPartyA.toString()).to.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
-		const tradingFee = await getTradingFeeForQuotes(context, [arg.quoteId])
+		const tradingFee = await getOpenTradingFeeForQuotes(context, [arg.quoteId])
 		expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + BigInt(tradingFee))
 
 	}

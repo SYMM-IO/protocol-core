@@ -1,13 +1,13 @@
-import {expect} from "chai"
-import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
-import {getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal} from "../../utils/Common"
-import {logger} from "../../utils/LoggerUtils"
-import {expectToBeApproximately} from "../../utils/SafeMath"
-import {PositionType, QuoteStatus} from "../Enums"
-import {Hedger} from "../Hedger"
-import {RunContext} from "../RunContext"
-import {BalanceInfo, User} from "../User"
-import {TransactionValidator} from "./TransactionValidator"
+import { expect } from "chai"
+import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
+import { getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal } from "../../utils/Common"
+import { logger } from "../../utils/LoggerUtils"
+import { expectToBeApproximately } from "../../utils/SafeMath"
+import { PositionType, QuoteStatus } from "../Enums"
+import { Hedger } from "../Hedger"
+import { RunContext } from "../RunContext"
+import { BalanceInfo, User } from "../User"
+import { TransactionValidator } from "./TransactionValidator"
 
 export type FillCloseRequestValidatorBeforeArg = {
 	user: User
@@ -42,7 +42,7 @@ export class FillCloseRequestValidator implements TransactionValidator {
 
 	async after(context: RunContext, arg: FillCloseRequestValidatorAfterArg) {
 		logger.debug("After FillCloseRequestValidator...")
-// Check Quote
+		// Check Quote
 		const newQuote = await context.viewFacet.getQuote(arg.quoteId)
 		const oldQuote = arg.beforeOutput.quote
 		const zeroToClose = newQuote.quantityToClose === 0n
@@ -58,7 +58,7 @@ export class FillCloseRequestValidator implements TransactionValidator {
 
 		expect(newQuote.closedAmount.toString()).to.equal((BigInt(oldQuote.closedAmount) + BigInt(arg.fillAmount)).toString())
 
-// TODO: Sometimes fillCloseRequest has Error
+		// TODO: Sometimes fillCloseRequest has Error
 
 		expect(newQuote.quantityToClose.toString()).to.equal((BigInt(oldQuote.quantityToClose) - BigInt(arg.fillAmount)).toString())
 
@@ -78,21 +78,26 @@ export class FillCloseRequestValidator implements TransactionValidator {
 		const returnedLockedValuesPartyA = (BigInt(oldLockedValuesPartyA) * BigInt(arg.fillAmount)) / BigInt(oldQuote.quantity)
 		const returnedLockedValuesPartyB = (BigInt(oldLockedValuesPartyB) * BigInt(arg.fillAmount)) / BigInt(oldQuote.quantity)
 
-// Check Balances partyA
+		// Check Balances partyA
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
 
 		expect(newBalanceInfoPartyA.totalPendingLockedPartyA.toString()).to.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
-		expectToBeApproximately(BigInt(newBalanceInfoPartyA.totalLockedPartyA), BigInt(oldBalanceInfoPartyA.totalLockedPartyA) - returnedLockedValuesPartyA)
+		expectToBeApproximately(
+			BigInt(newBalanceInfoPartyA.totalLockedPartyA),
+			BigInt(oldBalanceInfoPartyA.totalLockedPartyA) - returnedLockedValuesPartyA,
+		)
 		expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + profit)
 
-// Check Balances partyB
+		// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())
 		const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB
 
 		expect(newBalanceInfoPartyB.totalPendingLockedPartyB.toString()).to.equal(oldBalanceInfoPartyB.totalPendingLockedPartyB.toString())
-		expectToBeApproximately(BigInt(newBalanceInfoPartyB.totalLockedPartyB), BigInt(oldBalanceInfoPartyB.totalLockedPartyB) - returnedLockedValuesPartyB)
+		expectToBeApproximately(
+			BigInt(newBalanceInfoPartyB.totalLockedPartyB),
+			BigInt(oldBalanceInfoPartyB.totalLockedPartyB) - returnedLockedValuesPartyB,
+		)
 		expectToBeApproximately(BigInt(newBalanceInfoPartyB.allocatedBalances), BigInt(oldBalanceInfoPartyB.allocatedBalances) - profit)
-
 	}
 }

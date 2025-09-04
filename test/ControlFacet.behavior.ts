@@ -6,6 +6,7 @@ import { keccak256 } from "js-sha3"
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
 import { ethers } from "hardhat"
 import { ZeroAddress } from "ethers"
+import { decimal } from "./utils/Common"
 
 const DISPUTE_ROLE = `0x${keccak256("DISPUTE_ROLE")}`
 const PARTY_B_MANAGER_ROLE = `0x${keccak256("PARTY_B_MANAGER_ROLE")}`
@@ -156,7 +157,7 @@ export function shouldBehaveLikeControlFacet(): void {
 
 			await expect(
 				context.controlFacet.connect(owner).addSymbol("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period),
-			).to.be.revertedWith("ControlFacet: High trading fee")
+			).to.be.revertedWith("ControlFacet: High default fee")
 		})
 	})
 
@@ -227,15 +228,15 @@ export function shouldBehaveLikeControlFacet(): void {
 
 	describe("setSymbolTradingFee", () => {
 		it("Should setSymbolTradingFee successfully", async function () {
-			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(1, BigInt("200000000000000000000"))).to.not.be.reverted
-			expect((await context.viewFacet.getSymbol(1)).tradingFee).to.equal(BigInt("200000000000000000000"))
+			await expect(context.controlFacet.connect(owner).setSymbolDefaultFee(1, BigInt("200000000000000000000"))).to.not.be.reverted
+			expect((await context.viewFacet.getSymbol(1)).defaultFee).to.equal(BigInt("200000000000000000000"))
 		})
 
 		it("Should not setSymbolTradingFee if invalid symbol id", async function () {
-			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(0, BigInt("200000000000000000000"))).to.be.revertedWith(
+			await expect(context.controlFacet.connect(owner).setSymbolDefaultFee(0, BigInt("200000000000000000000"))).to.be.revertedWith(
 				"ControlFacet: Invalid id",
 			)
-			await expect(context.controlFacet.connect(owner).setSymbolTradingFee(6, BigInt("200000000000000000000"))).to.be.revertedWith(
+			await expect(context.controlFacet.connect(owner).setSymbolDefaultFee(6, BigInt("200000000000000000000"))).to.be.revertedWith(
 				"ControlFacet: Invalid id",
 			)
 		})
@@ -413,9 +414,7 @@ export function shouldBehaveLikeControlFacet(): void {
 
 		it("Should fail to add zero address as external transfer target", async function () {
 			await expect(
-				context.controlFacet
-					.connect(context.signers.admin)
-					.addRelayerForExternalTransferTarget(ZeroAddress, context.signers.others[1].address),
+				context.controlFacet.connect(context.signers.admin).addRelayerForExternalTransferTarget(ZeroAddress, context.signers.others[1].address),
 			).to.be.revertedWith("ControlFacet: Zero address")
 		})
 	})
@@ -474,7 +473,7 @@ export function shouldBehaveLikeControlFacet(): void {
 
 			await expect(
 				context.controlFacet.connect(owner).addSymbolWithType("ETHUSDT", maxQty, baseUnit, quoteUnit, minQty, windowTime, period, symbolType),
-			).to.be.revertedWith("ControlFacet: High trading fee")
+			).to.be.revertedWith("ControlFacet: High default fee")
 		})
 	})
 
@@ -492,6 +491,7 @@ export function shouldBehaveLikeControlFacet(): void {
 					fundingRateEpochDuration: BigInt(28800),
 					fundingRateWindowTime: BigInt(900),
 					symbolType: 2,
+					defaultFee: BigInt(800000000000000),
 				},
 				{
 					symbolId: 0,
@@ -504,6 +504,7 @@ export function shouldBehaveLikeControlFacet(): void {
 					fundingRateEpochDuration: BigInt(28800),
 					fundingRateWindowTime: BigInt(900),
 					symbolType: 3,
+					defaultFee: BigInt(800000000000000),
 				},
 			]
 
@@ -527,6 +528,7 @@ export function shouldBehaveLikeControlFacet(): void {
 					fundingRateEpochDuration: BigInt(900),
 					fundingRateWindowTime: BigInt(800),
 					symbolType: 1,
+					defaultFee: BigInt(800000000000000),
 				},
 			]
 
@@ -541,7 +543,7 @@ export function shouldBehaveLikeControlFacet(): void {
 					isValid: true,
 					minAcceptableQuoteValue: BigInt("100000000000000000000"),
 					minAcceptablePortionLF: BigInt(4000000000000000),
-					tradingFee: BigInt("100000000000000000000"),
+					defaultFee: decimal(2n),
 					maxLeverage: BigInt("60000000000000000000"),
 					fundingRateEpochDuration: BigInt(28800),
 					fundingRateWindowTime: BigInt(900),
@@ -549,7 +551,7 @@ export function shouldBehaveLikeControlFacet(): void {
 				},
 			]
 
-			await expect(context.controlFacet.connect(owner).addSymbolsWithType(symbolsWithType)).to.be.revertedWith("ControlFacet: High trading fee")
+			await expect(context.controlFacet.connect(owner).addSymbolsWithType(symbolsWithType)).to.be.revertedWith("ControlFacet: High default fee")
 		})
 	})
 }

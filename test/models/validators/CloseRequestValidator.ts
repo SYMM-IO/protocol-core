@@ -6,6 +6,7 @@ import {Hedger} from "../Hedger"
 import {RunContext} from "../RunContext"
 import {BalanceInfo, User} from "../User"
 import {TransactionValidator} from "./TransactionValidator"
+import { getCloseTradingFeeForQuotes, getCloseTradingFeeForQuoteWithFilledAmount } from "../../utils/Common"
 
 export type CloseRequestValidatorBeforeArg = {
 	user: User
@@ -42,7 +43,6 @@ export class CloseRequestValidator implements TransactionValidator {
 		logger.debug("After CloseRequestValidator...")
 		// Check Quote
 		const newQuote = await context.viewFacet.getQuote(arg.quoteId)
-		const oldQuote = arg.beforeOutput.quote
 		expect(newQuote.quoteStatus).to.be.equal(QuoteStatus.CLOSE_PENDING)
 		expect(newQuote.quantityToClose).to.be.equal(arg.quantityToClose)
 		expect(newQuote.requestedClosePrice).to.be.equal(arg.closePrice)
@@ -53,7 +53,7 @@ export class CloseRequestValidator implements TransactionValidator {
 
 		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
 		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
-		expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances.toString())
+		expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances - await getCloseTradingFeeForQuoteWithFilledAmount(context, arg.quoteId, arg.quantityToClose))
 
 		// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())
