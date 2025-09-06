@@ -68,11 +68,10 @@ struct Quote {
 	uint256 statusModifyTimestamp;
 	uint256 lastFundingPaymentTimestamp;
 	uint256 deadline;
-	Fee tradingFee;
-//	uint256 openFee;
-//	uint256 closeFee;
+	uint256 tradingFee; // openFee
 	address affiliate;
 	int256 accumulatedPaidFunding;
+	uint256 closeFee;
 }
 
 library QuoteStorage {

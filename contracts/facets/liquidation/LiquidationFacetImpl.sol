@@ -212,7 +212,7 @@ library LiquidationFacetImpl {
 				(quote.avgClosedPrice * quote.closedAmount + LibQuote.quoteOpenAmount(quote) * liquidationPrice) /
 				(quote.closedAmount + LibQuote.quoteOpenAmount(quote));
 
-			uint256 fee = ((quote.quantity - quote.closedAmount) * liquidationPrice * quote.tradingFee.closeFee) / 1e36;
+			uint256 fee = ((quote.quantity - quote.closedAmount) * liquidationPrice * quote.closeFee) / 1e36;
 			accountLayout.settlementStates[partyA][quote.partyB].closeFee += fee;
 
 			quote.closedAmount = quote.quantity;

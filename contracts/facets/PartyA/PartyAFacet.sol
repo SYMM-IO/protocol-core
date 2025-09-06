@@ -77,9 +77,10 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			quote.lockedValues.lf,
 			quote.lockedValues.partyAmm,
 			quote.lockedValues.partyBmm,
-			Fee(quote.tradingFee.openFee, quote.tradingFee.closeFee),
+			quote.tradingFee,
 			deadline
 		);
+
 	}
 
 	/**
@@ -133,6 +134,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			upnlSig
 		);
 		Quote storage quote = QuoteStorage.layout().quotes[quoteId];
+
 		emit SendQuote(
 			msg.sender,
 			quoteId,
@@ -147,7 +149,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			quote.lockedValues.lf,
 			quote.lockedValues.partyAmm,
 			quote.lockedValues.partyBmm,
-			Fee(quote.tradingFee.openFee, quote.tradingFee.closeFee),
+			quote.tradingFee,
 			deadline
 		);
 	}

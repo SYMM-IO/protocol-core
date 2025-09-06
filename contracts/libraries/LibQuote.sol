@@ -173,9 +173,9 @@ library LibQuote {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
 		if (quote.orderType == OrderType.LIMIT) {
-			fee = (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee.openFee) / 1e36;
+			fee = (LibQuote.quoteOpenAmount(quote) * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
 		} else {
-			fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee.openFee) / 1e36;
+			fee = (LibQuote.quoteOpenAmount(quote) * quote.marketPrice * quote.tradingFee) / 1e36;
 		}
 	}
 
@@ -187,7 +187,7 @@ library LibQuote {
 	function getCloseFee(uint256 quoteId) internal view returns (uint256 fee) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		Quote storage quote = quoteLayout.quotes[quoteId];
-		fee = (quote.quantityToClose * quote.requestedClosePrice * quote.tradingFee.closeFee) / 1e36;
+		fee = (quote.quantityToClose * quote.requestedClosePrice * quote.closeFee) / 1e36;
 //		if (quote.orderType == OrderType.LIMIT) {
 //			fee = (quote.quantityToClose * quote.requestedClosePrice * quote.closeFee) / 1e36;
 //		} else {
@@ -268,7 +268,7 @@ library LibQuote {
 
 		quote.avgClosedPrice = (quote.avgClosedPrice * quote.closedAmount + filledAmount * closedPrice) / (quote.closedAmount + filledAmount);
 
-		uint256 fee = (filledAmount * closedPrice * quote.tradingFee.closeFee) / 1e36;
+		uint256 fee = (filledAmount * closedPrice * quote.closeFee) / 1e36;
 		accountLayout.allocatedBalances[quote.partyA] -= fee;
 		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 		address feeCollector = appLayout.affiliateFeeCollector[quote.affiliate] == address(0)

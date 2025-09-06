@@ -46,10 +46,10 @@ library LibPartyBPositionsActions {
 			: appLayout.affiliateFeeCollector[quote.affiliate];
 		if (quote.orderType == OrderType.LIMIT) {
 			require(quote.quantity >= filledAmount && filledAmount > 0, "PartyBFacet: Invalid filledAmount");
-			accountLayout.balances[feeCollector] += (filledAmount * quote.requestedOpenPrice * quote.tradingFee.openFee) / 1e36;
+			accountLayout.balances[feeCollector] += (filledAmount * quote.requestedOpenPrice * quote.tradingFee) / 1e36;
 		} else {
 			require(quote.quantity == filledAmount, "PartyBFacet: Invalid filledAmount");
-			accountLayout.balances[feeCollector] += (filledAmount * quote.marketPrice * quote.tradingFee.openFee) / 1e36;
+			accountLayout.balances[feeCollector] += (filledAmount * quote.marketPrice * quote.tradingFee) / 1e36;
 		}
 		if (quote.positionType == PositionType.LONG) {
 			require(openedPrice <= quote.requestedOpenPrice, "PartyBFacet: Opened price isn't valid");
@@ -134,11 +134,10 @@ library LibPartyBPositionsActions {
 				quantityToClose: 0,
 				lastFundingPaymentTimestamp: 0,
 				deadline: quote.deadline,
-				tradingFee:Fee(quote.tradingFee.openFee,quote.tradingFee.closeFee),
-//				openFee: quote.openFee,
-//				closeFee: quote.closeFee,
+				tradingFee: quote.tradingFee,
 				affiliate: quote.affiliate,
-				accumulatedPaidFunding: 0
+				accumulatedPaidFunding: 0,
+				closeFee: quote.closeFee
 			});
 
 			quoteLayout.quoteIdsOf[quote.partyA].push(currentId);

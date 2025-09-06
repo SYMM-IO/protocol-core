@@ -73,8 +73,8 @@ library PartyAFacetImpl {
 		}
 
 		Fee memory affiliateFee = GlobalAppStorage.layout().affiliateFee[affiliate];
-		uint256 openFee = affiliateFee.openFee > 0 ? affiliateFee.openFee : symbolLayout.symbols[symbolId].defaultFee;
-		uint256 closeFee = affiliateFee.closeFee > 0 ? affiliateFee.closeFee : symbolLayout.symbols[symbolId].defaultFee;
+		uint256 openFee = affiliateFee.openFee > 0 ? affiliateFee.openFee : symbolLayout.symbols[symbolId].tradingFee;
+		uint256 closeFee = affiliateFee.closeFee > 0 ? affiliateFee.closeFee : symbolLayout.symbols[symbolId].tradingFee;
 
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
@@ -116,11 +116,10 @@ library PartyAFacetImpl {
 			quantityToClose: 0,
 			lastFundingPaymentTimestamp: 0,
 			deadline: deadline,
-			tradingFee:Fee(openFee,closeFee),
-//			openFee: openFee,
-//			closeFee: closeFee,
+			tradingFee:openFee,
 			affiliate: affiliate,
-			accumulatedPaidFunding: 0
+			accumulatedPaidFunding: 0,
+			closeFee:closeFee
 		});
 		quoteLayout.quoteIdsOf[msg.sender].push(currentId);
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
