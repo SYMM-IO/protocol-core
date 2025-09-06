@@ -109,7 +109,7 @@ export async function getDefaultFeeForQuotes(context: RunContext, quoteIds: bigi
 	let out = 0n
 	for (const quoteId of quoteIds) {
 		let q = await context.viewFacet.getQuote(quoteId)
-		let tf = (await context.viewFacet.getSymbol(q.symbolId)).defaultFee
+		let tf = (await context.viewFacet.getSymbol(q.symbolId)).tradingFee
 		if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(q.quantity * q.requestedOpenPrice * tf, 36)
 		else out += unDecimal(q.quantity * q.marketPrice * tf, 36)
 	}
@@ -119,7 +119,7 @@ export async function getDefaultFeeForQuotes(context: RunContext, quoteIds: bigi
 export async function getDefaultFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
 	let out = 0n
 	let q = await context.viewFacet.getQuote(quoteId)
-	let tf = (await context.viewFacet.getSymbol(q.symbolId)).defaultFee
+	let tf = (await context.viewFacet.getSymbol(q.symbolId)).tradingFee
 	if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(filledAmounts * q.requestedOpenPrice * tf, 36)
 	else out += unDecimal(filledAmounts * q.marketPrice * tf, 36)
 	return out
@@ -128,7 +128,7 @@ export async function getDefaultFeeForQuoteWithFilledAmount(context: RunContext,
 export async function getOpenTradingFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
 	let out = 0n
 	let q = await context.viewFacet.getQuote(quoteId)
-	let tf = q.tradingFee.openFee
+	let tf = q.tradingFee
 	if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(filledAmounts * q.requestedOpenPrice * tf, 36)
 	else out += unDecimal(filledAmounts * q.marketPrice * tf, 36)
 	return out
@@ -137,7 +137,7 @@ export async function getOpenTradingFeeForQuoteWithFilledAmount(context: RunCont
 export async function getCloseTradingFeeForQuoteWithFilledAmount(context: RunContext, quoteId: bigint, filledAmounts: bigint): Promise<bigint> {
 	let out = 0n
 	let q = await context.viewFacet.getQuote(quoteId)
-	let tf = q.tradingFee.closeFee
+	let tf = q.closeFee
 	if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(filledAmounts * q.requestedOpenPrice * tf, 36)
 	else out += unDecimal(filledAmounts * q.marketPrice * tf, 36)
 	return out
@@ -147,7 +147,7 @@ export async function getCloseTradingFeeForQuotes(context: RunContext, quoteIds:
 	let out = 0n
 	for (const quoteId of quoteIds) {
 		let q = await context.viewFacet.getQuote(quoteId)
-		let tf = q.tradingFee.closeFee
+		let tf = q.closeFee
 		if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(q.quantity * q.requestedOpenPrice * tf, 36)
 		else out += unDecimal(q.quantity * q.marketPrice * tf, 36)
 	}
@@ -158,7 +158,7 @@ export async function getOpenTradingFeeForQuotes(context: RunContext, quoteIds: 
 	let out = 0n
 	for (const quoteId of quoteIds) {
 		let q = await context.viewFacet.getQuote(quoteId)
-		let tf = q.tradingFee.openFee
+		let tf = q.tradingFee
 		if (q.orderType === BigInt(OrderType.LIMIT)) out += unDecimal(q.quantity * q.requestedOpenPrice * tf, 36)
 		else out += unDecimal(q.quantity * q.marketPrice * tf, 36)
 	}
