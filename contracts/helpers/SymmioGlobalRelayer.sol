@@ -121,20 +121,15 @@ contract SymmioGlobalRelayer is AccessControlEnumerableUpgradeable, PausableUpgr
 	/* ─────────────────────────────── Initialization ─────────────────────────────── */
 
 	/**
-	 * @notice Constructor that disables initializers for the implementation contract
-	 * @dev Prevents the implementation contract from being initialized directly
-	 */
-	constructor() {
-		_disableInitializers();
-	}
-
-	/**
 	 * @notice Initializes the contract with admin role assignments
 	 * @param admin Address to receive all initial administrative roles
 	 * @dev This function can only be called once due to the initializer modifier
 	 *      Grants DEFAULT_ADMIN_ROLE, SETTER_ROLE, and UNPAUSER_ROLE to the admin
 	 */
 	function initialize(address admin) external initializer {
+		__Pausable_init();
+		__AccessControl_init();
+
 		if (admin == address(0)) revert InvalidAddress();
 
 		_grantRole(DEFAULT_ADMIN_ROLE, admin);
