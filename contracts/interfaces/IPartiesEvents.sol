@@ -24,9 +24,7 @@ interface IPartiesEvents {
 		uint256 lf,
 		uint256 partyAmm,
 		uint256 partyBmm,
-		Fee tradingFee,
-//		uint256 openFee,
-//		uint256 closeFee,
+		uint256 tradingFee,
 		uint256 deadline
 	);
 

@@ -15,13 +15,12 @@ interface IControlEvents {
 		string name,
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF,
-		uint256 defaultFee,
+		uint256 tradingFee,
 		uint256 maxLeverage,
 		uint256 fundingRateEpochDuration,
 		uint256 fundingRateWindowTime
 	);
 	event SetFeeCollector(address affiliate, address oldFeeCollector, address newFeeCollector);
-	event SetAffiliateFee(address affiliate, uint256 openFee, uint256 closeFee);
 	event SetDefaultFeeCollector(address oldDefaultFeeCollector, address newDefaultFeeCollector);
 	event SetSymbolValidationState(uint256 symbolId, bool oldState, bool isValid);
 	event SetSymbolFundingState(uint256 symbolId, uint256 fundingRateEpochDuration, uint256 fundingRateWindowTime);
@@ -32,7 +31,7 @@ interface IControlEvents {
 		uint256 minAcceptableQuoteValue,
 		uint256 minAcceptablePortionLF
 	);
-	event SetSymbolDefaultFee(uint256 symbolId, uint256 oldDefaultFee, uint256 defaultFee);
+	event SetSymbolTradingFee(uint256 symbolId, uint256 oldTradingFee, uint256 tradingFee);
 	event SetSymbolMaxSlippage(uint256 symbolId, uint256 oldMaxSlippage, uint256 maxSlippage);
 	event SetSymbolMaxLeverage(uint256 symbolId, uint256 oldMaxLeverage, uint256 maxLeverage);
 	event SetDeallocateCooldown(uint256 oldDeallocateCooldown, uint256 newDeallocateCooldown);

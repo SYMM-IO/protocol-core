@@ -1,6 +1,6 @@
 import {expect} from "chai"
 
-import {getTotalLockedValuesForQuoteIds, getDefaultFeeForQuotes, getOpenTradingFeeForQuotes} from "../../utils/Common"
+import {getTotalLockedValuesForQuoteIds, getTradingFeeForQuotes} from "../../utils/Common"
 import {logger} from "../../utils/LoggerUtils"
 import {QuoteStatus} from "../Enums"
 import {RunContext} from "../RunContext"
@@ -37,7 +37,7 @@ export class SendQuoteValidator implements TransactionValidator {
 		expect(newBalanceInfo.totalPendingLockedPartyA).to.be.equal(
 			(oldBalanceInfo.totalPendingLockedPartyA + await getTotalLockedValuesForQuoteIds(context, [arg.quoteId])).toString(),
 		)
-		expect(newBalanceInfo.allocatedBalances).to.be.equal((oldBalanceInfo.allocatedBalances - await getOpenTradingFeeForQuotes(context, [arg.quoteId])))
+		expect(newBalanceInfo.allocatedBalances).to.be.equal((oldBalanceInfo.allocatedBalances - await getTradingFeeForQuotes(context, [arg.quoteId])))
 		expect((await context.viewFacet.getQuote(arg.quoteId)).quoteStatus).to.be.equal(QuoteStatus.PENDING)
 	}
 }

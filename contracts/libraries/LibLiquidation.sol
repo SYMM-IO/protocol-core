@@ -58,7 +58,7 @@ library LibLiquidation {
 
 			if (quote.partyB == partyB && (quote.quoteStatus == QuoteStatus.LOCKED || quote.quoteStatus == QuoteStatus.CANCEL_PENDING)) {
 				accountLayout.pendingLockedBalances[partyA].subQuote(quote);
-				uint256 fee = LibQuote.getOpenFee(quote.id);
+				uint256 fee = LibQuote.getTradingFee(quote.id);
 				accountLayout.allocatedBalances[partyA] += fee;
 				emit SharedEvents.BalanceChangePartyA(partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 				pendingQuotes[index] = pendingQuotes[pendingQuotes.length - 1];

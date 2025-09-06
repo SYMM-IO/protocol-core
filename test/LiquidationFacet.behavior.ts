@@ -10,7 +10,7 @@ import {
 	decimal,
 	getPriceFetcher,
 	getTotalLockedValuesForQuoteIds,
-	getDefaultFeeForQuotes,
+	getTradingFeeForQuotes,
 	unDecimal,
 } from "./utils/Common";
 import {getDummyLiquidationSig, getDummySingleUpnlSig} from "./utils/SignatureUtils"
@@ -93,7 +93,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED_PENDING)
 
 			let balanceInfoOfPartyA: BalanceInfo = await user.getBalanceInfo()
-			expect(balanceInfoOfPartyA.allocatedBalances).to.be.equal(decimal(500n) - (await getDefaultFeeForQuotes(context, [1n, 2n, 3n, 4n])))
+			expect(balanceInfoOfPartyA.allocatedBalances).to.be.equal(decimal(500n) - (await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])))
 			expect(balanceInfoOfPartyA.totalLockedPartyA).to.be.equal(await getTotalLockedValuesForQuoteIds(context, [1n]))
 			expect(balanceInfoOfPartyA.pendingLockedCva).to.be.equal("0")
 			expect(balanceInfoOfPartyA.pendingLockedMmPartyA).to.be.equal("0")
@@ -121,7 +121,7 @@ export function shouldBehaveLikeLiquidationFacet(): void {
 			expect((await context.viewFacet.getQuote(3)).quoteStatus).to.be.equal(QuoteStatus.LIQUIDATED_PENDING)
 
 			let balanceInfoOfPartyA: BalanceInfo = await user.getBalanceInfo()
-			expect(balanceInfoOfPartyA.allocatedBalances).to.be.equal(decimal(500n) - (await getDefaultFeeForQuotes(context, [1n, 2n, 3n, 4n])))
+			expect(balanceInfoOfPartyA.allocatedBalances).to.be.equal(decimal(500n) - (await getTradingFeeForQuotes(context, [1n, 2n, 3n, 4n])))
 			expect(balanceInfoOfPartyA.totalLockedPartyA).to.be.equal(await getTotalLockedValuesForQuoteIds(context, [1n]))
 			expect(balanceInfoOfPartyA.pendingLockedCva).to.be.equal("0")
 			expect(balanceInfoOfPartyA.pendingLockedMmPartyA).to.be.equal("0")

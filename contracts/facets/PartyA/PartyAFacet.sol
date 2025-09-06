@@ -77,7 +77,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			quote.lockedValues.lf,
 			quote.lockedValues.partyAmm,
 			quote.lockedValues.partyBmm,
-			Fee(quote.tradingFee.openFee, quote.tradingFee.closeFee),
+			quote.tradingFee,
 			deadline
 		);
 	}
@@ -147,7 +147,7 @@ contract PartyAFacet is Accessibility, Pausable, IPartyAFacet {
 			quote.lockedValues.lf,
 			quote.lockedValues.partyAmm,
 			quote.lockedValues.partyBmm,
-			Fee(quote.tradingFee.openFee, quote.tradingFee.closeFee),
+			quote.tradingFee,
 			deadline
 		);
 	}

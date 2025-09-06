@@ -72,15 +72,11 @@ library PartyAFacetImpl {
 			LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
 		}
 
-		Fee memory affiliateFee = GlobalAppStorage.layout().affiliateFee[affiliate];
-		uint256 openFee = affiliateFee.openFee > 0 ? affiliateFee.openFee : symbolLayout.symbols[symbolId].defaultFee;
-		uint256 closeFee = affiliateFee.closeFee > 0 ? affiliateFee.closeFee : symbolLayout.symbols[symbolId].defaultFee;
-
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
 		require(
 			uint256(availableBalance) >=
-				lockedValues.totalForPartyA() + ((quantity * tradingPrice * openFee) / 1e36),
+				lockedValues.totalForPartyA() + ((quantity * tradingPrice * symbolLayout.symbols[symbolId].tradingFee) / 1e36),
 			"PartyAFacet: insufficient available balance"
 		);
 		require(maLayout.affiliateStatus[affiliate] || affiliate == address(0), "PartyAFacet: Invalid affiliate");
@@ -116,9 +112,7 @@ library PartyAFacetImpl {
 			quantityToClose: 0,
 			lastFundingPaymentTimestamp: 0,
 			deadline: deadline,
-			tradingFee:Fee(openFee,closeFee),
-//			openFee: openFee,
-//			closeFee: closeFee,
+			tradingFee: symbolLayout.symbols[symbolId].tradingFee,
 			affiliate: affiliate,
 			accumulatedPaidFunding: 0
 		});
@@ -126,7 +120,7 @@ library PartyAFacetImpl {
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
 		quoteLayout.quotes[currentId] = quote;
 
-		uint256 fee = LibQuote.getOpenFee(currentId);
+		uint256 fee = LibQuote.getTradingFee(currentId);
 		accountLayout.allocatedBalances[msg.sender] -= fee;
 		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
 	}
@@ -141,7 +135,7 @@ library PartyAFacetImpl {
 			result = LibQuote.expireQuote(quoteId);
 		} else if (quote.quoteStatus == QuoteStatus.PENDING) {
 			quote.quoteStatus = QuoteStatus.CANCELED;
-			uint256 fee = LibQuote.getOpenFee(quote.id);
+			uint256 fee = LibQuote.getTradingFee(quote.id);
 			accountLayout.allocatedBalances[quote.partyA] += fee;
 			emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 			accountLayout.pendingLockedBalances[quote.partyA].subQuote(quote);
@@ -179,11 +173,6 @@ library PartyAFacetImpl {
 		quote.quantityToClose = quantityToClose;
 		quote.orderType = orderType;
 		quote.deadline = deadline;
-
-//		uint256 fee = LibQuote.getCloseFee(quoteId);
-//		AccountStorage.layout().allocatedBalances[msg.sender] -= fee;
-//		emit SharedEvents.BalanceChangePartyA(msg.sender, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_OUT);
-
 	}
 
 	function requestToCancelCloseRequest(uint256 quoteId) internal returns (QuoteStatus) {

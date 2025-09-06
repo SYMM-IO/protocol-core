@@ -58,7 +58,7 @@ library PartyBQuoteActionsFacetImpl {
 		accountLayout.partyBPendingLockedBalances[quote.partyB][quote.partyA].subQuote(quote);
 
 		// send trading Fee back to partyA
-		uint256 fee = LibQuote.getOpenFee(quoteId);
+		uint256 fee = LibQuote.getTradingFee(quoteId);
 		accountLayout.allocatedBalances[quote.partyA] += fee;
 		emit SharedEvents.BalanceChangePartyA(quote.partyA, fee, SharedEvents.BalanceChangeType.PLATFORM_FEE_IN);
 
