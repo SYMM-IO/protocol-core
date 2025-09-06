@@ -17,6 +17,8 @@ interface ISymmio {
 	function setDeallocateCooldown(uint256 deallocateCooldown) external;
 
 	function depositFor(address user, uint256 amount) external;
+
+	function withdrawCooldownOf(address user) external view returns (uint256);
 }
 
 interface IMultiAccount {
@@ -33,6 +35,7 @@ contract SymmioGlobalRelayer is AccessControlEnumerableUpgradeable, PausableUpgr
 	bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 
 	event SetWhitelistedTargets(address[] targets, bool[] states);
+	event SetTargetWithdrawCooldowns(address[] targets, uint256[] cooldowns);
 	event TransferExecuted(
 		address collateral,
 		address sender,
@@ -47,8 +50,10 @@ contract SymmioGlobalRelayer is AccessControlEnumerableUpgradeable, PausableUpgr
 	error TargetNotWhitelisted();
 	error Unauthorized();
 	error MismatchedCollateral();
+	error WithdrawCooldownNotReached();
 
 	mapping(address => bool) public whitelistedTargets;
+	mapping(address => uint256) public targetWithdrawCooldowns;
 
 	constructor() {
 		_disableInitializers();
@@ -64,6 +69,11 @@ contract SymmioGlobalRelayer is AccessControlEnumerableUpgradeable, PausableUpgr
 	function setWhitelistedTargets(address[] calldata targets, bool[] calldata states) external onlyRole(SETTER_ROLE) {
 		for (uint256 i = 0; i < targets.length; i++) whitelistedTargets[targets[i]] = states[i];
 		emit SetWhitelistedTargets(targets, states);
+	}
+
+	function setTargetWithdrawCooldowns(address[] calldata targets, uint256[] calldata cooldowns) external onlyRole(SETTER_ROLE) {
+		for (uint256 i = 0; i < targets.length; i++) targetWithdrawCooldowns[targets[i]] = cooldowns[i];
+		emit SetTargetWithdrawCooldowns(targets, cooldowns);
 	}
 
 	function pause() external onlyRole(PAUSER_ROLE) {
@@ -93,6 +103,10 @@ contract SymmioGlobalRelayer is AccessControlEnumerableUpgradeable, PausableUpgr
 
 		// Get the current deallocateCooldown from symmio
 		(uint256 originalCooldown, , , ) = ISymmio(source).coolDownsOfMA();
+
+		uint256 deallocateTimestamp = ISymmio(source).withdrawCooldownOf(sender);
+
+		if (deallocateTimestamp + targetWithdrawCooldowns[target] > block.timestamp) revert WithdrawCooldownNotReached();
 
 		// Set deallocateCooldown to 0
 		ISymmio(source).setDeallocateCooldown(0);
