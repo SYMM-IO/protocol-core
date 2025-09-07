@@ -9,6 +9,7 @@ import { limitQuoteRequestBuilder, marketQuoteRequestBuilder } from "./models/re
 import { SendQuoteValidator } from "./models/validators/SendQuoteValidator"
 import { decimal, getBlockTimestamp, pausePartyA } from "./utils/Common"
 import { getDummySingleUpnlAndPriceSig } from "./utils/SignatureUtils"
+import { ethers } from "ethers";
 
 export function shouldBehaveLikeSendQuote(): void {
 	let user: User, context: RunContext
@@ -144,5 +145,18 @@ export function shouldBehaveLikeSendQuote(): void {
 				.build(),
 		)
 		await validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
+	})
+
+	it("Should store data by sending quote with data successfully for limit", async function () {
+		let validator = new SendQuoteValidator()
+		const before = await validator.before(context, { user: user })
+		let qId = await user.sendQuoteWithData()
+		await validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
+		let quote = await context.viewFacet.getQuote(qId)
+		let text = ethers.AbiCoder.defaultAbiCoder().decode(
+			["string"],
+			quote.data
+		);
+		await expect(text[0]).to.be.equal("hello-world")
 	})
 }
