@@ -12,8 +12,6 @@ import "../../storages/QuoteStorage.sol";
 import "../../libraries/SharedEvents.sol";
 import "../../libraries/LibQuote.sol";
 import "../../libraries/muon/LibMuonLiquidation.sol";
-import "hardhat/console.sol";
-
 library ClearingHouseFacetImpl {
 	using LockedValuesOps for LockedValues;
 
@@ -23,15 +21,10 @@ library ClearingHouseFacetImpl {
 
 		require(accountLayout.masterAccountMode[partyB], "ClearingHouseFacet: partyB is not using master account mode");
 		LibMuonLiquidation.verifyCrossLiquidation(liquidationSig, partyB);
-		console.logInt(liquidationSig.upnl);
-		console.log("totalAllocatedBalance:", liquidationSig.totalAllocatedBalance);
-		console.log("partyBAllocatedBalances:", accountLayout.partyBAllocatedBalances[partyB][address(0)]);
-		console.log("partyBTotalCva:", accountLayout.partyBTotalCva[partyB]);
-		console.log("partyBTotalLf:", accountLayout.partyBTotalLf[partyB]);
+
 		int256 solvencyCheck = liquidationSig.upnl +
 			(int256(liquidationSig.totalAllocatedBalance + accountLayout.partyBAllocatedBalances[partyB][address(0)]) -
 				int256(accountLayout.partyBTotalCva[partyB] + accountLayout.partyBTotalLf[partyB]));
-		console.logInt(solvencyCheck);
 		require(solvencyCheck < 0, "ClearingHouseFacet: partyB is solvent");
 		maLayout.partyBLiquidationTimestamp[partyB][address(0)] = liquidationSig.timestamp;
 		accountLayout.crossLiquidationDetails[partyB] = CrossLiquidationDetail({

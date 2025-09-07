@@ -53,7 +53,7 @@ export class CloseRequestValidator implements TransactionValidator {
 
 		expect(newBalanceInfoPartyA.totalPendingLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
 		expect(newBalanceInfoPartyA.totalLockedPartyA).to.be.equal(oldBalanceInfoPartyA.totalLockedPartyA.toString())
-		expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances - await getCloseTradingFeeForQuoteWithFilledAmount(context, arg.quoteId, arg.quantityToClose))
+		expect(newBalanceInfoPartyA.allocatedBalances).to.be.equal(oldBalanceInfoPartyA.allocatedBalances)
 
 		// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())

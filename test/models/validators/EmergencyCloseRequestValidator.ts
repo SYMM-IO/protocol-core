@@ -1,14 +1,14 @@
-import {expect} from "chai"
+import { expect } from "chai"
 
-import {QuoteStructOutput} from "../../../src/types/contracts/interfaces/ISymmio"
-import {getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal} from "../../utils/Common"
-import {logger} from "../../utils/LoggerUtils"
-import {expectToBeApproximately} from "../../utils/SafeMath"
-import {PositionType, QuoteStatus} from "../Enums"
-import {Hedger} from "../Hedger"
-import {RunContext} from "../RunContext"
-import {BalanceInfo, User} from "../User"
-import {TransactionValidator} from "./TransactionValidator"
+import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
+import { getCloseTradingFeeForQuotes, getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal } from "../../utils/Common"
+import { logger } from "../../utils/LoggerUtils"
+import { expectToBeApproximately } from "../../utils/SafeMath"
+import { PositionType, QuoteStatus } from "../Enums"
+import { Hedger } from "../Hedger"
+import { RunContext } from "../RunContext"
+import { BalanceInfo, User } from "../User"
+import { TransactionValidator } from "./TransactionValidator"
 
 export type EmergencyCloseRequestValidatorBeforeArg = {
 	user: User
@@ -66,21 +66,30 @@ export class EmergencyCloseRequestValidator implements TransactionValidator {
 		const returnedLockedValuesPartyA = (BigInt(oldLockedValuesPartyA) * closedAmount) / BigInt(oldQuote.quantity)
 		const returnedLockedValuesPartyB = (BigInt(oldLockedValuesPartyB) * closedAmount) / BigInt(oldQuote.quantity)
 
-// Check Balances partyA
+		// Check Balances partyA
 		const newBalanceInfoPartyA = await arg.user.getBalanceInfo()
 		const oldBalanceInfoPartyA = arg.beforeOutput.balanceInfoPartyA
 
 		expect(newBalanceInfoPartyA.totalPendingLockedPartyA.toString()).to.equal(oldBalanceInfoPartyA.totalPendingLockedPartyA.toString())
-		expectToBeApproximately(BigInt(newBalanceInfoPartyA.totalLockedPartyA), BigInt(oldBalanceInfoPartyA.totalLockedPartyA) - returnedLockedValuesPartyA)
-		expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + profit)
+		expectToBeApproximately(
+			BigInt(newBalanceInfoPartyA.totalLockedPartyA),
+			BigInt(oldBalanceInfoPartyA.totalLockedPartyA) - returnedLockedValuesPartyA,
+		)
 
-// Check Balances partyB
+		expect(BigInt(newBalanceInfoPartyA.allocatedBalances)).to.be.approximately(
+			BigInt(oldBalanceInfoPartyA.allocatedBalances) + profit - (await getCloseTradingFeeForQuotes(context, [arg.quoteId])),
+			newBalanceInfoPartyA.allocatedBalances / 1000n,
+		)
+
+		// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())
 		const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB
 
 		expect(newBalanceInfoPartyB.totalPendingLockedPartyB.toString()).to.equal(oldBalanceInfoPartyB.totalPendingLockedPartyB.toString())
-		expectToBeApproximately(BigInt(newBalanceInfoPartyB.totalLockedPartyB), BigInt(oldBalanceInfoPartyB.totalLockedPartyB) - returnedLockedValuesPartyB)
+		expectToBeApproximately(
+			BigInt(newBalanceInfoPartyB.totalLockedPartyB),
+			BigInt(oldBalanceInfoPartyB.totalLockedPartyB) - returnedLockedValuesPartyB,
+		)
 		expectToBeApproximately(BigInt(newBalanceInfoPartyB.allocatedBalances), BigInt(oldBalanceInfoPartyB.allocatedBalances) - profit)
-
 	}
 }

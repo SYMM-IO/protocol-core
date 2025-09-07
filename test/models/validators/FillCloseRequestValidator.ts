@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { QuoteStructOutput } from "../../../src/types/contracts/interfaces/ISymmio"
-import { getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal } from "../../utils/Common"
+import { getCloseTradingFeeForQuotes, getTotalPartyALockedValuesForQuotes, getTotalPartyBLockedValuesForQuotes, unDecimal } from "../../utils/Common"
 import { logger } from "../../utils/LoggerUtils"
 import { expectToBeApproximately } from "../../utils/SafeMath"
 import { PositionType, QuoteStatus } from "../Enums"
@@ -87,8 +87,11 @@ export class FillCloseRequestValidator implements TransactionValidator {
 			BigInt(newBalanceInfoPartyA.totalLockedPartyA),
 			BigInt(oldBalanceInfoPartyA.totalLockedPartyA) - returnedLockedValuesPartyA,
 		)
-		expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + profit)
-
+		// expectToBeApproximately(BigInt(newBalanceInfoPartyA.allocatedBalances), BigInt(oldBalanceInfoPartyA.allocatedBalances) + profit)
+		expect(newBalanceInfoPartyA.allocatedBalances).to.be.approximately(
+			oldBalanceInfoPartyA.allocatedBalances - (await getCloseTradingFeeForQuotes(context, [arg.quoteId])) + profit,
+			oldBalanceInfoPartyA.allocatedBalances / 1000n,
+		)
 		// Check Balances partyB
 		const newBalanceInfoPartyB = await arg.hedger.getBalanceInfo(await arg.user.getAddress())
 		const oldBalanceInfoPartyB = arg.beforeOutput.balanceInfoPartyB
