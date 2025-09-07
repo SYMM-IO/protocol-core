@@ -36,7 +36,8 @@ library PartyAFacetImpl {
 		uint256 maxFundingRate,
 		uint256 deadline,
 		address affiliate,
-		SingleUpnlAndPriceSig memory upnlSig
+		SingleUpnlAndPriceSig memory upnlSig,
+		bytes memory data
 	) internal returns (uint256 currentId) {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
@@ -119,7 +120,8 @@ library PartyAFacetImpl {
 			tradingFee:openFee,
 			affiliate: affiliate,
 			accumulatedPaidFunding: 0,
-			closeFee:closeFee
+			closeFee:closeFee,
+			data:data
 		});
 		quoteLayout.quoteIdsOf[msg.sender].push(currentId);
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);

@@ -212,8 +212,6 @@ library LiquidationFacetImpl {
 				(quote.avgClosedPrice * quote.closedAmount + LibQuote.quoteOpenAmount(quote) * liquidationPrice) /
 				(quote.closedAmount + LibQuote.quoteOpenAmount(quote));
 
-			uint256 fee = ((quote.quantity - quote.closedAmount) * liquidationPrice * quote.closeFee) / 1e36;
-			accountLayout.settlementStates[partyA][quote.partyB].closeFee += fee;
 
 			quote.closedAmount = quote.quantity;
 
@@ -297,34 +295,6 @@ library LiquidationFacetImpl {
 			accountLayout.liquidationDetails[partyA].involvedPartyBCounts -= 1;
 
 			int256 settleAmount = accountLayout.settlementStates[partyA][partyB].actualAmount;
-//			uint256 closeFee = accountLayout.settlementStates[partyA][partyB].closeFee;
-//			uint256 cva = accountLayout.settlementStates[partyA][partyB].cva;
-//			if(closeFee < cva){
-//				accountLayout.settlementStates[partyA][partyB].cva -= closeFee;
-//			} else {
-//				accountLayout.settlementStates[partyA][partyB].closeFee -= cva;
-//				accountLayout.settlementStates[partyA][partyB].cva = 0;
-//			}
-//			uint256 lf = accountLayout.liquidationDetails[partyA].liquidationFee;
-//			if(accountLayout.settlementStates[partyA][partyB].closeFee != 0){
-//				if(accountLayout.settlementStates[partyA][partyB].closeFee < lf){
-//					accountLayout.liquidationDetails[partyA].liquidationFee -= accountLayout.settlementStates[partyA][partyB].closeFee;
-//				} else {
-//					accountLayout.settlementStates[partyA][partyB].closeFee -= lf;
-//					accountLayout.liquidationDetails[partyA].liquidationFee = 0;
-//				}
-//			}
-
-//			if(accountLayout.settlementStates[partyA][partyB].closeFee != 0){
-//				if(settleAmount < 0){
-//					settleAmount += int256(accountLayout.settlementStates[partyA][partyB].closeFee);
-//				} else {
-//					settleAmount -= int256(accountLayout.settlementStates[partyA][partyB].closeFee);
-//				}
-//				accountLayout.settlementStates[partyA][partyB].closeFee = 0;
-//			}
-
-
 
 		accountLayout.partyBAllocatedBalances[partyB][partyA] += accountLayout.settlementStates[partyA][partyB].cva;
 			emit SharedEvents.BalanceChangePartyB(

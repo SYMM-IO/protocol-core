@@ -72,6 +72,7 @@ struct Quote {
 	address affiliate;
 	int256 accumulatedPaidFunding;
 	uint256 closeFee;
+	bytes data;
 }
 
 library QuoteStorage {

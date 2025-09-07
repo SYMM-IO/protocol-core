@@ -137,7 +137,8 @@ library LibPartyBPositionsActions {
 				tradingFee: quote.tradingFee,
 				affiliate: quote.affiliate,
 				accumulatedPaidFunding: 0,
-				closeFee: quote.closeFee
+				closeFee: quote.closeFee,
+				data: quote.data
 			});
 
 			quoteLayout.quoteIdsOf[quote.partyA].push(currentId);

@@ -18,7 +18,6 @@ struct SettlementState {
 	int256 expectedAmount;
 	uint256 cva;
 	bool pending;
-	uint256 closeFee;
 }
 
 struct LiquidationDetail {
