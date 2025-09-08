@@ -157,6 +157,15 @@ export function shouldBehaveLikeSendQuote(): void {
 			["string"],
 			quote.data
 		);
-		await expect(text[0]).to.be.equal("hello-world")
+		 expect(text[0]).to.be.equal("hello-world")
+	})
+
+	it("should send quote with correct affiliate fee", async function () {
+		await context.controlFacet.registerAffiliate(context.signers.hedger)
+		await context.controlFacet.setAffiliateFee(context.signers.hedger, decimal(1n,17), decimal(1n,17))
+		let validator = new SendQuoteValidator()
+		const before = await validator.before(context, { user: user })
+		let qId = await user.sendQuote(limitQuoteRequestBuilder().affiliate(context.signers.hedger.address).build())
+		await validator.after(context, { user: user, quoteId: qId, beforeOutput: before })
 	})
 }
