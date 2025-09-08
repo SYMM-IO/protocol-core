@@ -17,7 +17,7 @@ library SettlementFacetImpl {
 		LibMuonSettlement.verifySettlement(settleSig, partyA);
 		return LibSettlement.settleUpnl(settleSig, updatedPrices, partyA, false);
 	}
-	
+
 	// // TODO: handle nonce and upnls
 	// function settleUpnlAndFillCloseRequests(
 	// 	SettlementSig memory settleSig,

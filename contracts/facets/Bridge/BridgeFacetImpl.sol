@@ -139,8 +139,7 @@ library BridgeFacetImpl {
 		require(validAmount <= bridgeTransaction.amount, "BridgeFacet: High valid amount");
 
 		AccountStorage.layout().balances[bridgeLayout.invalidBridgedAmountsPool] +=
-			((bridgeTransaction.amount - validAmount) * (10 ** 18)) /
-			(10 ** IERC20Metadata(appLayout.collateral).decimals());
+			((bridgeTransaction.amount - validAmount) * (10 ** 18)) / (10 ** IERC20Metadata(appLayout.collateral).decimals());
 		bridgeTransaction.status = BridgeTransactionStatus.RECEIVED;
 		bridgeTransaction.amount = validAmount;
 	}

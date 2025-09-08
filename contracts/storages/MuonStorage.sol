@@ -134,11 +134,6 @@ struct CrossLiquidationSig {
 	IMuonSignatureVerifier.SchnorrSign sigs; // Schnorr signature for additional verification
 }
 
-struct Fee {
-	uint256 openFee;
-	uint256 closeFee;
-}
-
 library MuonStorage {
 	bytes32 internal constant MUON_STORAGE_SLOT = keccak256("diamond.standard.storage.muon");
 

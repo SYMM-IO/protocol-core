@@ -43,6 +43,7 @@ library PartyAFacetImpl {
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 		MAStorage.Layout storage maLayout = MAStorage.layout();
 		SymbolStorage.Layout storage symbolLayout = SymbolStorage.layout();
+		GlobalAppStorage.Layout storage appLayout = GlobalAppStorage.layout();
 
 		require(!LibAccessibility.hasRole(msg.sender, LibAccessibility.LIQUIDATOR_ROLE), "PartyAFacet: Liquidator can't be partyA");
 		require(
@@ -73,15 +74,14 @@ library PartyAFacetImpl {
 			LibMuonPartyA.verifyPartyAUpnlAndPrice(upnlSig, msg.sender, symbolId);
 		}
 
-		Fee memory affiliateFee = GlobalAppStorage.layout().affiliateFee[affiliate];
-		uint256 openFee = affiliateFee.openFee > 0 ? affiliateFee.openFee : symbolLayout.symbols[symbolId].tradingFee;
-		uint256 closeFee = affiliateFee.closeFee > 0 ? affiliateFee.closeFee : symbolLayout.symbols[symbolId].tradingFee;
+		Fee memory affiliateFee = appLayout.affiliateFee[affiliate];
+		uint256 openFee = appLayout.isAffiliateFeeSet[affiliate] ? affiliateFee.openFee : symbolLayout.symbols[symbolId].tradingFee;
+		uint256 closeFee = appLayout.isAffiliateFeeSet[affiliate] ? affiliateFee.closeFee : symbolLayout.symbols[symbolId].tradingFee;
 
 		int256 availableBalance = LibAccount.partyAAvailableForQuote(upnlSig.upnl, msg.sender);
 		require(availableBalance > 0, "PartyAFacet: Available balance is lower than zero");
 		require(
-			uint256(availableBalance) >=
-				lockedValues.totalForPartyA() + ((quantity * tradingPrice * openFee) / 1e36),
+			uint256(availableBalance) >= lockedValues.totalForPartyA() + ((quantity * tradingPrice * openFee) / 1e36),
 			"PartyAFacet: insufficient available balance"
 		);
 		require(maLayout.affiliateStatus[affiliate] || affiliate == address(0), "PartyAFacet: Invalid affiliate");
@@ -117,11 +117,11 @@ library PartyAFacetImpl {
 			quantityToClose: 0,
 			lastFundingPaymentTimestamp: 0,
 			deadline: deadline,
-			tradingFee:openFee,
+			tradingFee: openFee,
 			affiliate: affiliate,
 			accumulatedPaidFunding: 0,
-			closeFee:closeFee,
-			data:data
+			closeFee: closeFee,
+			data: data
 		});
 		quoteLayout.quoteIdsOf[msg.sender].push(currentId);
 		quoteLayout.partyAPendingQuotes[msg.sender].push(currentId);
@@ -180,7 +180,6 @@ library PartyAFacetImpl {
 		quote.quantityToClose = quantityToClose;
 		quote.orderType = orderType;
 		quote.deadline = deadline;
-
 	}
 
 	function requestToCancelCloseRequest(uint256 quoteId) internal returns (QuoteStatus) {

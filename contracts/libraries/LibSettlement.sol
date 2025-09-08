@@ -20,7 +20,10 @@ library LibSettlement {
 		QuoteStorage.Layout storage quoteLayout = QuoteStorage.layout();
 		AccountStorage.Layout storage accountLayout = AccountStorage.layout();
 
-		require(settleSig.quotesSettlementsData.length > 0 && settleSig.quotesSettlementsData.length == updatedPrices.length, "LibSettlement: Invalid length");
+		require(
+			settleSig.quotesSettlementsData.length > 0 && settleSig.quotesSettlementsData.length == updatedPrices.length,
+			"LibSettlement: Invalid length"
+		);
 		require(
 			LibAccount.partyAAvailableBalanceForLiquidation(settleSig.upnlPartyA, accountLayout.allocatedBalances[partyA], partyA) >= 0,
 			"LibSettlement: PartyA is insolvent"
@@ -66,12 +69,10 @@ library LibSettlement {
 			}
 			if (quote.positionType == PositionType.LONG) {
 				settleAmounts[data.partyBUpnlIndex] +=
-					((int256(updatedPrices[i]) - int256(quote.openedPrice)) * int256(LibQuote.quoteOpenAmount(quote))) /
-					1e18;
+					((int256(updatedPrices[i]) - int256(quote.openedPrice)) * int256(LibQuote.quoteOpenAmount(quote))) / 1e18;
 			} else {
 				settleAmounts[data.partyBUpnlIndex] +=
-					((int256(quote.openedPrice) - int256(updatedPrices[i])) * int256(LibQuote.quoteOpenAmount(quote))) /
-					1e18;
+					((int256(quote.openedPrice) - int256(updatedPrices[i])) * int256(LibQuote.quoteOpenAmount(quote))) / 1e18;
 			}
 			quote.openedPrice = updatedPrices[i];
 		}
@@ -85,7 +86,7 @@ library LibSettlement {
 			);
 			require(!MAStorage.layout().partyBLiquidationStatus[partyB][partyA], "LibSettlement: PartyB is in liquidation process");
 			require(!accountLayout.crossLiquidationDetails[partyB].inProgress, "LibSettlement: PartyB is in cross liquidation process");
-			
+
 			if (!isForceClose && msg.sender != partyB) {
 				require(
 					block.timestamp >=

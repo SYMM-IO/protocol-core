@@ -151,7 +151,14 @@ contract LiquidationFacet is Pausable, Accessibility, ILiquidationFacet {
 		address partyB,
 		address partyA,
 		SingleUpnlSig memory upnlSig
-	) external whenNotLiquidationPaused notLiquidatedPartyB(partyB, partyA) notCrossLiquidatedPartyB(partyB) notLiquidatedPartyA(partyA) onlyRole(LibAccessibility.PARTYB_LIQUIDATOR_ROLE) {
+	)
+		external
+		whenNotLiquidationPaused
+		notLiquidatedPartyB(partyB, partyA)
+		notCrossLiquidatedPartyB(partyB)
+		notLiquidatedPartyA(partyA)
+		onlyRole(LibAccessibility.PARTYB_LIQUIDATOR_ROLE)
+	{
 		emit LiquidatePartyB(msg.sender, partyB, partyA, AccountStorage.layout().partyBAllocatedBalances[partyB][partyA], upnlSig.upnl);
 		LiquidationFacetImpl.liquidatePartyB(partyB, partyA, upnlSig);
 	}

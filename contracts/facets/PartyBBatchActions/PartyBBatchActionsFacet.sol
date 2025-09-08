@@ -79,7 +79,15 @@ contract PartyBBatchActionsFacet is Accessibility, Pausable, IPartyBBatchActions
 		);
 		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
 		for (uint256 i = 0; i < quoteIds.length; i++) {
-			emit FillCloseRequest(quoteIds[i], firstQuote.partyA, firstQuote.partyB, filledAmounts[i], closedPrices[i], quoteStatuses[i], closeIds[i]);
+			emit FillCloseRequest(
+				quoteIds[i],
+				firstQuote.partyA,
+				firstQuote.partyB,
+				filledAmounts[i],
+				closedPrices[i],
+				quoteStatuses[i],
+				closeIds[i]
+			);
 		}
 	}
 }

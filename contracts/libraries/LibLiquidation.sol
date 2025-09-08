@@ -34,15 +34,13 @@ library LibLiquidation {
 		uint256 liquidatorShare;
 		uint256 remainingLf;
 
-
 		// Determine liquidator share and remaining locked funds
 		if (uint256(-availableBalance) < accountLayout.partyBLockedBalances[partyB][partyA].lf) {
 			remainingLf = accountLayout.partyBLockedBalances[partyB][partyA].lf - uint256(-availableBalance);
 			liquidatorShare = (remainingLf * maLayout.liquidatorShare) / 1e18;
 
 			maLayout.partyBPositionLiquidatorsShare[partyB][partyA] =
-				(remainingLf - liquidatorShare) /
-				quoteLayout.partyBPositionsCount[partyB][partyA];
+				(remainingLf - liquidatorShare) / quoteLayout.partyBPositionsCount[partyB][partyA];
 		} else {
 			maLayout.partyBPositionLiquidatorsShare[partyB][partyA] = 0;
 		}
@@ -69,7 +67,6 @@ library LibLiquidation {
 				index++;
 			}
 		}
-
 
 		// Update allocated balances for Party A
 		uint256 value = accountLayout.partyBAllocatedBalances[partyB][partyA] - remainingLf;

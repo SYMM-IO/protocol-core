@@ -13,5 +13,4 @@ interface IFundingRateFacet is IFundingRateEvents {
 	function setLongFundingFee(uint256[] memory symbolIds, int256[] memory longFees, int256[] memory marketPrices) external;
 	function setEpochDurations(uint256[] memory symbolIds, uint256[] memory durations) external;
 	function chargeAccumulatedFundingFee(address partyA, address partyB, uint256[] memory quoteIds, PairUpnlSig memory upnlSig) external;
-
 }

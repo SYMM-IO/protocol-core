@@ -178,8 +178,8 @@ library LiquidationFacetImpl {
 					accountLayout.settlementStates[partyA][quote.partyB].actualAmount -= int256(amount);
 				}
 				accountLayout.settlementStates[partyA][quote.partyB].expectedAmount = accountLayout
-				.settlementStates[partyA][quote.partyB].actualAmount;
-
+					.settlementStates[partyA][quote.partyB]
+					.actualAmount;
 			} else if (accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.LATE) {
 				accountLayout.settlementStates[partyA][quote.partyB].cva +=
 					quote.lockedValues.cva -
@@ -190,7 +190,8 @@ library LiquidationFacetImpl {
 					accountLayout.settlementStates[partyA][quote.partyB].actualAmount -= int256(amount);
 				}
 				accountLayout.settlementStates[partyA][quote.partyB].expectedAmount = accountLayout
-				.settlementStates[partyA][quote.partyB].actualAmount;
+					.settlementStates[partyA][quote.partyB]
+					.actualAmount;
 			} else if (accountLayout.liquidationDetails[partyA].liquidationType == LiquidationType.OVERDUE) {
 				if (hasMadeProfit) {
 					accountLayout.settlementStates[partyA][quote.partyB].actualAmount += int256(amount);
@@ -211,7 +212,6 @@ library LiquidationFacetImpl {
 			quote.avgClosedPrice =
 				(quote.avgClosedPrice * quote.closedAmount + LibQuote.quoteOpenAmount(quote) * liquidationPrice) /
 				(quote.closedAmount + LibQuote.quoteOpenAmount(quote));
-
 
 			quote.closedAmount = quote.quantity;
 
@@ -296,7 +296,7 @@ library LiquidationFacetImpl {
 
 			int256 settleAmount = accountLayout.settlementStates[partyA][partyB].actualAmount;
 
-		accountLayout.partyBAllocatedBalances[partyB][partyA] += accountLayout.settlementStates[partyA][partyB].cva;
+			accountLayout.partyBAllocatedBalances[partyB][partyA] += accountLayout.settlementStates[partyA][partyB].cva;
 			emit SharedEvents.BalanceChangePartyB(
 				partyB,
 				partyA,

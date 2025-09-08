@@ -114,10 +114,7 @@ contract MultiAccount is IMultiAccount, Initializable, PausableUpgradeable, Acce
 	function revokeAccesses(address account, address target, bytes4[] memory selector) external onlyOwner(account, msg.sender) {
 		require(target != msg.sender && target != account, "MultiAccount: Invalid target");
 		for (uint256 i = selector.length; i != 0; i--) {
-			require(
-				revokeProposalTimestamp[account][target][selector[i - 1]] != 0,
-				"MultiAccount: Revoke access not proposed"
-			);
+			require(revokeProposalTimestamp[account][target][selector[i - 1]] != 0, "MultiAccount: Revoke access not proposed");
 			require(
 				revokeProposalTimestamp[account][target][selector[i - 1]] + revokeCooldown <= block.timestamp,
 				"MultiAccount: Cooldown not reached"

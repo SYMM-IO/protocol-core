@@ -172,7 +172,7 @@ library FundingRateFacetImpl {
 				timestampForEpoch = block.timestamp;
 				fundingFee.lastUpdatedTimeStamp = block.timestamp;
 			}
-			
+
 			// Update epoch duration
 			fundingFee.lastUpdatedEpoch = LibFundingRate.getEpochOfTimestamp(timestampForEpoch, durations[i]);
 			fundingFee.epochDuration = durations[i];

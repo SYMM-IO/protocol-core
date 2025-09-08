@@ -4,14 +4,15 @@ pragma solidity >=0.8.18;
 import "../interfaces/IMuonSignatureVerifier.sol";
 
 library LibMuonV04ClientBase {
-    // See https://en.bitcoin.it/wiki/Secp256k1 for this constant.
-    uint256 constant public Q = // Group order of secp256k1
-    // solium-disable-next-line indentation
-    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-    // solium-disable-next-line zeppelin/no-arithmetic-operations
-    uint256 constant public HALF_Q = (Q >> 1) + 1;
+	// See https://en.bitcoin.it/wiki/Secp256k1 for this constant.
+	uint256 public constant Q =
+		// Group order of secp256k1
+		// solium-disable-next-line indentation
+		0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+	// solium-disable-next-line zeppelin/no-arithmetic-operations
+	uint256 public constant HALF_Q = (Q >> 1) + 1;
 
-    /** **************************************************************************
+	/** **************************************************************************
 @notice verifySignature returns true iff passed a valid Schnorr signature.
 
       @dev See https://en.wikipedia.org/wiki/Schnorr_signature for reference.
@@ -97,67 +98,64 @@ library LibMuonV04ClientBase {
              above instructions
       **************************************************************************
       @return True if passed a valid signature, false otherwise. */
-    function verifySignature(
-        uint256 signingPubKeyX,
-        uint8 pubKeyYParity,
-        uint256 signature,
-        uint256 msgHash,
-        address nonceTimesGeneratorAddress) public pure returns (bool) {
-        require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
-        // Avoid signature malleability from multiple representations for ℤ/Qℤ elts
-        require(signature < Q, "signature must be reduced modulo Q");
+	function verifySignature(
+		uint256 signingPubKeyX,
+		uint8 pubKeyYParity,
+		uint256 signature,
+		uint256 msgHash,
+		address nonceTimesGeneratorAddress
+	) public pure returns (bool) {
+		require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
+		// Avoid signature malleability from multiple representations for ℤ/Qℤ elts
+		require(signature < Q, "signature must be reduced modulo Q");
 
-        // Forbid trivial inputs, to avoid ecrecover edge cases. The main thing to
-        // avoid is something which causes ecrecover to return 0x0: then trivial
-        // signatures could be constructed with the nonceTimesGeneratorAddress input
-        // set to 0x0.
-        //
-        // solium-disable-next-line indentation
-        require(nonceTimesGeneratorAddress != address(0) && signingPubKeyX > 0 &&
-        signature > 0 && msgHash > 0, "no zero inputs allowed");
+		// Forbid trivial inputs, to avoid ecrecover edge cases. The main thing to
+		// avoid is something which causes ecrecover to return 0x0: then trivial
+		// signatures could be constructed with the nonceTimesGeneratorAddress input
+		// set to 0x0.
+		//
+		// solium-disable-next-line indentation
+		require(nonceTimesGeneratorAddress != address(0) && signingPubKeyX > 0 && signature > 0 && msgHash > 0, "no zero inputs allowed");
 
-        // solium-disable-next-line indentation
-        uint256 msgChallenge = // "e"
-        // solium-disable-next-line indentation
-                            uint256(keccak256(abi.encodePacked(signingPubKeyX, pubKeyYParity,
-                msgHash, nonceTimesGeneratorAddress))
-            );
+		// solium-disable-next-line indentation
+		uint256 msgChallenge = // "e"
+		// solium-disable-next-line indentation
+		uint256(keccak256(abi.encodePacked(signingPubKeyX, pubKeyYParity, msgHash, nonceTimesGeneratorAddress)));
 
-        // Verify msgChallenge * signingPubKey + signature * generator ==
-        //        nonce * generator
-        //
-        // https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384/9
-        // The point corresponding to the address returned by
-        // ecrecover(-s*r,v,r,e*r) is (r⁻¹ mod Q)*(e*r*R-(-s)*r*g)=e*R+s*g, where R
-        // is the (v,r) point. See https://crypto.stackexchange.com/a/18106
-        //
-        // solium-disable-next-line indentation
-        address recoveredAddress = ecrecover(
-        // solium-disable-next-line zeppelin/no-arithmetic-operations
-            bytes32(Q - mulmod(signingPubKeyX, signature, Q)),
-            // https://ethereum.github.io/yellowpaper/paper.pdf p. 24, "The
-            // value 27 represents an even y value and 28 represents an odd
-            // y value."
-            (pubKeyYParity == 0) ? 27 : 28,
-            bytes32(signingPubKeyX),
-            bytes32(mulmod(msgChallenge, signingPubKeyX, Q)));
-        return nonceTimesGeneratorAddress == recoveredAddress;
-    }
+		// Verify msgChallenge * signingPubKey + signature * generator ==
+		//        nonce * generator
+		//
+		// https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384/9
+		// The point corresponding to the address returned by
+		// ecrecover(-s*r,v,r,e*r) is (r⁻¹ mod Q)*(e*r*R-(-s)*r*g)=e*R+s*g, where R
+		// is the (v,r) point. See https://crypto.stackexchange.com/a/18106
+		//
+		// solium-disable-next-line indentation
+		address recoveredAddress = ecrecover(
+			// solium-disable-next-line zeppelin/no-arithmetic-operations
+			bytes32(Q - mulmod(signingPubKeyX, signature, Q)),
+			// https://ethereum.github.io/yellowpaper/paper.pdf p. 24, "The
+			// value 27 represents an even y value and 28 represents an odd
+			// y value."
+			(pubKeyYParity == 0) ? 27 : 28,
+			bytes32(signingPubKeyX),
+			bytes32(mulmod(msgChallenge, signingPubKeyX, Q))
+		);
+		return nonceTimesGeneratorAddress == recoveredAddress;
+	}
 
-    function validatePubKey(uint256 signingPubKeyX) public pure {
-        require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
-    }
+	function validatePubKey(uint256 signingPubKeyX) public pure {
+		require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
+	}
 
-    function muonVerify(
-        uint256 hash,
-        IMuonSignatureVerifier.SchnorrSign memory signature,
-        IMuonSignatureVerifier.PublicKey memory pubKey
-    ) internal pure returns (bool) {
-        if (!verifySignature(pubKey.x, pubKey.parity,
-            signature.signature,
-            hash, signature.nonce)) {
-            return false;
-        }
-        return true;
-    }
+	function muonVerify(
+		uint256 hash,
+		IMuonSignatureVerifier.SchnorrSign memory signature,
+		IMuonSignatureVerifier.PublicKey memory pubKey
+	) internal pure returns (bool) {
+		if (!verifySignature(pubKey.x, pubKey.parity, signature.signature, hash, signature.nonce)) {
+			return false;
+		}
+		return true;
+	}
 }

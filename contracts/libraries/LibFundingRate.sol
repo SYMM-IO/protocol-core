@@ -31,7 +31,6 @@ library LibFundingRate {
 	}
 
 	function updateAccumulatedRates(FundingFee storage fundingFee) internal returns (int256 accumulatedLongRate, int256 accumulatedShortRate) {
-
 		uint256 newEpochs = getEpochsSinceLastUpdate(fundingFee);
 		uint256 previousEpochs = fundingFee.lastUpdatedEpoch - fundingFee.startEpoch;
 
@@ -44,12 +43,10 @@ library LibFundingRate {
 		uint256 totalEpochs = previousEpochs + newEpochs;
 
 		fundingFee.accumulatedLongRate =
-			(fundingFee.accumulatedLongRate * int256(previousEpochs) + fundingFee.currentLongRate * int256(newEpochs)) /
-			int256(totalEpochs);
+			(fundingFee.accumulatedLongRate * int256(previousEpochs) + fundingFee.currentLongRate * int256(newEpochs)) / int256(totalEpochs);
 
 		fundingFee.accumulatedShortRate =
-			(fundingFee.accumulatedShortRate * int256(previousEpochs) + fundingFee.currentShortRate * int256(newEpochs)) /
-			int256(totalEpochs);
+			(fundingFee.accumulatedShortRate * int256(previousEpochs) + fundingFee.currentShortRate * int256(newEpochs)) / int256(totalEpochs);
 
 		fundingFee.lastUpdatedEpoch = getEpochOfTimestamp(block.timestamp, fundingFee.epochDuration);
 		fundingFee.lastUpdatedTimeStamp = block.timestamp;

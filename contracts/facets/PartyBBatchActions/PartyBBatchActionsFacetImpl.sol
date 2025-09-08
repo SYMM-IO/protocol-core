@@ -28,9 +28,9 @@ library PartyBBatchActionsFacetImpl {
 			quoteIds.length == filledAmounts.length && quoteIds.length == openedPrices.length && quoteIds.length > 0,
 			"PartyBFacet: Invalid length"
 		);
-		
+
 		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
-		
+
 		// PartyA and PartyB are not suspended
 		require(!accountLayout.suspendedAddresses[firstQuote.partyA], "PartyBFacet: PartyA is Suspended");
 		require(!accountLayout.suspendedAddresses[firstQuote.partyB], "PartyBFacet: Sender is Suspended");
@@ -85,10 +85,10 @@ library PartyBBatchActionsFacetImpl {
 		);
 
 		Quote storage firstQuote = quoteLayout.quotes[quoteIds[0]];
-		
+
 		// Verify the upnl and prices
 		LibMuonPartyBBatchActions.verifyPairUpnlAndPrices(upnlSig, firstQuote.partyB, firstQuote.partyA, quoteIds);
-		
+
 		LibSolvency.isSolventAfterClosePosition(
 			quoteIds,
 			filledAmounts,
@@ -107,7 +107,7 @@ library PartyBBatchActionsFacetImpl {
 
 		accountLayout.partyBNonces[firstQuote.partyB][firstQuote.partyA] += 1;
 		accountLayout.partyANonces[firstQuote.partyA] += 1;
-		
+
 		quoteStatuses = new QuoteStatus[](quoteIds.length);
 		closeIds = new uint256[](quoteIds.length);
 		for (uint256 i = 0; i < quoteIds.length; i++) {

@@ -23,7 +23,7 @@ library LibAccessibility {
 	bytes32 public constant SECURED_WITHDRAWER_ROLE = keccak256("SECURED_WITHDRAWER_ROLE");
 	bytes32 public constant CLEARING_HOUSE_ROLE = keccak256("CLEARING_HOUSE_ROLE");
 	bytes32 public constant DEALLOCATE_COOLDOWN_SETTER_ROLE = keccak256("DEALLOCATE_COOLDOWN_SETTER_ROLE");
-	
+
 	/**
 	 * @notice Checks if a user has a specific role.
 	 * @param user The address of the user.

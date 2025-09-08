@@ -6,7 +6,7 @@ pragma solidity >=0.8.18;
 
 import "./MuonStorage.sol";
 
-	enum PositionType {
+enum PositionType {
 	LONG,
 	SHORT
 }
@@ -73,6 +73,11 @@ struct Quote {
 	int256 accumulatedPaidFunding;
 	uint256 closeFee;
 	bytes data;
+}
+
+struct Fee {
+	uint256 openFee;
+	uint256 closeFee;
 }
 
 library QuoteStorage {

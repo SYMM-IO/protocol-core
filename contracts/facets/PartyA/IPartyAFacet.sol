@@ -59,7 +59,6 @@ interface IPartyAFacet is IPartyAEvents {
 		bytes memory data
 	) external returns (uint256 quoteId);
 
-
 	function expireQuote(uint256[] memory expiredQuoteIds) external;
 
 	function requestToCancelQuote(uint256 quoteId) external;

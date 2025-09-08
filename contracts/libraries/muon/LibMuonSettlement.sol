@@ -19,7 +19,7 @@ library LibMuonSettlement {
 		for (uint256 i = 0; i < settleSig.quotesSettlementsData.length; i++) {
 			nonces[i] = AccountStorage.layout().partyBNonces[QuoteStorage.layout().quotes[settleSig.quotesSettlementsData[i].quoteId].partyB][partyA];
 			encodedData = abi.encodePacked(
-				encodedData,  // Append the previously encoded data
+				encodedData, // Append the previously encoded data
 				settleSig.quotesSettlementsData[i].quoteId,
 				settleSig.quotesSettlementsData[i].currentPrice,
 				settleSig.quotesSettlementsData[i].partyBUpnlIndex
