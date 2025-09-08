@@ -68,7 +68,6 @@ export class OpenPositionValidator implements TransactionValidator {
 		const newLockedValuesPartyA = await getTotalPartyALockedValuesForQuotes([newQuote])
 
 		const oldLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([oldQuote])
-		const newLockedValuesPartyB = await getTotalPartyBLockedValuesForQuotes([newQuote])
 
 		const fillAmountCoef = new BN(arg.fillAmount.toString()).div(new BN(oldQuote.quantity.toString()))
 		const priceCoef = new BN(arg.openedPrice.toString()).div(new BN(oldQuote.requestedOpenPrice.toString()))
