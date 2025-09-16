@@ -107,10 +107,10 @@ library PartyBPositionActionsFacetImpl {
 			LibAccount.partyAAvailableBalanceForLiquidation(upnlSig.upnlPartyA, accountLayout.allocatedBalances[quote.partyA], quote.partyA) >= 0,
 			"PartyBFacet: PartyA is insolvent"
 		);
-		require(
-			LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, quote.partyB, quote.partyA) >= 0,
-			"PartyBFacet: PartyB should be solvent"
-		);
+		// require(
+		// 	LibAccount.partyBAvailableBalanceForLiquidation(upnlSig.upnlPartyB, quote.partyB, quote.partyA) >= 0,
+		// 	"PartyBFacet: PartyB should be solvent"
+		// );
 		accountLayout.partyBNonces[quote.partyB][quote.partyA] += 1;
 		accountLayout.partyANonces[quote.partyA] += 1;
 		LibQuote.closeQuote(quote, filledAmount, upnlSig.price);
